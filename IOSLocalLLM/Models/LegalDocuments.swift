@@ -15,7 +15,7 @@ enum LegalDocuments {
     // MARK: - Versioning
     // Bump this whenever any legal text materially changes. Existing users
     // will be re-prompted to accept on app launch.
-    static let currentVersion = 3
+    static let currentVersion = 4
 
     // MARK: - Public URLs
     static let privacyPolicyURL = "https://github.com/Mesutcydev/ios-local-llm/blob/main/PRIVACY_POLICY.md"
@@ -50,7 +50,7 @@ enum LegalDocuments {
     - **Web search:** When you enable web search and submit a query, the configured provider receives that query under its own terms.
     - **Mac Bridge and Local API Server:** When enabled, paired clients communicate with the app over your local network.
     - **iCloud sync:** When enabled, Apple stores conversations in your private CloudKit database.
-    - **External links and companion downloads:** These open or download only after your action.
+    - **External documentation and links:** These open only after your action.
 
     There is no iOS Local LLM telemetry channel, remote configuration service, analytics SDK, or advertising SDK.
 
@@ -96,12 +96,12 @@ enum LegalDocuments {
 
     **Last updated:** \(currentVersionDate)
 
-    iOS Local LLM is open-source software. This notice summarizes the licenses and important safety information; it does not add copyright restrictions to the MIT-licensed portions of the app.
+    This source distribution contains original open-source software and separately licensed third-party material. This notice summarizes licenses and important safety information; it does not add copyright restrictions to the MIT-licensed portions of the app.
 
     ## 1. iOS Local LLM license
     Original iOS Local LLM source code and documentation are licensed under the **MIT License**. Subject to that license, you may use, copy, modify, merge, publish, distribute, sublicense, and sell copies.
 
-    The MIT copyright and permission notice must be included in copies or substantial portions of the software. The iOS Local LLM name and logos are not licensed as trademarks and must not be used to imply endorsement of a modified distribution.
+    The MIT copyright and permission notice must be included in copies or substantial portions of the software. “iOS Local LLM” is used as a descriptive project title. iOS and related names are Apple Inc. trademarks; this independent project is not affiliated with or endorsed by Apple or any compatibility provider. Modified public distributions should use their own identity and must not imply endorsement.
 
     ## 2. Third-party components and models
     iOS Local LLM includes or downloads components that are separate works under their own terms. Those terms are not replaced by the iOS Local LLM MIT License.
@@ -130,7 +130,7 @@ enum LegalDocuments {
     Some features capture camera frames, microphone audio, or photo-library images. **You are solely responsible for ensuring you have the legal right to capture and analyse any image, video, or audio you process with the app**, including obtaining any necessary consent from persons captured. The app processes this data entirely on-device and does not transmit it anywhere, but local processing does not relieve you of consent and privacy obligations under your local law.
 
     ## 6. Network usage and privacy
-    The app makes outbound network requests only for user-initiated actions: searching Hugging Face, downloading AI model weights from huggingface.co, and (if you enable Mac Bridge) communicating with paired devices on your local network. **Use of huggingface.co is subject to Hugging Face's own terms of service and privacy policy.** Use of any downloaded model is subject to that model's own license, which you must read and comply with.
+    The app makes outbound network requests only for user-initiated or explicitly enabled features: searching or downloading from Hugging Face, web search, Mac Bridge and Local API communication on your local network, optional iCloud sync, and external documentation or links you choose to open. Each provider, including Hugging Face, Apple iCloud, and any configured search provider, applies its own terms and privacy policy. Use of any downloaded model is subject to that model's own license, which you must read and comply with.
 
     ## 7. No warranty
     IOS_LOCAL_LLM, THIRD-PARTY COMPONENTS, MODELS, AND AI OUTPUTS ARE PROVIDED **"AS IS"**, WITHOUT WARRANTY OF ANY KIND, TO THE MAXIMUM EXTENT PERMITTED BY THEIR APPLICABLE LICENSES AND BY LAW. The complete MIT warranty disclaimer is included with the source distribution.
@@ -187,8 +187,11 @@ enum LegalDocuments {
 
     ## 6. On-device privacy (not anonymity)
     All AI inference happens on your device. The app makes no telemetry calls and does not transmit your prompts, images, or audio. The only outbound network requests are:
-    - Anonymous searches and downloads from `huggingface.co` when you explicitly request a model.
-    - If you enable Mac Bridge, communication with paired Macs on your local network.
+    - Searches and downloads from `huggingface.co` when you explicitly request them; gated repositories may include a token you saved.
+    - Web search when you enable it and submit a query.
+    - Mac Bridge or Local API communication on your local network when enabled.
+    - iCloud synchronization when enabled.
+    - External documentation and links when you choose them.
 
     A live indicator in the assistant tab lights up whenever ANY network request is in flight. On-device processing protects you from cloud-side data retention but does **not** make your use anonymous to your network provider, your device-management policies, or anyone with physical access to your unlocked device.
 
@@ -248,11 +251,11 @@ enum LegalDocuments {
         Attribution(
             name: "Qwen3-4B (mlx-community 4-bit)",
             author: "Alibaba Cloud / Tongyi Lab",
-            license: "Tongyi Qianwen License",
+            license: "Apache-2.0",
             licenseURL: "https://github.com/QwenLM/Qwen3/blob/main/LICENSE",
             sourceURL: "https://huggingface.co/mlx-community/Qwen3-4B-4bit",
             paperURL: "https://arxiv.org/abs/2502.12119",
-            note: "Used as the default on-device coding assistant. Commercial use permitted under the Tongyi Qianwen License with attribution.",
+            note: "Used as the default on-device coding assistant. Qwen3 source and weights are published under Apache-2.0; verify the selected model repository before redistribution.",
             category: "Language Model"
         ),
         Attribution(
@@ -268,13 +271,23 @@ enum LegalDocuments {
 
         // ── Vision–Language ──────────────────────────────────────────────────
         Attribution(
-            name: "FastVLM (FastViT-HD encoder)",
+            name: "FastVLM sample implementation",
             author: "Apple Inc.",
-            license: "Apple Sample Code License (Apple ML Research)",
+            license: "Apple Sample Code License",
             licenseURL: "https://github.com/apple/ml-fastvlm/blob/main/LICENSE",
             sourceURL: "https://github.com/apple/ml-fastvlm",
             paperURL: "https://arxiv.org/abs/2412.13303",
-            note: "Vision encoder + projector for image understanding. Models distributed by Apple under the Apple ML Research / Apple Sample Code License.",
+            note: "Adapted vision encoder and projector sample code. FastVLM model weights are separate and use Apple's research model license.",
+            category: "Vision–Language"
+        ),
+        Attribution(
+            name: "FastVLM model weights (not included)",
+            author: "Apple Inc.",
+            license: "Apple Machine Learning Research Model License",
+            licenseURL: "https://github.com/apple/ml-fastvlm/blob/main/LICENSE_MODEL",
+            sourceURL: "https://github.com/apple/ml-fastvlm",
+            paperURL: "https://arxiv.org/abs/2412.13303",
+            note: "Optional research-licensed model weights are not distributed in this source repository. Review LICENSE_MODEL before downloading or using them.",
             category: "Vision–Language"
         ),
 
@@ -302,23 +315,23 @@ enum LegalDocuments {
 
         // ── Frameworks ───────────────────────────────────────────────────────
         Attribution(
-            name: "MLX Swift",
-            author: "Apple Inc.",
+            name: "MLX Swift (PrismML fork)",
+            author: "Apple Inc. / PrismML contributors",
             license: "MIT",
-            licenseURL: "https://github.com/ml-explore/mlx-swift/blob/main/LICENSE",
-            sourceURL: "https://github.com/ml-explore/mlx-swift",
+            licenseURL: "https://github.com/PrismML-Eng/mlx-swift/blob/main/LICENSE",
+            sourceURL: "https://github.com/PrismML-Eng/mlx-swift",
             paperURL: nil,
-            note: "Array framework powering on-device LLM and VLM inference.",
+            note: "Pinned fork of Apple's Swift API for MLX, used for on-device inference and required one-bit kernels.",
             category: "Framework"
         ),
         Attribution(
-            name: "MLX Swift Examples",
-            author: "Apple Inc.",
+            name: "MLX Swift LM",
+            author: "MLX contributors",
             license: "MIT",
-            licenseURL: "https://github.com/ml-explore/mlx-swift-examples/blob/main/LICENSE",
-            sourceURL: "https://github.com/ml-explore/mlx-swift-examples",
+            licenseURL: "https://github.com/ml-explore/mlx-swift-lm/blob/main/LICENSE",
+            sourceURL: "https://github.com/ml-explore/mlx-swift-lm",
             paperURL: nil,
-            note: "Provides MLXLLM, MLXVLM, MLXLMCommon — the model factories used to load and run models.",
+            note: "Provides MLXLLM, MLXVLM, and MLXLMCommon model factories.",
             category: "Framework"
         ),
         Attribution(

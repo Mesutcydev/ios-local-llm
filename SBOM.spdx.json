@@ -1,0 +1,147 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "ios-local-llm-3.2.5-source",
+  "documentNamespace": "https://github.com/Mesutcydev/ios-local-llm/sbom/3.2.5/2026-07-29",
+  "creationInfo": {
+    "created": "2026-07-29T00:00:00Z",
+    "creators": [
+      "Tool: manual-lockfile-inventory",
+      "Organization: iOS Local LLM contributors"
+    ],
+    "comment": "Source-distribution inventory. Package.resolved and Podfile.lock remain the authoritative transitive lockfiles."
+  },
+  "documentDescribes": [
+    "SPDXRef-Package-ios-local-llm"
+  ],
+  "packages": [
+    {
+      "name": "ios-local-llm",
+      "SPDXID": "SPDXRef-Package-ios-local-llm",
+      "versionInfo": "3.2.5",
+      "downloadLocation": "git+https://github.com/Mesutcydev/ios-local-llm.git",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT AND LicenseRef-Apple-Sample-Code AND LicenseRef-CMUdict",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright 2026 Mesut and iOS Local LLM contributors"
+    },
+    {
+      "name": "llama.cpp",
+      "SPDXID": "SPDXRef-Package-llama-cpp",
+      "versionInfo": "7ef790f90a4772eadd6966815f6d3ae7d93c7e03",
+      "downloadLocation": "git+https://github.com/ggml-org/llama.cpp.git@7ef790f90a4772eadd6966815f6d3ae7d93c7e03",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "name": "whisper.cpp",
+      "SPDXID": "SPDXRef-Package-whisper-cpp",
+      "versionInfo": "8443cf05e3fa8ce1b32348e1bcbcf8fc31f7f3ae",
+      "downloadLocation": "git+https://github.com/ggerganov/whisper.cpp.git@8443cf05e3fa8ce1b32348e1bcbcf8fc31f7f3ae",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "name": "mlx-swift",
+      "SPDXID": "SPDXRef-Package-mlx-swift",
+      "versionInfo": "e40e0a57a6f7ad08dc3fd87ad598a7aa6407d230",
+      "downloadLocation": "git+https://github.com/PrismML-Eng/mlx-swift.git@e40e0a57a6f7ad08dc3fd87ad598a7aa6407d230",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "name": "mlx-swift-lm",
+      "SPDXID": "SPDXRef-Package-mlx-swift-lm",
+      "versionInfo": "3.31.4",
+      "downloadLocation": "git+https://github.com/ml-explore/mlx-swift-lm.git@bd4b7434e6bdb588c7ef55706ff8904cb7fd4c57",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "name": "swift-transformers-mlx",
+      "SPDXID": "SPDXRef-Package-swift-transformers-mlx",
+      "versionInfo": "0.2.0",
+      "downloadLocation": "git+https://github.com/DePasqualeOrg/swift-transformers-mlx.git@a0315dec80a16825021baac238b8c0d51c7b444d",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "name": "onnxruntime-objc",
+      "SPDXID": "SPDXRef-Package-onnxruntime-objc",
+      "versionInfo": "1.23.0",
+      "downloadLocation": "https://cdn.cocoapods.org/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "name": "VoiceAgentOrb",
+      "SPDXID": "SPDXRef-Package-voice-agent-orb",
+      "versionInfo": "3.2.5",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright 2026 Mesut and VoiceAgentOrb contributors"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-ios-local-llm",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-llama-cpp"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-ios-local-llm",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-whisper-cpp"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-ios-local-llm",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-mlx-swift"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-ios-local-llm",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-mlx-swift-lm"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-ios-local-llm",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-swift-transformers-mlx"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-ios-local-llm",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-onnxruntime-objc"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-ios-local-llm",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-voice-agent-orb"
+    }
+  ],
+  "hasExtractedLicensingInfos": [
+    {
+      "licenseId": "LicenseRef-Apple-Sample-Code",
+      "extractedText": "See LICENSES/Apple-Sample-Code-License.txt."
+    },
+    {
+      "licenseId": "LicenseRef-CMUdict",
+      "extractedText": "See IOSLocalLLM/Resources/Voice/LICENSE."
+    }
+  ]
+}

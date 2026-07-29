@@ -893,11 +893,15 @@ struct CodingAssistantView: View {
         // on appear.
         .task(id: isActive) {
             guard isActive else { return }
-#if DEBUG
             // Simulator UI verification must not initialize MLX/Metal. The
             // simulated GPU aborts before SwiftUI can present the chat, which
-            // makes deterministic layout checks impossible. Release builds
-            // compile this branch out entirely.
+            // makes ordinary simulator navigation and deterministic layout
+            // checks impossible. Physical-device builds still prepare the
+            // model normally.
+#if targetEnvironment(simulator)
+            return
+#else
+#if DEBUG
             guard !ProcessInfo.processInfo.arguments.contains("-assistantUITestMode") else {
                 return
             }
@@ -905,6 +909,7 @@ struct CodingAssistantView: View {
             try? await Task.sleep(nanoseconds: 250_000_000)
             guard !Task.isCancelled, isActive else { return }
             await ensureModelReady()
+#endif
         }
         .onChange(of: legal.needsAcceptance) { _, needsAcceptance in
             if !needsAcceptance, isActive {

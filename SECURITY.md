@@ -10,7 +10,8 @@ pre-built releases at this time.
 Do not open a public issue for a vulnerability that could put users or their
 data at risk.
 
-Email `mesutcy@gmail.com` with:
+Use GitHub's private vulnerability reporting feature on this repository. If
+that is unavailable, email `mesutcy@gmail.com` with:
 
 - a concise description and impact;
 - affected files or features;
@@ -21,6 +22,9 @@ Email `mesutcy@gmail.com` with:
 Do not include real user data or active credentials. You should receive an
 acknowledgement within seven days. Please allow reasonable time for a fix
 before public disclosure.
+
+Reports are handled on a best-effort basis by a volunteer maintainer. No bug
+bounty is currently offered.
 
 ## Scope
 

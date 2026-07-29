@@ -1,0 +1,29 @@
+version = 1
+
+[[annotations]]
+path = [
+  "**",
+  "!.git/**",
+  "!ThirdParty/llama.cpp/**",
+  "!ThirdParty/whisper.cpp/**",
+  "!ThirdParty/thinking-orbs/**",
+  "!IOSLocalLLM/Vendor/StableDiffusion/**",
+  "!IOSLocalLLM/Resources/Voice/cmudict.txt",
+  "!IOSLocalLLM/Services/FastVLM.swift",
+  "!LICENSES/**"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Mesut and iOS Local LLM contributors"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "IOSLocalLLM/Services/FastVLM.swift"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Apple Inc."
+SPDX-License-Identifier = "LicenseRef-Apple-Sample-Code"
+
+[[annotations]]
+path = "IOSLocalLLM/Resources/Voice/cmudict.txt"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Carnegie Mellon University"
+SPDX-License-Identifier = "LicenseRef-CMUdict"

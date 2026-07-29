@@ -1,5 +1,5 @@
 import XCTest
-@testable import iOS Local LLM
+@testable import IOSLocalLLM
 
 // MARK: - DiagnosticsTests
 //

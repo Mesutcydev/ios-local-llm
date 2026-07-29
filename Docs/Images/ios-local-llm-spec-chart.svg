@@ -1,0 +1,222 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1200" viewBox="0 0 1800 1200" role="img" aria-labelledby="title description">
+  <title id="title">iOS Local LLM full specification overview</title>
+  <desc id="description">A promotional technical chart covering local inference, device safety, agent APIs, privacy, reusable components, supported platforms, and licensing.</desc>
+
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07101F"/>
+      <stop offset="0.52" stop-color="#0B1426"/>
+      <stop offset="1" stop-color="#11152D"/>
+    </linearGradient>
+    <linearGradient id="headline" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.58" stop-color="#DDE7FF"/>
+      <stop offset="1" stop-color="#AFC7FF"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#A879FF"/>
+      <stop offset="0.5" stop-color="#637BFF"/>
+      <stop offset="1" stop-color="#37D6E7"/>
+    </linearGradient>
+    <linearGradient id="accentSoft" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#A879FF" stop-opacity="0.22"/>
+      <stop offset="0.5" stop-color="#637BFF" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#37D6E7" stop-opacity="0.18"/>
+    </linearGradient>
+    <radialGradient id="glowPurple">
+      <stop offset="0" stop-color="#8B5CF6" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowCyan">
+      <stop offset="0" stop-color="#22D3EE" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#22D3EE" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000814" flood-opacity="0.34"/>
+    </filter>
+    <style>
+      .sans { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Arial, sans-serif; }
+      .mono { font-family: "SFMono-Regular", "SF Mono", "Roboto Mono", Menlo, monospace; }
+      .eyebrow { font-size: 17px; font-weight: 750; letter-spacing: 2.4px; }
+      .card-title { font-size: 25px; font-weight: 750; letter-spacing: 0.2px; fill: #F8FAFF; }
+      .body { font-size: 20px; font-weight: 500; fill: #B7C2D9; }
+      .body-strong { font-size: 20px; font-weight: 680; fill: #EAF0FF; }
+      .micro { font-size: 15px; font-weight: 650; letter-spacing: 0.6px; fill: #8996B2; }
+      .metric { font-size: 22px; font-weight: 750; fill: #F8FAFF; }
+    </style>
+  </defs>
+
+  <rect width="1800" height="1200" fill="url(#background)"/>
+  <circle cx="210" cy="20" r="500" fill="url(#glowPurple)"/>
+  <circle cx="1660" cy="380" r="520" fill="url(#glowCyan)"/>
+  <circle cx="980" cy="1210" r="530" fill="url(#glowPurple)" opacity="0.45"/>
+
+  <g opacity="0.16">
+    <path d="M0 160H1800M0 320H1800M0 480H1800M0 640H1800M0 800H1800M0 960H1800M0 1120H1800" stroke="#7E8EB2"/>
+    <path d="M200 0V1200M400 0V1200M600 0V1200M800 0V1200M1000 0V1200M1200 0V1200M1400 0V1200M1600 0V1200" stroke="#7E8EB2"/>
+  </g>
+
+  <!-- Header -->
+  <g class="sans">
+    <rect x="90" y="72" width="570" height="42" rx="21" fill="url(#accentSoft)" stroke="#8EA7FF" stroke-opacity="0.34"/>
+    <circle cx="116" cy="93" r="5" fill="#58E7C2"/>
+    <text x="134" y="99" class="eyebrow" fill="#D6E2FF">ORIGINAL CODE: MIT · THIRD-PARTY TERMS APPLY</text>
+
+    <text x="90" y="194" font-size="76" font-weight="790" fill="url(#headline)" letter-spacing="-2.5">iOS Local LLM</text>
+    <text x="92" y="238" font-size="26" font-weight="520" fill="#AEBBD3">A reusable SwiftUI workbench for private, on-device AI.</text>
+
+    <g transform="translate(1325 62)">
+      <rect width="385" height="196" rx="34" fill="#111D32" fill-opacity="0.86" stroke="#8EA7FF" stroke-opacity="0.26"/>
+      <rect x="29" y="29" width="62" height="118" rx="15" fill="none" stroke="#B8C8E9" stroke-width="3"/>
+      <rect x="38" y="39" width="44" height="88" rx="8" fill="#182944"/>
+      <rect x="47" y="33" width="26" height="5" rx="2.5" fill="#B8C8E9"/>
+      <rect x="116" y="49" width="128" height="84" rx="10" fill="none" stroke="#B8C8E9" stroke-width="3"/>
+      <path d="M101 148H261" stroke="#B8C8E9" stroke-width="3" stroke-linecap="round"/>
+      <path d="M145 133L136 148M215 133L224 148" stroke="#B8C8E9" stroke-width="3"/>
+      <text x="278" y="67" class="micro">TARGETS</text>
+      <text x="278" y="98" font-size="21" font-weight="720" fill="#F2F6FF">iPhone</text>
+      <text x="278" y="127" font-size="21" font-weight="720" fill="#F2F6FF">Apple silicon Mac</text>
+      <text x="29" y="177" class="mono micro" fill="#8090AE">one codebase · device-owned inference</text>
+    </g>
+  </g>
+
+  <!-- Capability ribbon -->
+  <g transform="translate(90 286)" class="sans">
+    <rect width="1620" height="110" rx="28" fill="#101A2D" fill-opacity="0.92" stroke="#8294B8" stroke-opacity="0.23"/>
+    <rect width="1620" height="5" rx="2.5" fill="url(#accent)"/>
+    <g transform="translate(36 27)">
+      <text class="micro">MODALITIES</text>
+      <text y="36" class="metric">Text · Vision · Voice · Images</text>
+    </g>
+    <path d="M430 25V87" stroke="#7081A3" stroke-opacity="0.35"/>
+    <g transform="translate(472 27)">
+      <text class="micro">RUNTIMES</text>
+      <text y="36" class="metric">MLX · llama.cpp · Core ML · whisper.cpp</text>
+    </g>
+    <path d="M1015 25V87" stroke="#7081A3" stroke-opacity="0.35"/>
+    <g transform="translate(1057 27)">
+      <text class="micro">LOCAL APIS</text>
+      <text y="36" class="metric">OpenAI · Anthropic · Ollama</text>
+    </g>
+    <path d="M1395 25V87" stroke="#7081A3" stroke-opacity="0.35"/>
+    <g transform="translate(1437 27)">
+      <text class="micro">LICENSE</text>
+      <text y="36" class="metric">MIT original code</text>
+    </g>
+  </g>
+
+  <!-- Top row cards -->
+  <g transform="translate(90 430)" class="sans">
+    <g filter="url(#shadow)">
+      <rect width="510" height="300" rx="30" fill="#101A2D" stroke="#9B72FF" stroke-opacity="0.4"/>
+      <rect x="0" y="0" width="8" height="300" rx="4" fill="#A879FF"/>
+    </g>
+    <rect x="32" y="30" width="50" height="50" rx="15" fill="#8B5CF6" fill-opacity="0.18"/>
+    <path d="M47 55H67M57 45V65M45 43L69 67M69 43L45 67" stroke="#C5ADFF" stroke-width="2.5" stroke-linecap="round" opacity="0.88"/>
+    <text x="100" y="63" class="card-title">Local inference</text>
+    <text x="34" y="112" class="body-strong">Language and vision on MLX</text>
+    <text x="34" y="147" class="body">GGUF execution through llama.cpp</text>
+    <text x="34" y="182" class="body">Local VAD, transcription and speech</text>
+    <text x="34" y="217" class="body">Core ML image and vision pipelines</text>
+    <text x="34" y="252" class="body">Hugging Face discovery and downloads</text>
+    <rect x="34" y="270" width="156" height="3" rx="1.5" fill="#A879FF"/>
+    <rect x="196" y="270" width="64" height="3" rx="1.5" fill="#A879FF" opacity="0.45"/>
+  </g>
+
+  <g transform="translate(645 430)" class="sans">
+    <g filter="url(#shadow)">
+      <rect width="510" height="300" rx="30" fill="#101A2D" stroke="#4CE5C3" stroke-opacity="0.38"/>
+      <rect x="0" y="0" width="8" height="300" rx="4" fill="#48DDBB"/>
+    </g>
+    <rect x="32" y="30" width="50" height="50" rx="15" fill="#35D4AF" fill-opacity="0.16"/>
+    <path d="M57 42L70 48V58C70 67 64 72 57 76C50 72 44 67 44 58V48L57 42Z" fill="none" stroke="#8DF1D7" stroke-width="2.5"/>
+    <path d="M51 58L55 62L64 53" fill="none" stroke="#8DF1D7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="100" y="63" class="card-title">Device safety</text>
+    <text x="34" y="112" class="body-strong">RAM admission before model loading</text>
+    <text x="34" y="147" class="body">Coordinated heavy-model residency</text>
+    <text x="34" y="182" class="body">Thermal state monitoring and refusal</text>
+    <text x="34" y="217" class="body">Cancellation, unload and cooldown paths</text>
+    <text x="34" y="252" class="body">Background cleanup and recovery</text>
+    <rect x="34" y="270" width="156" height="3" rx="1.5" fill="#48DDBB"/>
+    <rect x="196" y="270" width="64" height="3" rx="1.5" fill="#48DDBB" opacity="0.45"/>
+  </g>
+
+  <g transform="translate(1200 430)" class="sans">
+    <g filter="url(#shadow)">
+      <rect width="510" height="300" rx="30" fill="#101A2D" stroke="#4EAEFF" stroke-opacity="0.4"/>
+      <rect x="0" y="0" width="8" height="300" rx="4" fill="#4EAEFF"/>
+    </g>
+    <rect x="32" y="30" width="50" height="50" rx="15" fill="#4EAEFF" fill-opacity="0.16"/>
+    <path d="M44 51H70M44 59H70M49 43L43 51L49 59M65 51L71 59L65 67" fill="none" stroke="#9AD2FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="100" y="63" class="card-title">Agents and APIs</text>
+    <text x="34" y="112" class="body-strong">OpenAI chat, Responses and tools</text>
+    <text x="34" y="147" class="body">Anthropic Messages compatibility</text>
+    <text x="34" y="182" class="body">Ollama models, chat and generation</text>
+    <text x="34" y="217" class="body">Bearer-authenticated trusted-LAN server</text>
+    <text x="34" y="252" class="body">Paired Mac tools with explicit risk levels</text>
+    <rect x="34" y="270" width="156" height="3" rx="1.5" fill="#4EAEFF"/>
+    <rect x="196" y="270" width="64" height="3" rx="1.5" fill="#4EAEFF" opacity="0.45"/>
+  </g>
+
+  <!-- Bottom row cards -->
+  <g transform="translate(90 770)" class="sans">
+    <g filter="url(#shadow)">
+      <rect width="510" height="300" rx="30" fill="#101A2D" stroke="#FC75C5" stroke-opacity="0.36"/>
+      <rect x="0" y="0" width="8" height="300" rx="4" fill="#F26BBB"/>
+    </g>
+    <rect x="32" y="30" width="50" height="50" rx="15" fill="#F26BBB" fill-opacity="0.15"/>
+    <rect x="45" y="51" width="24" height="20" rx="4" fill="none" stroke="#FFA8DB" stroke-width="2.5"/>
+    <path d="M50 51V47C50 42 53 39 57 39C61 39 64 42 64 47V51" fill="none" stroke="#FFA8DB" stroke-width="2.5"/>
+    <text x="100" y="63" class="card-title">Privacy by default</text>
+    <text x="34" y="112" class="body-strong">No account and no telemetry required</text>
+    <text x="34" y="147" class="body">Inference and user data stay local</text>
+    <text x="34" y="182" class="body">Network use follows explicit user actions</text>
+    <text x="34" y="217" class="body">No silent fallback to a cloud model</text>
+    <text x="34" y="252" class="body">Sensitive content and secrets stay out of logs</text>
+    <rect x="34" y="270" width="156" height="3" rx="1.5" fill="#F26BBB"/>
+    <rect x="196" y="270" width="64" height="3" rx="1.5" fill="#F26BBB" opacity="0.45"/>
+  </g>
+
+  <g transform="translate(645 770)" class="sans">
+    <g filter="url(#shadow)">
+      <rect width="510" height="300" rx="30" fill="#101A2D" stroke="#F4B95F" stroke-opacity="0.36"/>
+      <rect x="0" y="0" width="8" height="300" rx="4" fill="#F4B95F"/>
+    </g>
+    <rect x="32" y="30" width="50" height="50" rx="15" fill="#F4B95F" fill-opacity="0.15"/>
+    <path d="M44 47H70V68H44Z" fill="none" stroke="#FFD896" stroke-width="2.5"/>
+    <path d="M49 42V52M57 42V52M65 42V52" stroke="#FFD896" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="100" y="63" class="card-title">Developer building blocks</text>
+    <text x="34" y="112" class="body-strong">Extractable · Adaptable · Integrated</text>
+    <text x="34" y="147" class="body">File-level reusable component catalog</text>
+    <text x="34" y="182" class="body">Architecture and runtime lifecycle map</text>
+    <text x="34" y="217" class="body">Coding-agent implementation handoff</text>
+    <text x="34" y="252" class="body">AGENTS.md · llms.txt · codemeta.json</text>
+    <rect x="34" y="270" width="156" height="3" rx="1.5" fill="#F4B95F"/>
+    <rect x="196" y="270" width="64" height="3" rx="1.5" fill="#F4B95F" opacity="0.45"/>
+  </g>
+
+  <g transform="translate(1200 770)" class="sans">
+    <g filter="url(#shadow)">
+      <rect width="510" height="300" rx="30" fill="#101A2D" stroke="#8AA4FF" stroke-opacity="0.38"/>
+      <rect x="0" y="0" width="8" height="300" rx="4" fill="#8AA4FF"/>
+    </g>
+    <rect x="32" y="30" width="50" height="50" rx="15" fill="#8AA4FF" fill-opacity="0.15"/>
+    <path d="M44 44H70V66H44Z" fill="none" stroke="#B9C7FF" stroke-width="2.5"/>
+    <path d="M50 72H64M53 66L51 72M61 66L63 72" stroke="#B9C7FF" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="100" y="63" class="card-title">Platform and source</text>
+    <text x="34" y="112" class="body-strong">Swift and SwiftUI application</text>
+    <text x="34" y="147" class="body">iOS 18+ · Xcode 26+</text>
+    <text x="34" y="182" class="body">iPhone and Apple-silicon Mac Catalyst</text>
+    <text x="34" y="217" class="body">Source distribution; bring your own signing</text>
+    <text x="34" y="252" class="body">No model weights or generated frameworks</text>
+    <rect x="34" y="270" width="156" height="3" rx="1.5" fill="#8AA4FF"/>
+    <rect x="196" y="270" width="64" height="3" rx="1.5" fill="#8AA4FF" opacity="0.45"/>
+  </g>
+
+  <!-- Footer -->
+  <g class="sans">
+    <rect x="90" y="1110" width="1620" height="1" fill="#7584A5" opacity="0.32"/>
+    <text x="90" y="1152" font-size="18" font-weight="620" fill="#B8C4DB">github.com/Mesutcydev/ios-local-llm</text>
+    <text x="1710" y="1152" text-anchor="end" class="mono" font-size="15" font-weight="600" fill="#7F8EAA">API compatibility is intentionally scoped · model licenses vary · performance depends on device</text>
+  </g>
+</svg>

@@ -129,7 +129,10 @@ final class VoiceOrbAudioModelTests {
 
         // Past the interval: the scheduled flush delivers the latest value.
         clock.t += 0.02
-        try await Task.sleep(for: .milliseconds(120))
+        let timeout = ContinuousClock.now.advanced(by: .seconds(1))
+        while model.hasPendingFlush, ContinuousClock.now < timeout {
+            try await Task.sleep(for: .milliseconds(10))
+        }
         #expect(!model.hasPendingFlush)
         #expect(model.microphoneLevel > first)
     }

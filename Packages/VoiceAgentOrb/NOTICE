@@ -1,0 +1,8 @@
+VoiceAgentOrb includes adaptations inspired by thinking-orbs by Jakub Antalik.
+The upstream project is licensed under MIT.
+
+Source: https://github.com/antfu-collective/thinking-orbs
+Vendored license: ../../ThirdParty/thinking-orbs/LICENSE
+
+All original VoiceAgentOrb implementation and integration changes are
+copyright 2026 Mesut and contributors and are licensed under MIT.

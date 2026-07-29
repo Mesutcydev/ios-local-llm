@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - VoiceLibraryView
 // The Voice tab — design screen 04 ("Voice · Browse & pick speech models")
-// from the Local AI Studio handoff, rebuilt in KoduTheme.
+// from the local LLM foundation handoff, rebuilt in KoduTheme.
 //
 // This replaces the bare conversation orb as the Voice tab's landing surface:
 // it's a browsable library of the on-device speech voices for the active

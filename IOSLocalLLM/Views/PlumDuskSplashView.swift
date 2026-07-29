@@ -83,7 +83,7 @@ private struct SplashFrame: View {
                     .offset(y: CGFloat((1.0 - titleIn) * 13.0))
                     .position(x: size.width * 0.5, y: size.height * (1135.0 / 1920.0))
 
-                Text("LOCAL AI STUDIO")
+                Text("LOCAL AI WORKBENCH")
                     .font(.system(size: size.width * (40.0 / 1080.0), weight: .regular, design: .monospaced))
                     .tracking(size.width * (12.8 / 1080.0))
                     .foregroundStyle(.white.opacity(0.78))

@@ -15,4 +15,5 @@
 - [ ] I did not add credentials, signing files, model weights, generated binaries, or private data.
 - [ ] New third-party code, models, and assets are identified with their source and redistribution license.
 - [ ] I have the right to submit this contribution under the MIT license.
+- [ ] Every commit includes a `Signed-off-by` line for the Developer Certificate of Origin.
 - [ ] I disclosed material AI assistance, if any.

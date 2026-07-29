@@ -1,0 +1,10 @@
+# Default ownership. Add subsystem reviewers as the maintainer team grows.
+* @Mesutcydev
+
+# Security-sensitive and project-governance surfaces.
+/SECURITY.md @Mesutcydev
+/Docs/SECURITY_MODEL.md @Mesutcydev
+/.github/workflows/ @Mesutcydev
+/project.yml @Mesutcydev
+/IOSLocalLLM/Services/Bridge/ @Mesutcydev
+/IOSLocalLLM/Services/Bridge/LocalAPIServer.swift @Mesutcydev

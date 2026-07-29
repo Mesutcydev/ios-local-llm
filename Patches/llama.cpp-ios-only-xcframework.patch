@@ -1,0 +1,29 @@
+diff --git a/build-xcframework.sh b/build-xcframework.sh
+index 697278d..abccde2 100755
+--- a/build-xcframework.sh
++++ b/build-xcframework.sh
+@@ -434,6 +434,23 @@ cmake -B build-ios-device -G Xcode \
+     -S .
+ cmake --build build-ios-device --config Release -j $(sysctl -n hw.logicalcpu) -- -quiet
+-
++
++# Allow consumers that ship only on iOS to skip optional Apple-platform slices.
++if [[ "${IOS_ONLY:-0}" == "1" ]]; then
++    echo "Packaging iOS-only XCFramework..."
++    setup_framework_structure "build-ios-sim" ${IOS_MIN_OS_VERSION} "ios"
++    setup_framework_structure "build-ios-device" ${IOS_MIN_OS_VERSION} "ios"
++    combine_static_libraries "build-ios-sim" "Release-iphonesimulator" "ios" "true"
++    combine_static_libraries "build-ios-device" "Release-iphoneos" "ios" "false"
++    mkdir -p build-apple
++    xcrun xcodebuild -create-xcframework \
++        -framework $(pwd)/build-ios-sim/framework/llama.framework \
++        -debug-symbols $(pwd)/build-ios-sim/dSYMs/llama.dSYM \
++        -framework $(pwd)/build-ios-device/framework/llama.framework \
++        -debug-symbols $(pwd)/build-ios-device/dSYMs/llama.dSYM \
++        -output $(pwd)/build-apple/llama.xcframework
++    exit 0
++fi
++
+ echo "Building for macOS..."
+ cmake -B build-macos -G Xcode \
+     "${COMMON_CMAKE_ARGS[@]}" \

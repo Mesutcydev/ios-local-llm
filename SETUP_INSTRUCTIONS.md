@@ -35,13 +35,15 @@ git submodule update --init --recursive
 ## Build native frameworks
 
 IOSLocalLLM links locally generated llama.cpp and whisper.cpp XCFrameworks.
-Upstream's build scripts build several Apple-platform slices and can take a
-while:
+The tracked root script builds the required slices from pinned submodules:
 
 ```bash
-(cd ThirdParty/llama.cpp && ./build-xcframework.sh)
-(cd ThirdParty/whisper.cpp && ./build-xcframework.sh)
+./scripts/build_native_frameworks.sh
 ```
+
+Add `--with-catalyst` when you also need the Apple-Silicon Mac Catalyst target.
+The script may apply the tracked iOS-only patch inside the generated
+llama.cpp build checkout; do not commit that submodule worktree change.
 
 Expected outputs:
 
@@ -65,6 +67,12 @@ open IOSLocalLLM.xcworkspace
 Open the workspace, not the `.xcodeproj`, so the ONNX Runtime pods are
 available.
 
+SwiftPM may report a conflicting `mlx-swift` identity because the project pins
+the PrismML fork for one-bit model kernels while another package declares the
+upstream repository transitively. This is a documented forward-compatibility
+risk in [Docs/XCODE_SECURITY_SETTINGS.md](Docs/XCODE_SECURITY_SETTINGS.md), not
+a missing package in the current lockfile.
+
 ## Run in Simulator
 
 Select the `IOSLocalLLM` scheme and an iOS 18 or newer Simulator. Simulator builds
@@ -81,8 +89,8 @@ Use your own signing identity:
 1. Select the IOSLocalLLM project in Xcode.
 2. For the app, share extension, unit-test, and UI-test targets, select your
    development team.
-3. Change `com.mesutcydev.ioslocalllm.IOSLocalLLM` and related identifiers to identifiers owned
-   by your team.
+3. Replace the app, extension, App Group, and CloudKit identifiers with values
+   owned by your team, following [Docs/FORK_CONFIGURATION.md](Docs/FORK_CONFIGURATION.md).
 4. Build and run on your device.
 
 If you regenerate the project, make permanent identifier changes in
@@ -135,3 +143,6 @@ xcodebuild test \
 ```
 
 The exact Simulator name depends on the runtimes installed on your Mac.
+
+Thermal, Jetsam, Metal-residency, and battery claims require physical-device
+validation; see [Docs/VALIDATION.md](Docs/VALIDATION.md).
