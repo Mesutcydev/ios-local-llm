@@ -53,9 +53,13 @@ common_cmake_args=(
 # substitution is unreliable when CodeQL's macOS build tracer is injected.
 helper_file="$(mktemp "${TMPDIR:-/tmp}/ios-local-llm-whisper-helpers.XXXXXX")"
 trap 'unlink "$helper_file" 2>/dev/null || true' EXIT
-sed -n \
-  '/^setup_framework_structure()/,/^}/p; /^combine_static_libraries()/,/^}/p' \
-  build-xcframework.sh >"$helper_file"
+awk '
+  /^setup_framework_structure\(\)/ { copying = 1 }
+  /^# Create dynamic libraries/ && copying { copying = 0 }
+  /^combine_static_libraries\(\)/ { copying = 1 }
+  /^echo "Building for iOS simulator/ && copying { copying = 0 }
+  copying { print }
+' build-xcframework.sh >"$helper_file"
 
 # shellcheck disable=SC1090
 source "$helper_file"
