@@ -1,9 +1,15 @@
 # OnDeviceiOS
 
 OnDeviceiOS is the open-source home of CodeLens, a local-first AI workbench for
-iPhone and Apple silicon Macs. It
-runs language, vision, speech, and image-generation models on the user's
-device, with no account or telemetry required.
+iPhone and Apple silicon Macs. Built with Swift, SwiftUI, MLX, llama.cpp,
+whisper.cpp, and Core ML, it runs language, vision, speech, and
+image-generation models on the user's device, with no account or telemetry
+required.
+
+The app also provides opt-in, authenticated OpenAI-, Anthropic-, and
+Ollama-compatible local APIs, structured tool calling, and a paired Mac agent
+channel. CodeLens is an agent-compatible workbench; it does not silently
+execute machine actions or send local inference to a cloud service.
 
 The app was previously distributed through the App Store. This repository is
 now the canonical source distribution. There is currently no official
@@ -17,6 +23,38 @@ pre-built binary or App Store release.
 - Local OpenAI-compatible API server and Mac bridge
 - Model discovery and downloads from Hugging Face
 - iPhone and Apple-silicon Mac Catalyst targets
+
+## AI and agent integration
+
+External development tools and agents can use the opt-in local server through:
+
+- OpenAI-style models, chat completions, Responses, streaming, and supported
+  tool calls
+- Anthropic Messages compatibility
+- Ollama-compatible model, chat, and generation routes
+- A versioned, pairing-authenticated iPhone-to-Mac tool protocol with explicit
+  risk levels
+
+The local API is bearer-authenticated HTTP intended for a trusted LAN and
+stops when iOS backgrounds the app. Compatibility is intentionally scoped;
+unsupported options fail explicitly. See
+[AI and agent integration](Docs/AGENT_INTEGRATION.md) for routes, examples,
+security boundaries, and integration guidance.
+
+## For coding agents
+
+This repository includes an agent-readable discovery layer:
+
+- [AGENTS.md](AGENTS.md) — architecture, commands, constraints, and editing
+  rules
+- [llms.txt](llms.txt) — concise documentation and capability index
+- [codemeta.json](codemeta.json) — structured software metadata
+- [.github/copilot-instructions.md](.github/copilot-instructions.md) —
+  repository instructions for GitHub Copilot
+
+Agents should treat `project.yml` as the Xcode project source of truth and must
+not add model weights, credentials, signing files, or generated native
+frameworks to Git.
 
 ## Project status
 

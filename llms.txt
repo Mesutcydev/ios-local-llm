@@ -1,0 +1,41 @@
+# OnDeviceiOS
+
+> OnDeviceiOS is the open-source home of CodeLens, a Swift/SwiftUI local-first
+> AI workbench for iPhone and Apple silicon Macs. It runs language, vision,
+> speech, and image-generation workflows on-device and exposes optional,
+> authenticated local APIs for AI clients and agents.
+
+Canonical repository: https://github.com/Mesutcydev/ondeviceios
+License: MIT for original project code and documentation
+Aliases: CodeLens, On Device LLM, OnDeviceiOS
+
+## Primary documentation
+
+- [Project overview](https://github.com/Mesutcydev/ondeviceios/blob/main/README.md)
+- [Coding-agent instructions](https://github.com/Mesutcydev/ondeviceios/blob/main/AGENTS.md)
+- [Development setup](https://github.com/Mesutcydev/ondeviceios/blob/main/SETUP_INSTRUCTIONS.md)
+- [Agent and local API integration](https://github.com/Mesutcydev/ondeviceios/blob/main/Docs/AGENT_INTEGRATION.md)
+- [Contributing](https://github.com/Mesutcydev/ondeviceios/blob/main/CONTRIBUTING.md)
+- [Security policy](https://github.com/Mesutcydev/ondeviceios/blob/main/SECURITY.md)
+- [Third-party notices](https://github.com/Mesutcydev/ondeviceios/blob/main/THIRD_PARTY_NOTICES.md)
+- [Structured metadata](https://github.com/Mesutcydev/ondeviceios/blob/main/codemeta.json)
+
+## Capabilities
+
+- On-device LLM chat and code assistance with MLX and llama.cpp
+- Camera, screenshot, OCR, and vision-language-model analysis
+- Local transcription, voice activity detection, and text-to-speech
+- On-device image generation
+- Hugging Face model discovery, admission checks, downloads, and lifecycle
+- Thermal-aware generation and coordinated model residency
+- OpenAI-, Anthropic-, and Ollama-compatible local HTTP routes
+- Structured tool calling and a pairing-authenticated iPhone-to-Mac agent link
+
+## Important boundaries
+
+- Model weights and generated native frameworks are not included in Git.
+- Downloaded models have independent licenses.
+- Local API access is opt-in, bearer-authenticated HTTP for trusted networks.
+- The project does not silently send local prompts or captures to a cloud
+  inference service.
+- Simulator results do not prove physical-device thermal or Jetsam behavior.

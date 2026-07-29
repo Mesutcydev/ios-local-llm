@@ -1,0 +1,50 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "name": "OnDeviceiOS",
+  "alternateName": [
+    "CodeLens",
+    "On Device LLM"
+  ],
+  "description": "A local-first Swift and SwiftUI AI workbench for running language, vision, speech, and image-generation models on iPhone and Apple silicon Macs, with authenticated OpenAI-, Anthropic-, Ollama-, and agent-compatible local interfaces.",
+  "codeRepository": "https://github.com/Mesutcydev/ondeviceios",
+  "issueTracker": "https://github.com/Mesutcydev/ondeviceios/issues",
+  "license": "https://spdx.org/licenses/MIT.html",
+  "author": {
+    "@type": "Person",
+    "name": "Mesut",
+    "url": "https://github.com/Mesutcydev"
+  },
+  "programmingLanguage": [
+    "Swift",
+    "Objective-C",
+    "C",
+    "C++"
+  ],
+  "runtimePlatform": [
+    "iOS 18 or newer",
+    "macOS 13 or newer through Mac Catalyst"
+  ],
+  "developmentStatus": "active",
+  "keywords": [
+    "on-device AI",
+    "local LLM",
+    "AI agents",
+    "private AI",
+    "iOS",
+    "Swift",
+    "SwiftUI",
+    "MLX",
+    "llama.cpp",
+    "whisper.cpp",
+    "Core ML",
+    "OpenAI-compatible API",
+    "Anthropic-compatible API",
+    "Ollama-compatible API",
+    "tool calling",
+    "vision language model",
+    "speech recognition",
+    "text to speech",
+    "Mac Catalyst"
+  ]
+}

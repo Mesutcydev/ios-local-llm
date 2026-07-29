@@ -6,11 +6,16 @@ repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repository_root"
 
 required_files=(
+  AGENTS.md
   LICENSE
   README.md
   CONTRIBUTING.md
   SECURITY.md
   THIRD_PARTY_NOTICES.md
+  Docs/AGENT_INTEGRATION.md
+  codemeta.json
+  llms.txt
+  .github/copilot-instructions.md
   CodeLens/Vendor/StableDiffusion/LICENSE
   CodeLens/Resources/Voice/LICENSE
   LICENSES/Apple-Sample-Code-License.txt
