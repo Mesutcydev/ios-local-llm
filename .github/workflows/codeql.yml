@@ -35,7 +35,31 @@ jobs:
       - name: Install locked CocoaPods dependencies
         run: pod install --deployment
 
+      - name: Derive the native framework cache key
+        id: native-cache-key
+        run: |
+          native_hash="$(
+            {
+              git submodule status
+              git hash-object \
+                Patches/llama.cpp-ios-only-xcframework.patch \
+                scripts/build_native_frameworks.sh \
+                scripts/native/build_whisper_ios.sh
+            } | shasum -a 256 | awk '{ print $1 }'
+          )"
+          echo "key=native-ios-${RUNNER_OS}-${RUNNER_ARCH}-${native_hash}" >>"$GITHUB_OUTPUT"
+
+      - name: Restore pinned native frameworks
+        id: native-cache
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: |
+            ThirdParty/llama.cpp/build-apple/llama.xcframework
+            ThirdParty/whisper.cpp/build-apple/whisper.xcframework
+          key: ${{ steps.native-cache-key.outputs.key }}
+
       - name: Build pinned native inference frameworks
+        if: steps.native-cache.outputs.cache-hit != 'true'
         run: ./scripts/build_native_frameworks.sh
 
       - name: Initialize CodeQL
