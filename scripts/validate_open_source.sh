@@ -26,6 +26,7 @@ required_files=(
   Docs/CODING_AGENT_IMPLEMENTATION.md
   Docs/FORK_CONFIGURATION.md
   Docs/OPEN_SOURCE_PROGRAM_READINESS.md
+  Docs/RELEASE_VERIFICATION.md
   Docs/REUSABLE_COMPONENTS.md
   Docs/SECURITY_MODEL.md
   Docs/VALIDATION.md
@@ -35,6 +36,8 @@ required_files=(
   llms.txt
   .github/CODEOWNERS
   .github/copilot-instructions.md
+  .github/workflows/scorecard.yml
+  .github/workflows/source-release.yml
   Packages/VoiceAgentOrb/LICENSE
   Packages/VoiceAgentOrb/NOTICE
   Packages/VoiceAgentOrb/README.md
@@ -91,6 +94,65 @@ fi
 
 python3 -m json.tool codemeta.json >/dev/null
 python3 -m json.tool SBOM.spdx.json >/dev/null
+
+python3 - <<'PY'
+import json
+import plistlib
+import re
+from pathlib import Path
+
+project_text = Path("project.yml").read_text(encoding="utf-8")
+project_versions = set(
+    re.findall(r'CFBundleShortVersionString:\s*"([^"]+)"', project_text)
+)
+if len(project_versions) != 1:
+    raise SystemExit(
+        f"error: project.yml has inconsistent marketing versions: {sorted(project_versions)}"
+    )
+
+version = project_versions.pop()
+for plist_path in (
+    Path("IOSLocalLLM/Info.plist"),
+    Path("IOSLocalLLMShareExtension/Info.plist"),
+):
+    with plist_path.open("rb") as plist_file:
+        plist_version = plistlib.load(plist_file)["CFBundleShortVersionString"]
+    if plist_version != version:
+        raise SystemExit(
+            f"error: {plist_path} version {plist_version} does not match {version}"
+        )
+
+citation_text = Path("CITATION.cff").read_text(encoding="utf-8")
+if not re.search(rf"^version:\s*{re.escape(version)}\s*$", citation_text, re.MULTILINE):
+    raise SystemExit(f"error: CITATION.cff does not declare version {version}")
+
+with Path("SBOM.spdx.json").open(encoding="utf-8") as sbom_file:
+    sbom = json.load(sbom_file)
+root_package = next(
+    package
+    for package in sbom["packages"]
+    if package["SPDXID"] == "SPDXRef-Package-ios-local-llm"
+)
+if root_package["versionInfo"] != version:
+    raise SystemExit(
+        "error: SBOM root version "
+        f"{root_package['versionInfo']} does not match {version}"
+    )
+
+changelog_text = Path("CHANGELOG.md").read_text(encoding="utf-8")
+if f"## [{version}]" not in changelog_text:
+    raise SystemExit(f"error: CHANGELOG.md has no {version} release section")
+PY
+
+unpinned_actions="$(
+  grep -RHE '^[[:space:]]*uses:' .github/workflows |
+    grep -Ev '@[0-9a-f]{40}([[:space:]]|$)' || true
+)"
+if [[ -n "$unpinned_actions" ]]; then
+  echo "error: GitHub Actions must be pinned to full commit SHAs:" >&2
+  echo "$unpinned_actions" >&2
+  exit 1
+fi
 
 retired_brand_pattern='CodeLens|code lens|CODELENS|LOCAL AI STUDIO|Local AI Studio|LOCAL_AI_STUDIO'
 retired_brand_matches="$(
