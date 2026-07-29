@@ -51,6 +51,8 @@ This repository includes an agent-readable discovery layer:
 - [codemeta.json](codemeta.json) — structured software metadata
 - [.github/copilot-instructions.md](.github/copilot-instructions.md) —
   repository instructions for GitHub Copilot
+- [Coding-agent implementation handoff](Docs/CODING_AGENT_IMPLEMENTATION.md) —
+  a copy-paste brief for implementing selected components in another app
 
 Agents should treat `project.yml` as the Xcode project source of truth and must
 not add model weights, credentials, signing files, or generated native
@@ -64,6 +66,8 @@ You do not need to adopt the whole application. The repository now includes:
   subsystem ownership, and safety invariants
 - [Reusable component catalog](Docs/REUSABLE_COMPONENTS.md) — exact source
   files, dependencies, tests, portability level, and extraction guidance
+- [Coding-agent implementation handoff](Docs/CODING_AGENT_IMPLEMENTATION.md) —
+  a ready-to-share prompt, workflow, and definition of done
 - [LocalAIRuntimeFoundation notes](CodeLens/LocalAIRuntimeFoundation/README.md)
   — the closest existing boundary to a future standalone Swift package
 

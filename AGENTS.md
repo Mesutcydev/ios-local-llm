@@ -25,7 +25,9 @@ XCFrameworks, signed apps, and installers.
 4. Read `THIRD_PARTY_NOTICES.md` before adding dependencies, models, or assets.
 5. Read `ARCHITECTURE.md` for subsystem boundaries and safety invariants.
 6. Read `Docs/REUSABLE_COMPONENTS.md` before extracting code into another app.
-7. Read `Docs/AGENT_INTEGRATION.md` when changing the local API, tool calling,
+7. Use `Docs/CODING_AGENT_IMPLEMENTATION.md` when implementing a selected
+   component in another repository.
+8. Read `Docs/AGENT_INTEGRATION.md` when changing the local API, tool calling,
    or Mac bridge.
 
 `llms.txt` is the short machine-readable documentation index.
@@ -44,6 +46,7 @@ XCFrameworks, signed apps, and installers.
 | `CodeLens/LocalAIRuntimeFoundation/` | Reusable local-runtime abstractions |
 | `ARCHITECTURE.md` | Layer map, inference lifecycle, boundaries, and invariants |
 | `Docs/REUSABLE_COMPONENTS.md` | File-level reuse and extraction catalog |
+| `Docs/CODING_AGENT_IMPLEMENTATION.md` | Shareable implementation brief and acceptance criteria |
 | `CodeLensTests/` | Unit and policy tests |
 | `Packages/VoiceAgentOrb/` | Standalone Swift package with its own tests |
 | `project.yml` | Source of truth for generated Xcode project settings |

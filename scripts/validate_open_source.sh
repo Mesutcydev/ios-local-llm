@@ -14,6 +14,7 @@ required_files=(
   SECURITY.md
   THIRD_PARTY_NOTICES.md
   Docs/AGENT_INTEGRATION.md
+  Docs/CODING_AGENT_IMPLEMENTATION.md
   Docs/REUSABLE_COMPONENTS.md
   CodeLens/LocalAIRuntimeFoundation/README.md
   codemeta.json

@@ -20,3 +20,8 @@ Read `/AGENTS.md` before editing. Use `/llms.txt` as the documentation index.
 
 Runtime API and tool-calling behavior is documented in
 `/Docs/AGENT_INTEGRATION.md`.
+
+When adapting a component for another app, follow
+`/Docs/CODING_AGENT_IMPLEMENTATION.md` and use
+`/Docs/REUSABLE_COMPONENTS.md` to identify its reuse level, source, tests, and
+dependencies.

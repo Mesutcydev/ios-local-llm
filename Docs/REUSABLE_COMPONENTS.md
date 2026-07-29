@@ -316,6 +316,15 @@ The
 describes the closest existing boundary to a future standalone runtime
 package.
 
+## Give a component to a coding agent
+
+Use the
+[coding-agent implementation handoff](CODING_AGENT_IMPLEMENTATION.md) when you
+want an agent to port one of these components into another app. It includes a
+copy-paste prompt, required discovery and licensing checks, instructions for
+each reuse level, physical-device validation requirements, and a definition
+of done.
+
 ## Licensing when reusing code
 
 Original OnDeviceiOS code is available under the
