@@ -13,13 +13,13 @@ jobs:
   repository:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validate repository contents
         run: ./scripts/validate_open_source.sh
 
   voice-orb:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Test VoiceAgentOrb
         run: swift test --package-path Packages/VoiceAgentOrb
