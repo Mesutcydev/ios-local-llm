@@ -1,14 +1,14 @@
-# OnDeviceiOS
+# iOS Local LLM
 
-OnDeviceiOS is the open-source home of CodeLens, a local-first AI workbench for
-iPhone and Apple silicon Macs. Built with Swift, SwiftUI, MLX, llama.cpp,
+iOS Local LLM is a local-first AI workbench for iPhone and Apple silicon Macs.
+Built with Swift, SwiftUI, MLX, llama.cpp,
 whisper.cpp, and Core ML, it runs language, vision, speech, and
 image-generation models on the user's device, with no account or telemetry
 required.
 
 The app also provides opt-in, authenticated OpenAI-, Anthropic-, and
 Ollama-compatible local APIs, structured tool calling, and a paired Mac agent
-channel. CodeLens is an agent-compatible workbench; it does not silently
+channel. iOS Local LLM is an agent-compatible workbench; it does not silently
 execute machine actions or send local inference to a cloud service.
 
 The app was previously distributed through the App Store. This repository is
@@ -68,7 +68,7 @@ You do not need to adopt the whole application. The repository now includes:
   files, dependencies, tests, portability level, and extraction guidance
 - [Coding-agent implementation handoff](Docs/CODING_AGENT_IMPLEMENTATION.md) —
   a ready-to-share prompt, workflow, and definition of done
-- [LocalAIRuntimeFoundation notes](CodeLens/LocalAIRuntimeFoundation/README.md)
+- [LocalAIRuntimeFoundation notes](IOSLocalLLM/LocalAIRuntimeFoundation/README.md)
   — the closest existing boundary to a future standalone Swift package
 
 Components are labeled **Extractable**, **Adaptable**, or **Integrated** so
@@ -77,7 +77,7 @@ services that require app-specific adapters or native inference frameworks.
 
 ## Project status
 
-CodeLens is usable but is a large, evolving application. Some features require
+iOS Local LLM is usable but is a large, evolving application. Some features require
 recent Apple hardware, optional model downloads, or native frameworks that
 must be built locally. Contributions that improve first-run setup, tests,
 accessibility, and documentation are especially welcome.
@@ -100,8 +100,8 @@ identifier.
 Clone the repository and its native dependencies:
 
 ```bash
-git clone --recurse-submodules https://github.com/Mesutcydev/ondeviceios.git
-cd ondeviceios
+git clone --recurse-submodules https://github.com/Mesutcydev/ios-local-llm.git
+cd ios-local-llm
 ```
 
 Install project tools if needed:
@@ -122,10 +122,10 @@ Generate the Xcode project and install CocoaPods:
 ```bash
 xcodegen generate
 pod install
-open CodeLens.xcworkspace
+open IOSLocalLLM.xcworkspace
 ```
 
-Select the `CodeLens` scheme and an iOS Simulator. For a physical device,
+Select the `IOSLocalLLM` scheme and an iOS Simulator. For a physical device,
 change the bundle identifiers and select your own development team in Xcode.
 See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md) for details and optional
 model setup.
@@ -134,10 +134,10 @@ model setup.
 
 No AI model weights, compiled Core ML models, generated XCFrameworks, or app
 installers are distributed in this repository. They are intentionally ignored
-because they are large and often have terms different from the CodeLens
+because they are large and often have terms different from the iOS Local LLM
 license.
 
-CodeLens downloads supported models only after a user chooses them. Always
+iOS Local LLM downloads supported models only after a user chooses them. Always
 review a model's license before downloading or redistributing it. In
 particular, Apple FastVLM weights use a research-only license and are not part
 of this open-source distribution.
@@ -158,8 +158,8 @@ reports should follow [SECURITY.md](SECURITY.md).
 
 ## License
 
-Original CodeLens code and documentation are available under the
+Original iOS Local LLM code and documentation are available under the
 [MIT License](LICENSE). Third-party code, data, models, and dependencies remain
 under their respective terms; see
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The CodeLens name and logos
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The iOS Local LLM name and logos
 are not licensed as trademarks; see [TRADEMARKS.md](TRADEMARKS.md).

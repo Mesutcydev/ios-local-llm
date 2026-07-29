@@ -5,11 +5,11 @@ submodules that provide their own `AGENTS.md`.
 
 ## Project identity
 
-- Repository: **OnDeviceiOS**
-- App/product names found in source: **CodeLens** and **On Device LLM**
+- Repository: **iOS Local LLM**
+- App/product names found in source: **IOSLocalLLM** and **iOS Local LLM**
 - Purpose: a local-first Swift/SwiftUI AI workbench for iPhone and Apple
   silicon Macs
-- Repository: <https://github.com/Mesutcydev/ondeviceios>
+- Repository: <https://github.com/Mesutcydev/ios-local-llm>
 - License: MIT for original project code and documentation; third-party code,
   assets, and downloaded models keep their own licenses
 
@@ -37,17 +37,17 @@ XCFrameworks, signed apps, and installers.
 
 | Path | Responsibility |
 | --- | --- |
-| `CodeLens/CodeLensApp.swift` | App entry point and service installation |
-| `CodeLens/ContentView.swift` | Root application navigation |
-| `CodeLens/Views/` | SwiftUI screens and reusable UI |
-| `CodeLens/Services/` | Inference, model, safety, diagnostics, and bridge services |
-| `CodeLens/Models/` | App data models, catalogs, settings, and shared types |
-| `CodeLens/Services/Bridge/` | Local APIs, pairing, and authenticated agent channel |
-| `CodeLens/LocalAIRuntimeFoundation/` | Reusable local-runtime abstractions |
+| `IOSLocalLLM/IOSLocalLLMApp.swift` | App entry point and service installation |
+| `IOSLocalLLM/ContentView.swift` | Root application navigation |
+| `IOSLocalLLM/Views/` | SwiftUI screens and reusable UI |
+| `IOSLocalLLM/Services/` | Inference, model, safety, diagnostics, and bridge services |
+| `IOSLocalLLM/Models/` | App data models, catalogs, settings, and shared types |
+| `IOSLocalLLM/Services/Bridge/` | Local APIs, pairing, and authenticated agent channel |
+| `IOSLocalLLM/LocalAIRuntimeFoundation/` | Reusable local-runtime abstractions |
 | `ARCHITECTURE.md` | Layer map, inference lifecycle, boundaries, and invariants |
 | `Docs/REUSABLE_COMPONENTS.md` | File-level reuse and extraction catalog |
 | `Docs/CODING_AGENT_IMPLEMENTATION.md` | Shareable implementation brief and acceptance criteria |
-| `CodeLensTests/` | Unit and policy tests |
+| `IOSLocalLLMTests/` | Unit and policy tests |
 | `Packages/VoiceAgentOrb/` | Standalone Swift package with its own tests |
 | `project.yml` | Source of truth for generated Xcode project settings |
 | `ThirdParty/llama.cpp/` | Upstream Git submodule |
@@ -85,8 +85,8 @@ App tests, after native dependencies and CocoaPods are available:
 
 ```bash
 xcodebuild test \
-  -workspace CodeLens.xcworkspace \
-  -scheme CodeLens \
+  -workspace IOSLocalLLM.xcworkspace \
+  -scheme IOSLocalLLM \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
 
@@ -105,7 +105,7 @@ repository validator.
   signing files, credentials, or local agent memory files.
 - Treat `ThirdParty/llama.cpp` and `ThirdParty/whisper.cpp` as independent
   upstream repositories. Do not absorb incidental submodule changes into an
-  OnDeviceiOS commit.
+  iOS Local LLM commit.
 - Preserve accessibility labels and identifiers. Validate visible UI changes
   with an iOS Simulator when available.
 
@@ -125,7 +125,7 @@ If the license is unclear, do not add the material.
 
 ## Agent-facing surfaces
 
-OnDeviceiOS is both agent-friendly source code and an agent-compatible local
+iOS Local LLM is both agent-friendly source code and an agent-compatible local
 runtime:
 
 - OpenAI-style `GET /v1/models` and `POST /v1/chat/completions`
@@ -137,4 +137,4 @@ runtime:
 
 Compatibility is intentionally scoped rather than a promise of complete API
 parity. Use `Docs/AGENT_INTEGRATION.md` and the implementation in
-`CodeLens/Services/Bridge/LocalAPIServer.swift` as the source of truth.
+`IOSLocalLLM/Services/Bridge/LocalAPIServer.swift` as the source of truth.

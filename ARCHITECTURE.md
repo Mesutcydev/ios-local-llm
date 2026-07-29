@@ -1,6 +1,6 @@
-# OnDeviceiOS architecture
+# iOS Local LLM architecture
 
-This map is for developers who want to understand OnDeviceiOS or reuse part of
+This map is for developers who want to understand iOS Local LLM or reuse part of
 it in another local-LLM iOS app. For a file-by-file extraction guide, see
 [Reusable components](Docs/REUSABLE_COMPONENTS.md).
 
@@ -39,12 +39,12 @@ lifecycle are coordinated before inference begins.
 
 | Path | Role |
 | --- | --- |
-| `CodeLens/Views/` | SwiftUI screens and reusable presentation components |
-| `CodeLens/Services/` | Product services, runtimes, safety policy, downloads, diagnostics, and bridges |
-| `CodeLens/Models/` | Shared app types, model metadata, catalogs, and settings |
-| `CodeLens/LocalAIRuntimeFoundation/` | Small runtime abstractions and utilities; currently compiled into the app target |
-| `CodeLens/Services/Bridge/` | Local OpenAI/Anthropic/Ollama routes and paired Mac-agent protocol |
-| `CodeLensTests/` | Unit, policy, decoding, lifecycle, and service tests |
+| `IOSLocalLLM/Views/` | SwiftUI screens and reusable presentation components |
+| `IOSLocalLLM/Services/` | Product services, runtimes, safety policy, downloads, diagnostics, and bridges |
+| `IOSLocalLLM/Models/` | Shared app types, model metadata, catalogs, and settings |
+| `IOSLocalLLM/LocalAIRuntimeFoundation/` | Small runtime abstractions and utilities; currently compiled into the app target |
+| `IOSLocalLLM/Services/Bridge/` | Local OpenAI/Anthropic/Ollama routes and paired Mac-agent protocol |
+| `IOSLocalLLMTests/` | Unit, policy, decoding, lifecycle, and service tests |
 | `Packages/VoiceAgentOrb/` | Independently buildable Swift package |
 | `ThirdParty/llama.cpp/` | Upstream llama.cpp submodule |
 | `ThirdParty/whisper.cpp/` | Upstream whisper.cpp submodule |
@@ -90,7 +90,7 @@ are in [Docs/REUSABLE_COMPONENTS.md](Docs/REUSABLE_COMPONENTS.md).
 
 ## Reuse boundaries
 
-OnDeviceiOS is an application, not a single SDK. Its code falls into three
+iOS Local LLM is an application, not a single SDK. Its code falls into three
 practical reuse levels:
 
 1. **Extractable** — small Foundation-oriented types that can move into a

@@ -1,6 +1,6 @@
-name: CodeLens
+name: IOSLocalLLM
 options:
-  bundleIdPrefix: com.codelens
+  bundleIdPrefix: com.mesutcydev.ioslocalllm
   deploymentTarget:
     iOS: "18.0"
   xcodeVersion: "26.0"
@@ -69,12 +69,12 @@ settings:
       VALIDATE_PRODUCT: YES
 
 targets:
-  CodeLens:
+  IOSLocalLLM:
     type: application
     platform: iOS
     deploymentTarget: "18.0"
     sources:
-      - path: CodeLens
+      - path: IOSLocalLLM
         excludes:
           - "**/*.mlmodelc"
           - "**/FastVLM-0.5B-fp16/**"
@@ -101,8 +101,8 @@ targets:
     resources:
       # Model-specific tokenizers and processor files are intentionally not
       # redistributed. The downloaded model must provide its own metadata.
-      - path: CodeLens/PrivacyInfo.xcprivacy
-      - path: CodeLens/Resources/Localization/WebTriggerKeywords.json
+      - path: IOSLocalLLM/PrivacyInfo.xcprivacy
+      - path: IOSLocalLLM/Resources/Localization/WebTriggerKeywords.json
       # CMU Pronouncing Dictionary — trimmed (primary pronunciations only,
       # 126K entries, 3.2 MB plain text). Used by PhonemizerEN to convert
       # English text to IPA phonemes for the neural TTS engines (Kokoro,
@@ -111,8 +111,8 @@ targets:
       # that were so far off-distribution the models output a robotic,
       # zombie-like voice. Source: cmusphinx/cmudict on GitHub,
       # public-domain license.
-      - path: CodeLens/Resources/Voice/cmudict.txt
-      - path: CodeLens/Resources/VoiceModelCatalog.json
+      - path: IOSLocalLLM/Resources/Voice/cmudict.txt
+      - path: IOSLocalLLM/Resources/VoiceModelCatalog.json
       # NOTE: SmolVLM2-500M weights (~1 GB) are *not* listed here. They
       # are copied into the .app by a postBuildScript below (see
       # "Copy SmolVLM bundled weights"). xcodegen 2.45 applies the
@@ -122,9 +122,9 @@ targets:
       # silently drops any resources entry pointing into it. A
       # postBuildScript sidesteps that bug.
     info:
-      path: CodeLens/Info.plist
+      path: IOSLocalLLM/Info.plist
       properties:
-        CFBundleDisplayName: On Device LLM
+        CFBundleDisplayName: iOS Local LLM
         # Source of truth for both targets' marketing version. xcodegen
         # writes these into the generated Info.plist files on every run,
         # so hand-edits to those plists get reverted next regen — always
@@ -134,11 +134,11 @@ targets:
         # Standard HTTPS only — answers the ASC export-compliance question
         # automatically so review submission doesn't stall on it.
         ITSAppUsesNonExemptEncryption: false
-        NSCameraUsageDescription: "CodeLens uses the back camera to capture live video of your terminal or code editor for real-time analysis."
-        NSPhotoLibraryUsageDescription: "CodeLens can analyze code from photos in your library."
-        NSMicrophoneUsageDescription: "CodeLens uses the microphone for hold-to-talk dictation in the chat composer. Audio is transcribed on-device and never leaves your phone."
-        NSLocalNetworkUsageDescription: "CodeLens can expose your on-device language model to computers on your local network when you enable the Local API Server."
-        NSSpeechRecognitionUsageDescription: "CodeLens uses on-device speech recognition to convert your voice into text for the chat composer."
+        NSCameraUsageDescription: "iOS Local LLM uses the back camera to capture live video of your terminal or code editor for real-time analysis."
+        NSPhotoLibraryUsageDescription: "iOS Local LLM can analyze code from photos in your library."
+        NSMicrophoneUsageDescription: "iOS Local LLM uses the microphone for hold-to-talk dictation in the chat composer. Audio is transcribed on-device and never leaves your phone."
+        NSLocalNetworkUsageDescription: "iOS Local LLM can expose your on-device language model to computers on your local network when you enable the Local API Server."
+        NSSpeechRecognitionUsageDescription: "iOS Local LLM uses on-device speech recognition to convert your voice into text for the chat composer."
         UIRequiresFullScreen: true
         UIStatusBarStyle: UIStatusBarStyleDarkContent
         UIViewControllerBasedStatusBarAppearance: false
@@ -150,19 +150,19 @@ targets:
           UIApplicationSupportsMultipleScenes: false
         NSSupportsLiveActivities: true
         # Make downloaded/imported models under Documents/HFModels visible at
-        # Files → On My iPhone → On Device LLM. Per-model export remains
+        # Files → On My iPhone → iOS Local LLM. Per-model export remains
         # available from the Models tab for copying to any Files provider.
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
         CFBundleURLTypes:
-          - CFBundleURLName: com.codelens.scheme
+          - CFBundleURLName: com.mesutcydev.ioslocalllm.scheme
             CFBundleURLSchemes:
-              - codelens
+              - ios-local-llm
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.codelens.CodeLens
-        INFOPLIST_FILE: CodeLens/Info.plist
-        CODE_SIGN_ENTITLEMENTS: CodeLens/CodeLens.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.mesutcydev.ioslocalllm.IOSLocalLLM
+        INFOPLIST_FILE: IOSLocalLLM/Info.plist
+        CODE_SIGN_ENTITLEMENTS: IOSLocalLLM/IOSLocalLLM.entitlements
         CODE_SIGN_STYLE: Automatic
         VERSIONING_SYSTEM: apple-generic
         CURRENT_PROJECT_VERSION: "98"
@@ -171,7 +171,7 @@ targets:
         # Xcode 26 and iOS 18–26 builds keep the existing local-only binary.
         "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos27.*]": "$(inherited) FM_PCC"
         "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphonesimulator27.*]": "$(inherited) FM_PCC"
-        "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos27.*]": CodeLens/CodeLens-PCC.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos27.*]": IOSLocalLLM/IOSLocalLLM-PCC.entitlements
         # iOS stays iPhone-only (family 1) so the iPhone app is unchanged.
         # Mac Catalyst is built against the macosx SDK and *requires* the
         # iPad idiom (family 2) plus Mac (6); scope that to the macOS SDK
@@ -193,7 +193,7 @@ targets:
         MACOSX_DEPLOYMENT_TARGET: "13.0"
         # Use a Catalyst-specific entitlements set (App Sandbox + camera/
         # mic/network) on the macOS SDK; the iOS entitlements are untouched.
-        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": CodeLens/CodeLens-Catalyst.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": IOSLocalLLM/IOSLocalLLM-Catalyst.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Default icon is the neon pink "eye" mark (AppIcon); the previous
         # pink mark ships as AppIconClassic so users can switch back in
@@ -201,7 +201,7 @@ targets:
         # alternate icons to be compiled into the bundle.
         ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
         SWIFT_EMIT_LOC_STRINGS: YES
-        # CodeLensTests uses `@testable import CodeLens`, and the scheme
+        # IOSLocalLLMTests uses `@testable import IOSLocalLLM`, and the scheme
         # builds the tests for both Debug and Release configs. Without
         # ENABLE_TESTABILITY on Release, the test module dependency
         # can't resolve and `xcodebuild -configuration Release build`
@@ -210,7 +210,7 @@ targets:
         # ── llama.cpp + mtmd integration ────────────────────────
         # Bridging header exposes llama.h / mtmd.h / mtmd-helper.h
         # to Swift via LlamaCppBridge.swift.
-        SWIFT_OBJC_BRIDGING_HEADER: "$(SRCROOT)/CodeLens/Services/LlamaCpp/CodeLens-Bridging-Header.h"
+        SWIFT_OBJC_BRIDGING_HEADER: "$(SRCROOT)/IOSLocalLLM/Services/LlamaCpp/IOSLocalLLM-Bridging-Header.h"
         # Source-tree header paths keep bridging-header dependency scanning
         # deterministic. The compiled llama, ggml, and mtmd implementations
         # all come from the single llama.xcframework below.
@@ -236,7 +236,7 @@ targets:
       # mlx-swift-lm 3.x into the swift-transformers-mlx fork.
       - package: swift-transformers-mlx
         product: MLXLMTransformers
-      # StableDiffusion is now VENDORED under CodeLens/Vendor/StableDiffusion
+      # StableDiffusion is now VENDORED under IOSLocalLLM/Vendor/StableDiffusion
       # (patched so the app can construct configurations for additional
       # SD/SDXL models). The SPM product is intentionally NOT linked to avoid
       # duplicate type definitions.
@@ -263,7 +263,7 @@ targets:
       # cloud-fallback dependency.
       - framework: ThirdParty/whisper.cpp/build-apple/whisper.xcframework
         embed: true
-      - target: CodeLensShareExtension
+      - target: IOSLocalLLMShareExtension
         embed: true
         # The share extension is an iOS-only app-extension; a Mac Catalyst app
         # may not embed an iOS .appex. `platformFilter: iOS` emits the PBX
@@ -282,7 +282,7 @@ targets:
       - name: Copy bundled VLM (SmolVLM2 GGUF)
         script: |
           set -e
-          SRC="${SRCROOT}/CodeLens/Resources/BundledVLM"
+          SRC="${SRCROOT}/IOSLocalLLM/Resources/BundledVLM"
           DEST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/BundledVLM"
           if [ ! -d "$SRC" ]; then
             echo "warning: BundledVLM source not found at $SRC — skipping (lens tab will fall back to network download of SmolVLM2 GGUF, ~520 MB on first launch)"
@@ -304,7 +304,7 @@ targets:
       - name: Copy bundled voice models (Silero VAD)
         script: |
           set -e
-          SRC="${SRCROOT}/CodeLens/Resources/BundledVoiceModels"
+          SRC="${SRCROOT}/IOSLocalLLM/Resources/BundledVoiceModels"
           DEST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/BundledVoiceModels"
           if [ ! -d "$SRC" ]; then
             echo "warning: BundledVoiceModels source not found at $SRC — Voice mode will require a runtime download from Models → Catalog."
@@ -327,7 +327,7 @@ targets:
       - name: Compile and bundle FastVLM Core ML encoder
         script: |
           set -e
-          SRC="${SRCROOT}/CodeLens/Models/FastVLM-0.5B-fp16/fastvithd.mlpackage"
+          SRC="${SRCROOT}/IOSLocalLLM/Models/FastVLM-0.5B-fp16/fastvithd.mlpackage"
           DEST_DIR="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
           DEST_PACKAGE="${DEST_DIR}/fastvithd.mlpackage"
           DEST_COMPILED="${DEST_DIR}/fastvithd.mlmodelc"
@@ -359,19 +359,19 @@ targets:
         runOnlyWhenInstalling: false
         basedOnDependencyAnalysis: false
 
-  CodeLensShareExtension:
+  IOSLocalLLMShareExtension:
     type: app-extension
     platform: iOS
     deploymentTarget: "18.0"
     sources:
-      - path: CodeLensShareExtension
+      - path: IOSLocalLLMShareExtension
         excludes:
           - "Info.plist"
           - "*.entitlements"
     info:
-      path: CodeLensShareExtension/Info.plist
+      path: IOSLocalLLMShareExtension/Info.plist
       properties:
-        CFBundleDisplayName: On Device LLM
+        CFBundleDisplayName: iOS Local LLM
         # Must match the main target's version above — App Store rejects
         # extension targets with mismatched marketing versions.
         CFBundleShortVersionString: "3.2.5"
@@ -388,26 +388,26 @@ targets:
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.codelens.CodeLens.share
-        INFOPLIST_FILE: CodeLensShareExtension/Info.plist
-        CODE_SIGN_ENTITLEMENTS: CodeLensShareExtension/CodeLensShareExtension.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.mesutcydev.ioslocalllm.IOSLocalLLM.share
+        INFOPLIST_FILE: IOSLocalLLMShareExtension/Info.plist
+        CODE_SIGN_ENTITLEMENTS: IOSLocalLLMShareExtension/IOSLocalLLMShareExtension.entitlements
         CODE_SIGN_STYLE: Automatic
         VERSIONING_SYSTEM: apple-generic
         CURRENT_PROJECT_VERSION: "98"
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_EMIT_LOC_STRINGS: YES
 
-  CodeLensTests:
+  IOSLocalLLMTests:
     type: bundle.unit-test
     platform: iOS
     deploymentTarget: "18.0"
     sources:
-      - path: CodeLensTests
+      - path: IOSLocalLLMTests
     dependencies:
-      - target: CodeLens
+      - target: IOSLocalLLM
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.codelens.CodeLensTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.mesutcydev.ioslocalllm.IOSLocalLLMTests
         INFOPLIST_FILE: ""   # auto-generate
         CODE_SIGN_STYLE: Automatic
         TARGETED_DEVICE_FAMILY: "1"
@@ -426,33 +426,33 @@ targets:
           - "$(SRCROOT)/ThirdParty/llama.cpp/ggml/include"
           - "$(SRCROOT)/ThirdParty/whisper.cpp/include"
 
-  CodeLensUITests:
+  IOSLocalLLMUITests:
     type: bundle.ui-testing
     platform: iOS
     deploymentTarget: "18.0"
     sources:
-      - path: CodeLensUITests
+      - path: IOSLocalLLMUITests
     dependencies:
-      - target: CodeLens
+      - target: IOSLocalLLM
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.codelens.CodeLensUITests
+        PRODUCT_BUNDLE_IDENTIFIER: com.mesutcydev.ioslocalllm.IOSLocalLLMUITests
         CODE_SIGN_STYLE: Automatic
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_EMIT_LOC_STRINGS: NO
 
 schemes:
-  CodeLens:
+  IOSLocalLLM:
     build:
       targets:
-        CodeLens: all
-        CodeLensTests: [test, run]
-        CodeLensUITests: [test]
+        IOSLocalLLM: all
+        IOSLocalLLMTests: [test, run]
+        IOSLocalLLMUITests: [test]
     test:
       config: Debug
       targets:
-        - CodeLensTests
-        - CodeLensUITests
+        - IOSLocalLLMTests
+        - IOSLocalLLMUITests
     archive:
       config: Release

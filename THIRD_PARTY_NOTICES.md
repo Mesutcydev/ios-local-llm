@@ -1,18 +1,18 @@
 # Third-party notices
 
-The top-level MIT license covers original CodeLens code and documentation. It
+The top-level MIT license covers original iOS Local LLM code and documentation. It
 does not replace the licenses of the components below.
 
 ## Source included in this repository
 
 | Component | Location | License |
 | --- | --- | --- |
-| FastVLM sample implementation | `CodeLens/Services/FastVLM.swift` | [Apple Sample Code License](LICENSES/Apple-Sample-Code-License.txt) |
-| MLX Stable Diffusion implementation | `CodeLens/Vendor/StableDiffusion/` | [MIT](CodeLens/Vendor/StableDiffusion/LICENSE) |
-| CMU Pronouncing Dictionary | `CodeLens/Resources/Voice/cmudict.txt` | [CMUdict license](CodeLens/Resources/Voice/LICENSE) |
+| FastVLM sample implementation | `IOSLocalLLM/Services/FastVLM.swift` | [Apple Sample Code License](LICENSES/Apple-Sample-Code-License.txt) |
+| MLX Stable Diffusion implementation | `IOSLocalLLM/Vendor/StableDiffusion/` | [MIT](IOSLocalLLM/Vendor/StableDiffusion/LICENSE) |
+| CMU Pronouncing Dictionary | `IOSLocalLLM/Resources/Voice/cmudict.txt` | [CMUdict license](IOSLocalLLM/Resources/Voice/LICENSE) |
 | thinking-orbs adaptations | `Packages/VoiceAgentOrb/` | [MIT](ThirdParty/thinking-orbs/LICENSE) |
 
-The MIT license for CodeLens applies only to the original changes and
+The MIT license for iOS Local LLM applies only to the original changes and
 integration around these components.
 
 ## Git submodules
@@ -26,7 +26,7 @@ Each submodule retains its upstream notices and license.
 
 ## Direct package dependencies
 
-CodeLens resolves these dependencies through Swift Package Manager or
+iOS Local LLM resolves these dependencies through Swift Package Manager or
 CocoaPods. Their source and license files are not copied into this repository.
 
 | Dependency | Source | License |

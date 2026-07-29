@@ -1,8 +1,8 @@
 # Local AI Studio Foundation Handoff
 
-> **Target:** Build a new app from CodeLens' strongest foundations.
+> **Target:** Build a new app from iOS Local LLM' strongest foundations.
 > **Generated:** 2026-06-18
-> **Source codebase:** CodeLens v3.0.1 (`<repo-root>`)
+> **Source codebase:** iOS Local LLM v3.0.1 (`<repo-root>`)
 > **Deployment target:** iOS 18.0
 > **Swift version:** 5.10
 > **Package manager:** Swift Package Manager (`project.yml` / XcodeGen)
@@ -11,13 +11,13 @@
 
 ## 1. Project Map
 
-The app is a single-target iOS application with optional Mac Catalyst support. It is structured as a standard Xcode project generated from `project.yml` (XcodeGen). The share extension `CodeLensShareExtension` exists but was not inspected in depth — it handles image sharing into the main app.
+The app is a single-target iOS application with optional Mac Catalyst support. It is structured as a standard Xcode project generated from `project.yml` (XcodeGen). The share extension `IOSLocalLLMShareExtension` exists but was not inspected in depth — it handles image sharing into the main app.
 
 ### Source Tree Overview
 
 ```
-CodeLens/
-├── CodeLensApp.swift              ← @main entry point, app delegate, scene phase handling
+IOSLocalLLM/
+├── IOSLocalLLMApp.swift              ← @main entry point, app delegate, scene phase handling
 ├── ContentView.swift              ← Tab-based navigation (Home/Assistant/Lens/Voice/Models)
 ├── Models/
 │   ├── AppSettings.swift          ← @AppStorage-backed user preferences hub
@@ -73,9 +73,9 @@ CodeLens/
 
 | Area | File/Path | Main Types | Purpose | Reusable? |
 |------|-----------|------------|---------|-----------|
-| Entry | `CodeLensApp.swift` | `CodeLensApp`, `AppDelegate` | App bootstrap, scene-phase GPU cancellation, crash reporter install | Partially |
+| Entry | `IOSLocalLLMApp.swift` | `IOSLocalLLMApp`, `AppDelegate` | App bootstrap, scene-phase GPU cancellation, crash reporter install | Partially |
 | Nav | `ContentView.swift` | `ContentView` | Tab-based routing, cross-tab model unload orchestration | No (app-specific UI) |
-| Settings | `CodeLens/Models/AppSettings.swift` | `AppSettings` | @AppStorage-backed settings hub (~60 keys) | Yes, as pattern |
+| Settings | `IOSLocalLLM/Models/AppSettings.swift` | `AppSettings` | @AppStorage-backed settings hub (~60 keys) | Yes, as pattern |
 | Model Catalog | `Models/AssistantModelCatalog.swift` | `AssistantModelCatalog`, `AssistantModel` | Curated text LLM presets (15 models) | Yes |
 | Chat | `Models/ChatMessage.swift` | `ChatMessage` | Message model with attachments, streaming state | Yes, core |
 | Chat TMpl | `Models/ChatTemplate.swift` | `ChatTemplate` | Per-family prompt formatting (ChatML, Llama3, Gemma, Phi) | Yes, core |
@@ -107,7 +107,7 @@ CodeLens/
 ## 2. App Foundation Summary
 
 ### What the app fundamentally does
-CodeLens is a local AI studio for iPhone. All inference runs on-device — no cloud LLM dependency. The app supports:
+iOS Local LLM is a local AI studio for iPhone. All inference runs on-device — no cloud LLM dependency. The app supports:
 - **Text chat** with user-selectable on-device LLMs (Qwen3, Llama 3.2, Phi-3.5, Gemma 2, etc.) via Apple MLX
 - **Camera-based image analysis** (the "Lens" tab) using VLMs (FastVLM, SmolVLM2 GGUF, Qwen3-VL)
 - **On-device RAG** (Knowledge Base) — embed documents locally, retrieve via cosine similarity
@@ -327,7 +327,7 @@ Called on memory warnings (`UIApplication.didReceiveMemoryWarningNotification`),
 - **Context window trimming:** `trimToInputBudget()` drops oldest non-system messages first
 - **Tier context cap:** `.max` caps at 16,384 input tokens; all others at 8,192
 - **Autorelease pool:** Called after unload `autoreleasepool { }`
-- **Discardable debug state:** `lastModelInput` / `lastModelInputInfo` dropped on memory pressure via `.codeLensDropDiscardableCaches` notification
+- **Discardable debug state:** `lastModelInput` / `lastModelInputInfo` dropped on memory pressure via `.iosLocalLLMDropDiscardableCaches` notification
 
 ### RAM Topic Summary
 
@@ -413,7 +413,7 @@ Called on memory warnings (`UIApplication.didReceiveMemoryWarningNotification`),
 - Used by benchmarks and live lens loop
 - Force-cleared on background transition
 
-**Background GPU cancellation** (`CodeLensApp.onChange(of: scenePhase)`):
+**Background GPU cancellation** (`IOSLocalLLMApp.onChange(of: scenePhase)`):
 - On `willResignActive` → `MLXGenerationGate.isForegrounded = false` (prevents new GPU submissions)
 - On `didEnterBackground` → `cancelAll()` drains the gate queue
 - Active generation tasks are cancelled: `CodingAssistantService.stopGeneration()`, `FastVLMService.stopGeneration()`, `MLXVisionService.cancelCurrentInference()`, `LlamaCppVLMService.cancelCurrentInference()`, `ImageGenerationService.cancel()`
@@ -430,7 +430,7 @@ Called on memory warnings (`UIApplication.didReceiveMemoryWarningNotification`),
 | LPM detection | `ProcessInfo.isLowPowerModeEnabled` + observer | `DeviceSafetyMonitor` | Passive badge only, no throttling |
 | Battery state | `UIDevice.batteryState/Level` monitoring | `DeviceSafetyMonitor` | Gates speculative prefetch |
 | Keep-awake | Ref-counted idle timer disable | `DeviceSafetyMonitor.setKeepAwake()` | Reasons: benchmark, lens-live-loop |
-| Bg GPU cancel | Scene phase → gate drain + task cancel | `CodeLensApp.onChange(of:)` | Prevents Metal SIGABRT in bg |
+| Bg GPU cancel | Scene phase → gate drain + task cancel | `IOSLocalLLMApp.onChange(of:)` | Prevents Metal SIGABRT in bg |
 | Wi-Fi only DL | `wifiOnlyDownloads` setting + path monitor | `BackgroundDownloadCoordinator` | Per-task + session-level |
 | Conversation flush | Immediate save on bg | `ConversationStore.flush()` | Prevents data loss |
 
@@ -856,12 +856,12 @@ Documents/
 - [ ] `Services/FastVLMService.swift` (if using FastVLM)
 - [ ] `Services/LlamaCpp/LlamaCppVLMService.swift`
 - [ ] `Services/LlamaCpp/LlamaCppBridge.swift`
-- [ ] `Services/LlamaCpp/CodeLens-Bridging-Header.h`
+- [ ] `Services/LlamaCpp/iOS Local LLM-Bridging-Header.h`
 - [ ] `Services/RAG/KnowledgeBaseService.swift`
 - [ ] `Services/RAG/OnDeviceEmbedder.swift`
 - [ ] `Services/HFSearchService.swift`
 - [ ] `project.yml` (as build system reference)
-- [ ] `CodeLens/CodeLens.entitlements` (as entitlement reference)
+- [ ] `IOSLocalLLM/iOS Local LLM.entitlements` (as entitlement reference)
 - [ ] `ThirdParty/llama.cpp/` (vendored mtmd sources)
 
 ### Files to Avoid
@@ -961,7 +961,7 @@ Documents/
 
 ## 22. Suggested Next-Agent Build Prompt
 
-> **Build a new local AI app on iOS using CodeLens' foundation.**
+> **Build a new local AI app on iOS using iOS Local LLM' foundation.**
 >
 > You are building a new iOS app from scratch using the battle-tested model loading, inference, memory management, thermal protection, and download systems documented in `Docs/LOCAL_AI_STUDIO_FOUNDATION_HANDOFF.md`. That document is your source of truth.
 >

@@ -1,4 +1,4 @@
-# OnDeviceiOS repository instructions
+# iOS Local LLM repository instructions
 
 Read `/AGENTS.md` before editing. Use `/llms.txt` as the documentation index.
 

@@ -12,4 +12,4 @@
 *.jpg binary
 *.jpeg binary
 *.xcassets linguist-generated=false
-CodeLens.xcodeproj/project.pbxproj linguist-generated=true
+IOSLocalLLM.xcodeproj/project.pbxproj linguist-generated=true

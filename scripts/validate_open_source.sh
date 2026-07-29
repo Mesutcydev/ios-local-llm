@@ -16,12 +16,12 @@ required_files=(
   Docs/AGENT_INTEGRATION.md
   Docs/CODING_AGENT_IMPLEMENTATION.md
   Docs/REUSABLE_COMPONENTS.md
-  CodeLens/LocalAIRuntimeFoundation/README.md
+  IOSLocalLLM/LocalAIRuntimeFoundation/README.md
   codemeta.json
   llms.txt
   .github/copilot-instructions.md
-  CodeLens/Vendor/StableDiffusion/LICENSE
-  CodeLens/Resources/Voice/LICENSE
+  IOSLocalLLM/Vendor/StableDiffusion/LICENSE
+  IOSLocalLLM/Resources/Voice/LICENSE
   LICENSES/Apple-Sample-Code-License.txt
 )
 

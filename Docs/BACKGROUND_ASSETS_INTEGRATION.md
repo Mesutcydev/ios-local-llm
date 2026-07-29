@@ -2,7 +2,7 @@
 
 ## Current safe boundary
 
-CodeLens continues to use `BackgroundDownloadCoordinator` and a background
+iOS Local LLM continues to use `BackgroundDownloadCoordinator` and a background
 `URLSession` for Hugging Face and other dynamic model downloads. Those files
 can be chosen at runtime, can require an authorization header, and don't have
 an app-versioned asset-pack identity. They are not candidates for Managed
@@ -39,7 +39,7 @@ managed downloader extension is a programmer error. Runtime activation
 therefore waits until all of these are complete together:
 
 1. Add a managed Background Download extension target.
-2. Configure the shared App Group (`group.com.codelens.shared`) for the app and
+2. Configure the shared App Group (`group.com.mesutcydev.ioslocalllm.shared`) for the app and
    extension.
 3. Choose Apple hosting or a production self-hosted manifest.
 4. Upload and validate version 1 of the asset pack in App Store Connect or on

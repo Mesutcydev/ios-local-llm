@@ -1,10 +1,10 @@
 # Reusable components for local-LLM iOS apps
 
-This catalog helps iOS developers find the parts of OnDeviceiOS that are useful
+This catalog helps iOS developers find the parts of iOS Local LLM that are useful
 outside the full application. It lists source files, dependencies, tests, and
 the work normally required to extract each subsystem.
 
-OnDeviceiOS is MIT-licensed, but it is an app rather than a finished SDK. Start
+iOS Local LLM is MIT-licensed, but it is an app rather than a finished SDK. Start
 with a small component and preserve its tests and safety behavior.
 
 ## Reuse levels
@@ -41,9 +41,9 @@ with a small component and preserve its tests and safety behavior.
 ### UTF-8 streaming and response coalescing — Extractable
 
 - Source:
-  [`StreamingResponseCoordinator.swift`](../CodeLens/LocalAIRuntimeFoundation/Streaming/StreamingResponseCoordinator.swift)
+  [`StreamingResponseCoordinator.swift`](../IOSLocalLLM/LocalAIRuntimeFoundation/Streaming/StreamingResponseCoordinator.swift)
 - Tests:
-  [`LocalAIFoundationTests.swift`](../CodeLensTests/LocalAIFoundationTests.swift)
+  [`LocalAIFoundationTests.swift`](../IOSLocalLLMTests/LocalAIFoundationTests.swift)
 - Dependencies: Foundation and Swift concurrency.
 - Useful for: incremental token output where a runtime can split a Unicode
   scalar across byte chunks; throttled/coalesced UI updates.
@@ -53,7 +53,7 @@ with a small component and preserve its tests and safety behavior.
 ### Serialized inference sessions — Extractable
 
 - Source:
-  [`RuntimeEngine.swift`](../CodeLens/LocalAIRuntimeFoundation/Runtime/RuntimeEngine.swift)
+  [`RuntimeEngine.swift`](../IOSLocalLLM/LocalAIRuntimeFoundation/Runtime/RuntimeEngine.swift)
 - Dependencies: Foundation and Swift concurrency.
 - Useful for: actor-isolated model sessions, one active generation at a time,
   and explicit cancellation.
@@ -63,10 +63,10 @@ with a small component and preserve its tests and safety behavior.
 ### Runtime configuration and errors — Extractable
 
 - Sources:
-  [`LocalAIFoundationConfig.swift`](../CodeLens/LocalAIRuntimeFoundation/Public/LocalAIFoundationConfig.swift),
-  [`RuntimeError.swift`](../CodeLens/LocalAIRuntimeFoundation/Public/RuntimeError.swift),
+  [`LocalAIFoundationConfig.swift`](../IOSLocalLLM/LocalAIRuntimeFoundation/Public/LocalAIFoundationConfig.swift),
+  [`RuntimeError.swift`](../IOSLocalLLM/LocalAIRuntimeFoundation/Public/RuntimeError.swift),
   and
-  [`LocalAITypes.swift`](../CodeLens/LocalAIRuntimeFoundation/Public/LocalAITypes.swift)
+  [`LocalAITypes.swift`](../IOSLocalLLM/LocalAIRuntimeFoundation/Public/LocalAITypes.swift)
 - Dependencies: primarily Foundation; some public types currently import
   UIKit.
 - Useful for: generation options, runtime state, error classification, and
@@ -79,9 +79,9 @@ with a small component and preserve its tests and safety behavior.
 ### Local model validation — Extractable
 
 - Source:
-  [`LocalModelFileValidator.swift`](../CodeLens/LocalAIRuntimeFoundation/Storage/LocalModelFileValidator.swift)
+  [`LocalModelFileValidator.swift`](../IOSLocalLLM/LocalAIRuntimeFoundation/Storage/LocalModelFileValidator.swift)
 - Tests:
-  [`LocalAIFoundationTests.swift`](../CodeLensTests/LocalAIFoundationTests.swift)
+  [`LocalAIFoundationTests.swift`](../IOSLocalLLMTests/LocalAIFoundationTests.swift)
 - Dependencies: Foundation.
 - Useful for: checking GGUF magic bytes, validating paired VLM projector
   files, and confirming expected safetensors shards exist before loading.
@@ -91,9 +91,9 @@ with a small component and preserve its tests and safety behavior.
 ### Pending indexing queue — Extractable
 
 - Source:
-  [`PendingIndexQueue.swift`](../CodeLens/LocalAIRuntimeFoundation/RAG/PendingIndexQueue.swift)
+  [`PendingIndexQueue.swift`](../IOSLocalLLM/LocalAIRuntimeFoundation/RAG/PendingIndexQueue.swift)
 - Tests:
-  [`LocalAIFoundationTests.swift`](../CodeLensTests/LocalAIFoundationTests.swift)
+  [`LocalAIFoundationTests.swift`](../IOSLocalLLMTests/LocalAIFoundationTests.swift)
 - Dependencies: Foundation.
 - Useful for: persisting RAG work that must wait for acceptable power, thermal,
   or memory conditions.
@@ -102,9 +102,9 @@ with a small component and preserve its tests and safety behavior.
 ### PII redaction — Extractable
 
 - Source:
-  [`PIIRedactor.swift`](../CodeLens/LocalAIRuntimeFoundation/RAG/PIIRedactor.swift)
+  [`PIIRedactor.swift`](../IOSLocalLLM/LocalAIRuntimeFoundation/RAG/PIIRedactor.swift)
 - Tests:
-  [`LocalAIFoundationTests.swift`](../CodeLensTests/LocalAIFoundationTests.swift)
+  [`LocalAIFoundationTests.swift`](../IOSLocalLLMTests/LocalAIFoundationTests.swift)
 - Dependencies: Foundation.
 - Useful for: basic masking before locally indexing text.
 - Boundary: this is defensive preprocessing, not a comprehensive data-loss
@@ -115,10 +115,10 @@ with a small component and preserve its tests and safety behavior.
 ### Device tier and memory admission — Adaptable
 
 - Sources:
-  [`DeviceTierAdvisor.swift`](../CodeLens/Services/DeviceTierAdvisor.swift) and
-  [`MemoryAdvisor.swift`](../CodeLens/Services/MemoryAdvisor.swift)
+  [`DeviceTierAdvisor.swift`](../IOSLocalLLM/Services/DeviceTierAdvisor.swift) and
+  [`MemoryAdvisor.swift`](../IOSLocalLLM/Services/MemoryAdvisor.swift)
 - Tests:
-  [`DeviceTierAdvisorTests.swift`](../CodeLensTests/DeviceTierAdvisorTests.swift)
+  [`DeviceTierAdvisorTests.swift`](../IOSLocalLLMTests/DeviceTierAdvisorTests.swift)
 - Dependencies: Foundation, `os`, UIKit, and app model metadata.
 - Useful for: estimating whether a model/configuration fits the current
   device, explaining refusals, and selecting conservative defaults.
@@ -129,9 +129,9 @@ with a small component and preserve its tests and safety behavior.
 ### Runtime safety, residency, and lifecycle — Adaptable
 
 - Sources:
-  [`DeviceSafetyMonitor.swift`](../CodeLens/Services/DeviceSafetyMonitor.swift),
-  [`ModelResidency.swift`](../CodeLens/Services/ModelResidency.swift), and
-  [`LifecycleController.swift`](../CodeLens/Services/LifecycleController.swift)
+  [`DeviceSafetyMonitor.swift`](../IOSLocalLLM/Services/DeviceSafetyMonitor.swift),
+  [`ModelResidency.swift`](../IOSLocalLLM/Services/ModelResidency.swift), and
+  [`LifecycleController.swift`](../IOSLocalLLM/Services/LifecycleController.swift)
 - Dependencies: Foundation, UIKit/SwiftUI lifecycle notifications, `os`, and
   the app's runtime services.
 - Useful for: one coordinated owner for large model allocations, thermal
@@ -145,14 +145,14 @@ with a small component and preserve its tests and safety behavior.
 ### Hugging Face search and download — Adaptable
 
 - Sources:
-  [`HFSearchService.swift`](../CodeLens/Services/HFSearchService.swift),
-  [`HFModelDownloadManager.swift`](../CodeLens/Services/HFModelDownloadManager.swift),
+  [`HFSearchService.swift`](../IOSLocalLLM/Services/HFSearchService.swift),
+  [`HFModelDownloadManager.swift`](../IOSLocalLLM/Services/HFModelDownloadManager.swift),
   and
-  [`ModelDownloadCenter.swift`](../CodeLens/Services/ModelDownloadCenter.swift)
+  [`ModelDownloadCenter.swift`](../IOSLocalLLM/Services/ModelDownloadCenter.swift)
 - Tests:
-  [`HighRiskServiceTests.swift`](../CodeLensTests/HighRiskServiceTests.swift)
+  [`HighRiskServiceTests.swift`](../IOSLocalLLMTests/HighRiskServiceTests.swift)
   and
-  [`ModelCategoryInferenceTests.swift`](../CodeLensTests/ModelCategoryInferenceTests.swift)
+  [`ModelCategoryInferenceTests.swift`](../IOSLocalLLMTests/ModelCategoryInferenceTests.swift)
 - Dependencies: Foundation, Combine, CryptoKit, app catalog types, storage,
   admission policy, and Hugging Face HTTP APIs.
 - Useful for: model discovery, resumable state, integrity checks, category
@@ -164,7 +164,7 @@ with a small component and preserve its tests and safety behavior.
 ### Local model import — Adaptable
 
 - Source:
-  [`LocalModelImportService.swift`](../CodeLens/Services/LocalModelImportService.swift)
+  [`LocalModelImportService.swift`](../IOSLocalLLM/Services/LocalModelImportService.swift)
 - Dependencies: Foundation, UIKit, UniformTypeIdentifiers, SwiftUI, model
   validation, and app storage conventions.
 - Useful for: security-scoped file import and copying user-provided models
@@ -177,9 +177,9 @@ with a small component and preserve its tests and safety behavior.
 ### MLX language and vision runtime — Integrated
 
 - Sources:
-  [`CodingAssistantService.swift`](../CodeLens/Services/CodingAssistantService.swift)
+  [`CodingAssistantService.swift`](../IOSLocalLLM/Services/CodingAssistantService.swift)
   and
-  [`MLXGenerationGate.swift`](../CodeLens/Services/MLXGenerationGate.swift)
+  [`MLXGenerationGate.swift`](../IOSLocalLLM/Services/MLXGenerationGate.swift)
 - Dependencies: MLX/MLXLLM/MLXVLM packages, tokenizer/model factories, UIKit,
   safety policy, residency, app chat types, and observable UI state.
 - Useful for: a production-scale reference for loading, streaming, cancelling,
@@ -192,9 +192,9 @@ with a small component and preserve its tests and safety behavior.
 ### llama.cpp GGUF runtime — Integrated
 
 - Sources:
-  [`LlamaCppBridge.swift`](../CodeLens/Services/LlamaCpp/LlamaCppBridge.swift)
+  [`LlamaCppBridge.swift`](../IOSLocalLLM/Services/LlamaCpp/LlamaCppBridge.swift)
   and
-  [`LlamaCppVLMService.swift`](../CodeLens/Services/LlamaCpp/LlamaCppVLMService.swift)
+  [`LlamaCppVLMService.swift`](../IOSLocalLLM/Services/LlamaCpp/LlamaCppVLMService.swift)
 - Native dependency: the
   [`ThirdParty/llama.cpp`](../ThirdParty/llama.cpp) submodule and its locally
   generated XCFramework.
@@ -211,9 +211,9 @@ with a small component and preserve its tests and safety behavior.
 ### OpenAI, Anthropic, and Ollama compatibility — Integrated
 
 - Source:
-  [`LocalAPIServer.swift`](../CodeLens/Services/Bridge/LocalAPIServer.swift)
+  [`LocalAPIServer.swift`](../IOSLocalLLM/Services/Bridge/LocalAPIServer.swift)
 - Tests:
-  [`LocalAPIServerTests.swift`](../CodeLensTests/LocalAPIServerTests.swift)
+  [`LocalAPIServerTests.swift`](../IOSLocalLLMTests/LocalAPIServerTests.swift)
 - Dependencies: Network, Darwin, UIKit, app runtimes, authentication,
   serialization types, and lifecycle policy.
 - Useful for: request decoding, streaming response encoding, scoped
@@ -226,9 +226,9 @@ with a small component and preserve its tests and safety behavior.
 ### Tool execution — Integrated
 
 - Source:
-  [`ToolRunner.swift`](../CodeLens/Services/ToolRunner.swift)
+  [`ToolRunner.swift`](../IOSLocalLLM/Services/ToolRunner.swift)
 - Tests:
-  [`ToolRunnerTests.swift`](../CodeLensTests/ToolRunnerTests.swift)
+  [`ToolRunnerTests.swift`](../IOSLocalLLMTests/ToolRunnerTests.swift)
 - Dependencies: Foundation, UIKit, app tools, approval/risk policy, and paired
   bridge state.
 - Useful for: structured tool-call dispatch and a reference risk model.
@@ -241,7 +241,7 @@ with a small component and preserve its tests and safety behavior.
 ### Passage scoring — Extractable
 
 - Source:
-  [`EmbeddingPassageScorer.swift`](../CodeLens/Services/RAG/EmbeddingPassageScorer.swift)
+  [`EmbeddingPassageScorer.swift`](../IOSLocalLLM/Services/RAG/EmbeddingPassageScorer.swift)
 - Dependencies: Foundation.
 - Useful for: ranking embedded passages independently of the storage or UI
   layer.
@@ -249,11 +249,11 @@ with a small component and preserve its tests and safety behavior.
 ### Knowledge base and on-device embeddings — Adaptable
 
 - Sources:
-  [`KnowledgeBaseService.swift`](../CodeLens/Services/RAG/KnowledgeBaseService.swift)
+  [`KnowledgeBaseService.swift`](../IOSLocalLLM/Services/RAG/KnowledgeBaseService.swift)
   and
-  [`OnDeviceEmbedder.swift`](../CodeLens/Services/RAG/OnDeviceEmbedder.swift)
+  [`OnDeviceEmbedder.swift`](../IOSLocalLLM/Services/RAG/OnDeviceEmbedder.swift)
 - Tests:
-  [`OnDeviceEmbedderTests.swift`](../CodeLensTests/OnDeviceEmbedderTests.swift)
+  [`OnDeviceEmbedderTests.swift`](../IOSLocalLLMTests/OnDeviceEmbedderTests.swift)
 - Dependencies: Foundation, Combine, NaturalLanguage, app persistence, PII
   redaction, and indexing policy.
 - Useful for: local document ingestion, embeddings, retrieval, and deferred
@@ -268,17 +268,17 @@ stack:
 
 | Component | Source | Level |
 | --- | --- | --- |
-| Bounded audio buffering | [`AudioQueue.swift`](../CodeLens/Services/Voice/Pipeline/AudioQueue.swift) | Extractable |
-| Local language detection | [`LanguageDetector.swift`](../CodeLens/Services/Voice/Pipeline/LanguageDetector.swift) | Adaptable (`NaturalLanguage`) |
-| Remove reasoning tags from spoken output | [`ReasoningStripper.swift`](../CodeLens/Services/Voice/Pipeline/ReasoningStripper.swift) | Extractable |
-| Semantic speech chunking | [`SemanticChunker.swift`](../CodeLens/Services/Voice/Pipeline/SemanticChunker.swift) | Extractable |
-| Text sanitizing/chunking | [`TextChunker.swift`](../CodeLens/Services/Voice/TextChunker.swift) | Extractable |
-| End-of-turn estimation | [`EndOfTurnEstimator.swift`](../CodeLens/Services/Voice/Listening/EndOfTurnEstimator.swift) | Extractable |
-| Turn-end state machine | [`TurnEndpointer.swift`](../CodeLens/Services/Voice/Listening/TurnEndpointer.swift) | Extractable |
-| Core ML voice activity detection | [`VoiceActivityDetector.swift`](../CodeLens/Services/Voice/Listening/VoiceActivityDetector.swift) | Adaptable |
+| Bounded audio buffering | [`AudioQueue.swift`](../IOSLocalLLM/Services/Voice/Pipeline/AudioQueue.swift) | Extractable |
+| Local language detection | [`LanguageDetector.swift`](../IOSLocalLLM/Services/Voice/Pipeline/LanguageDetector.swift) | Adaptable (`NaturalLanguage`) |
+| Remove reasoning tags from spoken output | [`ReasoningStripper.swift`](../IOSLocalLLM/Services/Voice/Pipeline/ReasoningStripper.swift) | Extractable |
+| Semantic speech chunking | [`SemanticChunker.swift`](../IOSLocalLLM/Services/Voice/Pipeline/SemanticChunker.swift) | Extractable |
+| Text sanitizing/chunking | [`TextChunker.swift`](../IOSLocalLLM/Services/Voice/TextChunker.swift) | Extractable |
+| End-of-turn estimation | [`EndOfTurnEstimator.swift`](../IOSLocalLLM/Services/Voice/Listening/EndOfTurnEstimator.swift) | Extractable |
+| Turn-end state machine | [`TurnEndpointer.swift`](../IOSLocalLLM/Services/Voice/Listening/TurnEndpointer.swift) | Extractable |
+| Core ML voice activity detection | [`VoiceActivityDetector.swift`](../IOSLocalLLM/Services/Voice/Listening/VoiceActivityDetector.swift) | Adaptable |
 
 Matching tests are named after these components in
-[`CodeLensTests`](../CodeLensTests). Model artifacts are deliberately excluded
+[`IOSLocalLLMTests`](../IOSLocalLLMTests). Model artifacts are deliberately excluded
 from the repository and retain their own licenses.
 
 ## Diagnostics and recovery
@@ -286,12 +286,12 @@ from the repository and retain their own licenses.
 ### Diagnostics, crash reporting, and system status — Adaptable
 
 - Sources:
-  [`Diagnostics.swift`](../CodeLens/Services/Diagnostics/Diagnostics.swift),
-  [`CrashReporter.swift`](../CodeLens/Services/Diagnostics/CrashReporter.swift),
+  [`Diagnostics.swift`](../IOSLocalLLM/Services/Diagnostics/Diagnostics.swift),
+  [`CrashReporter.swift`](../IOSLocalLLM/Services/Diagnostics/CrashReporter.swift),
   and
-  [`SystemStatusService.swift`](../CodeLens/Services/SystemStatusService.swift)
+  [`SystemStatusService.swift`](../IOSLocalLLM/Services/SystemStatusService.swift)
 - Tests:
-  [`DiagnosticsTests.swift`](../CodeLensTests/DiagnosticsTests.swift)
+  [`DiagnosticsTests.swift`](../IOSLocalLLMTests/DiagnosticsTests.swift)
 - Dependencies: Foundation, Darwin, Metal, UIKit, `os`, and app settings.
 - Useful for: privacy-conscious local diagnostics, detecting previous
   abnormal termination, and exposing hardware/runtime status.
@@ -312,7 +312,7 @@ from the repository and retain their own licenses.
 6. Profile and user-test on the oldest physical device you support.
 
 The
-[`LocalAIRuntimeFoundation README`](../CodeLens/LocalAIRuntimeFoundation/README.md)
+[`LocalAIRuntimeFoundation README`](../IOSLocalLLM/LocalAIRuntimeFoundation/README.md)
 describes the closest existing boundary to a future standalone runtime
 package.
 
@@ -327,7 +327,7 @@ of done.
 
 ## Licensing when reusing code
 
-Original OnDeviceiOS code is available under the
+Original iOS Local LLM code is available under the
 [MIT License](../LICENSE). Keep the copyright and permission notice with
 copied or substantial portions of the code.
 
@@ -336,7 +336,7 @@ The MIT license does not automatically cover:
 - `llama.cpp`, `whisper.cpp`, or other third-party dependencies;
 - model weights, tokenizers, datasets, voices, or generated assets;
 - Apple sample code and research-only assets;
-- the CodeLens name or logos as trademarks.
+- the iOS Local LLM name or logos as trademarks.
 
 Review [Third-party notices](../THIRD_PARTY_NOTICES.md),
 [`LICENSES`](../LICENSES), and each model card before distribution.

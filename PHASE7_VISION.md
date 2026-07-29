@@ -562,7 +562,7 @@ iOS side — most vision plumbing already exists, only needs to be exposed
 outside the Lens tab:
 
 ```
-CodeLens/Services/
+IOSLocalLLM/Services/
   FastVLMService.swift            ← runs FastVLM on UIImage
   FastVLMPromptBuilder.swift      ← prompt templates per task
   FastVLMRepoAutoDiscovery.swift

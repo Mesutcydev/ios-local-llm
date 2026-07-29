@@ -1,28 +1,28 @@
-# OnDeviceiOS
+# iOS Local LLM
 
-> OnDeviceiOS is the open-source home of CodeLens, a Swift/SwiftUI local-first
-> AI workbench for iPhone and Apple silicon Macs. It runs language, vision,
+> iOS Local LLM is a Swift/SwiftUI local-first AI workbench for iPhone and
+> Apple silicon Macs. It runs language, vision,
 > speech, and image-generation workflows on-device and exposes optional,
 > authenticated local APIs for AI clients and agents.
 
-Canonical repository: https://github.com/Mesutcydev/ondeviceios
+Canonical repository: https://github.com/Mesutcydev/ios-local-llm
 License: MIT for original project code and documentation
-Aliases: CodeLens, On Device LLM, OnDeviceiOS
+Swift module and Xcode scheme: IOSLocalLLM
 
 ## Primary documentation
 
-- [Project overview](https://github.com/Mesutcydev/ondeviceios/blob/main/README.md)
-- [Coding-agent instructions](https://github.com/Mesutcydev/ondeviceios/blob/main/AGENTS.md)
-- [Architecture](https://github.com/Mesutcydev/ondeviceios/blob/main/ARCHITECTURE.md)
-- [Reusable component catalog](https://github.com/Mesutcydev/ondeviceios/blob/main/Docs/REUSABLE_COMPONENTS.md)
-- [Coding-agent implementation handoff](https://github.com/Mesutcydev/ondeviceios/blob/main/Docs/CODING_AGENT_IMPLEMENTATION.md)
-- [Local runtime foundation notes](https://github.com/Mesutcydev/ondeviceios/blob/main/CodeLens/LocalAIRuntimeFoundation/README.md)
-- [Development setup](https://github.com/Mesutcydev/ondeviceios/blob/main/SETUP_INSTRUCTIONS.md)
-- [Agent and local API integration](https://github.com/Mesutcydev/ondeviceios/blob/main/Docs/AGENT_INTEGRATION.md)
-- [Contributing](https://github.com/Mesutcydev/ondeviceios/blob/main/CONTRIBUTING.md)
-- [Security policy](https://github.com/Mesutcydev/ondeviceios/blob/main/SECURITY.md)
-- [Third-party notices](https://github.com/Mesutcydev/ondeviceios/blob/main/THIRD_PARTY_NOTICES.md)
-- [Structured metadata](https://github.com/Mesutcydev/ondeviceios/blob/main/codemeta.json)
+- [Project overview](https://github.com/Mesutcydev/ios-local-llm/blob/main/README.md)
+- [Coding-agent instructions](https://github.com/Mesutcydev/ios-local-llm/blob/main/AGENTS.md)
+- [Architecture](https://github.com/Mesutcydev/ios-local-llm/blob/main/ARCHITECTURE.md)
+- [Reusable component catalog](https://github.com/Mesutcydev/ios-local-llm/blob/main/Docs/REUSABLE_COMPONENTS.md)
+- [Coding-agent implementation handoff](https://github.com/Mesutcydev/ios-local-llm/blob/main/Docs/CODING_AGENT_IMPLEMENTATION.md)
+- [Local runtime foundation notes](https://github.com/Mesutcydev/ios-local-llm/blob/main/IOSLocalLLM/LocalAIRuntimeFoundation/README.md)
+- [Development setup](https://github.com/Mesutcydev/ios-local-llm/blob/main/SETUP_INSTRUCTIONS.md)
+- [Agent and local API integration](https://github.com/Mesutcydev/ios-local-llm/blob/main/Docs/AGENT_INTEGRATION.md)
+- [Contributing](https://github.com/Mesutcydev/ios-local-llm/blob/main/CONTRIBUTING.md)
+- [Security policy](https://github.com/Mesutcydev/ios-local-llm/blob/main/SECURITY.md)
+- [Third-party notices](https://github.com/Mesutcydev/ios-local-llm/blob/main/THIRD_PARTY_NOTICES.md)
+- [Structured metadata](https://github.com/Mesutcydev/ios-local-llm/blob/main/codemeta.json)
 
 ## Capabilities
 

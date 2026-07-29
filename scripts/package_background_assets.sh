@@ -5,9 +5,9 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/.." && pwd)"
 manifest_path="${1:-${repo_root}/BackgroundAssets/Manifests/offline-voice-models.json}"
 output_dir="${2:-${repo_root}/build/background-assets}"
-pack_id="com.codelens.offline-voice-models"
+pack_id="com.mesutcydev.ioslocalllm.offline-voice-models"
 pack_version="${ASSET_PACK_VERSION:-1}"
-source_dir="${repo_root}/CodeLens/Resources/BundledVoiceModels"
+source_dir="${repo_root}/IOSLocalLLM/Resources/BundledVoiceModels"
 
 if [[ ! -f "${manifest_path}" ]]; then
   echo "error: Background Assets manifest not found: ${manifest_path}" >&2
@@ -25,7 +25,7 @@ if ! find "${source_dir}" -type f -size +0c -print -quit | grep -q .; then
 fi
 
 ba_package="$(xcrun --find ba-package)"
-temporary_dir="$(mktemp -d "${TMPDIR:-/tmp}/codelens-background-assets.XXXXXX")"
+temporary_dir="$(mktemp -d "${TMPDIR:-/tmp}/ioslocalllm-background-assets.XXXXXX")"
 trap 'rm -rf "${temporary_dir}"' EXIT
 
 temporary_archive="${temporary_dir}/${pack_id}-v${pack_version}.aar"

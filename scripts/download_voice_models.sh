@@ -36,7 +36,7 @@ done
 
 # Find simulator app Documents directory (latest booted iPhone sim)
 find_sim_docs() {
-  xcrun simctl get_app_container booted com.codelens.CodeLens data 2>/dev/null \
+  xcrun simctl get_app_container booted com.mesutcydev.ioslocalllm.IOSLocalLLM data 2>/dev/null \
     | sed 's|$|/Documents|' || echo ""
 }
 

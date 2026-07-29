@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # export_fastvlm_coreml.sh
 #
-# Exports FastVLM model components from apple/ml-fastvlm for use with CodeLens.
+# Exports FastVLM model components from apple/ml-fastvlm for use with IOSLocalLLM.
 #
 # WHAT THIS SCRIPT PRODUCES
 # ──────────────────────────────────────────────────────────────────────────────
@@ -317,8 +317,8 @@ echo ""
 echo "  1. Add the GeneratedFastVLMModels/FastVLM-0.5B-CoreML/ folder to"
 echo "     your Xcode project:"
 echo ""
-echo "     a. In Xcode, right-click the CodeLens group in the Project navigator"
-echo "     b. Choose 'Add Files to CodeLens...'"
+echo "     a. In Xcode, right-click the IOSLocalLLM group in the Project navigator"
+echo "     b. Choose 'Add Files to IOSLocalLLM...'"
 echo "     c. Select GeneratedFastVLMModels/FastVLM-0.5B-CoreML/"
 echo "     d. Check 'Copy items if needed' and 'Create folder references'"
 echo "     e. Click Add"
@@ -330,7 +330,7 @@ echo "  3. MLX model directory ($MLX_OUTPUT_NAME/) — either:"
 echo "     a. Bundle it in the app (large: ~1 GB for FP16)"
 echo "     b. Copy to the device's Documents/FastVLMModels/ at runtime"
 echo ""
-echo "  4. Build and run CodeLens. The FastVLM pipeline status in Settings"
+echo "  4. Build and run IOSLocalLLM. The FastVLM pipeline status in Settings"
 echo "     will show green indicators when all components are detected."
 echo ""
 echo "  5. See scripts/FASTVLM_EXPORT_NOTES.md for architecture details"

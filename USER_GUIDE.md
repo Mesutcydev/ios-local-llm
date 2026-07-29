@@ -1,8 +1,8 @@
-# CodeLens User Guide — Complete On-Device AI Workspace Manual
+# iOS Local LLM User Guide — Complete On-Device AI Workspace Manual
 
-Welcome to the **CodeLens User Guide**. This document serves as a comprehensive manual detailing every tab, menu, setting, and feature of CodeLens. 
+Welcome to the **iOS Local LLM User Guide**. This document serves as a comprehensive manual detailing every tab, menu, setting, and feature of iOS Local LLM.
 
-CodeLens is a local-first, privacy-respecting AI studio built specifically for macOS and iOS. It runs third-party language models (LLMs) and vision-language models (VLMs) directly on your device's hardware using Apple's **MLX framework**, Core ML, and local native runtimes. It requires no CodeLens account and includes no project-operated telemetry. Model downloads, optional web search, iCloud sync, and local bridge features use the network only when you enable or request them.
+iOS Local LLM is a local-first, privacy-respecting AI studio built specifically for macOS and iOS. It runs third-party language models (LLMs) and vision-language models (VLMs) directly on your device's hardware using Apple's **MLX framework**, Core ML, and local native runtimes. It requires no iOS Local LLM account and includes no project-operated telemetry. Model downloads, optional web search, iCloud sync, and local bridge features use the network only when you enable or request them.
 
 ---
 
@@ -20,7 +20,7 @@ CodeLens is a local-first, privacy-respecting AI studio built specifically for m
 
 ## 1. Core Features & Architecture
 
-CodeLens is designed to maximize local hardware capabilities while maintaining a strict zero-data-collection posture.
+iOS Local LLM is designed to maximize local hardware capabilities while maintaining a strict zero-data-collection posture.
 
 ### Technology Blueprint
 * **Inference Engine**: Employs the Apple MLX Swift wrapper for native Apple Silicon optimization, allowing LLMs (like Qwen 2.5 Coder or Llama 3.2) and VLMs (like SmolVLM 2.2B) to execute at maximum tokens-per-second on-device.
@@ -31,7 +31,7 @@ CodeLens is designed to maximize local hardware capabilities while maintaining a
 
 ## 2. Home Tab: Dashboard & Status Hub
 
-The **Home Tab** acts as the launchpad and central status dashboard for CodeLens.
+The **Home Tab** acts as the launchpad and central status dashboard for iOS Local LLM.
 
 ### Main Functions
 * **Greeting & Quick-Launch Hero Card**: Surfaces a real-time status of the loaded Assistant Model (e.g., *Ready*, *Thinking*, *Preparing*, or *Needs Setup*). Allows starting a **New Chat** or accessing **Voice mode** with a single tap.
@@ -46,7 +46,7 @@ The **Home Tab** acts as the launchpad and central status dashboard for CodeLens
 
 The **Assistant Tab** is a fully-featured local chat interface powered by your choice of on-device LLM.
 
-![Assistant Tab Landing View](CodeLens/ss/4.PNG)
+![Assistant Tab Landing View](IOSLocalLLM/ss/4.PNG)
 *Figure 1: The Assistant tab home view, presenting a clean landing interface with model status indicator and quick starting cards.*
 
 ### Landing Interface vs. Active Chat
@@ -78,11 +78,11 @@ Click the ellipsis icon (`...`) in the top right to access advanced power tools:
 9. **Macros Runner**: Execute multi-prompt chains sequentially (e.g., `Review Code` ➔ `Write Tests` ➔ `Format`).
 
 ### On-Device Image Generation
-CodeLens features a fully local image generation engine that fits within iOS memory budgets, avoiding heavy, server-only engines like FLUX in favor of highly optimized SD 1.5, SDXL Turbo, and Stable Diffusion models.
+iOS Local LLM features a fully local image generation engine that fits within iOS memory budgets, avoiding heavy, server-only engines like FLUX in favor of highly optimized SD 1.5, SDXL Turbo, and Stable Diffusion models.
 
 | Image Generation Prompting | Advanced Options |
 |---|---|
-| ![Image Prompting](CodeLens/ss/1.PNG) <br> *Figure 2: Writing a text prompt for image generation.* | ![Image Generation Settings](CodeLens/ss/3.PNG) <br> *Figure 3: Image generation model selector (e.g., DreamShaper 8) and advanced settings.* |
+| ![Image Prompting](IOSLocalLLM/ss/1.PNG) <br> *Figure 2: Writing a text prompt for image generation.* | ![Image Generation Settings](IOSLocalLLM/ss/3.PNG) <br> *Figure 3: Image generation model selector (e.g., DreamShaper 8) and advanced settings.* |
 
 * **Model Options**: Pick models like `DreamShaper 8` (Lykon/dreamshaper-8 SD 1.5 fine-tune) optimized to generate images under strict local RAM limits.
 * **Advanced Adjustments**: Define **negative prompts** (elements to avoid) and adjust the generation **steps** slider (higher values add detail but require more processing time).
@@ -94,7 +94,7 @@ CodeLens features a fully local image generation engine that fits within iOS mem
 
 The **Lens Tab** utilizes the device camera to read, OCR, and analyze documents, screens, and environments in real time.
 
-![Lens Visual Analysis View](CodeLens/ss/1840%20a.PNG)
+![Lens Visual Analysis View](IOSLocalLLM/ss/1840%20a.PNG)
 *Figure 4: The Lens tab executing live analysis on an open laptop. Features live video feedback, a text response card, and camera adjustments.*
 
 ### Camera Controls & Views
@@ -123,7 +123,7 @@ The **Lens Tab** utilizes the device camera to read, OCR, and analyze documents,
 
 The **Voice Tab** enables conversational interaction with your active local model.
 
-![Voice Conversation View](CodeLens/ss/6.PNG)
+![Voice Conversation View](IOSLocalLLM/ss/6.PNG)
 *Figure 5: The Voice mode interface showing the voice session orb, active model details, TTS selection, and control buttons.*
 
 ### Features
@@ -159,7 +159,7 @@ Instead of listing everything in one flat list, models are organized by their sp
 
 The **Mac Bridge** allows you to pair your Mac with your iOS device.
 
-![Mac Bridge View](CodeLens/ss/7.PNG)
+![Mac Bridge View](IOSLocalLLM/ss/7.PNG)
 *Figure 6: Mac Bridge configuration screen showing network options, pairing QR instructions, and active connections.*
 
 ### Integration Architecture

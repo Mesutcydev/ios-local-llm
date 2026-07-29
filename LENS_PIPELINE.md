@@ -61,13 +61,13 @@ Three keys to make sense of this:
 
 | File | Role |
 |---|---|
-| `CodeLens/Services/CameraService.swift` | Owns `AVCaptureSession`. Adds `streamingFrameHandler` and `OSAllocatedUnfairLock<Bool>` gate as additive changes. `OneShotCapture` lifted to file scope for the type-check. |
-| `CodeLens/Services/VLMCapabilities.swift` | Model-aware preprocessing parameters. Loaded from `preprocessor_config.json` + `processor_config.json` + `config.json`, with a per-architecture defaults table as safety net. Device-tier clamps applied last. |
-| `CodeLens/Services/LensFramePreparer.swift` | `CVPixelBuffer` → `CIImage`. YpCbCr-safe, world-orientation aware, sRGB-forced, strategy-aware resize. |
-| `CodeLens/Services/LensInferenceLoop.swift` | Sole owner of the VLM `ModelContainer`. Streaming hook installation, single-flight gate, one-shot describe, memory-gated load with fallback walk. |
-| `CodeLens/Services/MLXVisionService.swift` | Backward-compat shim re-publishing `LensInferenceLoop`'s state for legacy UI bindings. Slated for removal — see [#1](https://github.com/Cesur2000/CodeLens/issues/1). |
-| `CodeLens/Views/LensDebugOverlay.swift` | `#if DEBUG`-only diagnostic readout. Long-press the preview to toggle. |
-| `CodeLens/Views/CameraPreviewView.swift` | `UIViewRepresentable` over `AVCaptureVideoPreviewLayer`. **Do not touch.** `updateUIView` is a deliberate no-op; `layoutSubviews` uses `CATransaction.setDisableActions(true)`. Both prevent a 250 ms half-sized-layer flicker during MLX download progress. |
+| `IOSLocalLLM/Services/CameraService.swift` | Owns `AVCaptureSession`. Adds `streamingFrameHandler` and `OSAllocatedUnfairLock<Bool>` gate as additive changes. `OneShotCapture` lifted to file scope for the type-check. |
+| `IOSLocalLLM/Services/VLMCapabilities.swift` | Model-aware preprocessing parameters. Loaded from `preprocessor_config.json` + `processor_config.json` + `config.json`, with a per-architecture defaults table as safety net. Device-tier clamps applied last. |
+| `IOSLocalLLM/Services/LensFramePreparer.swift` | `CVPixelBuffer` → `CIImage`. YpCbCr-safe, world-orientation aware, sRGB-forced, strategy-aware resize. |
+| `IOSLocalLLM/Services/LensInferenceLoop.swift` | Sole owner of the VLM `ModelContainer`. Streaming hook installation, single-flight gate, one-shot describe, memory-gated load with fallback walk. |
+| `IOSLocalLLM/Services/MLXVisionService.swift` | Backward-compat shim re-publishing `LensInferenceLoop`'s state for legacy UI bindings. Slated for removal; this document remains the migration reference. |
+| `IOSLocalLLM/Views/LensDebugOverlay.swift` | `#if DEBUG`-only diagnostic readout. Long-press the preview to toggle. |
+| `IOSLocalLLM/Views/CameraPreviewView.swift` | `UIViewRepresentable` over `AVCaptureVideoPreviewLayer`. **Do not touch.** `updateUIView` is a deliberate no-op; `layoutSubviews` uses `CATransaction.setDisableActions(true)`. Both prevent a 250 ms half-sized-layer flicker during MLX download progress. |
 
 ---
 

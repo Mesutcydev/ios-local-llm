@@ -22,8 +22,8 @@ brew install cmake xcodegen cocoapods
 The llama.cpp and whisper.cpp sources are Git submodules:
 
 ```bash
-git clone --recurse-submodules https://github.com/Mesutcydev/ondeviceios.git
-cd ondeviceios
+git clone --recurse-submodules https://github.com/Mesutcydev/ios-local-llm.git
+cd ios-local-llm
 ```
 
 If the repository was cloned without submodules:
@@ -34,7 +34,7 @@ git submodule update --init --recursive
 
 ## Build native frameworks
 
-CodeLens links locally generated llama.cpp and whisper.cpp XCFrameworks.
+IOSLocalLLM links locally generated llama.cpp and whisper.cpp XCFrameworks.
 Upstream's build scripts build several Apple-platform slices and can take a
 while:
 
@@ -59,7 +59,7 @@ These outputs are generated files and must not be committed.
 ```bash
 xcodegen generate
 pod install
-open CodeLens.xcworkspace
+open IOSLocalLLM.xcworkspace
 ```
 
 Open the workspace, not the `.xcodeproj`, so the ONNX Runtime pods are
@@ -67,7 +67,7 @@ available.
 
 ## Run in Simulator
 
-Select the `CodeLens` scheme and an iOS 18 or newer Simulator. Simulator builds
+Select the `IOSLocalLLM` scheme and an iOS 18 or newer Simulator. Simulator builds
 do not require a paid Apple Developer Program membership.
 
 The source-only build starts without bundled AI weights. Features that depend
@@ -78,10 +78,10 @@ the app's model catalog.
 
 Use your own signing identity:
 
-1. Select the CodeLens project in Xcode.
+1. Select the IOSLocalLLM project in Xcode.
 2. For the app, share extension, unit-test, and UI-test targets, select your
    development team.
-3. Change `com.codelens.CodeLens` and related identifiers to identifiers owned
+3. Change `com.mesutcydev.ioslocalllm.IOSLocalLLM` and related identifiers to identifiers owned
    by your team.
 4. Build and run on your device.
 
@@ -129,8 +129,8 @@ Run app unit tests from Xcode or with a Simulator destination:
 
 ```bash
 xcodebuild test \
-  -workspace CodeLens.xcworkspace \
-  -scheme CodeLens \
+  -workspace IOSLocalLLM.xcworkspace \
+  -scheme IOSLocalLLM \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
 

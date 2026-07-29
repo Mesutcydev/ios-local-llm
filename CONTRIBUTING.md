@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve CodeLens.
+Thanks for helping improve iOS Local LLM.
 
 ## Before you start
 

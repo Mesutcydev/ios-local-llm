@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible problem in CodeLens
+description: Report a reproducible problem in iOS Local LLM
 title: "[Bug]: "
 labels:
   - bug
@@ -30,7 +30,7 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: macOS, Xcode, iOS, device, and CodeLens revision
+      description: macOS, Xcode, iOS, device, and iOS Local LLM revision
     validations:
       required: true
   - type: input

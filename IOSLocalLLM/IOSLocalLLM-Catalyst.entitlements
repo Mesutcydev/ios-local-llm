@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Mac Catalyst entitlements. Separate from the iOS set
+       (IOSLocalLLM.entitlements) and selected only for the macosx SDK via
+       project.yml. The iOS-only increased-memory-limit / extended-virtual-
+       addressing keys are intentionally omitted (not applicable on macOS).
+       App Sandbox is required for Mac App Store distribution. -->
+  <key>com.apple.security.app-sandbox</key>
+  <true/>
+  <!-- Live camera capture for the Lens feature (degrades gracefully when
+       no camera is present). -->
+  <key>com.apple.security.device.camera</key>
+  <true/>
+  <!-- Microphone for hold-to-talk dictation / voice mode. -->
+  <key>com.apple.security.device.audio-input</key>
+  <true/>
+  <!-- Outbound connections: model downloads, HF Hub, bridge client. -->
+  <key>com.apple.security.network.client</key>
+  <true/>
+  <!-- Inbound: the LAN bridge publishes a Bonjour service and listens. -->
+  <key>com.apple.security.network.server</key>
+  <true/>
+  <!-- User-chosen file import (local model import, document/code files). -->
+  <key>com.apple.security.files.user-selected.read-write</key>
+  <true/>
+  <!-- Shared container used by the app (also the iOS share extension on
+       the iOS build). Kept so shared UserDefaults/containers resolve. -->
+  <key>com.apple.security.application-groups</key>
+  <array>
+    <string>group.com.mesutcydev.ioslocalllm.shared</string>
+  </array>
+  <!-- Match the iOS target so conversation sync uses the same private
+       CloudKit container when the app runs through Mac Catalyst. -->
+  <key>com.apple.developer.icloud-container-identifiers</key>
+  <array>
+    <string>iCloud.com.mesutcydev.ioslocalllm</string>
+  </array>
+  <key>com.apple.developer.icloud-services</key>
+  <array>
+    <string>CloudKit</string>
+  </array>
+</dict>
+</plist>

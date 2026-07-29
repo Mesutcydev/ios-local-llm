@@ -38,13 +38,13 @@ ThirdParty/whisper.cpp/build*/
 
 # Downloaded and generated AI models. These have their own licenses and are
 # intentionally not redistributed by this repository.
-CodeLens/Models/FastVLM-0.5B-fp16/
-CodeLens/Models/tokenizer.json
-CodeLens/Models/vocab.json
-CodeLens/Models/merges.txt
-CodeLens/Models/preprocessor_config.json
-CodeLens/Resources/BundledVLM/
-CodeLens/Resources/BundledVoiceModels/
+IOSLocalLLM/Models/FastVLM-0.5B-fp16/
+IOSLocalLLM/Models/tokenizer.json
+IOSLocalLLM/Models/vocab.json
+IOSLocalLLM/Models/merges.txt
+IOSLocalLLM/Models/preprocessor_config.json
+IOSLocalLLM/Resources/BundledVLM/
+IOSLocalLLM/Resources/BundledVoiceModels/
 GeneratedFastVLMModels/
 VoiceModels/
 scripts/.fastvlm_work/

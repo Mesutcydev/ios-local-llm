@@ -15,12 +15,12 @@ fi
 
 derived_data_root="${BUILD_DIR%%/Build/*}"
 source_file="${derived_data_root}/SourcePackages/checkouts/mlx-swift/Source/Cmlx/mlx-generated/metal/steel/attn/kernels/steel_attention.metal"
-marker="CodeLens: suppress Xcode 26.5 C++17 extension warning"
+marker="IOSLocalLLM: suppress Xcode 26.5 C++17 extension warning"
 
 if [ ! -f "${source_file}" ] || /usr/bin/grep -Fq "${marker}" "${source_file}"; then
     exit 0
 fi
 
 /usr/bin/perl -0pi -e \
-    's/\A/#pragma clang diagnostic ignored "-Wc++17-extensions" \/\/ CodeLens: suppress Xcode 26.5 C++17 extension warning\n/' \
+    's/\A/#pragma clang diagnostic ignored "-Wc++17-extensions" \/\/ IOSLocalLLM: suppress Xcode 26.5 C++17 extension warning\n/' \
     "${source_file}"

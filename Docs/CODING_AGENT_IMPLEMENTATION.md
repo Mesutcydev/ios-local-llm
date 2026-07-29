@@ -1,6 +1,6 @@
 # Coding-agent implementation handoff
 
-Use this document when asking a coding agent to implement an OnDeviceiOS
+Use this document when asking a coding agent to implement an iOS Local LLM
 component in another iOS local-LLM app. It gives the agent enough context to
 select the right files, preserve safety behavior, carry the license correctly,
 and verify the result.
@@ -9,12 +9,12 @@ and verify the result.
 
 Send your coding agent this URL:
 
-<https://github.com/Mesutcydev/ondeviceios/blob/main/Docs/CODING_AGENT_IMPLEMENTATION.md>
+<https://github.com/Mesutcydev/ios-local-llm/blob/main/Docs/CODING_AGENT_IMPLEMENTATION.md>
 
 Then add one sentence:
 
 > Implement **[component or capability]** in **[target repository/app]** using
-> OnDeviceiOS as the reference. My deployment target is **[iOS version]**, my
+> iOS Local LLM as the reference. My deployment target is **[iOS version]**, my
 > inference backend is **[MLX / llama.cpp / other]**, and success means
 > **[observable result]**.
 
@@ -36,8 +36,8 @@ Inference backend: [MLX, llama.cpp, Core ML, other, or none]
 Target devices: [for example: iPhone 15 and newer]
 Success criteria: [specific user-visible and testable outcome]
 
-Use OnDeviceiOS as the reference implementation:
-https://github.com/Mesutcydev/ondeviceios
+Use iOS Local LLM as the reference implementation:
+https://github.com/Mesutcydev/ios-local-llm
 
 Read these files before editing:
 1. Docs/REUSABLE_COMPONENTS.md
@@ -51,7 +51,7 @@ Implementation requirements:
 - State whether the selected component is Extractable, Adaptable, or
   Integrated according to the catalog.
 - Reuse the smallest coherent subsystem. Do not copy the full app or preserve
-  CodeLens-specific singletons, UI state, storage paths, or model types unless
+  iOS Local LLM-specific singletons, UI state, storage paths, or model types unless
   they are genuinely required.
 - Put app-specific behavior behind protocols or adapters.
 - Preserve cancellation, cleanup, model-file validation, memory admission,
@@ -59,7 +59,7 @@ Implementation requirements:
   that apply to the selected component.
 - Never add model weights, credentials, signing files, generated frameworks,
   or user data to Git.
-- Preserve the OnDeviceiOS MIT copyright and permission notice for copied or
+- Preserve the iOS Local LLM MIT copyright and permission notice for copied or
   substantial portions. Check every dependency and model under its own terms.
 - Port the relevant tests and add target-project integration tests.
 - For thermal or memory work, validate on physical devices and clearly label
@@ -69,7 +69,7 @@ Implementation requirements:
 - Do not make unrelated refactors.
 
 Before implementation, report:
-1. selected OnDeviceiOS files;
+1. selected iOS Local LLM files;
 2. dependencies and licenses;
 3. target-project files to change;
 4. safety invariants and test plan.
@@ -140,7 +140,7 @@ The coding agent should work in this order:
 - Extract policy and state transitions, not the app's service graph.
 - Introduce protocols for device information, persistence, notifications,
   logging, and runtime control.
-- Replace CodeLens observable/singleton state with target-owned dependency
+- Replace iOS Local LLM observable/singleton state with target-owned dependency
   injection.
 - Add an integration test for every adapter.
 
@@ -169,11 +169,11 @@ An implementation is complete only when:
 ## Example: thermal and RAM management
 
 ```text
-Implement OnDeviceiOS-style device-tier, RAM admission, thermal monitoring,
+Implement iOS Local LLM-style device-tier, RAM admission, thermal monitoring,
 model residency, cancellation, and background cleanup in my iOS local-LLM
 app. Use Docs/CODING_AGENT_IMPLEMENTATION.md as the operating instructions and
 Docs/REUSABLE_COMPONENTS.md to select the relevant files. Adapt the policy
-behind protocols for my runtime rather than copying CodeLens singleton state.
+behind protocols for my runtime rather than copying iOS Local LLM singleton state.
 Port the policy tests, add lifecycle integration tests, and report physical
 device measurements separately from Simulator checks.
 ```
@@ -181,7 +181,7 @@ device measurements separately from Simulator checks.
 ## Example: one portable utility
 
 ```text
-Extract the OnDeviceiOS UTF-8 streaming decoder and response coordinator into
+Extract the iOS Local LLM UTF-8 streaming decoder and response coordinator into
 a Foundation-only Swift package in my project. Follow
 Docs/CODING_AGENT_IMPLEMENTATION.md, port the matching tests, preserve the MIT
 notice, and verify split multi-byte Unicode, cancellation, and coalesced

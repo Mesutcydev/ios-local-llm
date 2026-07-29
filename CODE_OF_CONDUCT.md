@@ -1,6 +1,6 @@
 # Code of conduct
 
-CodeLens is intended to be a welcoming, practical, and technically rigorous
+iOS Local LLM is intended to be a welcoming, practical, and technically rigorous
 project.
 
 ## Expected behavior

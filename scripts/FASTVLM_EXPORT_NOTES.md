@@ -161,7 +161,7 @@ This is non-trivial engineering and is outside what apple/ml-fastvlm provides.
 ## 6. Where exported files go in this project
 
 ```
-CodeLens/
+IOSLocalLLM/
   GeneratedFastVLMModels/
     FastVLM-0.5B-CoreML/
       fastvithd.mlpackage                    ← Core ML vision encoder
@@ -186,8 +186,8 @@ The `export_fastvlm_coreml.sh` script in this directory produces exactly this la
 
 ## 7. How to add to Xcode
 
-1. In Xcode's Project navigator, right-click the **CodeLens** group.
-2. Choose **Add Files to "CodeLens"...**.
+1. In Xcode's Project navigator, right-click the **IOSLocalLLM** group.
+2. Choose **Add Files to "IOSLocalLLM"...**.
 3. Navigate to `GeneratedFastVLMModels/FastVLM-0.5B-CoreML/`.
 4. Select:
    - `fastvithd.mlpackage` — add to the app **target** (will be compiled at build time).
@@ -205,7 +205,7 @@ Bundling it directly in the app is possible but produces a large IPA. The altern
 
 ## 8. FastVLMModelBundleValidator — what the app checks at runtime
 
-Based on the CodeLens codebase, `FastVLMModelBundleValidator` verifies:
+Based on the IOSLocalLLM codebase, `FastVLMModelBundleValidator` verifies:
 
 - `fastvithd.mlpackage` (or compiled `.mlmodelc`) is present and loadable via the Core ML framework
 - The MLX model directory contains a valid `config.json` with `model_type: "llava_qwen2"`

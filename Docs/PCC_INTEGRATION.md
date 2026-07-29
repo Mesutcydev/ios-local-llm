@@ -1,4 +1,4 @@
-# Apple Private Cloud Compute (PCC) integration — CodeLens / "On Device LLM"
+# Apple Private Cloud Compute (PCC) integration — IOSLocalLLM / "iOS Local LLM"
 
 Status: **Runtime, dispatch, cancellation, context budgeting, picker/privacy
 UX, quota state, reasoning selection, conversation restoration, and per-message
@@ -68,7 +68,7 @@ developed/tested now but ships later.
    `sudo xcode-select -s /Applications/Xcode-beta.app/Contents/Developer`
 2. Build normally. `project.yml` automatically adds `FM_PCC` for
    `iphoneos27.*` / `iphonesimulator27.*`, and uses
-   `CodeLens-PCC.entitlements` for iOS 27 device builds.
+   `IOSLocalLLM-PCC.entitlements` for iOS 27 device builds.
 3. Build on a **physical iOS 27 device** with Apple Intelligence enabled. PCC does
    not run in the Simulator.
 
@@ -87,7 +87,7 @@ Both paths are verified to type-check clean (zero warnings):
 PCC requires `com.apple.developer.private-cloud-compute = true`. The Developer
 account already has access to it.
 
-`CodeLens/CodeLens-PCC.entitlements` contains the capability and is selected
+`IOSLocalLLM/IOSLocalLLM-PCC.entitlements` contains the capability and is selected
 only for `iphoneos27.*`. The normal iOS 26 build and the Share Extension retain
 their existing entitlement files. Automatic signing still needs to produce an
 iOS 27 provisioning profile carrying the capability during physical-device
@@ -99,12 +99,12 @@ validation.
 
 | File | Gate | Purpose |
 |---|---|---|
-| `CodeLens/Models/ApplePrivateCloudTypes.swift` | always compiled | `ModelExecutionLocation`, `ApplePCCStatus`, `ApplePCCReasoningLevel`, `ApplePrivateCloud` identity, `ApplePCCRequest`, `ApplePCCError`. No FoundationModels import. |
-| `CodeLens/Models/ApplePrivateCloudPromptBuilder.swift` | always compiled | Separates system instructions from ordered dialog, preserves hidden grounding, and omits empty streaming placeholders. |
-| `CodeLens/Services/ApplePrivateCloudRuntime.swift` | facade always / actor `#if FM_PCC` | `actor ApplePrivateCloudRuntime` (availability, quota→status, `contextSize`, session, **delta** streaming, per-request cancellation, error mapping). `ApplePrivateCloud.{currentStatus,contextSize,stream,answer,cancel,showLimitIncreaseOptions}` facade — returns `.unsupportedOS` / throws cleanly on GA. |
-| `CodeLens/Services/CodingAssistantService.swift` | always compiled | Separate cloud execution/generation state, dispatch, real context budgeting, cancellation/drain, and explicit no-silent-fallback errors. |
-| `CodeLens/Views/AssistantModelPickerView.swift` | runtime gated | Separate cloud section, availability/quota UI, reasoning level, and versioned privacy disclosure. |
-| `CodeLens/Models/ChatMessage.swift` / `ConversationStore.swift` | always compiled | Optional model/execution attribution that remains backward-decodable. |
+| `IOSLocalLLM/Models/ApplePrivateCloudTypes.swift` | always compiled | `ModelExecutionLocation`, `ApplePCCStatus`, `ApplePCCReasoningLevel`, `ApplePrivateCloud` identity, `ApplePCCRequest`, `ApplePCCError`. No FoundationModels import. |
+| `IOSLocalLLM/Models/ApplePrivateCloudPromptBuilder.swift` | always compiled | Separates system instructions from ordered dialog, preserves hidden grounding, and omits empty streaming placeholders. |
+| `IOSLocalLLM/Services/ApplePrivateCloudRuntime.swift` | facade always / actor `#if FM_PCC` | `actor ApplePrivateCloudRuntime` (availability, quota→status, `contextSize`, session, **delta** streaming, per-request cancellation, error mapping). `ApplePrivateCloud.{currentStatus,contextSize,stream,answer,cancel,showLimitIncreaseOptions}` facade — returns `.unsupportedOS` / throws cleanly on GA. |
+| `IOSLocalLLM/Services/CodingAssistantService.swift` | always compiled | Separate cloud execution/generation state, dispatch, real context budgeting, cancellation/drain, and explicit no-silent-fallback errors. |
+| `IOSLocalLLM/Views/AssistantModelPickerView.swift` | runtime gated | Separate cloud section, availability/quota UI, reasoning level, and versioned privacy disclosure. |
+| `IOSLocalLLM/Models/ChatMessage.swift` / `ConversationStore.swift` | always compiled | Optional model/execution attribution that remains backward-decodable. |
 
 Design choices honoring the brief:
 - PCC is **not** forced into `AssistantModel`/`DownloadableModel`/HF structures (no

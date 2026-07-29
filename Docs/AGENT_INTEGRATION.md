@@ -1,6 +1,6 @@
 # AI and agent integration
 
-OnDeviceiOS can act as a private local inference endpoint for development
+iOS Local LLM can act as a private local inference endpoint for development
 tools and AI agents. These interfaces are opt-in and remain separate from the
 app's normal on-device UI.
 
@@ -15,13 +15,13 @@ Enable the server in the app's Mac/bridge settings. The default port is
 Every request requires either:
 
 ```http
-Authorization: Bearer YOUR_ONDEVICEIOS_KEY
+Authorization: Bearer YOUR_IOS_LOCAL_LLM_KEY
 ```
 
 or:
 
 ```http
-x-api-key: YOUR_ONDEVICEIOS_KEY
+x-api-key: YOUR_IOS_LOCAL_LLM_KEY
 ```
 
 The key is generated locally, stored in Keychain, and can be rotated from the
@@ -43,13 +43,13 @@ listener stops when iOS backgrounds the app.
 
 Unsupported request options are rejected explicitly rather than silently
 ignored. The route implementation and decoding rules live in
-`CodeLens/Services/Bridge/LocalAPIServer.swift`.
+`IOSLocalLLM/Services/Bridge/LocalAPIServer.swift`.
 
 ### OpenAI-compatible example
 
 ```bash
 export OPENAI_BASE_URL="http://IPHONE_IP:11434/v1"
-export OPENAI_API_KEY="YOUR_ONDEVICEIOS_KEY"
+export OPENAI_API_KEY="YOUR_IOS_LOCAL_LLM_KEY"
 
 curl "$OPENAI_BASE_URL/models" \
   -H "Authorization: Bearer $OPENAI_API_KEY"
@@ -82,8 +82,8 @@ Treat a model's emitted tool call as untrusted input:
 - do not execute shell or filesystem mutations merely because a model asks;
 - return structured errors rather than fabricating successful results.
 
-`CodeLens/Services/ToolRunner.swift` contains local output parsing.
-`CodeLens/Services/Bridge/LocalAPIServer.swift` contains HTTP tool schemas and
+`IOSLocalLLM/Services/ToolRunner.swift` contains local output parsing.
+`IOSLocalLLM/Services/Bridge/LocalAPIServer.swift` contains HTTP tool schemas and
 response encoding.
 
 ## Paired Mac agent channel
@@ -112,7 +112,7 @@ request that context per message with `/mac`; the app does not continuously
 observe the Mac.
 
 The canonical iOS protocol types are in
-`CodeLens/Services/Bridge/Agent/AgentProtocol.swift`. Changes must remain
+`IOSLocalLLM/Services/Bridge/Agent/AgentProtocol.swift`. Changes must remain
 compatible with the matching LocalCoderBridge implementation.
 
 ## Privacy and security boundaries

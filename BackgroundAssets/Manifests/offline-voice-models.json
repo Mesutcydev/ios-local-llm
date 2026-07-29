@@ -1,5 +1,5 @@
 {
-  "assetPackID": "com.codelens.offline-voice-models",
+  "assetPackID": "com.mesutcydev.ioslocalllm.offline-voice-models",
   "downloadPolicy": {
     "prefetch": {
       "installationEventTypes": [
@@ -10,7 +10,7 @@
   },
   "fileSelectors": [
     {
-      "directory": "CodeLens/Resources/BundledVoiceModels"
+      "directory": "IOSLocalLLM/Resources/BundledVoiceModels"
     }
   ],
   "platforms": [

@@ -1,6 +1,6 @@
 # Voice Models — Setup Notes
 
-CodeLens supports three text-to-speech engines:
+IOSLocalLLM supports three text-to-speech engines:
 
 | Engine | Size | Quality | Requires Download |
 |--------|------|---------|-------------------|
@@ -74,7 +74,7 @@ Documents/
 KittenTTS and Kokoro are phoneme-input models — they require converting
 English text to IPA phoneme token IDs before synthesis.
 
-CodeLens uses `BasicG2P` (in `KittenTTSService.swift`), a rule-based
+IOSLocalLLM uses `BasicG2P` (in `KittenTTSService.swift`), a rule-based
 English letter-to-sound engine. It handles common English prose adequately.
 
 **Limitations:**

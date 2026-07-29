@@ -1,6 +1,6 @@
 # Support
 
-CodeLens is community-maintained and provided without warranty.
+iOS Local LLM is community-maintained and provided without warranty.
 
 - Use GitHub Issues for reproducible bugs.
 - Use GitHub Discussions for setup questions and ideas when available.
