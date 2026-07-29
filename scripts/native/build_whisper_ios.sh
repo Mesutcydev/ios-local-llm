@@ -49,10 +49,21 @@ common_cmake_args=(
   -DGGML_OPENMP=${GGML_OPENMP}
 )
 
-# shellcheck disable=SC1091
-source <(sed -n \
+# Materialize the two upstream packaging helpers before sourcing them. Process
+# substitution is unreliable when CodeQL's macOS build tracer is injected.
+helper_file="$(mktemp "${TMPDIR:-/tmp}/ios-local-llm-whisper-helpers.XXXXXX")"
+trap 'unlink "$helper_file" 2>/dev/null || true' EXIT
+sed -n \
   '/^setup_framework_structure()/,/^}/p; /^combine_static_libraries()/,/^}/p' \
-  build-xcframework.sh)
+  build-xcframework.sh >"$helper_file"
+
+# shellcheck disable=SC1090
+source "$helper_file"
+if ! declare -F setup_framework_structure >/dev/null ||
+  ! declare -F combine_static_libraries >/dev/null; then
+  echo "error: could not load XCFramework packaging helpers from whisper.cpp" >&2
+  exit 1
+fi
 
 echo "==> Building whisper.cpp for iOS Simulator"
 cmake -B build-ios-sim -G Xcode \
