@@ -1,0 +1,56 @@
+name: Bug report
+description: Report a reproducible problem in CodeLens
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include API keys, model tokens, private source code, or personal data.
+        Security vulnerabilities must follow SECURITY.md instead.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open…
+        2. Select…
+        3. Observe…
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: macOS, Xcode, iOS, device, and CodeLens revision
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Model
+      description: Repository, variant, and quantization, if relevant
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: I removed secrets and personal data.
+          required: true
+        - label: This is not a private security report.
+          required: true

@@ -1,0 +1,38 @@
+name: Feature request
+description: Propose a focused improvement
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior, not only the implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: licensing
+    attributes:
+      label: Models, dependencies, or assets
+      description: List anything new and its redistribution license.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and pull requests.
+          required: true
+        - label: I understand that large changes should be discussed before implementation.
+          required: true

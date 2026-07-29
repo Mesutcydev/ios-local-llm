@@ -1,0 +1,458 @@
+name: CodeLens
+options:
+  bundleIdPrefix: com.codelens
+  deploymentTarget:
+    iOS: "18.0"
+  xcodeVersion: "26.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+packages:
+  # Local premium glass voice orb (Canvas). Theme selector case: `.glass`.
+  VoiceAgentOrb:
+    path: Packages/VoiceAgentOrb
+  # MLX runtime stack. The app's source targets the mlx-swift-lm 3.x API
+  # (actor type/processor registries, config creators receive Data not URL,
+  # loadContainer(from:configuration:)) and imports MLXLMTransformers — the
+  # tokenizer/Hub bridge that mlx-swift-lm 3.x externalized into the
+  # DePasqualeOrg/swift-transformers-mlx fork. The OLD ml-explore/mlx-swift-examples
+  # package does NOT provide these and must not be used here.
+  #   • mlx-swift-lm 3.31.4 → MLXLLM / MLXLMCommon / MLXVLM / MLXEmbedders (iOS 17)
+  #   • swift-transformers-mlx 0.2.0 → MLXLMTransformers (pulls swift-transformers
+  #     1.3.x + swift-huggingface; depends on mlx-swift-lm 3.31.3+)
+  #   • PrismML mlx-swift at the pinned revision below → upstream-compatible MLX plus the
+  #     1-bit affine kernels required by the Bonsai presets (iOS 17)
+  # Everything is iOS 17; the app target is iOS 18, so there is no platform
+  # conflict at `archive`. Move these in lockstep.
+  # Do not replace this fork with upstream while the catalog contains
+  # `Bonsai-*-mlx-1bit`. Upstream MLX rejects bits=1 in mlx_quantize; its
+  # Swift error trampoline turns that validation error into a fatal SIGTRAP.
+  mlx-swift:
+    url: https://github.com/PrismML-Eng/mlx-swift.git
+    revision: e40e0a57a6f7ad08dc3fd87ad598a7aa6407d230
+  mlx-swift-lm:
+    url: https://github.com/ml-explore/mlx-swift-lm
+    from: "3.31.4"
+  swift-transformers-mlx:
+    url: https://github.com/DePasqualeOrg/swift-transformers-mlx
+    from: "0.2.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+    CLANG_ENABLE_MODULES: YES
+    SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+    # The bundled llama/whisper Catalyst frameworks are Apple-Silicon-only.
+    "EXCLUDED_ARCHS[sdk=macosx*]": "x86_64"
+    # Keep Catalyst linking on Xcode's Swift toolchain. Xcode 26.5 otherwise
+    # substitutes the separate Metal toolchain and adds a nonexistent
+    # usr/lib/swift/maccatalyst search path.
+    "TOOLCHAIN_DIR[sdk=macosx*]": "$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain"
+    # Xcode 26.5 otherwise expands the Catalyst Swift search path against
+    # the selected Metal toolchain, whose maccatalyst directory does not exist.
+    "LIBRARY_SEARCH_PATHS[sdk=macosx*]":
+      - "$(BUILT_PRODUCTS_DIR)"
+      - "$(SDKROOT)/System/iOSSupport/usr/lib"
+      - "$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/maccatalyst"
+    # The postCompileScripts below (Copy bundled VLM, Compile FastVLM)
+    # rsync/coremlcompiler into TARGET_BUILD_DIR. Their outputs aren't
+    # declarable statically (rsync mirrors a directory tree of varying
+    # contents), so user script sandboxing — which only permits writes
+    # to declared output paths — rejects them with mkdir deny errors.
+    # Disabling sandboxing per-build-script in xcodegen isn't supported,
+    # so disable it project-wide.
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+  configs:
+    Release:
+      SWIFT_OPTIMIZATION_LEVEL: "-O"
+      VALIDATE_PRODUCT: YES
+
+targets:
+  CodeLens:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: CodeLens
+        excludes:
+          - "**/*.mlmodelc"
+          - "**/FastVLM-0.5B-fp16/**"
+          - "**/yolo11n.mlpackage"     # Removed — AGPL-3.0, replaced by Apple Vision
+          - "**/*.png"
+          - "**/*.jpg"
+          - "**/*.md"
+          # LocalCoderBridge Mac installer — the app downloads this from
+          # mesut.uk at runtime (see BridgePairingView), it must NOT ship
+          # inside the iOS bundle (dead weight + odd for App Review).
+          - "**/*.pkg"
+          # SmolVLM GGUF weights ship as a folder reference under the
+          # postCompileScript below — exclude from the implicit source
+          # scan so Xcode doesn't try to compile the .gguf files as
+          # Swift inputs. Same pattern as the old MLX SmolVLM bundle
+          # this replaced; see BundledVLMInstaller for the rationale.
+          - "Resources/BundledVLM/**"
+          # KittenTTS + Kokoro CoreML voice models. Same rationale as
+          # BundledVLM: they're shipped via a postCompileScript rsync
+          # below so Voice mode works offline with zero downloads. The
+          # source scan would otherwise try to swift-compile every
+          # .mil / .bin / weight blob and fail.
+          - "Resources/BundledVoiceModels/**"
+    resources:
+      # Model-specific tokenizers and processor files are intentionally not
+      # redistributed. The downloaded model must provide its own metadata.
+      - path: CodeLens/PrivacyInfo.xcprivacy
+      - path: CodeLens/Resources/Localization/WebTriggerKeywords.json
+      # CMU Pronouncing Dictionary — trimmed (primary pronunciations only,
+      # 126K entries, 3.2 MB plain text). Used by PhonemizerEN to convert
+      # English text to IPA phonemes for the neural TTS engines (Kokoro,
+      # KittenTTS). Without a real dictionary the home-grown
+      # letter-to-sound rules in the old BasicG2P produced phonemes
+      # that were so far off-distribution the models output a robotic,
+      # zombie-like voice. Source: cmusphinx/cmudict on GitHub,
+      # public-domain license.
+      - path: CodeLens/Resources/Voice/cmudict.txt
+      - path: CodeLens/Resources/VoiceModelCatalog.json
+      # NOTE: SmolVLM2-500M weights (~1 GB) are *not* listed here. They
+      # are copied into the .app by a postBuildScript below (see
+      # "Copy SmolVLM bundled weights"). xcodegen 2.45 applies the
+      # target's `sources.excludes` patterns to `resources` paths too —
+      # so excluding the directory from the source scan (we have to,
+      # otherwise the safetensors gets indexed as a Swift source) also
+      # silently drops any resources entry pointing into it. A
+      # postBuildScript sidesteps that bug.
+    info:
+      path: CodeLens/Info.plist
+      properties:
+        CFBundleDisplayName: On Device LLM
+        # Source of truth for both targets' marketing version. xcodegen
+        # writes these into the generated Info.plist files on every run,
+        # so hand-edits to those plists get reverted next regen — always
+        # bump HERE first, then `xcodegen` to propagate.
+        CFBundleShortVersionString: "3.2.5"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        # Standard HTTPS only — answers the ASC export-compliance question
+        # automatically so review submission doesn't stall on it.
+        ITSAppUsesNonExemptEncryption: false
+        NSCameraUsageDescription: "CodeLens uses the back camera to capture live video of your terminal or code editor for real-time analysis."
+        NSPhotoLibraryUsageDescription: "CodeLens can analyze code from photos in your library."
+        NSMicrophoneUsageDescription: "CodeLens uses the microphone for hold-to-talk dictation in the chat composer. Audio is transcribed on-device and never leaves your phone."
+        NSLocalNetworkUsageDescription: "CodeLens can expose your on-device language model to computers on your local network when you enable the Local API Server."
+        NSSpeechRecognitionUsageDescription: "CodeLens uses on-device speech recognition to convert your voice into text for the chat composer."
+        UIRequiresFullScreen: true
+        UIStatusBarStyle: UIStatusBarStyleDarkContent
+        UIViewControllerBasedStatusBarAppearance: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UILaunchScreen:
+          UIColorName: ""
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        NSSupportsLiveActivities: true
+        # Make downloaded/imported models under Documents/HFModels visible at
+        # Files → On My iPhone → On Device LLM. Per-model export remains
+        # available from the Models tab for copying to any Files provider.
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        CFBundleURLTypes:
+          - CFBundleURLName: com.codelens.scheme
+            CFBundleURLSchemes:
+              - codelens
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.codelens.CodeLens
+        INFOPLIST_FILE: CodeLens/Info.plist
+        CODE_SIGN_ENTITLEMENTS: CodeLens/CodeLens.entitlements
+        CODE_SIGN_STYLE: Automatic
+        VERSIONING_SYSTEM: apple-generic
+        CURRENT_PROJECT_VERSION: "98"
+        # PCC symbols exist only in the iOS 27 SDK. Enable the implementation
+        # and its capability automatically for iOS 27 device/simulator builds;
+        # Xcode 26 and iOS 18–26 builds keep the existing local-only binary.
+        "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos27.*]": "$(inherited) FM_PCC"
+        "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphonesimulator27.*]": "$(inherited) FM_PCC"
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos27.*]": CodeLens/CodeLens-PCC.entitlements
+        # iOS stays iPhone-only (family 1) so the iPhone app is unchanged.
+        # Mac Catalyst is built against the macosx SDK and *requires* the
+        # iPad idiom (family 2) plus Mac (6); scope that to the macOS SDK
+        # only via a conditional setting so it never affects the iOS build.
+        TARGETED_DEVICE_FAMILY: "1"
+        "TARGETED_DEVICE_FAMILY[sdk=macosx*]": "2,6"
+        # ── Mac Catalyst ────────────────────────────────────────
+        # Adds a native Mac (Catalyst) build of this same target. The
+        # llama.cpp + whisper.cpp xcframeworks ship an `ios-arm64-maccatalyst`
+        # slice (built via each ThirdParty/.../build-maccatalyst-slice.sh).
+        # Apple-Silicon only — no x86_64 Catalyst slice exists.
+        SUPPORTS_MACCATALYST: YES
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        # Keep the SAME bundle id on Mac so it's the same product, not a
+        # separate derived identifier.
+        DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO
+        # Catalyst maps the iOS 18 deployment target to a high macOS
+        # minimum; pin the Catalyst macOS floor explicitly instead.
+        MACOSX_DEPLOYMENT_TARGET: "13.0"
+        # Use a Catalyst-specific entitlements set (App Sandbox + camera/
+        # mic/network) on the macOS SDK; the iOS entitlements are untouched.
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": CodeLens/CodeLens-Catalyst.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Default icon is the neon pink "eye" mark (AppIcon); the previous
+        # pink mark ships as AppIconClassic so users can switch back in
+        # Settings → Appearance. INCLUDE_ALL_APPICON_ASSETS is required for
+        # alternate icons to be compiled into the bundle.
+        ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
+        SWIFT_EMIT_LOC_STRINGS: YES
+        # CodeLensTests uses `@testable import CodeLens`, and the scheme
+        # builds the tests for both Debug and Release configs. Without
+        # ENABLE_TESTABILITY on Release, the test module dependency
+        # can't resolve and `xcodebuild -configuration Release build`
+        # fails. Cost is a small loss of dead-code stripping in Release.
+        ENABLE_TESTABILITY: YES
+        # ── llama.cpp + mtmd integration ────────────────────────
+        # Bridging header exposes llama.h / mtmd.h / mtmd-helper.h
+        # to Swift via LlamaCppBridge.swift.
+        SWIFT_OBJC_BRIDGING_HEADER: "$(SRCROOT)/CodeLens/Services/LlamaCpp/CodeLens-Bridging-Header.h"
+        # Source-tree header paths keep bridging-header dependency scanning
+        # deterministic. The compiled llama, ggml, and mtmd implementations
+        # all come from the single llama.xcframework below.
+        HEADER_SEARCH_PATHS:
+          - "$(inherited)"
+          - "$(SRCROOT)/ThirdParty/llama.cpp/tools/mtmd"
+          - "$(SRCROOT)/ThirdParty/llama.cpp/include"
+          - "$(SRCROOT)/ThirdParty/llama.cpp/ggml/include"
+          # whisper.h lives inside the framework, but adding the source
+          # include dir makes the bridging header importable without
+          # full module-map gymnastics.
+          - "$(SRCROOT)/ThirdParty/whisper.cpp/include"
+    dependencies:
+      - package: VoiceAgentOrb
+        product: VoiceAgentOrb
+      - package: mlx-swift-lm
+        product: MLXLLM
+      - package: mlx-swift-lm
+        product: MLXLMCommon
+      - package: mlx-swift-lm
+        product: MLXVLM
+      # Tokenizer/Hub bridge (import MLXLMTransformers) — externalized out of
+      # mlx-swift-lm 3.x into the swift-transformers-mlx fork.
+      - package: swift-transformers-mlx
+        product: MLXLMTransformers
+      # StableDiffusion is now VENDORED under CodeLens/Vendor/StableDiffusion
+      # (patched so the app can construct configurations for additional
+      # SD/SDXL models). The SPM product is intentionally NOT linked to avoid
+      # duplicate type definitions.
+      - package: mlx-swift
+        product: MLX
+      - package: mlx-swift
+        product: MLXNN
+      - package: mlx-swift
+        product: MLXRandom
+      # Imported directly by FastVLM.swift. Declared explicitly so it doesn't
+      # rely on being pulled in transitively (which fails at `archive`).
+      - package: mlx-swift
+        product: MLXFast
+      # llama.cpp prebuilt xcframework — built by
+      # ThirdParty/llama.cpp/build-xcframework.sh. Provides
+      # libllama + libggml with Metal backend.
+      - framework: ThirdParty/llama.cpp/build-apple/llama.xcframework
+        embed: true
+      # whisper.cpp prebuilt xcframework — built by
+      # ThirdParty/whisper.cpp/build-xcframework.sh (with the iOS-only
+      # patch applied; macOS/visionOS/tvOS slices are commented out for
+      # disk + time savings). Provides libwhisper with the Metal backend
+      # for on-device speech-to-text without SFSpeechRecognizer's
+      # cloud-fallback dependency.
+      - framework: ThirdParty/whisper.cpp/build-apple/whisper.xcframework
+        embed: true
+      - target: CodeLensShareExtension
+        embed: true
+        # The share extension is an iOS-only app-extension; a Mac Catalyst app
+        # may not embed an iOS .appex. `platformFilter: iOS` emits the PBX
+        # `ios` build-file filter so the extension is embedded for iOS only and
+        # skipped on the Mac build. (Mac has its own system share mechanisms.)
+        platformFilter: iOS
+    # Copy the pre-bundled SmolVLM2-500M weights into the .app before
+    # codesigning runs. We can't use the regular `resources:` entry
+    # because xcodegen 2.45 propagates `sources.excludes` patterns to
+    # resources paths, and we need to exclude the weights folder from
+    # the source scan (else Xcode treats the safetensors as a source
+    # input). postCompileScripts runs after the Sources phase but
+    # before Copy Resources / codesign, so the weights end up signed
+    # like any other bundled asset.
+    postCompileScripts:
+      - name: Copy bundled VLM (SmolVLM2 GGUF)
+        script: |
+          set -e
+          SRC="${SRCROOT}/CodeLens/Resources/BundledVLM"
+          DEST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/BundledVLM"
+          if [ ! -d "$SRC" ]; then
+            echo "warning: BundledVLM source not found at $SRC — skipping (lens tab will fall back to network download of SmolVLM2 GGUF, ~520 MB on first launch)"
+            exit 0
+          fi
+          mkdir -p "$DEST"
+          # rsync with --delete keeps the bundled copy in sync if files
+          # are added/removed in source between builds. -a preserves
+          # times so incremental builds skip unchanged files. The
+          # bundle folder contains the GGUF pair:
+          #   ggml-org_SmolVLM2-500M-Video-Instruct-GGUF/
+          #     SmolVLM2-500M-Video-Instruct-Q8_0.gguf       (~417 MB)
+          #     mmproj-SmolVLM2-500M-Video-Instruct-Q8_0.gguf (~104 MB)
+          rsync -a --delete "$SRC/" "$DEST/"
+          echo "Copied bundled VLM (SmolVLM2 GGUF Q8) to $DEST"
+        runOnlyWhenInstalling: false
+        basedOnDependencyAnalysis: false
+
+      - name: Copy bundled voice models (Silero VAD)
+        script: |
+          set -e
+          SRC="${SRCROOT}/CodeLens/Resources/BundledVoiceModels"
+          DEST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/BundledVoiceModels"
+          if [ ! -d "$SRC" ]; then
+            echo "warning: BundledVoiceModels source not found at $SRC — Voice mode will require a runtime download from Models → Catalog."
+            exit 0
+          fi
+          mkdir -p "$DEST"
+          # Only Silero (the ~0.9 MB listening VAD) ships in the app now.
+          # KittenTTS (~62 MB) and Kokoro (~312 MB) were UNBUNDLED to shrink
+          # the IPA — they download on demand via ModelDownloadCenter when the
+          # user picks a neural voice. Apple System Voice remains the
+          # zero-download default, so voice works out of the box without them.
+          # Remove any stale copies a previous (fully-bundled) build left in
+          # DEST so incremental archives don't keep shipping them.
+          rm -rf "$DEST/KittenTTS" "$DEST/Kokoro"
+          rsync -a --delete "$SRC/Silero/" "$DEST/Silero/"
+          echo "Copied bundled Silero VAD to $DEST/Silero"
+        runOnlyWhenInstalling: false
+        basedOnDependencyAnalysis: false
+
+      - name: Compile and bundle FastVLM Core ML encoder
+        script: |
+          set -e
+          SRC="${SRCROOT}/CodeLens/Models/FastVLM-0.5B-fp16/fastvithd.mlpackage"
+          DEST_DIR="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
+          DEST_PACKAGE="${DEST_DIR}/fastvithd.mlpackage"
+          DEST_COMPILED="${DEST_DIR}/fastvithd.mlmodelc"
+          if [ ! -d "$SRC" ]; then
+            echo "warning: fastvithd.mlpackage not found at $SRC — FastVLM lens path will be unavailable on this build."
+            exit 0
+          fi
+          # Prefer shipping the pre-compiled .mlmodelc so the first
+          # camera tap doesn't pay the ~2-3 s on-device compile cost.
+          # coremlcompiler is the Xcode-bundled tool that runs the
+          # same compile step Xcode's build system uses for sources.
+          COREMLC="$(xcrun --find coremlcompiler 2>/dev/null || true)"
+          if [ -n "$COREMLC" ] && [ -x "$COREMLC" ]; then
+            rm -rf "$DEST_COMPILED"
+            "$COREMLC" compile "$SRC" "$DEST_DIR" >/dev/null
+            # coremlcompiler writes <name>.mlmodelc into the dest dir,
+            # so DEST_COMPILED is now populated. Drop the raw
+            # mlpackage so we don't ship both.
+            rm -rf "$DEST_PACKAGE"
+            echo "Compiled FastVLM encoder to $DEST_COMPILED"
+          else
+            # Fallback: ship the raw mlpackage. FastVLMCoreMLStub
+            # handles runtime compilation via MLModel.compileModel,
+            # which costs a few seconds on first launch but is
+            # functionally equivalent.
+            rsync -a --delete "$SRC/" "$DEST_PACKAGE/"
+            echo "Copied raw FastVLM encoder mlpackage to $DEST_PACKAGE (no coremlcompiler available — will compile at runtime)"
+          fi
+        runOnlyWhenInstalling: false
+        basedOnDependencyAnalysis: false
+
+  CodeLensShareExtension:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: CodeLensShareExtension
+        excludes:
+          - "Info.plist"
+          - "*.entitlements"
+    info:
+      path: CodeLensShareExtension/Info.plist
+      properties:
+        CFBundleDisplayName: On Device LLM
+        # Must match the main target's version above — App Store rejects
+        # extension targets with mismatched marketing versions.
+        CFBundleShortVersionString: "3.2.5"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        ITSAppUsesNonExemptEncryption: false
+        NSExtension:
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsImageWithMaxCount: 1
+              NSExtensionActivationSupportsText: true
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+              NSExtensionActivationSupportsWebPageWithMaxCount: 1
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.codelens.CodeLens.share
+        INFOPLIST_FILE: CodeLensShareExtension/Info.plist
+        CODE_SIGN_ENTITLEMENTS: CodeLensShareExtension/CodeLensShareExtension.entitlements
+        CODE_SIGN_STYLE: Automatic
+        VERSIONING_SYSTEM: apple-generic
+        CURRENT_PROJECT_VERSION: "98"
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_EMIT_LOC_STRINGS: YES
+
+  CodeLensTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: CodeLensTests
+    dependencies:
+      - target: CodeLens
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.codelens.CodeLensTests
+        INFOPLIST_FILE: ""   # auto-generate
+        CODE_SIGN_STYLE: Automatic
+        TARGETED_DEVICE_FAMILY: "1"
+        "TARGETED_DEVICE_FAMILY[sdk=macosx*]": "2,6"
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_EMIT_LOC_STRINGS: NO
+        # Clear the bridging header — tests only test Swift code.
+        SWIFT_OBJC_BRIDGING_HEADER: ""
+        SWIFT_INSTALL_OBJC_HEADER: NO
+        # Need header search paths for the main target's bridging header
+        # dependency scanning (llama.h, mtmd.h, etc.).
+        HEADER_SEARCH_PATHS:
+          - "$(inherited)"
+          - "$(SRCROOT)/ThirdParty/llama.cpp/tools/mtmd"
+          - "$(SRCROOT)/ThirdParty/llama.cpp/include"
+          - "$(SRCROOT)/ThirdParty/llama.cpp/ggml/include"
+          - "$(SRCROOT)/ThirdParty/whisper.cpp/include"
+
+  CodeLensUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: CodeLensUITests
+    dependencies:
+      - target: CodeLens
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.codelens.CodeLensUITests
+        CODE_SIGN_STYLE: Automatic
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_EMIT_LOC_STRINGS: NO
+
+schemes:
+  CodeLens:
+    build:
+      targets:
+        CodeLens: all
+        CodeLensTests: [test, run]
+        CodeLensUITests: [test]
+    test:
+      config: Debug
+      targets:
+        - CodeLensTests
+        - CodeLensUITests
+    archive:
+      config: Release

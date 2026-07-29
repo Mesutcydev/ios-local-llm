@@ -1,0 +1,13 @@
+{
+  "object" : [
+    {
+      "mirror" : "https://github.com/PrismML-Eng/mlx-swift.git",
+      "original" : "https://github.com/ml-explore/mlx-swift"
+    },
+    {
+      "mirror" : "https://github.com/PrismML-Eng/mlx-swift.git",
+      "original" : "https://github.com/ml-explore/mlx-swift.git"
+    }
+  ],
+  "version" : 1
+}

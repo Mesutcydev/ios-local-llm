@@ -1,0 +1,20 @@
+{
+  "assetPackID": "com.codelens.offline-voice-models",
+  "downloadPolicy": {
+    "prefetch": {
+      "installationEventTypes": [
+        "firstInstallation",
+        "subsequentUpdate"
+      ]
+    }
+  },
+  "fileSelectors": [
+    {
+      "directory": "CodeLens/Resources/BundledVoiceModels"
+    }
+  ],
+  "platforms": [
+    "iOS",
+    "macOS"
+  ]
+}

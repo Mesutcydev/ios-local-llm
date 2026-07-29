@@ -1,0 +1,4 @@
+This placeholder guarantees that Swift Package Manager generates a resource
+bundle (Bundle.module) for the VoiceOrb target. The Metal shader library
+(Shaders/VoiceOrbShaders.metal) is compiled into that bundle and looked up
+via ShaderLibrary.bundle(.module) at runtime.

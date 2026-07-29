@@ -1,0 +1,25 @@
+name: Validate
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  repository:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate repository contents
+        run: ./scripts/validate_open_source.sh
+
+  voice-orb:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test VoiceAgentOrb
+        run: swift test --package-path Packages/VoiceAgentOrb
