@@ -53,7 +53,6 @@ jobs:
             -configuration Debug \
             -sdk iphonesimulator \
             -destination "generic/platform=iOS Simulator" \
-            -arch arm64 \
             CODE_SIGNING_ALLOWED=NO \
             build
 
