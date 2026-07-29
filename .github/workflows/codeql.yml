@@ -1,0 +1,59 @@
+name: CodeQL
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "31 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  swift:
+    name: Swift security analysis
+    runs-on: macos-15
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout source and pinned submodules
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+        with:
+          languages: swift
+          build-mode: manual
+          queries: security-extended
+
+      - name: Install locked CocoaPods dependencies
+        run: pod install --deployment
+
+      - name: Build pinned native inference frameworks
+        run: ./scripts/build_native_frameworks.sh
+
+      - name: Build the iOS app for analysis
+        run: |
+          xcodebuild \
+            -workspace IOSLocalLLM.xcworkspace \
+            -scheme IOSLocalLLM \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            -arch arm64 \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Analyze Swift
+        uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+        with:
+          category: /language:swift

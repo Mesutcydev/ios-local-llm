@@ -1,6 +1,7 @@
 # iOS Local LLM
 
 [![Validate](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/validate.yml/badge.svg)](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/validate.yml)
+[![CodeQL](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/codeql.yml/badge.svg)](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/codeql.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Mesutcydev/ios-local-llm/badge)](https://scorecard.dev/viewer/?uri=github.com/Mesutcydev/ios-local-llm)
 [![License: MIT](https://img.shields.io/badge/original%20code-MIT-2ea44f.svg)](LICENSE)
 [![Swift](https://img.shields.io/badge/Swift-5.10-F05138.svg)](https://www.swift.org/)
