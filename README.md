@@ -56,6 +56,21 @@ Agents should treat `project.yml` as the Xcode project source of truth and must
 not add model weights, credentials, signing files, or generated native
 frameworks to Git.
 
+## Use parts in your own iOS local-LLM app
+
+You do not need to adopt the whole application. The repository now includes:
+
+- [Architecture](ARCHITECTURE.md) — system layers, runtime lifecycle,
+  subsystem ownership, and safety invariants
+- [Reusable component catalog](Docs/REUSABLE_COMPONENTS.md) — exact source
+  files, dependencies, tests, portability level, and extraction guidance
+- [LocalAIRuntimeFoundation notes](CodeLens/LocalAIRuntimeFoundation/README.md)
+  — the closest existing boundary to a future standalone Swift package
+
+Components are labeled **Extractable**, **Adaptable**, or **Integrated** so
+developers and coding agents can distinguish small portable utilities from
+services that require app-specific adapters or native inference frameworks.
+
 ## Project status
 
 CodeLens is usable but is a large, evolving application. Some features require

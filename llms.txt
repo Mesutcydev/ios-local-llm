@@ -13,6 +13,9 @@ Aliases: CodeLens, On Device LLM, OnDeviceiOS
 
 - [Project overview](https://github.com/Mesutcydev/ondeviceios/blob/main/README.md)
 - [Coding-agent instructions](https://github.com/Mesutcydev/ondeviceios/blob/main/AGENTS.md)
+- [Architecture](https://github.com/Mesutcydev/ondeviceios/blob/main/ARCHITECTURE.md)
+- [Reusable component catalog](https://github.com/Mesutcydev/ondeviceios/blob/main/Docs/REUSABLE_COMPONENTS.md)
+- [Local runtime foundation notes](https://github.com/Mesutcydev/ondeviceios/blob/main/CodeLens/LocalAIRuntimeFoundation/README.md)
 - [Development setup](https://github.com/Mesutcydev/ondeviceios/blob/main/SETUP_INSTRUCTIONS.md)
 - [Agent and local API integration](https://github.com/Mesutcydev/ondeviceios/blob/main/Docs/AGENT_INTEGRATION.md)
 - [Contributing](https://github.com/Mesutcydev/ondeviceios/blob/main/CONTRIBUTING.md)

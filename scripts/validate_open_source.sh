@@ -7,12 +7,15 @@ cd "$repository_root"
 
 required_files=(
   AGENTS.md
+  ARCHITECTURE.md
   LICENSE
   README.md
   CONTRIBUTING.md
   SECURITY.md
   THIRD_PARTY_NOTICES.md
   Docs/AGENT_INTEGRATION.md
+  Docs/REUSABLE_COMPONENTS.md
+  CodeLens/LocalAIRuntimeFoundation/README.md
   codemeta.json
   llms.txt
   .github/copilot-instructions.md
