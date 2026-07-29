@@ -10,13 +10,15 @@ accepted by any program.
 - Public contribution, conduct, security, governance, roadmap, maintainer, and
   release-policy documentation.
 - Automated repository hygiene and package tests.
+- OpenSSF Scorecard analysis with public results and code-scanning upload.
+- Reproducible source-release archives with checksums and GitHub/Sigstore
+  provenance attestations.
 - Secret scanning and push protection where provided by GitHub.
 - Machine-readable metadata, citation data, and an SPDX SBOM.
 
 ## Requires operating history
 
 - Multiple active human maintainers and documented reviewer succession.
-- Public releases with signed or attested provenance.
 - Published physical-device validation evidence.
 - Demonstrated issue response and contributor review activity.
 - OpenSSF Best Practices self-assessment with evidence for every claimed item.

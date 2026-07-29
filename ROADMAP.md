@@ -20,7 +20,7 @@ This roadmap communicates direction, not a promise of delivery dates.
 - Add protocol conformance fixtures for OpenAI-, Anthropic-, and
   Ollama-compatible routes.
 - Add accessibility and localization coverage for core flows.
-- Improve dependency automation, SBOM generation, and release provenance.
+- Keep dependency automation, SBOM generation, and release provenance current.
 - Recruit reviewers and a second maintainer through sustained contributions.
 
 ## Longer term

@@ -16,6 +16,9 @@ struct OnboardingView: View {
     private var pickerIndex: Int { pages.count }
     private var totalTabs: Int { pages.count + 1 }
     private var onPickerPage: Bool { page == pickerIndex }
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+    }
 
     private let pages: [OnboardingPage] = [
         OnboardingPage(
@@ -86,7 +89,7 @@ struct OnboardingView: View {
                 HStack {
                     KWordmark(name: "iOS Local LLM", logoAsset: "app_logo_small")
                     Spacer()
-                    KMono(text: "v1.0.0", size: 10, color: T.ink3)
+                    KMono(text: "v\(appVersion)", size: 10, color: T.ink3)
                     if page < pages.count - 1 {
                         Button {
                             settings.hasSeenOnboarding = true
