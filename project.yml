@@ -42,6 +42,16 @@ settings:
     SWIFT_VERSION: "5.10"
     DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
     CLANG_ENABLE_MODULES: YES
+    # High-confidence C/C++/Objective-C diagnostics. These apply to the
+    # bridging-header boundary and any future native sources added to targets.
+    GCC_WARN_ABOUT_RETURN_TYPE: YES_ERROR
+    GCC_WARN_UNINITIALIZED_AUTOS: YES_AGGRESSIVE
+    CLANG_WARN_IMPLICIT_FALLTHROUGH: YES
+    GCC_WARN_64_TO_32_BIT_CONVERSION: YES
+    GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS: YES
+    CLANG_ANALYZER_SECURITY_FLOATLOOPCOUNTER: YES
+    CLANG_ANALYZER_SECURITY_INSECUREAPI_RAND: YES
+    CLANG_ANALYZER_SECURITY_INSECUREAPI_STRCPY: YES
     SWIFT_OPTIMIZATION_LEVEL: "-Onone"
     # The bundled llama/whisper Catalyst frameworks are Apple-Silicon-only.
     "EXCLUDED_ARCHS[sdk=macosx*]": "x86_64"
@@ -80,7 +90,11 @@ targets:
           - "**/FastVLM-0.5B-fp16/**"
           - "**/yolo11n.mlpackage"     # Removed — AGPL-3.0, replaced by Apple Vision
           - "**/*.png"
+          - "**/*.PNG"
           - "**/*.jpg"
+          - "**/*.JPG"
+          - "**/*.jpeg"
+          - "**/*.JPEG"
           - "**/*.md"
           # LocalCoderBridge Mac installer — the app downloads this from
           # mesut.uk at runtime (see BridgePairingView), it must NOT ship
@@ -110,7 +124,7 @@ targets:
       # letter-to-sound rules in the old BasicG2P produced phonemes
       # that were so far off-distribution the models output a robotic,
       # zombie-like voice. Source: cmusphinx/cmudict on GitHub,
-      # public-domain license.
+      # permissive CMUdict license; see IOSLocalLLM/Resources/Voice/LICENSE.
       - path: IOSLocalLLM/Resources/Voice/cmudict.txt
       - path: IOSLocalLLM/Resources/VoiceModelCatalog.json
       # NOTE: SmolVLM2-500M weights (~1 GB) are *not* listed here. They
@@ -181,7 +195,7 @@ targets:
         # ── Mac Catalyst ────────────────────────────────────────
         # Adds a native Mac (Catalyst) build of this same target. The
         # llama.cpp + whisper.cpp xcframeworks ship an `ios-arm64-maccatalyst`
-        # slice (built via each ThirdParty/.../build-maccatalyst-slice.sh).
+        # slice (built via scripts/build_native_frameworks.sh --with-catalyst).
         # Apple-Silicon only — no x86_64 Catalyst slice exists.
         SUPPORTS_MACCATALYST: YES
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
@@ -251,14 +265,12 @@ targets:
       - package: mlx-swift
         product: MLXFast
       # llama.cpp prebuilt xcframework — built by
-      # ThirdParty/llama.cpp/build-xcframework.sh. Provides
+      # scripts/build_native_frameworks.sh. Provides
       # libllama + libggml with Metal backend.
       - framework: ThirdParty/llama.cpp/build-apple/llama.xcframework
         embed: true
       # whisper.cpp prebuilt xcframework — built by
-      # ThirdParty/whisper.cpp/build-xcframework.sh (with the iOS-only
-      # patch applied; macOS/visionOS/tvOS slices are commented out for
-      # disk + time savings). Provides libwhisper with the Metal backend
+      # scripts/build_native_frameworks.sh. Provides libwhisper with the Metal backend
       # for on-device speech-to-text without SFSpeechRecognizer's
       # cloud-fallback dependency.
       - framework: ThirdParty/whisper.cpp/build-apple/whisper.xcframework

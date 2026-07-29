@@ -55,7 +55,7 @@ struct BridgePairingView: View {
                     header
                     serverStatusRow
                     LocalAPIServerCard()
-                    macBridgeDownloadCard
+                    macBridgeIntegrationCard
                     pairingCard
                     insecurePairingCard
                     pairedClientsCard
@@ -114,20 +114,15 @@ struct BridgePairingView: View {
         .kGlass(cornerRadius: 16, fallbackFill: T.surface)
     }
 
-    // MARK: - Mac bridge download
+    // MARK: - Mac bridge integration guide
     //
-    // Designed card (not a raw link) that opens the LocalCoderBridge
-    // PKG URL in Safari. Shown to every visitor of the Mac tab — not
-    // gated on paired-state — because the same person who hasn't
-    // installed it yet, AND the friend who wants the app, both land
-    // here. Open the URL via UIApplication so it leaves the in-app
-    // browser sandbox (PKG can't be installed from inside an SFSafari-
-    // ViewController; Safari proper is needed for the .pkg MIME type
-    // and the Open-in-Installer affordance).
+    // The public source distribution documents the protocol instead of
+    // directing contributors to a binary companion whose source and release
+    // provenance are not part of this repository.
 
-    private var macBridgeDownloadCard: some View {
+    private var macBridgeIntegrationCard: some View {
         Button {
-            if let url = URL(string: "https://mesut.uk/LocalCoderBridge-1.3.1.pkg") {
+            if let url = URL(string: "https://github.com/Mesutcydev/ios-local-llm/blob/main/Docs/AGENT_INTEGRATION.md") {
                 UIApplication.shared.open(url)
             }
             HapticManager.impact(.light)
@@ -143,7 +138,7 @@ struct BridgePairingView: View {
                                 endPoint: .bottomTrailing
                             )
                         )
-                    Image(systemName: "arrow.down.app.fill")
+                    Image(systemName: "book.closed.fill")
                         .font(.system(size: 22, weight: .semibold))
                         .foregroundColor(T.accent)
                 }
@@ -151,10 +146,10 @@ struct BridgePairingView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
-                        Text("Get the Mac bridge")
+                        Text("Mac bridge integration")
                             .font(T.mono(13, .semibold))
                             .foregroundColor(T.ink)
-                        Text("PKG · 2 MB")
+                        Text("OPEN GUIDE")
                             .font(T.mono(9, .semibold))
                             .foregroundColor(T.ink3)
                             .padding(.horizontal, 6)
@@ -163,7 +158,7 @@ struct BridgePairingView: View {
                                 Capsule().fill(T.surface3)
                             )
                     }
-                    Text("Install LocalCoderBridge on your Mac to pair — signed, notarized, runs in the menu bar.")
+                    Text("Review the public pairing protocol, security boundaries, and client implementation notes.")
                         .font(T.mono(10.5))
                         .foregroundColor(T.ink3)
                         .lineLimit(2)
@@ -181,8 +176,8 @@ struct BridgePairingView: View {
             .kGlass(cornerRadius: 14, fallbackFill: T.surface)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Download LocalCoderBridge for Mac")
-        .accessibilityHint("Opens Safari to download the signed PKG installer.")
+        .accessibilityLabel("Open Mac bridge integration guide")
+        .accessibilityHint("Opens the public protocol documentation on GitHub.")
     }
 
     // MARK: - Argent Remote launcher
@@ -227,7 +222,7 @@ struct BridgePairingView: View {
 
     // MARK: - Header
 
-    // Design-language hero (matches Home / the Local AI Studio handoff). The
+    // Design-language hero (matches Home / the local LLM foundation handoff). The
     // Mac tab isn't in the design files, so this is built from the same
     // primitives: pink gradient, white type, a live status dot, soft bloom.
     private var header: some View {

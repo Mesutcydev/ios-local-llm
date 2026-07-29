@@ -17,7 +17,9 @@ Thanks for helping improve iOS Local LLM.
 3. Follow [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md).
 4. Add or update tests for behavior changes.
 5. Run the relevant tests and `./scripts/validate_open_source.sh`.
-6. Open a pull request using the repository template.
+6. Sign off each commit with `git commit -s` to certify the
+   [Developer Certificate of Origin](https://developercertificate.org/).
+7. Open a pull request using the repository template.
 
 ## Code style
 
@@ -31,7 +33,8 @@ Thanks for helping improve iOS Local LLM.
 
 By submitting a contribution, you agree that your contribution is licensed
 under the repository's MIT license. You confirm that you have the right to
-submit it.
+submit it. The `Signed-off-by` line certifies the Developer Certificate of
+Origin; it is not a copyright assignment.
 
 Clearly identify code or assets adapted from another source and include its
 copyright and license notice. A URL alone is not a substitute for permission

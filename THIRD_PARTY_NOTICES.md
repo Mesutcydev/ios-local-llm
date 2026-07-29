@@ -37,7 +37,8 @@ CocoaPods. Their source and license files are not copied into this repository.
 | ONNX Runtime | <https://github.com/microsoft/onnxruntime> | MIT |
 
 Transitive packages are recorded in `Package.resolved` and retain their own
-licenses in their source distributions.
+licenses in their source distributions. The source-distribution inventory is
+also recorded in [SBOM.spdx.json](SBOM.spdx.json).
 
 ## Models and generated artifacts not included
 

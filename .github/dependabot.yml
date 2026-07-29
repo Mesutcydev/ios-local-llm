@@ -8,7 +8,3 @@ updates:
     directory: /Packages/VoiceAgentOrb
     schedule:
       interval: monthly
-  - package-ecosystem: bundler
-    directory: /
-    schedule:
-      interval: monthly

@@ -35,8 +35,7 @@ The app makes network requests only for these explicit, user-initiated actions:
 4. **Mac Bridge and Local API Server** when you enable them. Requests are sent
    between devices on your local network.
 5. **iCloud sync** when you enable it.
-6. **External links and optional companion downloads** when you choose to open
-   or download them.
+6. **External documentation and links** when you choose to open them.
 
 The app includes a network-activity indicator for requests made through its
 monitored networking layer. Treat it as a useful diagnostic, not as a

@@ -149,9 +149,9 @@ struct SetupBannerView: View {
     }
 
     private var headline: String {
-        if isDownloading { return "setting up code lens…" }
+        if isDownloading { return "setting up local vision…" }
         if loadFailedWithFilesOnDisk { return "fastvlm installed — load failed" }
-        return "download fastvlm to enable code lens"
+        return "download FastVLM to enable local vision"
     }
 
     private var subhead: String {

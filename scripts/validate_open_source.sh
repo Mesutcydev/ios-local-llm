@@ -8,18 +8,36 @@ cd "$repository_root"
 required_files=(
   AGENTS.md
   ARCHITECTURE.md
+  ASSET_PROVENANCE.md
+  CHANGELOG.md
+  CITATION.cff
+  GOVERNANCE.md
   LICENSE
+  MAINTAINERS.md
+  PROVENANCE.md
   README.md
+  REUSE.toml
+  ROADMAP.md
+  SBOM.spdx.json
   CONTRIBUTING.md
   SECURITY.md
   THIRD_PARTY_NOTICES.md
   Docs/AGENT_INTEGRATION.md
   Docs/CODING_AGENT_IMPLEMENTATION.md
+  Docs/FORK_CONFIGURATION.md
+  Docs/OPEN_SOURCE_PROGRAM_READINESS.md
   Docs/REUSABLE_COMPONENTS.md
+  Docs/SECURITY_MODEL.md
+  Docs/VALIDATION.md
+  Docs/XCODE_SECURITY_SETTINGS.md
   IOSLocalLLM/LocalAIRuntimeFoundation/README.md
   codemeta.json
   llms.txt
+  .github/CODEOWNERS
   .github/copilot-instructions.md
+  Packages/VoiceAgentOrb/LICENSE
+  Packages/VoiceAgentOrb/NOTICE
+  Packages/VoiceAgentOrb/README.md
   IOSLocalLLM/Vendor/StableDiffusion/LICENSE
   IOSLocalLLM/Resources/Voice/LICENSE
   LICENSES/Apple-Sample-Code-License.txt
@@ -64,4 +82,40 @@ if [[ -n "$secret_matches" ]]; then
   exit 1
 fi
 
-echo "Open-source repository checks passed."
+if ! cmp -s \
+  IOSLocalLLM.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved \
+  IOSLocalLLM.xcworkspace/xcshareddata/swiftpm/Package.resolved; then
+  echo "error: committed Swift package lockfiles differ" >&2
+  exit 1
+fi
+
+python3 -m json.tool codemeta.json >/dev/null
+python3 -m json.tool SBOM.spdx.json >/dev/null
+
+retired_brand_pattern='CodeLens|code lens|CODELENS|LOCAL AI STUDIO|Local AI Studio|LOCAL_AI_STUDIO'
+retired_brand_matches="$(
+  git grep -In -E "$retired_brand_pattern" -- \
+    . \
+    ':!ThirdParty/**' \
+    ':!Pods/**' \
+    ':!scripts/validate_open_source.sh' \
+    ':!*.pbxproj' || true
+)"
+if [[ -n "$retired_brand_matches" ]]; then
+  echo "error: retired project branding remains in tracked source:" >&2
+  echo "$retired_brand_matches" >&2
+  exit 1
+fi
+
+for executable_script in \
+  scripts/build_native_frameworks.sh \
+  scripts/native/build_catalyst_slice.sh \
+  scripts/native/build_whisper_ios.sh; do
+  if [[ ! -x "$executable_script" ]]; then
+    echo "error: build script is not executable: $executable_script" >&2
+    exit 1
+  fi
+  bash -n "$executable_script"
+done
+
+echo "Repository hygiene checks passed."

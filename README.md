@@ -1,5 +1,13 @@
 # iOS Local LLM
 
+[![Validate](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/validate.yml/badge.svg)](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/validate.yml)
+[![License: MIT](https://img.shields.io/badge/original%20code-MIT-2ea44f.svg)](LICENSE)
+[![Swift](https://img.shields.io/badge/Swift-5.10-F05138.svg)](https://www.swift.org/)
+[![Platform](https://img.shields.io/badge/platform-iOS%2018%2B%20%7C%20Mac%20Catalyst-blue.svg)](SETUP_INSTRUCTIONS.md)
+
+> An independent, community-maintained local LLM workbench for iOS. Not
+> affiliated with or endorsed by Apple Inc.
+
 iOS Local LLM is a local-first AI workbench for iPhone and Apple silicon Macs.
 Built with Swift, SwiftUI, MLX, llama.cpp,
 whisper.cpp, and Core ML, it runs language, vision, speech, and
@@ -14,6 +22,21 @@ execute machine actions or send local inference to a cloud service.
 The app was previously distributed through the App Store. This repository is
 now the canonical source distribution. There is currently no official
 pre-built binary or App Store release.
+
+[![iOS Local LLM specification chart](Docs/Images/ios-local-llm-spec-chart.png)](Docs/Images/ios-local-llm-spec-chart.svg)
+
+## App screenshots
+
+| Home | Assistant |
+| --- | --- |
+| <img src="Docs/Images/Screenshots/home.png" width="320" alt="iOS Local LLM home dashboard"> | <img src="Docs/Images/Screenshots/assistant.png" width="320" alt="On-device assistant chat screen"> |
+| Models | Local vision onboarding |
+| <img src="Docs/Images/Screenshots/models.png" width="320" alt="Model discovery and management screen"> | <img src="Docs/Images/Screenshots/local-vision.png" width="320" alt="Local vision onboarding screen"> |
+
+These are unedited iPhone Simulator captures from the open-source source build.
+They contain no user content, accounts, tokens, or model weights. Simulator UI
+validation does not substitute for physical-device thermal, memory, or
+performance evidence; see [validation policy](Docs/VALIDATION.md).
 
 ## Highlights
 
@@ -49,6 +72,7 @@ This repository includes an agent-readable discovery layer:
   rules
 - [llms.txt](llms.txt) — concise documentation and capability index
 - [codemeta.json](codemeta.json) — structured software metadata
+- [SBOM.spdx.json](SBOM.spdx.json) — SPDX source dependency inventory
 - [.github/copilot-instructions.md](.github/copilot-instructions.md) —
   repository instructions for GitHub Copilot
 - [Coding-agent implementation handoff](Docs/CODING_AGENT_IMPLEMENTATION.md) —
@@ -113,9 +137,12 @@ brew install xcodegen cocoapods cmake
 Build the native inference frameworks:
 
 ```bash
-(cd ThirdParty/llama.cpp && ./build-xcframework.sh)
-(cd ThirdParty/whisper.cpp && ./build-xcframework.sh)
+./scripts/build_native_frameworks.sh
 ```
+
+For the optional Apple-Silicon Mac Catalyst target, add
+`--with-catalyst`. The tracked root scripts build only the required slices
+from the pinned submodules; no untracked submodule edits are required.
 
 Generate the Xcode project and install CocoaPods:
 
@@ -127,8 +154,9 @@ open IOSLocalLLM.xcworkspace
 
 Select the `IOSLocalLLM` scheme and an iOS Simulator. For a physical device,
 change the bundle identifiers and select your own development team in Xcode.
-See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md) for details and optional
-model setup.
+See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md) and
+[fork configuration](Docs/FORK_CONFIGURATION.md) for every identifier,
+capability, and optional model step.
 
 ## Models and large files
 
@@ -158,8 +186,12 @@ reports should follow [SECURITY.md](SECURITY.md).
 
 ## License
 
-Original iOS Local LLM code and documentation are available under the
+Original project code and documentation are available under the
 [MIT License](LICENSE). Third-party code, data, models, and dependencies remain
 under their respective terms; see
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The iOS Local LLM name and logos
-are not licensed as trademarks; see [TRADEMARKS.md](TRADEMARKS.md).
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Names and compatibility
+references are explained in [TRADEMARKS.md](TRADEMARKS.md).
+
+Project decisions and contribution roles are documented in
+[GOVERNANCE.md](GOVERNANCE.md), [ROADMAP.md](ROADMAP.md), and
+[MAINTAINERS.md](MAINTAINERS.md).

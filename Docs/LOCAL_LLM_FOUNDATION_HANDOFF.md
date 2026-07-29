@@ -1,4 +1,4 @@
-# Local AI Studio Foundation Handoff
+# Local LLM Foundation Handoff
 
 > **Target:** Build a new app from iOS Local LLM' strongest foundations.
 > **Generated:** 2026-06-18
@@ -107,7 +107,7 @@ IOSLocalLLM/
 ## 2. App Foundation Summary
 
 ### What the app fundamentally does
-iOS Local LLM is a local AI studio for iPhone. All inference runs on-device — no cloud LLM dependency. The app supports:
+iOS Local LLM is a local AI workbench for iPhone. All inference runs on-device — no cloud LLM dependency. The app supports:
 - **Text chat** with user-selectable on-device LLMs (Qwen3, Llama 3.2, Phi-3.5, Gemma 2, etc.) via Apple MLX
 - **Camera-based image analysis** (the "Lens" tab) using VLMs (FastVLM, SmolVLM2 GGUF, Qwen3-VL)
 - **On-device RAG** (Knowledge Base) — embed documents locally, retrieve via cosine similarity
@@ -963,7 +963,7 @@ Documents/
 
 > **Build a new local AI app on iOS using iOS Local LLM' foundation.**
 >
-> You are building a new iOS app from scratch using the battle-tested model loading, inference, memory management, thermal protection, and download systems documented in `Docs/LOCAL_AI_STUDIO_FOUNDATION_HANDOFF.md`. That document is your source of truth.
+> You are building a new iOS app from scratch using the model loading, inference, memory management, thermal protection, and download systems documented in `Docs/LOCAL_LLM_FOUNDATION_HANDOFF.md`. That document is your source of truth.
 >
 > **Your job:**
 > 1. Read the handoff document in full before writing any code.

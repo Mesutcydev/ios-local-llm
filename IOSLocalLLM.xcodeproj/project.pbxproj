@@ -10,10 +10,10 @@
 		000A91337B5D5EDDDDEC9129 /* VoicePerformanceSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36CD7E96744621CE4D02DAC5 /* VoicePerformanceSnapshot.swift */; };
 		00DFB0D15A9B6ACF2F79E0A3 /* HFSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC02AF2654D532FF24C662F7 /* HFSearchView.swift */; };
 		0168FB1A521187C6CFBD1E7C /* FastVLMPromptBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9254564509AE1BC2EB135493 /* FastVLMPromptBuilderTests.swift */; };
-		02826370BA30A71FAA8D585D /* 1840 a.PNG in Resources */ = {isa = PBXBuildFile; fileRef = 5F6DDC90BF4488DB7A256713 /* 1840 a.PNG */; };
 		039B3E292A20C21AC46327E1 /* ModelResidency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 309F28AD2CC3B36AC6B3A5AD /* ModelResidency.swift */; };
 		04D1C86F05E76C9491CCA438 /* HFSearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC160013CF67967CDF0A8E2 /* HFSearchService.swift */; };
 		056D4736B442F55516381722 /* StreamingResponseCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98EE39672E2AA6DA73C6048F /* StreamingResponseCoordinator.swift */; };
+		05F68855CA01AB6EEEE6C18C /* libPods-IOSLocalLLM.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FE3995FAD740CBE3CC9BC102 /* libPods-IOSLocalLLM.a */; };
 		06AD528AB61F1000D66EF224 /* BackgroundDownloadCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F2815611515CF0E04A12EDB /* BackgroundDownloadCoordinator.swift */; };
 		0707E8527F8745D2AB6AAAA9 /* VoiceConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 991CA1E41F5C8737D61B0ED0 /* VoiceConversationView.swift */; };
 		0808E0FF4B206698729DE620 /* PredDurWordAligner.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7FD9DEE5BAE6CC90030ADB5 /* PredDurWordAligner.swift */; };
@@ -109,7 +109,6 @@
 		45EF4DBA0B9FF796FE0335A0 /* FastVLMCoreMLStub.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761977E8725BE78333F53078 /* FastVLMCoreMLStub.swift */; };
 		4746E312ADDB08D6CE965B69 /* SetupBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F018B0A322EF52F1F27E2410 /* SetupBannerView.swift */; };
 		477BEF0541BBEEF0958E6383 /* KeyboardToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBB79B634A09D732D431B4C5 /* KeyboardToolbar.swift */; };
-		47E930C28219E9DA64105966 /* 3.PNG in Resources */ = {isa = PBXBuildFile; fileRef = EBD968D546D51E8D4BCDBB68 /* 3.PNG */; };
 		480C5DBFE0A76AB883E4974B /* CapabilityPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA8D52E421BF9AF3C149BFB5 /* CapabilityPill.swift */; };
 		487470A9D371015D8FC6C6A5 /* VoiceAudioSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E83CD1AB961EB288F1727D40 /* VoiceAudioSessionManager.swift */; };
 		491E2AC589BC23A46E0E5071 /* AudioRoutePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7308BD5EE5714102D13D719 /* AudioRoutePicker.swift */; };
@@ -134,7 +133,6 @@
 		5AE36BBC90674181FE758BD9 /* llama.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 1CA3A4EAF4DC522F64359FE8 /* llama.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		5B474CA001497BE1CCF60D03 /* AssistantModelPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70CFFAC2D82BA93F04548697 /* AssistantModelPickerView.swift */; };
 		5B8C22CD971CC522D8DF2502 /* BridgeIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72DC6407CF44D031F043CE22 /* BridgeIdentity.swift */; };
-		5C7632AF4DF5EFAE2AF99512 /* 2.PNG in Resources */ = {isa = PBXBuildFile; fileRef = 7B83548F2B6EDD97F940AAA8 /* 2.PNG */; };
 		5C777C2BEC817963C1CFF303 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 046C7B38EDE8E23489B1C10B /* MLX */; };
 		5D6A1BC4E771BA95BB103BDA /* MemoryAdvisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD933702AC2248C3D3FA6F6F /* MemoryAdvisor.swift */; };
 		60B54753771CE593836512F4 /* DownloadLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C13C7CD4EEC23DF270B8666 /* DownloadLiveActivity.swift */; };
@@ -155,7 +153,6 @@
 		6DA231F48254D19C49D22283 /* FastVLMModelState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37408B32C8BC3C6BFBC85AD4 /* FastVLMModelState.swift */; };
 		6DD3F56398A826A4F0DF9B2C /* Configuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0B8839B67FA81D65627A37 /* Configuration.swift */; };
 		6DEF09CC0790A07F0EAEA470 /* KoduTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A45D99983EDD15FBB217141 /* KoduTheme.swift */; };
-		6E16C6E9B74F49D5D587EF24 /* 4.PNG in Resources */ = {isa = PBXBuildFile; fileRef = 75928FD025264E7454E6563A /* 4.PNG */; };
 		6E3EAE0EFE7D2CD560297F6A /* WebContextCompressor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69DBCEE7274A8795B6780BE5 /* WebContextCompressor.swift */; };
 		70788400F2771D864AB9FFDF /* MLXRandom in Frameworks */ = {isa = PBXBuildFile; productRef = 5C1D9EE7015A5DED67652FF7 /* MLXRandom */; };
 		70CB8112EA03A4646EB41786 /* whisper.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 1418065A4D8FA0ECD4AED77C /* whisper.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -190,7 +187,6 @@
 		8908733E9E11BC3D922FD453 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1905B6A8006DD7A452F3DF5E /* OnboardingView.swift */; };
 		890D0EC516F14746E4CECE86 /* VoiceStatusPillTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 305459B9C85D1D4976C51D11 /* VoiceStatusPillTests.swift */; };
 		8B8C581AF273520102B1CFCC /* SnippetPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF54DA9F2D20B1E8BB4F942E /* SnippetPickerView.swift */; };
-		8BCCEC167BD1A72604CB5DF5 /* 1.PNG in Resources */ = {isa = PBXBuildFile; fileRef = 93E51D353F643E98EBD0A559 /* 1.PNG */; };
 		8CEF67560DB4007E4C2FE481 /* VoiceControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF8189A8E9E237627B3E19FA /* VoiceControlsView.swift */; };
 		8D68517306EB0E60722453C9 /* TextRegionDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B701A3E42F1667269912E0 /* TextRegionDetector.swift */; };
 		8D983E7D4ECEEDF616CA6A0B /* FastVLMConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5ED0CF56557CC59E004104D /* FastVLMConfig.swift */; };
@@ -279,6 +275,7 @@
 		CCBC321D5B27DFB0F44B833F /* CodePanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F66999841E408F85E5C58E8E /* CodePanelView.swift */; };
 		CD8F5AC91EA2A0AA07E41F66 /* BridgePairingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12A27032DF501FFDD0C77335 /* BridgePairingView.swift */; };
 		CE1CE6FEEAF445460914C31B /* ModelCatalogTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2C6875047C05D4A5816617F /* ModelCatalogTypes.swift */; };
+		CE7489C07D94B3AD35EEDC4A /* libPods-IOSLocalLLMTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E55FDB22CBEE888644FBE49 /* libPods-IOSLocalLLMTests.a */; };
 		CECDCDD71021A8D942B1EDE7 /* RemoteInferenceGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12910508E8C34A16AA08456F /* RemoteInferenceGate.swift */; };
 		CF3176608F458F3C35E1FB37 /* WebSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFE2927120C9D7BAE0C301CE /* WebSettingsView.swift */; };
 		CF3FFC7CA309357D319A78EC /* TextChunkerSanitizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73EACB4F00ACC8F5F747303F /* TextChunkerSanitizerTests.swift */; };
@@ -295,10 +292,8 @@
 		D5C3A482566EFD4A349486DF /* Int64FormattedBytesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C35A539EDBBB34389F2F5A4B /* Int64FormattedBytesTests.swift */; };
 		D64B5370DD99AC6554C42FDF /* LocalModelFileValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90C3DD968FB17EB45D474BEE /* LocalModelFileValidator.swift */; };
 		D6BF8C29E65AFB70DB63BDB2 /* ChatTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CA888929F48ED186E41533D /* ChatTemplate.swift */; };
-		D7B6778F332B692000D236CB /* 7.PNG in Resources */ = {isa = PBXBuildFile; fileRef = B7194DC18714A74C34F8224E /* 7.PNG */; };
 		D84E0CDD792456DB269247C3 /* LocalizationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26A27B2B7EB8DE856B884E04 /* LocalizationService.swift */; };
 		D89DD62F91ACBE68DA43DE47 /* ReasoningStripperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCE9D5D15D5523CE1E00B79D /* ReasoningStripperTests.swift */; };
-		D912AA217D02DF87EBE767C0 /* libPods-IOSLocalLLMTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F9FE265824B2FBBD704ED404 /* libPods-IOSLocalLLMTests.a */; };
 		DAB1B8AE6888C894C5A6CA11 /* QualityEvalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE487CF6A5B7DEDC484622AE /* QualityEvalView.swift */; };
 		DAC17F9185910181739598D0 /* LlamaCppBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B258D8DB6CEF26E963A8CF /* LlamaCppBridge.swift */; };
 		DBF76C0241DC913DD2073096 /* Detection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A15CA2FFACFE41DA8EA782A /* Detection.swift */; };
@@ -306,9 +301,7 @@
 		DC73A86BE6943BBAA95F4728 /* FileAttachmentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF3AF0CF9052069E4A9FE3F7 /* FileAttachmentPicker.swift */; };
 		DCB7B9A7944D7E30EAC4B703 /* BenchmarkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 808816437CAEB346B750B22D /* BenchmarkService.swift */; };
 		DCF5DC959F746127955FF004 /* VoiceSoakHarnessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CCF5D3CF42F2E7356173F90 /* VoiceSoakHarnessTests.swift */; };
-		DD090C4DDFF13387D108FEA3 /* libPods-IOSLocalLLM.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BCF63756FDF12E41670A078E /* libPods-IOSLocalLLM.a */; };
 		DD3C81B88574848F0BDA51F2 /* DeviceSafetyMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90FAE0D54AC61661E3BE2C8 /* DeviceSafetyMonitor.swift */; };
-		DD5423F183114F4BE8E0D599 /* 6.PNG in Resources */ = {isa = PBXBuildFile; fileRef = 7B454B8B0488A007C7463D16 /* 6.PNG */; };
 		DDC014FBC9023A61A1262BBF /* LensPromptPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6FEC862A107A8358D2E9F8E /* LensPromptPreset.swift */; };
 		DE57EDB5215AE09350287BEA /* PhotoPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02C420D45CBF6FFD1927DBDD /* PhotoPickerView.swift */; };
 		DF1FE6A0D2ADE3D5D74A7B2F /* ApplePrivateCloudTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = D767DA7B2F37938498A99222 /* ApplePrivateCloudTypes.swift */; };
@@ -418,7 +411,6 @@
 		0324C168EBB953F9E93165B1 /* TextChunker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextChunker.swift; sourceTree = "<group>"; };
 		0369F8854453D6ADF9FEEB1A /* DeviceCompatibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceCompatibility.swift; sourceTree = "<group>"; };
 		0388B5551C606DCD53DAE3EF /* VoiceProfileRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceProfileRegistry.swift; sourceTree = "<group>"; };
-		03CB56DC992D12420EA4D97D /* Pods-IOSLocalLLM.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-IOSLocalLLM.debug.xcconfig"; path = "Target Support Files/Pods-IOSLocalLLM/Pods-IOSLocalLLM.debug.xcconfig"; sourceTree = "<group>"; };
 		05E21676873ED90AA26479A2 /* FileAttachmentChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileAttachmentChip.swift; sourceTree = "<group>"; };
 		05E34F9B361C0201ABC6ADA8 /* VoiceValidationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceValidationView.swift; sourceTree = "<group>"; };
 		06B9760CF0D4262888FAFCDA /* TokenLogprob.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenLogprob.swift; sourceTree = "<group>"; };
@@ -529,7 +521,7 @@
 		5BD6D9337D83C9DAE3B832AE /* BridgeAgentMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeAgentMode.swift; sourceTree = "<group>"; };
 		5C13C7CD4EEC23DF270B8666 /* DownloadLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadLiveActivity.swift; sourceTree = "<group>"; };
 		5CCF5D3CF42F2E7356173F90 /* VoiceSoakHarnessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSoakHarnessTests.swift; sourceTree = "<group>"; };
-		5F6DDC90BF4488DB7A256713 /* 1840 a.PNG */ = {isa = PBXFileReference; path = "1840 a.PNG"; sourceTree = "<group>"; };
+		5E55FDB22CBEE888644FBE49 /* libPods-IOSLocalLLMTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-IOSLocalLLMTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		5F8CC53BBB7B486CB0E63769 /* LensDebugOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensDebugOverlay.swift; sourceTree = "<group>"; };
 		6008DB575A0E7876C98FC27B /* KaraokeTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaraokeTimelineTests.swift; sourceTree = "<group>"; };
 		6037EBD1E417179D0E2236AF /* AppleFoundationModelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleFoundationModelService.swift; sourceTree = "<group>"; };
@@ -563,7 +555,6 @@
 		70B42D06B98D56798186AADF /* HubApiDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubApiDownloader.swift; sourceTree = "<group>"; };
 		70B90912E09A237E7674B699 /* ToastCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastCenter.swift; sourceTree = "<group>"; };
 		70CFFAC2D82BA93F04548697 /* AssistantModelPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantModelPickerView.swift; sourceTree = "<group>"; };
-		70DB472DB161F96E8B6F15B7 /* Pods-IOSLocalLLM.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-IOSLocalLLM.release.xcconfig"; path = "Target Support Files/Pods-IOSLocalLLM/Pods-IOSLocalLLM.release.xcconfig"; sourceTree = "<group>"; };
 		713F51F04E4F96FD9C27E05C /* SpeechDictationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechDictationService.swift; sourceTree = "<group>"; };
 		7186FB223A43D80B77CCA5BA /* ArgentRemoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArgentRemoteView.swift; sourceTree = "<group>"; };
 		71B4E0E22B0DE1032603DD9B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -576,7 +567,6 @@
 		747F59D906B943AF82AB2092 /* OnDeviceEmbedder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnDeviceEmbedder.swift; sourceTree = "<group>"; };
 		74A242065554E291F7E81D2E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		74A2D8CFEA80C74B8EE12628 /* BundledVLMInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledVLMInstaller.swift; sourceTree = "<group>"; };
-		75928FD025264E7454E6563A /* 4.PNG */ = {isa = PBXFileReference; path = 4.PNG; sourceTree = "<group>"; };
 		761977E8725BE78333F53078 /* FastVLMCoreMLStub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastVLMCoreMLStub.swift; sourceTree = "<group>"; };
 		7830F858420CD08EC80FE319 /* CameraPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreviewView.swift; sourceTree = "<group>"; };
 		78AD83ACCCC6AC4F5D9FAAD0 /* WipeAllDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WipeAllDataService.swift; sourceTree = "<group>"; };
@@ -585,8 +575,6 @@
 		791D19F3F04B70A57DF7E9CF /* VoiceRuntimeDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRuntimeDiagnostics.swift; sourceTree = "<group>"; };
 		79241465C9BD62A73E93A8B0 /* IOSLocalLLMTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = IOSLocalLLMTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B031DA115AFAB64BCB51D96 /* SpeechAlignment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechAlignment.swift; sourceTree = "<group>"; };
-		7B454B8B0488A007C7463D16 /* 6.PNG */ = {isa = PBXFileReference; path = 6.PNG; sourceTree = "<group>"; };
-		7B83548F2B6EDD97F940AAA8 /* 2.PNG */ = {isa = PBXFileReference; path = 2.PNG; sourceTree = "<group>"; };
 		808816437CAEB346B750B22D /* BenchmarkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkService.swift; sourceTree = "<group>"; };
 		8145D75E059CB35F7034D6BD /* AnalysisPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisPanelView.swift; sourceTree = "<group>"; };
 		831091E3AAB1D8DBA145BCD8 /* LensFramePreparer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensFramePreparer.swift; sourceTree = "<group>"; };
@@ -595,7 +583,6 @@
 		8778BFA165A9B2B1D7C9166C /* BenchmarkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkView.swift; sourceTree = "<group>"; };
 		87FE163E96CA25656C2A84DB /* LocalModelImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalModelImportService.swift; sourceTree = "<group>"; };
 		883CFC699595B2AD4CB1CBEB /* DiffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiffView.swift; sourceTree = "<group>"; };
-		8986E42AABFA67611581EDA3 /* Pods-IOSLocalLLMTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-IOSLocalLLMTests.debug.xcconfig"; path = "Target Support Files/Pods-IOSLocalLLMTests/Pods-IOSLocalLLMTests.debug.xcconfig"; sourceTree = "<group>"; };
 		8C898BB73FE00984ADBA314F /* VoiceStatusPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceStatusPill.swift; sourceTree = "<group>"; };
 		8D6C8469A7BC0E2E44F349D4 /* LifecycleController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifecycleController.swift; sourceTree = "<group>"; };
 		8E10788E55E0B74A22F7224F /* StoredConversationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredConversationTests.swift; sourceTree = "<group>"; };
@@ -607,20 +594,20 @@
 		911B1DC5F11E046C3F7ADB8F /* ToolRunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolRunnerTests.swift; sourceTree = "<group>"; };
 		9254564509AE1BC2EB135493 /* FastVLMPromptBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastVLMPromptBuilderTests.swift; sourceTree = "<group>"; };
 		92EA47D030ABFC259E803F1C /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
-		93E51D353F643E98EBD0A559 /* 1.PNG */ = {isa = PBXFileReference; path = 1.PNG; sourceTree = "<group>"; };
 		9609639C834F0250421C3704 /* Sampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sampler.swift; sourceTree = "<group>"; };
 		962AAAEE3ABBAC2B592737BF /* HFModelDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HFModelDownloadManager.swift; sourceTree = "<group>"; };
+		972544CA459F2596227E78B3 /* Pods-IOSLocalLLM.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-IOSLocalLLM.debug.xcconfig"; path = "Target Support Files/Pods-IOSLocalLLM/Pods-IOSLocalLLM.debug.xcconfig"; sourceTree = "<group>"; };
 		97E3E6A80C0B87C536657429 /* HFTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HFTokenStore.swift; sourceTree = "<group>"; };
 		98EE39672E2AA6DA73C6048F /* StreamingResponseCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamingResponseCoordinator.swift; sourceTree = "<group>"; };
 		991CA1E41F5C8737D61B0ED0 /* VoiceConversationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceConversationView.swift; sourceTree = "<group>"; };
 		99FE3DF6BF247F70051BCFAF /* SamplerPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SamplerPreset.swift; sourceTree = "<group>"; };
 		9B0A862C61315A4322EA37DA /* ApplePrivateCloudRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplePrivateCloudRuntime.swift; sourceTree = "<group>"; };
 		9BED837A3844A47E6117A6CE /* LocalAIFoundationConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAIFoundationConfig.swift; sourceTree = "<group>"; };
-		9C08449DDB4EEE4D5ADBA8FC /* Pods-IOSLocalLLMTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-IOSLocalLLMTests.release.xcconfig"; path = "Target Support Files/Pods-IOSLocalLLMTests/Pods-IOSLocalLLMTests.release.xcconfig"; sourceTree = "<group>"; };
 		9C9F9E72A74D4CA68C813EBF /* LocalAPIServerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAPIServerTests.swift; sourceTree = "<group>"; };
 		9CA888929F48ED186E41533D /* ChatTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatTemplate.swift; sourceTree = "<group>"; };
 		9DB2E2AEB4DF10BBC2924600 /* preprocessor_config.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = preprocessor_config.json; sourceTree = "<group>"; };
 		9EE4B6D1BF322E8B9A1C9EE9 /* BridgePinningDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgePinningDelegate.swift; sourceTree = "<group>"; };
+		9FB3413A5CBBFD43B9556D64 /* Pods-IOSLocalLLMTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-IOSLocalLLMTests.debug.xcconfig"; path = "Target Support Files/Pods-IOSLocalLLMTests/Pods-IOSLocalLLMTests.debug.xcconfig"; sourceTree = "<group>"; };
 		9FB6FE5FFD1189F94A1BEFDA /* Clip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clip.swift; sourceTree = "<group>"; };
 		A27D7FEBC27519412B8192B9 /* LoRAAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoRAAdapter.swift; sourceTree = "<group>"; };
 		A2B701A3E42F1667269912E0 /* TextRegionDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextRegionDetector.swift; sourceTree = "<group>"; };
@@ -648,19 +635,18 @@
 		B05499A613EB55EDB55CA9E4 /* KittenRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KittenRuntimeTests.swift; sourceTree = "<group>"; };
 		B0CDD2B7E65FFD2024303ED9 /* ModelQualityEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelQualityEval.swift; sourceTree = "<group>"; };
 		B0E2FDF35B921F5027818C09 /* VoiceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceService.swift; sourceTree = "<group>"; };
+		B108BE51E52C60F2AE3F530F /* Pods-IOSLocalLLM.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-IOSLocalLLM.release.xcconfig"; path = "Target Support Files/Pods-IOSLocalLLM/Pods-IOSLocalLLM.release.xcconfig"; sourceTree = "<group>"; };
 		B13BFDB00D06DCDB278F707E /* AudioQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioQueue.swift; sourceTree = "<group>"; };
 		B2E54CBF9BED04F39E184435 /* LocalAITypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAITypes.swift; sourceTree = "<group>"; };
 		B39A7489F295F0E5720F4854 /* SpeechPlaybackCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechPlaybackCoordinator.swift; sourceTree = "<group>"; };
 		B39E1A4C888278D166B564E8 /* PendingIndexQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingIndexQueue.swift; sourceTree = "<group>"; };
 		B51DB6C45B6E81EC5D23945C /* FastVLM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastVLM.swift; sourceTree = "<group>"; };
-		B7194DC18714A74C34F8224E /* 7.PNG */ = {isa = PBXFileReference; path = 7.PNG; sourceTree = "<group>"; };
 		B90FAE0D54AC61661E3BE2C8 /* DeviceSafetyMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSafetyMonitor.swift; sourceTree = "<group>"; };
 		BA3D5B542D7CB0D3AFCEDB0D /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
 		BA6A2C186868595979664937 /* VoiceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceEngine.swift; sourceTree = "<group>"; };
 		BAEB982B3FCB8EC87372E494 /* AssistantModelCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantModelCatalog.swift; sourceTree = "<group>"; };
 		BBEA0D3B8DBB1E73ECD52D89 /* NetworkActivityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkActivityMonitor.swift; sourceTree = "<group>"; };
 		BC09C2C135F05153A40A06BE /* AnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisService.swift; sourceTree = "<group>"; };
-		BCF63756FDF12E41670A078E /* libPods-IOSLocalLLM.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-IOSLocalLLM.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		BD9665D7F4090BCB6D37C5B9 /* SemanticChunker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticChunker.swift; sourceTree = "<group>"; };
 		BE487CF6A5B7DEDC484622AE /* QualityEvalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QualityEvalView.swift; sourceTree = "<group>"; };
 		BEE7063F617524AEDF343E7F /* VisualModelComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualModelComparisonView.swift; sourceTree = "<group>"; };
@@ -711,6 +697,7 @@
 		DE85367B6A092FB48377CC95 /* KaraokeCueTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaraokeCueTrack.swift; sourceTree = "<group>"; };
 		DEE267E7EC529C3233A60DFD /* SystemStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemStatusView.swift; sourceTree = "<group>"; };
 		DF6E5B67502436EB849CDC52 /* SystemSpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSpeechService.swift; sourceTree = "<group>"; };
+		E05E912E024E79787277D765 /* Pods-IOSLocalLLMTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-IOSLocalLLMTests.release.xcconfig"; path = "Target Support Files/Pods-IOSLocalLLMTests/Pods-IOSLocalLLMTests.release.xcconfig"; sourceTree = "<group>"; };
 		E208A42DBA00CC379845A5DA /* LocalAIController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAIController.swift; sourceTree = "<group>"; };
 		E2D45C22A56ED4681BFEDFF3 /* Diagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostics.swift; sourceTree = "<group>"; };
 		E34106FA4E9A555A0A93D0B0 /* LensVoiceNarratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensVoiceNarratorTests.swift; sourceTree = "<group>"; };
@@ -726,7 +713,6 @@
 		EA0ADAB05351192148B2FC93 /* CameraService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraService.swift; sourceTree = "<group>"; };
 		EA44B66B98FE13D6AA599F15 /* merges.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = merges.txt; sourceTree = "<group>"; };
 		EAFC4B606D50E87FEA824092 /* VoiceActivityDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceActivityDetector.swift; sourceTree = "<group>"; };
-		EBD968D546D51E8D4BCDBB68 /* 3.PNG */ = {isa = PBXFileReference; path = 3.PNG; sourceTree = "<group>"; };
 		EBEF6C375F29115D5BE9DAFE /* BridgePairingStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgePairingStoreTests.swift; sourceTree = "<group>"; };
 		EC052BF15927CC2136D7B7F6 /* ModelsManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelsManagerView.swift; sourceTree = "<group>"; };
 		EC0B8839B67FA81D65627A37 /* Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configuration.swift; sourceTree = "<group>"; };
@@ -750,7 +736,6 @@
 		F872F76FB51763BB0478E0E4 /* AudioVisualClockTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioVisualClockTests.swift; sourceTree = "<group>"; };
 		F8BBDB5100E1AEA660CE3D67 /* ReasoningStripper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReasoningStripper.swift; sourceTree = "<group>"; };
 		F91E5E45E16E9F3C12D144D9 /* Load.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Load.swift; sourceTree = "<group>"; };
-		F9FE265824B2FBBD704ED404 /* libPods-IOSLocalLLMTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-IOSLocalLLMTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FA8D52E421BF9AF3C149BFB5 /* CapabilityPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapabilityPill.swift; sourceTree = "<group>"; };
 		FB75CD28A0C0237A0DFA3A94 /* FastVLMGenerationSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastVLMGenerationSettings.swift; sourceTree = "<group>"; };
 		FC07BD30E553E623D8332D1C /* KittenTTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KittenTTSService.swift; sourceTree = "<group>"; };
@@ -758,6 +743,7 @@
 		FCE9D5D15D5523CE1E00B79D /* ReasoningStripperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReasoningStripperTests.swift; sourceTree = "<group>"; };
 		FD1A3731D1CF59277AAACDE9 /* ModelPrefetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelPrefetcher.swift; sourceTree = "<group>"; };
 		FDB43FBBD1A98ED4F912189A /* ModelStorageCleanupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelStorageCleanupView.swift; sourceTree = "<group>"; };
+		FE3995FAD740CBE3CC9BC102 /* libPods-IOSLocalLLM.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-IOSLocalLLM.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FEFCD8FCA3620024E366D317 /* VoiceUITestFixtureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceUITestFixtureView.swift; sourceTree = "<group>"; };
 		FF1E88442F2ABD9A06A50B04 /* SpeechTimingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechTimingTests.swift; sourceTree = "<group>"; };
 		FF3BAC1E46C63422F3C4BB4C /* FileAttachmentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileAttachmentService.swift; sourceTree = "<group>"; };
@@ -765,14 +751,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		5B49431A8987909947DA686F /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D912AA217D02DF87EBE767C0 /* libPods-IOSLocalLLMTests.a in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		6F5B969AB795DED3EC3B3609 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -788,7 +766,15 @@
 				F71F9D8D6C6291F08CBCD860 /* MLXFast in Frameworks */,
 				61803324DC810077791D3A1E /* llama.xcframework in Frameworks */,
 				B4BA86702BFF2E2C515626A1 /* whisper.xcframework in Frameworks */,
-				DD090C4DDFF13387D108FEA3 /* libPods-IOSLocalLLM.a in Frameworks */,
+				05F68855CA01AB6EEEE6C18C /* libPods-IOSLocalLLM.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA62049DBBD46DC5420571DD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CE7489C07D94B3AD35EEDC4A /* libPods-IOSLocalLLMTests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -820,7 +806,6 @@
 				87C8C0A6180319B7CDEFB973 /* Models */,
 				3A1351278F7E262B0B0A5EA4 /* Resources */,
 				41D82D012EA92B600BD9E575 /* Services */,
-				866EF8DB98F9BF102C1215FA /* ss */,
 				DC40216CF81278F4F17AF9B1 /* Utilities */,
 				1211DDE4AFC493401FC4E826 /* Vendor */,
 				A28D0210159F248B559E778E /* ViewModels */,
@@ -983,18 +968,6 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
-		495BA24D3F054E60498DE63A /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				03CB56DC992D12420EA4D97D /* Pods-IOSLocalLLM.debug.xcconfig */,
-				70DB472DB161F96E8B6F15B7 /* Pods-IOSLocalLLM.release.xcconfig */,
-				8986E42AABFA67611581EDA3 /* Pods-IOSLocalLLMTests.debug.xcconfig */,
-				9C08449DDB4EEE4D5ADBA8FC /* Pods-IOSLocalLLMTests.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
-			sourceTree = "<group>";
-		};
 		497F7320F2141240A36E77FF /* Voice */ = {
 			isa = PBXGroup;
 			children = (
@@ -1030,10 +1003,22 @@
 			children = (
 				1CA3A4EAF4DC522F64359FE8 /* llama.xcframework */,
 				1418065A4D8FA0ECD4AED77C /* whisper.xcframework */,
-				BCF63756FDF12E41670A078E /* libPods-IOSLocalLLM.a */,
-				F9FE265824B2FBBD704ED404 /* libPods-IOSLocalLLMTests.a */,
+				FE3995FAD740CBE3CC9BC102 /* libPods-IOSLocalLLM.a */,
+				5E55FDB22CBEE888644FBE49 /* libPods-IOSLocalLLMTests.a */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		586E1223F8257BCF8967B395 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				972544CA459F2596227E78B3 /* Pods-IOSLocalLLM.debug.xcconfig */,
+				B108BE51E52C60F2AE3F530F /* Pods-IOSLocalLLM.release.xcconfig */,
+				9FB3413A5CBBFD43B9556D64 /* Pods-IOSLocalLLMTests.debug.xcconfig */,
+				E05E912E024E79787277D765 /* Pods-IOSLocalLLMTests.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 		5C54CDB33718A0167E092CE3 /* Pipeline */ = {
@@ -1139,20 +1124,6 @@
 				3D74A2CE112D680B565AB81F /* WebToolService.swift */,
 			);
 			path = Web;
-			sourceTree = "<group>";
-		};
-		866EF8DB98F9BF102C1215FA /* ss */ = {
-			isa = PBXGroup;
-			children = (
-				93E51D353F643E98EBD0A559 /* 1.PNG */,
-				7B83548F2B6EDD97F940AAA8 /* 2.PNG */,
-				EBD968D546D51E8D4BCDBB68 /* 3.PNG */,
-				75928FD025264E7454E6563A /* 4.PNG */,
-				7B454B8B0488A007C7463D16 /* 6.PNG */,
-				B7194DC18714A74C34F8224E /* 7.PNG */,
-				5F6DDC90BF4488DB7A256713 /* 1840 a.PNG */,
-			);
-			path = ss;
 			sourceTree = "<group>";
 		};
 		87C8C0A6180319B7CDEFB973 /* Models */ = {
@@ -1382,7 +1353,7 @@
 				8DF1B0293661BF7CF6627310 /* Packages */,
 				53BB26CD68559B00FC1336A2 /* Frameworks */,
 				7BA25EB20AD94880D0D83E00 /* Products */,
-				495BA24D3F054E60498DE63A /* Pods */,
+				586E1223F8257BCF8967B395 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1514,7 +1485,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5CDEAFB9F7F142CC702A73AA /* Build configuration list for PBXNativeTarget "IOSLocalLLM" */;
 			buildPhases = (
-				7ABD7A64B0C769853095E441 /* [CP] Check Pods Manifest.lock */,
+				214B58FA8637046861B60254 /* [CP] Check Pods Manifest.lock */,
 				FC9919E7442159F6D9C49FE6 /* Sources */,
 				01B5D3B8481B858E8B5DF4DC /* Copy bundled VLM (SmolVLM2 GGUF) */,
 				002289B961A54D99A766BC7C /* Copy bundled voice models (Silero VAD) */,
@@ -1564,9 +1535,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4ACA55057D5B9D48BABE8112 /* Build configuration list for PBXNativeTarget "IOSLocalLLMTests" */;
 			buildPhases = (
-				70087E5388138747ADAC9BF2 /* [CP] Check Pods Manifest.lock */,
+				D0F5D0D601A8AA0F9FE735A7 /* [CP] Check Pods Manifest.lock */,
 				01161802A7422596999569AA /* Sources */,
-				5B49431A8987909947DA686F /* Frameworks */,
+				DA62049DBBD46DC5420571DD /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -1651,13 +1622,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8BCCEC167BD1A72604CB5DF5 /* 1.PNG in Resources */,
-				02826370BA30A71FAA8D585D /* 1840 a.PNG in Resources */,
-				5C7632AF4DF5EFAE2AF99512 /* 2.PNG in Resources */,
-				47E930C28219E9DA64105966 /* 3.PNG in Resources */,
-				6E16C6E9B74F49D5D587EF24 /* 4.PNG in Resources */,
-				DD5423F183114F4BE8E0D599 /* 6.PNG in Resources */,
-				D7B6778F332B692000D236CB /* 7.PNG in Resources */,
 				6B672A80643DB8C055BC1DBB /* Assets.xcassets in Resources */,
 				22407975BCEF0D63F81F5C47 /* PrivacyInfo.xcprivacy in Resources */,
 				6CF5235FBC771BDB0370E221 /* VoiceModelCatalog.json in Resources */,
@@ -1730,29 +1694,7 @@
 			shellPath = /bin/sh;
 			shellScript = "set -e\nSRC=\"${SRCROOT}/IOSLocalLLM/Models/FastVLM-0.5B-fp16/fastvithd.mlpackage\"\nDEST_DIR=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\nDEST_PACKAGE=\"${DEST_DIR}/fastvithd.mlpackage\"\nDEST_COMPILED=\"${DEST_DIR}/fastvithd.mlmodelc\"\nif [ ! -d \"$SRC\" ]; then\n  echo \"warning: fastvithd.mlpackage not found at $SRC — FastVLM lens path will be unavailable on this build.\"\n  exit 0\nfi\n# Prefer shipping the pre-compiled .mlmodelc so the first\n# camera tap doesn't pay the ~2-3 s on-device compile cost.\n# coremlcompiler is the Xcode-bundled tool that runs the\n# same compile step Xcode's build system uses for sources.\nCOREMLC=\"$(xcrun --find coremlcompiler 2>/dev/null || true)\"\nif [ -n \"$COREMLC\" ] && [ -x \"$COREMLC\" ]; then\n  rm -rf \"$DEST_COMPILED\"\n  \"$COREMLC\" compile \"$SRC\" \"$DEST_DIR\" >/dev/null\n  # coremlcompiler writes <name>.mlmodelc into the dest dir,\n  # so DEST_COMPILED is now populated. Drop the raw\n  # mlpackage so we don't ship both.\n  rm -rf \"$DEST_PACKAGE\"\n  echo \"Compiled FastVLM encoder to $DEST_COMPILED\"\nelse\n  # Fallback: ship the raw mlpackage. FastVLMCoreMLStub\n  # handles runtime compilation via MLModel.compileModel,\n  # which costs a few seconds on first launch but is\n  # functionally equivalent.\n  rsync -a --delete \"$SRC/\" \"$DEST_PACKAGE/\"\n  echo \"Copied raw FastVLM encoder mlpackage to $DEST_PACKAGE (no coremlcompiler available — will compile at runtime)\"\nfi\n";
 		};
-		70087E5388138747ADAC9BF2 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-IOSLocalLLMTests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		7ABD7A64B0C769853095E441 /* [CP] Check Pods Manifest.lock */ = {
+		214B58FA8637046861B60254 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1768,6 +1710,28 @@
 			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/Pods-IOSLocalLLM-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		D0F5D0D601A8AA0F9FE735A7 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-IOSLocalLLMTests-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -2150,6 +2114,9 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_ANALYZER_SECURITY_FLOATLOOPCOUNTER = YES;
+				CLANG_ANALYZER_SECURITY_INSECUREAPI_RAND = YES;
+				CLANG_ANALYZER_SECURITY_INSECUREAPI_STRCPY = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
@@ -2164,6 +2131,7 @@
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_IMPLICIT_FALLTHROUGH = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
@@ -2185,6 +2153,7 @@
 				"EXCLUDED_ARCHS[sdk=macosx*]" = x86_64;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
@@ -2211,7 +2180,7 @@
 		};
 		191A6D60E7000E96612ACE70 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9C08449DDB4EEE4D5ADBA8FC /* Pods-IOSLocalLLMTests.release.xcconfig */;
+			baseConfigurationReference = E05E912E024E79787277D765 /* Pods-IOSLocalLLMTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -2243,7 +2212,7 @@
 		};
 		43D4022F6A7EB5B4CDE5143A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 03CB56DC992D12420EA4D97D /* Pods-IOSLocalLLM.debug.xcconfig */;
+			baseConfigurationReference = 972544CA459F2596227E78B3 /* Pods-IOSLocalLLM.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
@@ -2294,6 +2263,9 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_ANALYZER_SECURITY_FLOATLOOPCOUNTER = YES;
+				CLANG_ANALYZER_SECURITY_INSECUREAPI_RAND = YES;
+				CLANG_ANALYZER_SECURITY_INSECUREAPI_STRCPY = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
@@ -2308,6 +2280,7 @@
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_IMPLICIT_FALLTHROUGH = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
@@ -2335,6 +2308,7 @@
 					"$(inherited)",
 					"DEBUG=1",
 				);
+				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
@@ -2361,7 +2335,7 @@
 		};
 		7E72E41FC98248BC57305C89 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 8986E42AABFA67611581EDA3 /* Pods-IOSLocalLLMTests.debug.xcconfig */;
+			baseConfigurationReference = 9FB3413A5CBBFD43B9556D64 /* Pods-IOSLocalLLMTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -2393,7 +2367,7 @@
 		};
 		80DFF1E2A1C809E7A59B27A3 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 70DB472DB161F96E8B6F15B7 /* Pods-IOSLocalLLM.release.xcconfig */;
+			baseConfigurationReference = B108BE51E52C60F2AE3F530F /* Pods-IOSLocalLLM.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
