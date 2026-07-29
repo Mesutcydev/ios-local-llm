@@ -36,7 +36,7 @@ jobs:
           queries: security-extended
 
       - name: Install locked CocoaPods dependencies
-        run: pod install --deployment
+        run: pod _1.16.2_ install --deployment
 
       - name: Build pinned native inference frameworks
         run: ./scripts/build_native_frameworks.sh
