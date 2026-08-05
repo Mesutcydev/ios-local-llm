@@ -364,7 +364,6 @@ schemes:
     build:
       targets:
         CoreAIOnDeviceLAS: all
-        CoreAIOnDeviceLASTests: [test, run]
     test:
       config: Debug
       targets:
