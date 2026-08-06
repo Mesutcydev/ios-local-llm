@@ -1,15 +1,19 @@
 cff-version: 1.2.0
 message: "If this software supports your work, please cite the repository."
-title: "iOS Local LLM"
+title: "OnDevice Local AI Studio"
 type: software
 authors:
-  - family-names: "Mesut"
+  - family-names: "Yagci"
+    given-names: "Mesut"
+    website: "https://mesut.uk"
 repository-code: "https://github.com/Mesutcydev/ios-local-llm"
-url: "https://github.com/Mesutcydev/ios-local-llm"
+url: "https://mesut.uk/apps/codelens"
 license: MIT
 version: 3.2.6
 date-released: 2026-07-29
 keywords:
+  - OnDevice
+  - OnDevice Local AI Studio
   - on-device AI
   - local LLM
   - iOS
