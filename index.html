@@ -412,9 +412,16 @@
   <div class="eyebrow">Install</div>
   <h2>Sideloading with entitlements</h2>
   <p class="sub">
-    The release IPA is ad-hoc signed and carries two memory entitlements. Install it with
-    <strong>TrollStore</strong> so those entitlements survive — without them iOS caps the
-    process well below what a useful model needs, and larger models will be killed on load.
+    Install the release IPA with <strong>AltStore</strong> / AltServer, <strong>SideStore</strong>,
+    or <a href="https://github.com/Mesutcydev/ForgeSign-iOS">ForgeSign</a> if you would rather
+    re-sign on the device itself. TrollStore is not a general option any more — it only covers
+    a narrow range of older iOS versions.
+  </p>
+  <p class="sub">
+    The IPA is ad-hoc signed and declares two memory entitlements. Any of these tools re-signs it
+    with your own certificate, so <strong>check the entitlements survive that step</strong> —
+    without them iOS caps the process well below what a useful model needs, and larger models are
+    killed on load rather than degrading.
   </p>
   <div class="tbl-scroll"><table>
     <thead><tr><th>Entitlement</th><th>Why it is there</th></tr></thead>
