@@ -23,7 +23,7 @@ agent channel.
 | Product | Status | What it is |
 | --- | --- | --- |
 | **OnDevice Local AI Studio** | Main · open source | Full iOS/macCatalyst workbench (this repository) |
-| **OnDevice Local API Server** | Coming soon | Dedicated local API surface for agents and LAN clients |
+| [**OnDevice Local API Server**](https://mesutcydev.github.io/ios-local-llm/) | Beta | Dedicated local API surface for agents and LAN clients — [project page](https://mesutcydev.github.io/ios-local-llm/) |
 | **OnDevice CoreAI Local API Server** | Beta | CoreAI-backed local API server variant |
 
 Repository slug remains `ios-local-llm` for stable links. Product name is
