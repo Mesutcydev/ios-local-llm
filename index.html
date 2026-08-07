@@ -191,6 +191,86 @@
   footer .row { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-bottom: 20px; }
   footer a { color: var(--text-dim); }
   .disclaimer { max-width: 66ch; line-height: 1.65; }
+
+  /* ---------- spec banner (at a glance) ---------- */
+  .spec {
+    background: var(--bg-sunken); border: 1px solid var(--line);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .spec-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 11px 15px; border-bottom: 1px solid var(--line); background: var(--bg-raised);
+  }
+  .spec-bar i { width: 11px; height: 11px; border-radius: 50%; background: var(--line-bright); }
+  .spec-bar .local {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 7px;
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .14em; color: var(--accent);
+  }
+  .spec-bar .local i { width: 7px; height: 7px; background: var(--accent); }
+  .spec-head {
+    display: flex; align-items: center; gap: 20px;
+    padding: 26px 26px 22px; border-bottom: 1px solid var(--line);
+  }
+  .spec-head .logo { color: var(--text); flex: none; }
+  .spec-head .t { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .spec-head .t b {
+    font-family: var(--mono); font-weight: 680; letter-spacing: .05em; color: var(--text);
+    font-size: clamp(1.35rem, 4.4vw, 2.05rem); line-height: 1;
+  }
+  .spec-head .t span { font-family: var(--mono); font-size: 13px; color: var(--text-dim); }
+  .spec-cols { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .spec-col { padding: 22px 26px; border-right: 1px solid var(--line); min-width: 0; }
+  .spec-col:last-child { border-right: 0; }
+  .spec-col h4 {
+    margin: 0 0 14px; padding-bottom: 12px; border-bottom: 1px solid var(--line);
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .11em; color: var(--accent);
+  }
+  .spec-row {
+    display: flex; align-items: center; gap: 12px; padding: 7px 0;
+    font-family: var(--mono); font-size: 13px; color: var(--text);
+  }
+  .spec-row svg { flex: none; color: var(--accent); }
+  .spec-row.cap svg { color: var(--accent-dim); }
+  .flow { display: flex; flex-direction: column; }
+  .flow-node {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-size: 13px; color: var(--text);
+    border: 1px solid var(--line-bright); border-radius: 8px;
+    padding: 10px 13px; background: var(--bg-raised);
+  }
+  .flow-node svg { flex: none; color: var(--accent); }
+  .flow-arrow { align-self: center; display: flex; padding: 5px 0; color: var(--text-faint); }
+  .flow-note { margin-top: 14px; font-family: var(--mono); font-size: 12px; color: var(--accent); }
+  .spec-foot {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 15px 26px; border-top: 1px solid var(--line); background: var(--bg-raised);
+    font-family: var(--mono); font-size: 13px; color: var(--text-dim);
+  }
+  .spec-foot .prompt { color: var(--accent); font-weight: 600; }
+  .spec-foot .sep { color: var(--text-faint); }
+  @media (max-width: 760px) {
+    .spec-cols { grid-template-columns: 1fr; }
+    .spec-col { border-right: 0; border-bottom: 1px solid var(--line); }
+    .spec-col:last-child { border-bottom: 0; }
+  }
+
+  /* ---------- app previews ---------- */
+  .shots { display: grid; gap: 22px; grid-template-columns: repeat(4, 1fr); }
+  .shots > * { min-width: 0; }
+  .shot .frame {
+    display: block; border: 1px solid var(--line-bright); border-radius: 22px;
+    background: var(--bg-raised); padding: 6px; overflow: hidden; transition: .15s;
+  }
+  .shot .frame:hover { border-color: var(--text-faint); text-decoration: none; }
+  .shot .frame img { display: block; width: 100%; height: auto; border-radius: 16px; }
+  .shot .cap { margin-top: 13px; font-size: 13px; line-height: 1.5; color: var(--text-dim); }
+  .shot .cap b {
+    display: block; margin-bottom: 3px; color: var(--text);
+    font-family: var(--mono); font-size: 13px; font-weight: 600; letter-spacing: -0.01em;
+  }
+  @media (max-width: 900px) { .shots { grid-template-columns: repeat(2, 1fr); gap: 18px; } }
+  @media (max-width: 480px) { .shots { grid-template-columns: 1fr; max-width: 300px; margin: 0 auto; } }
 </style>
 </head>
 <body>
@@ -225,6 +305,72 @@
     <div class="term-body" id="term"></div>
   </div>
 </div></header>
+
+<section id="overview"><div class="wrap">
+  <div class="spec">
+    <div class="spec-bar">
+      <i></i><i></i><i></i>
+      <span class="local"><i></i> LOCAL</span>
+    </div>
+
+    <div class="spec-head">
+      <svg class="logo" width="46" height="46" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M10 14c5-6 23-6 28 0-5 6-23 6-28 0z"/><circle cx="24" cy="14" r="3.2"/>
+        <rect x="10" y="26" width="28" height="7" rx="2"/><rect x="10" y="36" width="28" height="7" rx="2"/>
+        <circle cx="15" cy="29.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="39.5" r="1.1" fill="currentColor" stroke="none"/>
+        <line x1="30" y1="29.5" x2="34" y2="29.5"/><line x1="30" y1="39.5" x2="34" y2="39.5"/>
+      </svg>
+      <div class="t">
+        <b>ON&nbsp;DEVICE&nbsp;:&nbsp;LAS</b>
+        <span>Local-first LLM runtime for iPhone</span>
+      </div>
+    </div>
+
+    <div class="spec-cols">
+      <div class="spec-col">
+        <h4>Architecture</h4>
+        <div class="spec-row"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18.5" x2="13" y2="18.5"/></svg> SwiftUI interface</div>
+        <div class="spec-row"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.66 3.13 3 7 3s7-1.34 7-3V6"/><path d="M5 12c0 1.66 3.13 3 7 3s7-1.34 7-3"/></svg> ModelResidency</div>
+        <div class="spec-row"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="0.5"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/></svg> MemoryAdvisor</div>
+        <div class="spec-row"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8 7 3 12 8 17"/><polyline points="16 7 21 12 16 17"/></svg> MLX + llama.cpp</div>
+        <div class="spec-row"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.4 2.5 15.6 0 18M12 3c-2.5 2.4-2.5 15.6 0 18"/></svg> LocalAPIServer</div>
+        <div class="spec-row"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><polyline points="14 3 14 8 18 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="16.5" x2="14" y2="16.5"/></svg> RuntimeLogCenter</div>
+      </div>
+
+      <div class="spec-col">
+        <h4>Capabilities</h4>
+        <div class="spec-row cap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="8.5 12.2 11 14.7 15.5 9.5"/></svg> On-device inference</div>
+        <div class="spec-row cap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="8.5 12.2 11 14.7 15.5 9.5"/></svg> Model import + export</div>
+        <div class="spec-row cap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="8.5 12.2 11 14.7 15.5 9.5"/></svg> Resumable downloads</div>
+        <div class="spec-row cap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="8.5 12.2 11 14.7 15.5 9.5"/></svg> OpenAI / Anthropic / Ollama</div>
+        <div class="spec-row cap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="8.5 12.2 11 14.7 15.5 9.5"/></svg> Tool calling + parsers</div>
+        <div class="spec-row cap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="8.5 12.2 11 14.7 15.5 9.5"/></svg> Debugger + live terminal</div>
+      </div>
+
+      <div class="spec-col">
+        <h4>Request flow</h4>
+        <div class="flow">
+          <div class="flow-node"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18.5" x2="13" y2="18.5"/></svg> Client</div>
+          <div class="flow-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="4" x2="12" y2="20"/><polyline points="6 14 12 20 18 14"/></svg></div>
+          <div class="flow-node"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="7" rx="1.5"/><rect x="4" y="13" width="16" height="7" rx="1.5"/><circle cx="8" cy="7.5" r="0.7" fill="currentColor" stroke="none"/><circle cx="8" cy="16.5" r="0.7" fill="currentColor" stroke="none"/></svg> Local API</div>
+          <div class="flow-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="4" x2="12" y2="20"/><polyline points="6 14 12 20 18 14"/></svg></div>
+          <div class="flow-node"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.4-3 8-7 9.6C8 19 5 15.4 5 11V6z"/></svg> Runtime gate</div>
+          <div class="flow-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="4" x2="12" y2="20"/><polyline points="6 14 12 20 18 14"/></svg></div>
+          <div class="flow-node"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5l8.5 4.7v9.6L12 21.5 3.5 16.8V7.2z"/><path d="M3.7 7.2 12 12l8.3-4.8M12 12v9.5"/></svg> Resident model</div>
+        </div>
+        <div class="flow-note">Bearer-authenticated · LAN only</div>
+      </div>
+    </div>
+
+    <div class="spec-foot">
+      <span class="prompt">&gt;_</span>
+      <span>iOS&nbsp;18+</span><span class="sep">·</span>
+      <span>No telemetry</span><span class="sep">·</span>
+      <span>No silent cloud fallback</span><span class="sep">·</span>
+      <span>MIT source</span>
+    </div>
+  </div>
+</div></section>
 
 <section id="what"><div class="wrap">
   <div class="eyebrow">What it is</div>
@@ -271,6 +417,41 @@
       <h3>Closed by default</h3>
       <p>Bearer-authenticated HTTP intended for a trusted LAN. The listener stops when iOS
          backgrounds the app. Nothing leaves the device.</p>
+    </div>
+  </div>
+</div></section>
+
+<section id="previews"><div class="wrap">
+  <div class="eyebrow">Previews</div>
+  <h2>On the device</h2>
+  <p class="sub">
+    The server build is a control surface, not a chat app — a homepage that holds a model
+    resident and answers HTTP, with runtime state, memory admission, and logs in view.
+  </p>
+  <div class="shots">
+    <div class="shot">
+      <a class="frame" href="shots/las-home.png" target="_blank" rel="noopener">
+        <img src="shots/las-home.png" width="660" height="1434" loading="lazy" alt="On Device: LAS server homepage showing device health, memory headroom, and Local API server status">
+      </a>
+      <div class="cap"><b>Server homepage</b>Device health, memory headroom, and the Local API server toggle.</div>
+    </div>
+    <div class="shot">
+      <a class="frame" href="shots/las-models.png" target="_blank" rel="noopener">
+        <img src="shots/las-models.png" width="660" height="1434" loading="lazy" alt="Model library screen listing installed on-device models with capacity readouts">
+      </a>
+      <div class="cap"><b>Model library</b>Import, download, and make an MLX or GGUF model resident.</div>
+    </div>
+    <div class="shot">
+      <a class="frame" href="shots/las-debugger.png" target="_blank" rel="noopener">
+        <img src="shots/las-debugger.png" width="660" height="1434" loading="lazy" alt="On-device debugger showing the memory admission snapshot">
+      </a>
+      <div class="cap"><b>On-device debugger</b>Admission snapshot — process budget, entitlements, thermal state.</div>
+    </div>
+    <div class="shot">
+      <a class="frame" href="shots/las-terminal.png" target="_blank" rel="noopener">
+        <img src="shots/las-terminal.png" width="660" height="1434" loading="lazy" alt="Verbose terminal streaming live server log events">
+      </a>
+      <div class="cap"><b>Verbose terminal</b>Live server log — every request and lifecycle event.</div>
     </div>
   </div>
 </div></section>
