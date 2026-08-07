@@ -181,6 +181,7 @@
   th { color: var(--text-faint); font-weight: 550; font-size: 12.5px;
        text-transform: uppercase; letter-spacing: .06em; }
   td.k { font-family: var(--mono); font-size: 12.6px; color: var(--accent); white-space: nowrap; }
+  .tdim { font-size: 12px; color: var(--text-faint); font-weight: 400; }
   .tbl-scroll { overflow-x: auto; border: 1px solid var(--line);
                 border-radius: var(--radius); background: var(--bg-raised); }
   .tbl-scroll table { min-width: 480px; }
@@ -311,6 +312,68 @@
         <li><span class="verb">POST</span>/api/chat</li>
         <li><span class="verb">POST</span>/api/generate</li>
       </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="requirements"><div class="wrap">
+  <div class="eyebrow">Requirements</div>
+  <h2>What a coding agent needs</h2>
+  <p class="sub">
+    Agent clients like aider drive long tool-calling conversations, and that is the demanding
+    case — not chat. A model has to carry a real <strong>65,536-token</strong> context and a KV
+    cache to match before the server will treat it as agent-ready; below that the app shows a
+    Hermes-compatibility warning rather than failing mid-session.
+  </p>
+  <div class="tbl-scroll"><table>
+    <thead><tr>
+      <th>Model family</th><th>Context</th><th>Tool parser</th>
+      <th>Parallel calls</th><th>Max output</th><th>KV cache</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Qwen3</strong><br><span class="tdim">needs YaRN ×2</span></td>
+        <td class="k">65,536</td><td class="k">hermes</td><td class="k">2</td>
+        <td class="k">4,096</td><td class="k">1.1–4.3 GB</td>
+      </tr>
+      <tr>
+        <td><strong>Qwen3.5</strong></td>
+        <td class="k">65,536</td><td class="k">qwen3_coder</td><td class="k">2</td>
+        <td class="k">4,096</td><td class="k">~1.1 GB</td>
+      </tr>
+      <tr>
+        <td><strong>Ornith</strong></td>
+        <td class="k">65,536</td><td class="k">qwen3_xml</td><td class="k">2</td>
+        <td class="k">4,096</td><td class="k">~1.1 GB</td>
+      </tr>
+      <tr>
+        <td><strong>Bonsai</strong><br><span class="tdim">not agent-ready</span></td>
+        <td class="k">≤ 32,768</td><td class="k">qwen3_coder</td><td class="k">1</td>
+        <td class="k">2,048</td><td class="k">≤ 0.5 GB</td>
+      </tr>
+      <tr>
+        <td><strong>Other / imported</strong><br><span class="tdim">no tool support</span></td>
+        <td class="k">catalog</td><td class="k">none</td><td class="k">1</td>
+        <td class="k">≤ 4,096</td><td class="k">varies</td>
+      </tr>
+    </tbody>
+  </table></div>
+  <div class="grid" style="margin-top:22px">
+    <div class="card">
+      <h3>Why 64K, not 32K</h3>
+      <p>Qwen3 is natively 32K. Reaching a real 65,536-token runtime needs a YaRN factor of 2,
+         which the app applies to the model configuration before MLX decodes it — your original
+         config is backed up, not overwritten.</p>
+    </div>
+    <div class="card">
+      <h3>Why the KV cache matters</h3>
+      <p>A 64K cache is 1.1&nbsp;GB on a small Qwen3 and about 4.3&nbsp;GB on an 8B, on top of the
+         weights. This is the reason the memory entitlements below are not optional.</p>
+    </div>
+    <div class="card">
+      <h3>Parallel tool calls</h3>
+      <p>Capped at 2 concurrent calls on the families that handle them reliably, and forced
+         sequential elsewhere. The limit is also settable per install.</p>
     </div>
   </div>
 </div></section>
