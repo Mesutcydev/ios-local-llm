@@ -1,0 +1,226 @@
+{
+  "name": "Mesutcydev Apps",
+  "subtitle": "On-device AI tools for iPhone",
+  "description": "A source for Mesutcydev's local-first iOS apps. These builds run supported AI workloads on the device and expose network access only through the app's explicit, authenticated features.",
+  "iconURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/b751e7444ce198d323d25c44e7cf2a85b90a4f29/IOSLocalLLM/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
+  "headerURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/59060017c4f8931950041f7e32382c5ca74bf60e/Docs/Images/ios-local-llm-spec-chart.png",
+  "website": "https://mesutcydev.github.io/ios-local-llm/",
+  "tintColor": "#5EEAD4",
+  "featuredApps": [
+    "com.forgesign.mobile",
+    "com.mesutcydev.ondevicelas",
+    "uk.mesut.screenharbor.ios",
+    "com.codelens.CodeLens",
+    "uk.mesut.SiteAgent"
+  ],
+  "apps": [
+    {
+      "name": "On Device: LAS",
+      "bundleIdentifier": "com.mesutcydev.ondevicelas",
+      "developerName": "Mesutcydev",
+      "subtitle": "A local AI server for iPhone.",
+      "localizedDescription": "On Device: LAS runs supported language models locally on your iPhone and exposes authenticated OpenAI-, Anthropic-, and Ollama-compatible APIs over your trusted local network. It does not silently fall back to a cloud service.",
+      "iconURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/b751e7444ce198d323d25c44e7cf2a85b90a4f29/IOSLocalLLM/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
+      "tintColor": "#5EEAD4",
+      "category": "developer",
+      "screenshots": [
+        "https://mesutcydev.github.io/ios-local-llm/shots/las-home.png",
+        "https://mesutcydev.github.io/ios-local-llm/shots/las-models.png",
+        "https://mesutcydev.github.io/ios-local-llm/shots/las-debugger.png",
+        "https://mesutcydev.github.io/ios-local-llm/shots/las-terminal.png"
+      ],
+      "versions": [
+        {
+          "version": "3.2.6",
+          "buildVersion": "140",
+          "date": "2026-08-07T08:43:20Z",
+          "localizedDescription": "Current sideload release with the local API server and coordinated on-device model runtime.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-140/OnDeviceLAS-sideload-entitled-3.2.6-140.ipa",
+          "size": 31153141,
+          "sha256": "3181ee404bd70d2ed01d57219756893c1f5df83e6189e5729d0b6d80da86cd62",
+          "minOSVersion": "18.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [
+          "com.apple.developer.kernel.extended-virtual-addressing",
+          "com.apple.developer.kernel.increased-memory-limit"
+        ],
+        "privacy": {
+          "NSLocalNetworkUsageDescription": "On Device: LAS exposes your selected on-device language model to trusted computers on your local network."
+        }
+      }
+    },
+    {
+      "name": "ForgeSign",
+      "bundleIdentifier": "com.forgesign.mobile",
+      "developerName": "Mesutcydev",
+      "subtitle": "Sign and install IPAs on-device.",
+      "localizedDescription": "ForgeSign is an on-device IPA re-signer for iPhone and iPad. Sign, install, and manage your own app builds locally without sending certificates or IPAs to a server.",
+      "iconURL": "https://raw.githubusercontent.com/Mesutcydev/ForgeSign-iOS/main/App/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
+      "tintColor": "#8B5CF6",
+      "category": "developer",
+      "screenshots": [
+        "https://raw.githubusercontent.com/Mesutcydev/ForgeSign-iOS/main/docs/screens/screenshot-sign-dark.png",
+        "https://raw.githubusercontent.com/Mesutcydev/ForgeSign-iOS/main/docs/screens/screenshot-sources-dark.png",
+        "https://raw.githubusercontent.com/Mesutcydev/ForgeSign-iOS/main/docs/screens/screenshot-library-dark.png"
+      ],
+      "versions": [
+        {
+          "version": "1.1",
+          "buildVersion": "2",
+          "date": "2026-08-08T14:55:04Z",
+          "localizedDescription": "Adds the Sources tab, IPA preflight, optional dylib injection, and refreshed Liquid Glass surfaces.",
+          "downloadURL": "https://github.com/Mesutcydev/ForgeSign-iOS/releases/download/v1.1/ForgeSign-1.1.ipa",
+          "size": 2608876,
+          "sha256": "47502d3e0e10968f418d55194ead3763917e0649399b7876c3d5a295b8a5abe6",
+          "minOSVersion": "16.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      }
+    },
+    {
+      "name": "MacPair for iOS",
+      "bundleIdentifier": "uk.mesut.screenharbor.ios",
+      "developerName": "Mesutcydev",
+      "subtitle": "A local-first remote desktop client for Mac.",
+      "localizedDescription": "MacPair for iOS connects to an approved MacPair Host on your local network for screen sharing, keyboard and pointer control, clipboard sync, file transfer, audio, and optional remote-terminal access.",
+      "iconURL": "https://raw.githubusercontent.com/Mesutcydev/macpair/main/Sources/ClientiOS/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
+      "tintColor": "#0EA5E9",
+      "category": "utilities",
+      "screenshots": [],
+      "versions": [
+        {
+          "version": "1.0.5",
+          "buildVersion": "6",
+          "date": "2026-08-04T13:38:58Z",
+          "localizedDescription": "Current iOS client release. The IPA is unsigned and is intended to be re-signed by the installer.",
+          "downloadURL": "https://github.com/Mesutcydev/macpair/releases/download/v1.0.10/MacPair-iOS-1.0.5-build-6-unsigned.ipa",
+          "size": 7166733,
+          "sha256": "043a7fefc06a2eeb12f6826259d0cc618e134d20bb399cb228a97ff7e76b6274",
+          "minOSVersion": "18.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSLocalNetworkUsageDescription": "MacPair uses your local network to discover and connect to Macs running MacPair Host.",
+          "NSMicrophoneUsageDescription": "MacPair captures your voice for on-device dictation into your approved Mac.",
+          "NSSpeechRecognitionUsageDescription": "MacPair transcribes your voice on-device so you can dictate text into your approved Mac."
+        }
+      }
+    },
+    {
+      "name": "On Device Local AI Studio",
+      "bundleIdentifier": "com.codelens.CodeLens",
+      "developerName": "Mesutcydev",
+      "subtitle": "A local-first AI workbench for iPhone.",
+      "localizedDescription": "On Device Local AI Studio runs supported language, vision, voice, and image-generation workloads on your iPhone. It includes local model management, camera and voice features, retrieval tools, and an authenticated local API without silently falling back to a cloud service.",
+      "iconURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/b751e7444ce198d323d25c44e7cf2a85b90a4f29/IOSLocalLLM/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
+      "tintColor": "#5EEAD4",
+      "category": "developer",
+      "screenshots": [
+        "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/b751e7444ce198d323d25c44e7cf2a85b90a4f29/Docs/Images/Screenshots/home.png",
+        "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/b751e7444ce198d323d25c44e7cf2a85b90a4f29/Docs/Images/Screenshots/assistant.png",
+        "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/b751e7444ce198d323d25c44e7cf2a85b90a4f29/Docs/Images/Screenshots/models.png",
+        "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/b751e7444ce198d323d25c44e7cf2a85b90a4f29/Docs/Images/Screenshots/local-vision.png"
+      ],
+      "versions": [
+        {
+          "version": "3.2.6",
+          "buildVersion": "101",
+          "date": "2026-08-08T22:36:27Z",
+          "localizedDescription": "Sideload build with the local AI workbench, share extension, and bundled memory entitlements.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-140/CodeLens-3.2.6-101-sideload-entitled.ipa",
+          "size": 309051696,
+          "sha256": "b982abf54bdfda4e665d18c453174545b1dd39bdc9e4fee3c76a476ffaf6a1e3",
+          "minOSVersion": "18.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [
+          "com.apple.developer.kernel.extended-virtual-addressing",
+          "com.apple.developer.kernel.increased-memory-limit"
+        ],
+        "privacy": {
+          "NSCameraUsageDescription": "iOS Local LLM uses the back camera to capture live video of your terminal or code editor for real-time analysis.",
+          "NSLocalNetworkUsageDescription": "iOS Local LLM can expose your on-device language model to computers on your local network when you enable the Local API Server.",
+          "NSMicrophoneUsageDescription": "iOS Local LLM uses the microphone for hold-to-talk dictation in the chat composer. Audio is transcribed on-device and never leaves your phone.",
+          "NSPhotoLibraryUsageDescription": "iOS Local LLM can analyze code from photos in your library.",
+          "NSSpeechRecognitionUsageDescription": "iOS Local LLM uses on-device speech recognition to convert your voice into text for the chat composer."
+        }
+      }
+    },
+    {
+      "name": "SiteAgent",
+      "bundleIdentifier": "uk.mesut.SiteAgent",
+      "developerName": "Mesutcydev",
+      "subtitle": "Manage websites from an AI agent on iPhone.",
+      "localizedDescription": "SiteAgent lets you connect GitHub repositories, edit websites with natural language, review visual diffs, preview changes, and commit approved updates from your iPhone. It supports cloud and on-device AI providers.",
+      "iconURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-140/AppIcon-1024.png",
+      "tintColor": "#10B981",
+      "category": "developer",
+      "screenshots": [
+        "https://raw.githubusercontent.com/Mesutcydev/SiteAgentPage/main/previews/home.png",
+        "https://raw.githubusercontent.com/Mesutcydev/SiteAgentPage/main/previews/sites.png",
+        "https://raw.githubusercontent.com/Mesutcydev/SiteAgentPage/main/previews/chat.png",
+        "https://raw.githubusercontent.com/Mesutcydev/SiteAgentPage/main/previews/deployment.png"
+      ],
+      "versions": [
+        {
+          "version": "1.16",
+          "buildVersion": "2026080901",
+          "date": "2026-08-08T21:24:29Z",
+          "localizedDescription": "Current sideload-unlocked release with website editing, AI routing, previews, deployment integrations, and local-model support.",
+          "downloadURL": "https://github.com/Mesutcydev/SiteAgentPage/releases/download/v1.16-sideload/SiteAgent-sideload-1.16-2026080901.ipa",
+          "size": 43278840,
+          "sha256": "3ce3e6b0697bc9df6f45634a2aa21bdd574597c6c5d15c2e04c75fd550720fd4",
+          "minOSVersion": "17.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [
+          "com.apple.developer.kernel.extended-virtual-addressing",
+          "com.apple.developer.kernel.increased-memory-limit"
+        ],
+        "privacy": {}
+      }
+    },
+    {
+      "name": "Core AI: LAS",
+      "bundleIdentifier": "com.mesutcydev.coreaiondevicelas",
+      "developerName": "Mesutcydev",
+      "subtitle": "A Core AI model server for iPhone.",
+      "localizedDescription": "Core AI: LAS runs supported Core AI language and vision models locally on iPhone and exposes the selected model through an authenticated local API. This build requires iOS 27 or newer.",
+      "iconURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/b751e7444ce198d323d25c44e7cf2a85b90a4f29/IOSLocalLLM/Assets.xcassets/AppIconCoreAI.appiconset/AppIconCoreAI-1024.png",
+      "tintColor": "#A78BFA",
+      "category": "developer",
+      "screenshots": [],
+      "versions": [
+        {
+          "version": "3.2.6",
+          "buildVersion": "138",
+          "date": "2026-08-07T08:43:20Z",
+          "localizedDescription": "Current Core AI sideload release.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-140/CoreAIOnDeviceLAS-sideload-entitled-3.2.6-138.ipa",
+          "size": 4699078,
+          "sha256": "019d6a6e7df900d41606b895b9d57335c9239872cf2efe91c1ed5adf5c497e8d",
+          "minOSVersion": "27.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [
+          "com.apple.developer.kernel.extended-virtual-addressing",
+          "com.apple.developer.kernel.increased-memory-limit"
+        ],
+        "privacy": {
+          "NSLocalNetworkUsageDescription": "Core AI: LAS exposes your selected on-device Core AI model to trusted computers on your local network."
+        }
+      }
+    }
+  ],
+  "news": []
+}

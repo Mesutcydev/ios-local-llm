@@ -176,6 +176,10 @@ provenance attestation. See
 [release verification](Docs/RELEASE_VERIFICATION.md) for the exact download
 and verification commands.
 
+Sideload builds are also listed in the [AltStore Classic source](altstore/source.json).
+See [AltStore publishing instructions](altstore/README.md) for the source URL
+and update workflow.
+
 ## Models and large files
 
 No AI model weights, compiled Core ML models, generated XCFrameworks, or app
