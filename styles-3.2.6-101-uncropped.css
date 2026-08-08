@@ -251,7 +251,7 @@ h1 em, h2 span { color: var(--muted); font-style: normal; }
 .preview-dialog__body img { width: min(100%, 420px); margin: auto; border: 1px solid var(--line); border-radius: 28px; box-shadow: 0 20px 60px rgba(0,0,0,.45); }
 .noscript-note { position: fixed; right: 16px; bottom: 16px; z-index: 30; padding: 12px 15px; border: 1px solid var(--line); border-radius: 12px; background: #131719; color: var(--muted); font-size: 12px; }
 
-.reveal { opacity: 0; transform: translateY(22px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+.reveal { opacity: 1; transform: none; transition: opacity .8s var(--ease), transform .8s var(--ease); }
 .reveal.is-visible { opacity: 1; transform: translateY(0); }
 
 @media (max-width: 980px) {
