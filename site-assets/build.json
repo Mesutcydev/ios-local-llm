@@ -29,6 +29,7 @@
     "and more current model families"
   ],
   "source": "https://github.com/Mesutcydev/ios-local-llm",
+  "productPage": "https://mesut.uk/apps/codelens",
   "ipa": {
     "product": "CodeLens / On Device LLM",
     "version": "3.2.6",
