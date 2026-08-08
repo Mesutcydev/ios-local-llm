@@ -168,7 +168,7 @@ h1 em, h2 span { color: var(--muted); font-style: normal; }
 .preview-card--large .preview-card__image { height: 620px; padding-inline: 32%; }
 .preview-card--wide .preview-card__image { height: 520px; padding-inline: 28%; }
 .preview-card__image::after { position: absolute; inset: 0; pointer-events: none; content: ""; border-top: 1px solid rgba(255,255,255,.08); background: linear-gradient(125deg, rgba(255,255,255,.07), transparent 22% 75%, rgba(190,220,208,.04)); mix-blend-mode: screen; }
-.preview-card__image img { width: auto; height: auto; max-width: 100%; max-height: 100%; border: 1px solid rgba(255,255,255,.21); border-radius: 31px; box-shadow: 0 24px 50px rgba(0,0,0,.5); object-fit: contain; object-position: center; }
+.preview-card__image img { width: auto; height: 100%; max-width: 100%; border: 1px solid rgba(255,255,255,.21); border-radius: 31px; box-shadow: 0 24px 50px rgba(0,0,0,.5); object-fit: contain; object-position: center; }
 .preview-card__image--assistant img { object-position: center; }
 .preview-card__image--models img { object-position: center; }
 .preview-card__meta { display: flex; justify-content: space-between; gap: 18px; padding: 15px 20px; color: var(--quiet); border-bottom: 1px solid var(--line-soft); }
