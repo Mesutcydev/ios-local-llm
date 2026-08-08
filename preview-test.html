@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Preview paint test</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 16px; background: #070809; color: #fff; font: 16px -apple-system, sans-serif; }
+    h1 { font-size: 20px; }
+    .sample { height: 565px; margin: 16px 0; padding: 26px 26%; display: flex; align-items: center; justify-content: center; background: #0b0d0f; border: 1px solid #555; overflow: hidden; }
+    .sample img { width: auto; height: 100%; max-width: 100%; display: block; border: 1px solid #aaa; object-fit: contain; }
+    .plain { height: auto; padding: 26px; }
+    .plain img { width: min(100%, 300px); height: auto; max-width: none; }
+    .button { width: 100%; padding: 0; border: 0; color: inherit; text-align: left; background: transparent; -webkit-appearance: none; appearance: none; }
+  </style>
+</head>
+<body>
+  <h1>Plain image</h1>
+  <div class="sample plain"><img src="site-assets/previews/assistant-dark.png" alt="plain"></div>
+  <h1>Exact layout, no button</h1>
+  <div class="sample"><img src="site-assets/previews/assistant-dark.png" alt="no button"></div>
+  <h1>Exact layout inside button</h1>
+  <button class="button"><div class="sample"><img src="site-assets/previews/assistant-dark.png" alt="button"></div></button>
+</body>
+</html>
