@@ -1,0 +1,32 @@
+{
+  "app": "On Device Local AI Studio",
+  "project": "CodeLens",
+  "version": "3.2.6",
+  "build": "101",
+  "bundleId": "com.codelens.CodeLens",
+  "verifiedOn": "CodeLens Voice iPhone",
+  "runtime": "iOS 26.5 Simulator",
+  "appearance": "dark",
+  "previews": [
+    "home-dark.png",
+    "assistant-dark.png",
+    "lens-dark.png",
+    "voice-dark.png",
+    "models-dark.png"
+  ],
+  "testedModels": [
+    "Qwen 3.5 series",
+    "Ornith 1.0 9B",
+    "Ternary Bonsai 27B",
+    "Nanbeige",
+    "and more current model families"
+  ],
+  "source": "https://github.com/Mesutcydev/ios-local-llm",
+  "ipa": {
+    "product": "CodeLens / On Device LLM",
+    "version": "3.2.6",
+    "build": "101",
+    "entitlements": "preserve in the signed sideload asset",
+    "policy": "Keep signed device installers outside the source tree."
+  }
+}
