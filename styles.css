@@ -181,12 +181,12 @@ h1 em, h2 span { color: var(--muted); font-style: normal; }
 
 .capabilities { padding-bottom: 180px; }
 .section-heading--compact { margin-bottom: 48px; }
-.capability-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.capability-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .capability { min-height: 302px; padding: 22px; border-radius: 23px; transition: transform .4s var(--ease), background .4s var(--ease); }
 .capability:hover { transform: translateY(-5px); background: linear-gradient(140deg, rgba(231,239,242,.16), rgba(172,187,192,.055)); }
 .capability__number { color: var(--quiet); font: 10px "SF Mono", monospace; }
 .capability__icon { display: block; margin: 31px 0 15px; color: var(--ink); font-size: 29px; line-height: 1; }
-.capability h3 { margin: 0; font-size: 23px; font-weight: 560; letter-spacing: -.05em; }
+.capability h3 { margin: 0; font-size: clamp(19px, 1.8vw, 23px); font-weight: 560; letter-spacing: -.05em; }
 .capability p { margin: 9px 0 30px; color: var(--muted); font-size: 14px; line-height: 1.42; }
 .capability__tag { color: var(--quiet); }
 

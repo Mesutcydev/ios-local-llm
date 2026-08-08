@@ -7,6 +7,13 @@
   "verifiedOn": "CodeLens Voice iPhone",
   "runtime": "iOS 26.5 Simulator",
   "appearance": "dark",
+  "supportedModelTypes": [
+    "Image generation models",
+    "Assistant models",
+    "Visual models",
+    "Voice models",
+    "Embedded models"
+  ],
   "previews": [
     "home-dark.png",
     "assistant-dark.png",
