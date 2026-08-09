@@ -119,7 +119,7 @@
       "developerName": "Mesutcydev",
       "subtitle": "A local-first AI workbench for iPhone.",
       "localizedDescription": "On Device Local AI Studio runs supported language, vision, voice, and image-generation workloads on your iPhone. It includes local model management, camera and voice features, retrieval tools, and an authenticated local API without silently falling back to a cloud service.",
-      "iconURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/b751e7444ce198d323d25c44e7cf2a85b90a4f29/IOSLocalLLM/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
+      "iconURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/52d0c61a8179ee60ca4efacff92881fd0c8e7284/IOSLocalLLM/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
       "tintColor": "#5EEAD4",
       "category": "developer",
       "screenshots": [
