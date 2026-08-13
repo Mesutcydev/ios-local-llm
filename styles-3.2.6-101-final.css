@@ -233,6 +233,8 @@ h1 em, h2 span { color: var(--muted); font-style: normal; }
 .artifact strong { font-size: 14px; font-weight: 560; }
 .artifact small { color: var(--muted); font-size: 11px; line-height: 1.35; }
 .build-card__link { display: inline-flex; gap: 10px; margin-top: 22px; color: var(--ink); font-size: 13px; }
+.build-card__link--download { align-items: center; padding: 12px 15px; border: 1px solid var(--line); border-radius: 999px; background: var(--ink); color: #08090a; font-weight: 650; }
+.build-card__link--download:hover { border-color: transparent; background: white; color: #08090a; transform: translateY(-2px); }
 
 .closing { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 28px; padding: 54px 0 100px; border-top: 1px solid var(--line-soft); }
 .closing__icon { width: 70px; height: 70px; overflow: hidden; border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 0 38px var(--pink-soft); }
