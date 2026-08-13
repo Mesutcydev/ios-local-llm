@@ -29,7 +29,7 @@
     "and more current model families"
   ],
   "source": "https://github.com/Mesutcydev/ios-local-llm",
-  "productPage": "https://mesut.uk/apps/codelens",
+  "productPage": "https://mesut.uk/apps",
   "ipa": {
     "product": "OnDevice LLM",
     "version": "3.2.6",
