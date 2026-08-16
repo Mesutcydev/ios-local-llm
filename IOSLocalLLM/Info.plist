@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>iOS Local LLM</string>
+	<string>OnDevice LLM</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -36,15 +36,15 @@
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>iOS Local LLM uses the back camera to capture live video of your terminal or code editor for real-time analysis.</string>
+	<string>OnDevice LLM uses the back camera to capture live video of your terminal or code editor for real-time analysis.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>iOS Local LLM can expose your on-device language model to computers on your local network when you enable the Local API Server.</string>
+	<string>OnDevice LLM can expose your on-device language model to computers on your local network when you enable the Local API Server.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>iOS Local LLM uses the microphone for hold-to-talk dictation in the chat composer. Audio is transcribed on-device and never leaves your phone.</string>
+	<string>OnDevice LLM uses the microphone for hold-to-talk dictation in the chat composer. Audio is transcribed on-device and never leaves your phone.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>iOS Local LLM can analyze code from photos in your library.</string>
+	<string>OnDevice LLM can analyze code from photos in your library.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>iOS Local LLM uses on-device speech recognition to convert your voice into text for the chat composer.</string>
+	<string>OnDevice LLM uses on-device speech recognition to convert your voice into text for the chat composer.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

@@ -205,7 +205,7 @@ final class DiagnosticsAnalyzer: ObservableObject {
     @Published var error: String?
 
     private let systemPrompt = """
-    You are an on-device diagnostics analyst for iOS Local LLM, an iOS app that runs \
+    You are an on-device diagnostics analyst for OnDevice LLM, an iOS app that runs \
     local AI models (MLX / Core ML) fully offline. You are given a system \
     snapshot (memory, thermal, device), the last crash if any, and recent \
     warnings/errors from the app's log. Respond with: (1) the most likely root \

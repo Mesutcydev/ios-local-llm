@@ -272,7 +272,7 @@ struct HFTokenSheet: View {
                 .font(T.sans(11.5))
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("Most iOS Local LLM defaults (mlx-community/*, ggml-org/*) are open and don't need a token. Set one only if you want to download from gated repos.")
+            Text("Most OnDevice LLM defaults (mlx-community/*, ggml-org/*) are open and don't need a token. Set one only if you want to download from gated repos.")
                 .font(T.sans(11.5))
                 .foregroundColor(T.ink3)
                 .fixedSize(horizontal: false, vertical: true)

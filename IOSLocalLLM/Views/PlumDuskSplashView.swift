@@ -75,7 +75,7 @@ private struct SplashFrame: View {
                     .scaleEffect(logoScale, anchor: .top)
                     .position(x: size.width * 0.5, y: logoTop + eyeHeight * 0.5)
 
-                Text("iOS Local LLM")
+                Text("OnDevice LLM")
                     .font(.system(size: size.width * (96.0 / 1080.0), weight: .semibold))
                     .tracking(-0.7)
                     .foregroundStyle(.white)

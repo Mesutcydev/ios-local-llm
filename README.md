@@ -49,6 +49,30 @@ performance evidence; see [validation policy](Docs/VALIDATION.md).
 - Model discovery and downloads from Hugging Face
 - iPhone and Apple-silicon Mac Catalyst targets
 
+## Feature matrix
+
+| Surface | What it unlocks | Runtime boundary | Signal |
+| --- | --- | --- | --- |
+| Assistant | Chat, code review, explanations, and feature planning | Downloaded local models | Local |
+| Lens | Camera frames, OCR, imported photos, and visual questions | Vision with OCR fallback | On-device |
+| Voice | Dictation, voice conversations, and spoken replies | Speech and local TTS | Private |
+| Models | Search, fit, download, and manage model families | Hugging Face only on request | Explicit |
+| Bridge | Mac pairing and compatible local API routes | Opt-in trusted LAN | Paired |
+
+## Tested model runs
+
+The local runtime has been tested with these model families and more current
+catalog entries, subject to device memory, thermal headroom, model license, and
+the selected quantization:
+
+| Model family | Tested status |
+| --- | --- |
+| Qwen 3.5 series | Tested |
+| Ornith 1.0 9B | Tested |
+| Ternary Bonsai 27B | Tested |
+| Nanbeige | Tested |
+| More current model families | Catalog/runtime coverage varies by device and model fit |
+
 ## AI and agent integration
 
 External development tools and agents can use the opt-in local server through:

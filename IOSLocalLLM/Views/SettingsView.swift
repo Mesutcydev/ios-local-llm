@@ -15,7 +15,7 @@ struct SettingsView: View {
 
     @State private var showingHFTokenSheet: Bool = false
     #if !targetEnvironment(macCatalyst)
-    /// nil = default "Neon" icon; "AppIconClassic" = previous pink mark.
+    /// nil = default "Classic" icon; "AppIcon" = the newer neon mark.
     @State private var activeIconName: String? = UIApplication.shared.alternateIconName
     #endif
     /// Presents the onboarding model picker as a sheet so existing
@@ -1156,15 +1156,15 @@ struct SettingsView: View {
     // MARK: - App Icon Picker
 
     #if !targetEnvironment(macCatalyst)
-    /// Default "Neon" icon + the previous "Classic" mark as an alternate.
-    /// Declared via CFBundleAlternateIcons in Info.plist; the classic asset
-    /// compiles because of INCLUDE_ALL_APPICON_ASSETS.
+    /// Default "Classic" icon + the newer "Neon" mark as an alternate.
+    /// Both are compiled from the asset catalog by XcodeGen's
+    /// INCLUDE_ALL_APPICON_ASSETS setting.
     private var appIconPickerRow: some View {
         VStack(alignment: .leading, spacing: 8) {
             KMono(text: "app icon", size: 11.5, color: T.ink, mono: false)
             HStack(spacing: 14) {
-                appIconOption(name: nil, title: "Neon", preview: "AppIconPreview")
-                appIconOption(name: "AppIconClassic", title: "Classic", preview: "AppIconClassicPreview")
+                appIconOption(name: nil, title: "Classic", preview: "AppIconClassicPreview")
+                appIconOption(name: "AppIcon", title: "Neon", preview: "AppIconPreview")
                 Spacer()
             }
         }

@@ -70,7 +70,7 @@ struct AttributionsView: View {
                 KMono(text: "thank you to the open-source community",
                        size: 12, weight: .semibold, color: T.ink)
             }
-            Text("iOS Local LLM is built on the work of many researchers and engineers who released their models, frameworks, and tools openly. Each is listed below with its license and source.")
+            Text("OnDevice LLM is built on the work of many researchers and engineers who released their models, frameworks, and tools openly. Each is listed below with its license and source.")
                 .font(T.sans(11))
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
