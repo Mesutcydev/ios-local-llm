@@ -1,20 +1,20 @@
-# OnDevice Local AI Studio
+# OnDevice LLM
 
-> OnDevice Local AI Studio is a Swift/SwiftUI local-first AI workbench for
+> OnDevice LLM is a Swift/SwiftUI local-first AI workbench for
 > iPhone and Apple silicon Macs. Run language, vision, speech, and
 > image-generation models on-device, with optional authenticated local APIs for
 > AI clients and agents.
 
-Product name: OnDevice Local AI Studio
+Product name: OnDevice LLM
 Product line: OnDevice
 Repository: https://github.com/Mesutcydev/ios-local-llm
-Website: https://mesut.uk/apps/codelens
+Website: https://mesutcydev.github.io/ios-local-llm/
 License: MIT for original project code and documentation
 Swift module and Xcode scheme: IOSLocalLLM
 
 ## OnDevice product line
 
-- OnDevice Local AI Studio — main open-source workbench (this repository)
+- OnDevice LLM — main open-source workbench (this repository)
 - OnDevice Local API Server — coming soon
 - OnDevice CoreAI Local API Server — beta
 

@@ -1,4 +1,4 @@
-# OnDevice Local AI Studio
+# OnDevice LLM
 
 **Run open-source LLMs on iPhone offline** — chat, vision, voice, RAG, and an
 authenticated local API. Built in SwiftUI with MLX, llama.cpp, whisper.cpp, and
@@ -14,7 +14,7 @@ Core ML. No account. No telemetry. No cloud inference by default.
 > Part of the **OnDevice** product line. Independent open-source project — not
 > affiliated with or endorsed by Apple Inc.
 
-**OnDevice Local AI Studio** (this repo) is the main local-first AI workbench
+**OnDevice LLM** (this repo) is the main local-first AI workbench
 for iPhone and Apple silicon Macs. It runs language, vision, speech, and
 image-generation models on the device, and exposes opt-in OpenAI-, Anthropic-,
 and Ollama-compatible local APIs with structured tool calling and a paired Mac
@@ -22,24 +22,24 @@ agent channel.
 
 | Product | Status | What it is |
 | --- | --- | --- |
-| **OnDevice Local AI Studio** | Main · open source | Full iOS/macCatalyst workbench (this repository) |
+| **OnDevice LLM** | Main · open source | Full iOS/macCatalyst workbench (this repository) |
 | [**OnDevice Local API Server**](https://mesutcydev.github.io/ios-local-llm/ondevice.html) | Beta | Dedicated local API surface for agents and LAN clients — [project page](https://mesutcydev.github.io/ios-local-llm/ondevice.html) |
 | **OnDevice CoreAI Local API Server** | Beta | CoreAI-backed local API server variant |
 
 Repository slug remains `ios-local-llm` for stable links. Product name is
-**OnDevice Local AI Studio**. Site: [mesut.uk/apps/codelens](https://mesut.uk/apps/codelens).
+**OnDevice LLM**. Site: [mesutcydev.github.io/ios-local-llm](https://mesutcydev.github.io/ios-local-llm/).
 
 The app was previously distributed through the App Store. This repository is
 now the canonical source distribution. Sideload builds may appear under
 Releases; there is currently no official App Store binary from this repo.
 
-[![OnDevice Local AI Studio specification chart](Docs/Images/ios-local-llm-spec-chart.png)](Docs/Images/ios-local-llm-spec-chart.svg)
+[![OnDevice LLM specification chart](Docs/Images/ios-local-llm-spec-chart.png)](Docs/Images/ios-local-llm-spec-chart.svg)
 
 ## App screenshots
 
 | Home | Assistant |
 | --- | --- |
-| <img src="Docs/Images/Screenshots/home.png" width="320" alt="OnDevice Local AI Studio home dashboard"> | <img src="Docs/Images/Screenshots/assistant.png" width="320" alt="On-device assistant chat screen"> |
+| <img src="Docs/Images/Screenshots/home.png" width="320" alt="OnDevice LLM home dashboard"> | <img src="Docs/Images/Screenshots/assistant.png" width="320" alt="On-device assistant chat screen"> |
 | Models | Local vision onboarding |
 | <img src="Docs/Images/Screenshots/models.png" width="320" alt="Model discovery and management screen"> | <img src="Docs/Images/Screenshots/local-vision.png" width="320" alt="Local vision onboarding screen"> |
 
@@ -111,7 +111,7 @@ services that require app-specific adapters or native inference frameworks.
 
 ## Project status
 
-OnDevice Local AI Studio is usable but is a large, evolving application. Some
+OnDevice LLM is usable but is a large, evolving application. Some
 features require recent Apple hardware, optional model downloads, or native
 frameworks that must be built locally. Contributions that improve first-run
 setup, tests, accessibility, and documentation are especially welcome.
@@ -187,7 +187,7 @@ installers are distributed in this repository. They are intentionally ignored
 because they are large and often have terms different from the OnDevice Local
 AI Studio license.
 
-OnDevice Local AI Studio downloads supported models only after a user chooses them. Always
+OnDevice LLM downloads supported models only after a user chooses them. Always
 review a model's license before downloading or redistributing it. In
 particular, Apple FastVLM weights use a research-only license and are not part
 of this open-source distribution.

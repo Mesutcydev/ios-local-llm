@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If this software supports your work, please cite the repository."
-title: "OnDevice Local AI Studio"
+title: "OnDevice LLM"
 type: software
 authors:
   - family-names: "Yagci"
@@ -13,7 +13,7 @@ version: 3.2.6
 date-released: 2026-07-29
 keywords:
   - OnDevice
-  - OnDevice Local AI Studio
+  - OnDevice LLM
   - on-device AI
   - local LLM
   - iOS

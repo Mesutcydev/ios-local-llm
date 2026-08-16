@@ -18,11 +18,11 @@ The source currently lists:
 - **ForgeSign** — iOS 16 or newer, version 1.1 (build 2).
 - **On Device: LAS** — iOS 18 or newer, version 3.2.6 (build 140).
 - **MacPair for iOS** — iOS 18 or newer, version 1.0.5 (build 6).
-- **On Device Local AI Studio** — iOS 18 or newer, version 3.2.6 (build 101).
+- **OnDevice LLM** — iOS 18 or newer, version 3.2.6 (build 103).
 - **SiteAgent** — iOS 17 or newer, version 1.16 (build 2026080901).
 - **Core AI: LAS** — iOS 27 or newer, version 3.2.6 (build 138).
 
-The On Device Local AI Studio IPA and the SiteAgent icon are hosted as assets
+The OnDevice LLM IPA and the SiteAgent icon are hosted as assets
 on the current `ios-local-llm` sideload release. Bell Link is not listed because
 the available Bell Link artifact is a macOS app, not an iOS/iPadOS IPA.
 

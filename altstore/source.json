@@ -10,7 +10,7 @@
     "com.forgesign.mobile",
     "com.mesutcydev.ondevicelas",
     "uk.mesut.screenharbor.ios",
-    "com.codelens.CodeLens",
+    "com.mesutcydev.ioslocalllm.IOSLocalLLM",
     "uk.mesut.SiteAgent"
   ],
   "apps": [
@@ -114,11 +114,11 @@
       }
     },
     {
-      "name": "On Device Local AI Studio",
-      "bundleIdentifier": "com.codelens.CodeLens",
+      "name": "OnDevice LLM",
+      "bundleIdentifier": "com.mesutcydev.ioslocalllm.IOSLocalLLM",
       "developerName": "Mesutcydev",
       "subtitle": "A local-first AI workbench for iPhone.",
-      "localizedDescription": "On Device Local AI Studio runs supported language, vision, voice, and image-generation workloads on your iPhone. It includes local model management, camera and voice features, retrieval tools, and an authenticated local API without silently falling back to a cloud service.",
+      "localizedDescription": "OnDevice LLM runs supported language, vision, voice, and image-generation workloads on your iPhone. It includes local model management, camera and voice features, retrieval tools, and an authenticated local API without silently falling back to a cloud service.",
       "iconURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/52d0c61a8179ee60ca4efacff92881fd0c8e7284/IOSLocalLLM/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
       "tintColor": "#5EEAD4",
       "category": "developer",
@@ -131,12 +131,12 @@
       "versions": [
         {
           "version": "3.2.6",
-          "buildVersion": "101",
-          "date": "2026-08-08T22:36:27Z",
+          "buildVersion": "103",
+          "date": "2026-08-13T20:46:53Z",
           "localizedDescription": "Sideload build with the local AI workbench, share extension, and bundled memory entitlements.",
-          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-140/CodeLens-3.2.6-101-sideload-entitled.ipa",
-          "size": 309051696,
-          "sha256": "b982abf54bdfda4e665d18c453174545b1dd39bdc9e4fee3c76a476ffaf6a1e3",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-103/IOSLocalLLM-3.2.6-103-sideload-entitled.ipa",
+          "size": 50311718,
+          "sha256": "bed89abe89a52ed75c6df857ae6fc01c49c172337681699543447dda62326fac",
           "minOSVersion": "18.0"
         }
       ],
