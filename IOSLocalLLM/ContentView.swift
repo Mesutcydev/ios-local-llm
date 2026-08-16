@@ -13,8 +13,6 @@ struct ContentView: View {
 
     @StateObject private var camera: CameraService
     @StateObject private var analysis: AnalysisService
-    @StateObject private var reviewPrompt = ReviewPromptService.shared
-
     @State private var showSettings = false
     // Mac/Bridge is reached from a Home button now (Models took its tab slot).
     // Presented as a sheet. AppBridge.requestTab(.mac) (index 3) also opens it.
@@ -258,21 +256,6 @@ struct ContentView: View {
             set: { if !$0 { settings.hasSeenOnboarding = true } }
         )) {
             OnboardingView()
-        }
-        // Rate-the-app pre-prompt — service decides when (≥5 turns,
-        // ≥3 days installed, ≥30 days cooldown). Mounted at the root so
-        // it surfaces regardless of which tab is active when the
-        // threshold is hit. Suppressed during onboarding/legal so we
-        // never stack sheets.
-        .sheet(isPresented: Binding(
-            get: { reviewPrompt.shouldShowPrompt
-                    && !legal.needsAnyAcceptance
-                    && settings.hasSeenOnboarding },
-            set: { newValue in
-                if !newValue { reviewPrompt.userDeferred() }
-            }
-        )) {
-            ReviewPromptSheet()
         }
     }
 

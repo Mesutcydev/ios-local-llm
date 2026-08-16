@@ -342,7 +342,7 @@ struct BridgePairingView: View {
                 Text("Pair with Mac")
                     .font(T.mono(15, .semibold))
                     .foregroundColor(T.ink)
-                Text("Open iOS Local LLM Bridge on your Mac, click \"Show QR\", then scan it here.")
+                Text("Open OnDevice LLM Bridge on your Mac, click \"Show QR\", then scan it here.")
                     .font(T.mono(12, .regular))
                     .foregroundColor(T.ink3)
                     .multilineTextAlignment(.center)

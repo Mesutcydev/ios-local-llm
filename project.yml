@@ -138,7 +138,7 @@ targets:
     info:
       path: IOSLocalLLM/Info.plist
       properties:
-        CFBundleDisplayName: iOS Local LLM
+        CFBundleDisplayName: OnDevice LLM
         # Source of truth for both targets' marketing version. xcodegen
         # writes these into the generated Info.plist files on every run,
         # so hand-edits to those plists get reverted next regen — always
@@ -148,11 +148,11 @@ targets:
         # Standard HTTPS only — answers the ASC export-compliance question
         # automatically so review submission doesn't stall on it.
         ITSAppUsesNonExemptEncryption: false
-        NSCameraUsageDescription: "iOS Local LLM uses the back camera to capture live video of your terminal or code editor for real-time analysis."
-        NSPhotoLibraryUsageDescription: "iOS Local LLM can analyze code from photos in your library."
-        NSMicrophoneUsageDescription: "iOS Local LLM uses the microphone for hold-to-talk dictation in the chat composer. Audio is transcribed on-device and never leaves your phone."
-        NSLocalNetworkUsageDescription: "iOS Local LLM can expose your on-device language model to computers on your local network when you enable the Local API Server."
-        NSSpeechRecognitionUsageDescription: "iOS Local LLM uses on-device speech recognition to convert your voice into text for the chat composer."
+        NSCameraUsageDescription: "OnDevice LLM uses the back camera to capture live video of your terminal or code editor for real-time analysis."
+        NSPhotoLibraryUsageDescription: "OnDevice LLM can analyze code from photos in your library."
+        NSMicrophoneUsageDescription: "OnDevice LLM uses the microphone for hold-to-talk dictation in the chat composer. Audio is transcribed on-device and never leaves your phone."
+        NSLocalNetworkUsageDescription: "OnDevice LLM can expose your on-device language model to computers on your local network when you enable the Local API Server."
+        NSSpeechRecognitionUsageDescription: "OnDevice LLM uses on-device speech recognition to convert your voice into text for the chat composer."
         UIRequiresFullScreen: true
         UIStatusBarStyle: UIStatusBarStyleDarkContent
         UIViewControllerBasedStatusBarAppearance: false
@@ -164,7 +164,7 @@ targets:
           UIApplicationSupportsMultipleScenes: false
         NSSupportsLiveActivities: true
         # Make downloaded/imported models under Documents/HFModels visible at
-        # Files → On My iPhone → iOS Local LLM. Per-model export remains
+        # Files → On My iPhone → OnDevice LLM. Per-model export remains
         # available from the Models tab for copying to any Files provider.
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
@@ -179,7 +179,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: IOSLocalLLM/IOSLocalLLM.entitlements
         CODE_SIGN_STYLE: Automatic
         VERSIONING_SYSTEM: apple-generic
-        CURRENT_PROJECT_VERSION: "99"
+        CURRENT_PROJECT_VERSION: "103"
         # PCC symbols exist only in the iOS 27 SDK. Enable the implementation
         # and its capability automatically for iOS 27 device/simulator builds;
         # Xcode 26 and iOS 18–26 builds keep the existing local-only binary.
@@ -208,11 +208,10 @@ targets:
         # Use a Catalyst-specific entitlements set (App Sandbox + camera/
         # mic/network) on the macOS SDK; the iOS entitlements are untouched.
         "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": IOSLocalLLM/IOSLocalLLM-Catalyst.entitlements
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        # Default icon is the neon pink "eye" mark (AppIcon); the previous
-        # pink mark ships as AppIconClassic so users can switch back in
-        # Settings → Appearance. INCLUDE_ALL_APPICON_ASSETS is required for
-        # alternate icons to be compiled into the bundle.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIconClassic
+        # Default icon is the original light-pink eye mark (AppIconClassic).
+        # The newer neon mark remains available as an alternate in Settings →
+        # Appearance. INCLUDE_ALL_APPICON_ASSETS compiles both icon sets.
         ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
         SWIFT_EMIT_LOC_STRINGS: YES
         # IOSLocalLLMTests uses `@testable import IOSLocalLLM`, and the scheme
@@ -383,7 +382,7 @@ targets:
     info:
       path: IOSLocalLLMShareExtension/Info.plist
       properties:
-        CFBundleDisplayName: iOS Local LLM
+        CFBundleDisplayName: OnDevice LLM
         # Must match the main target's version above — App Store rejects
         # extension targets with mismatched marketing versions.
         CFBundleShortVersionString: "3.2.6"
@@ -405,7 +404,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: IOSLocalLLMShareExtension/IOSLocalLLMShareExtension.entitlements
         CODE_SIGN_STYLE: Automatic
         VERSIONING_SYSTEM: apple-generic
-        CURRENT_PROJECT_VERSION: "99"
+        CURRENT_PROJECT_VERSION: "103"
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_EMIT_LOC_STRINGS: YES
 

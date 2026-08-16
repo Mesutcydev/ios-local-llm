@@ -5,6 +5,7 @@ authenticated local API. Built in SwiftUI with MLX, llama.cpp, whisper.cpp, and
 Core ML. No account. No telemetry. No cloud inference by default.
 
 [![Validate](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/validate.yml/badge.svg)](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/validate.yml)
+[![CodeQL](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/codeql.yml/badge.svg)](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/codeql.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Mesutcydev/ios-local-llm/badge)](https://scorecard.dev/viewer/?uri=github.com/Mesutcydev/ios-local-llm)
 [![License: MIT](https://img.shields.io/badge/original%20code-MIT-2ea44f.svg)](LICENSE)
 [![Swift](https://img.shields.io/badge/Swift-5.10-F05138.svg)](https://www.swift.org/)
@@ -56,6 +57,30 @@ performance evidence; see [validation policy](Docs/VALIDATION.md).
 - Local OpenAI-compatible API server and Mac bridge
 - Model discovery and downloads from Hugging Face
 - iPhone and Apple-silicon Mac Catalyst targets
+
+## Feature matrix
+
+| Surface | What it unlocks | Runtime boundary | Signal |
+| --- | --- | --- | --- |
+| Assistant | Chat, code review, explanations, and feature planning | Downloaded local models | Local |
+| Lens | Camera frames, OCR, imported photos, and visual questions | Vision with OCR fallback | On-device |
+| Voice | Dictation, voice conversations, and spoken replies | Speech and local TTS | Private |
+| Models | Search, fit, download, and manage model families | Hugging Face only on request | Explicit |
+| Bridge | Mac pairing and compatible local API routes | Opt-in trusted LAN | Paired |
+
+## Tested model runs
+
+The local runtime has been tested with these model families and more current
+catalog entries, subject to device memory, thermal headroom, model license, and
+the selected quantization:
+
+| Model family | Tested status |
+| --- | --- |
+| Qwen 3.5 series | Tested |
+| Ornith 1.0 9B | Tested |
+| Ternary Bonsai 27B | Tested |
+| Nanbeige | Tested |
+| More current model families | Catalog/runtime coverage varies by device and model fit |
 
 ## AI and agent integration
 

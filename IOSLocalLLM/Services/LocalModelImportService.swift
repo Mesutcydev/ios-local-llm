@@ -20,16 +20,36 @@ final class LocalModelImportService: ObservableObject {
 
     private init() {}
 
-    /// Returns the UTType list the document picker should accept.
-    static var acceptedTypes: [UTType] {
-        var types: [UTType] = [.folder, .item]
+    /// The Files picker must be opened in one document mode at a time.
+    /// Mixing `public.folder` with file UTIs greys out directories on many
+    /// providers after sideload/resign.
+    enum ImportKind: Equatable {
+        case folder
+        case file
+    }
+
+    /// Returns the UTType list for the requested document-picker mode.
+    static func acceptedTypes(for kind: ImportKind) -> [UTType] {
+        guard kind == .file else { return [.folder] }
+
+        var types: [UTType] = [.data, .package]
+        let dataExtensions = ["gguf", "safetensors", "bin", "onnx", "npz"]
+        types.append(contentsOf: dataExtensions.compactMap {
+            UTType(filenameExtension: $0, conformingTo: .data)
+        })
+        let packageExtensions = ["mlpackage", "mlmodelc"]
+        types.append(contentsOf: packageExtensions.compactMap {
+            UTType(filenameExtension: $0, conformingTo: .package)
+        })
         if let mlmodel = UTType("com.apple.coreml.model") { types.append(mlmodel) }
         if let mlpkg   = UTType("com.apple.coreml.mlpackage") { types.append(mlpkg) }
         // NOTE: .zip is intentionally NOT advertised — extraction isn't
-        // implemented on iOS, so offering it let users pick a zip and watch it
-        // "import" then fail. Re-add only when unzip() actually extracts.
+        // implemented on iOS.
         return types
     }
+
+    /// Backward-compatible file list for callers that only need model files.
+    static var acceptedTypes: [UTType] { acceptedTypes(for: .file) }
 
     /// Imports a URL chosen from the document picker.
     /// On success, registers the model with ModelDownloadCenter and returns
@@ -254,45 +274,25 @@ final class LocalModelImportService: ObservableObject {
     }
 }
 
-// MARK: - DocumentPickerWrapper
-// SwiftUI bridge around UIDocumentPickerViewController.
+// MARK: - Document picker presentation
+// Use ``LocalModelDocumentPickerSession.shared`` — a retained singleton owns
+// the picker + delegate so SwiftUI teardown cannot drop Open callbacks.
 
-struct LocalModelDocumentPicker: UIViewControllerRepresentable {
-
-    let onPick: (URL) -> Void
-    let onCancel: () -> Void
-
-    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        let picker = UIDocumentPickerViewController(
-            forOpeningContentTypes: LocalModelImportService.acceptedTypes,
-            asCopy: true
-        )
-        picker.allowsMultipleSelection = false
-        picker.shouldShowFileExtensions = true
-        picker.delegate = context.coordinator
-        return picker
+extension LocalModelDocumentPickerSession.Kind {
+    init(_ kind: LocalModelImportService.ImportKind) {
+        self = kind == .folder ? .folder : .file
     }
+}
 
-    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController,
-                                 context: Context) {}
-
-    func makeCoordinator() -> Coordinator { Coordinator(onPick: onPick, onCancel: onCancel) }
-
-    final class Coordinator: NSObject, UIDocumentPickerDelegate {
-        let onPick: (URL) -> Void
-        let onCancel: () -> Void
-        init(onPick: @escaping (URL) -> Void, onCancel: @escaping () -> Void) {
-            self.onPick = onPick
-            self.onCancel = onCancel
-        }
-        func documentPicker(_ controller: UIDocumentPickerViewController,
-                             didPickDocumentsAt urls: [URL]) {
-            guard let url = urls.first else { onCancel(); return }
-            onPick(url)
-        }
-        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
-            onCancel()
-        }
+extension LocalModelDocumentPickerSession {
+    /// Presents the picker and keeps the security-scoped URL valid until
+    /// `onPick` finishes (including async work).
+    func present(
+        importKind: LocalModelImportService.ImportKind,
+        onPick: @escaping (URL) async -> Void,
+        onCancel: @escaping () -> Void = {}
+    ) {
+        present(kind: Kind(importKind), onPick: onPick, onCancel: onCancel)
     }
 }
 

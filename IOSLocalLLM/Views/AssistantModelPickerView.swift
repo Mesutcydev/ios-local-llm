@@ -18,10 +18,10 @@ struct AssistantModelPickerView: View {
 
     @State private var selectedID: String = AssistantModelCatalog.currentSelection().id
     @State private var customRepoID: String = ""
-    @State private var showLocalImport = false
     @State private var showApplePrivateCloudDisclosure = false
     @State private var isImporting = false
     @State private var isActivating = false
+    @State private var showDocumentsImporter = false
 
     init(downloadedOnly: Bool = false) {
         self.downloadedOnly = downloadedOnly
@@ -235,15 +235,6 @@ struct AssistantModelPickerView: View {
                     }
                 }
                 .padding(.bottom, 32)
-            }
-            .sheet(isPresented: $showLocalImport) {
-                LocalModelDocumentPicker(
-                    onPick: { url in
-                        showLocalImport = false
-                        Task { await importLocal(url) }
-                    },
-                    onCancel: { showLocalImport = false }
-                )
             }
             .sheet(isPresented: $showApplePrivateCloudDisclosure) {
                 ApplePrivateCloudPrivacyDisclosureView {
@@ -699,9 +690,33 @@ struct AssistantModelPickerView: View {
 
     private var importSection: some View {
         KSection(title: "from_files") {
-            Button {
-                showLocalImport = true
-                HapticManager.impact(.light)
+            Menu {
+                Button("Import model folder from Files", systemImage: "folder.badge.plus") {
+                    // Folder import is open-in-place; on resigned/sideload
+                    // builds iOS denies the grant (folder selectable, "Open"
+                    // does nothing). Route those to the in-sandbox App
+                    // Documents flow instead.
+                    if LocalModelDocumentPickerSession.openInPlacePickingIsUsable {
+                        LocalModelDocumentPickerSession.shared.present(
+                            importKind: .folder,
+                            onPick: { url in await importLocal(url) }
+                        )
+                    } else {
+                        showDocumentsImporter = true
+                    }
+                    HapticManager.impact(.light)
+                }
+                Button("Import complete model file from Files", systemImage: "doc.badge.plus") {
+                    LocalModelDocumentPickerSession.shared.present(
+                        importKind: .file,
+                        onPick: { url in await importLocal(url) }
+                    )
+                    HapticManager.impact(.light)
+                }
+                Button("Import from App Documents", systemImage: "internaldrive") {
+                    showDocumentsImporter = true
+                    HapticManager.impact(.light)
+                }
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "tray.and.arrow.down")
@@ -733,6 +748,12 @@ struct AssistantModelPickerView: View {
             }
             .buttonStyle(.plain)
             .disabled(isImporting)
+            .sheet(isPresented: $showDocumentsImporter) {
+                LocalModelDocumentsImportSheet { url in
+                    showDocumentsImporter = false
+                    Task { await importLocal(url) }
+                }
+            }
         }
     }
 

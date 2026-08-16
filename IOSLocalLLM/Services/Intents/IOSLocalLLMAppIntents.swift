@@ -18,9 +18,9 @@ import Foundation
 // MARK: Ask
 
 struct AskIOSLocalLLMIntent: AppIntent {
-    static var title: LocalizedStringResource = "Ask iOS Local LLM"
+    static var title: LocalizedStringResource = "Ask OnDevice LLM"
     static var description = IntentDescription(
-        "Ask the on-device assistant a question. Opens iOS Local LLM and answers locally — nothing leaves your device."
+        "Ask the on-device assistant a question. Opens OnDevice LLM and answers locally — nothing leaves your device."
     )
     static var openAppWhenRun: Bool = true
 
@@ -34,7 +34,7 @@ struct AskIOSLocalLLMIntent: AppIntent {
     }
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Ask iOS Local LLM \(\.$prompt)")
+        Summary("Ask OnDevice LLM \(\.$prompt)")
     }
 }
 
@@ -44,9 +44,9 @@ struct AskIOSLocalLLMIntent: AppIntent {
 /// using Apple's on-device system model. This is the headless counterpart to
 /// `AskIOSLocalLLMIntent`: instant, private, zero-download. Falls back with a
 /// clear error when Apple Intelligence isn't available (older OS / device /
-/// toggle off), nudging the user to the app-opening "Ask iOS Local LLM" instead.
+/// toggle off), nudging the user to the app-opening "Ask OnDevice LLM" instead.
 struct QuickAskIOSLocalLLMIntent: AppIntent {
-    static var title: LocalizedStringResource = "Quick Ask iOS Local LLM"
+    static var title: LocalizedStringResource = "Quick Ask OnDevice LLM"
     static var description = IntentDescription(
         "Get a fast on-device answer from the built-in system model — no app launch, fully private."
     )
@@ -60,7 +60,7 @@ struct QuickAskIOSLocalLLMIntent: AppIntent {
             let reason = AppleFoundationModel.unavailableReason
                 ?? "The on-device system model isn't available."
             throw AppleFoundationModel.AppleFMError.unavailable(
-                "\(reason) Try \"Ask iOS Local LLM\" to use a downloaded model instead."
+                "\(reason) Try \"Ask OnDevice LLM\" to use a downloaded model instead."
             )
         }
         let answer = try await AppleFoundationModel.answer(
@@ -71,14 +71,14 @@ struct QuickAskIOSLocalLLMIntent: AppIntent {
     }
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Quick ask iOS Local LLM \(\.$prompt)")
+        Summary("Quick ask OnDevice LLM \(\.$prompt)")
     }
 }
 
 // MARK: New chat
 
 struct NewChatIntent: AppIntent {
-    static var title: LocalizedStringResource = "New iOS Local LLM Chat"
+    static var title: LocalizedStringResource = "New OnDevice LLM Chat"
     static var description = IntentDescription("Start a fresh conversation with the on-device assistant.")
     static var openAppWhenRun: Bool = true
 
@@ -106,7 +106,7 @@ struct LiveCaptionIntent: AppIntent {
 // MARK: Voice
 
 struct VoiceChatIntent: AppIntent {
-    static var title: LocalizedStringResource = "Talk to iOS Local LLM"
+    static var title: LocalizedStringResource = "Talk to OnDevice LLM"
     static var description = IntentDescription("Open hands-free voice conversation with the on-device assistant.")
     static var openAppWhenRun: Bool = true
 

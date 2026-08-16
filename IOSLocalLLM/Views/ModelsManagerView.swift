@@ -83,8 +83,8 @@ struct ModelsManagerView: View {
     @State private var showDownloadedOnly = false
     @State private var searchTask: Task<Void, Never>?
     @State private var pendingDelete: DownloadableModel?
-    @State private var showImportPicker = false
     @State private var importError: String?
+    @State private var showDocumentsImporter = false
     /// Installed model currently being copied to a user-selected Files
     /// location. The export picker works from the downloader's real directory,
     /// preserving config, tokenizer, and every weight shard together.
@@ -235,18 +235,9 @@ struct ModelsManagerView: View {
             ImageGenerationView()
                 .preferredColorScheme(settings.resolvedColorScheme)
         }
-        // Import-local picker + its alerts, formerly attached to the Installed
-        // section. They now live on the page body so they work from the
-        // utilities footer on every category page.
-        .sheet(isPresented: $showImportPicker) {
-            LocalModelDocumentPicker(
-                onPick: { url in
-                    showImportPicker = false
-                    Task { await importLocalModel(at: url) }
-                },
-                onCancel: { showImportPicker = false }
-            )
-        }
+        // Import uses LocalModelDocumentPickerSession.shared (not a SwiftUI
+        // sheet) so the picker delegate survives Files. Alerts stay here so
+        // they work from the utilities footer on every category page.
         .sheet(item: $exportingModel) { model in
             if let directory = model.downloader?.destination {
                 LocalModelExportPicker(
@@ -2586,15 +2577,6 @@ struct ModelsManagerView: View {
             importLocalRow
             cleanupRow
         }
-        .sheet(isPresented: $showImportPicker) {
-            LocalModelDocumentPicker(
-                onPick: { url in
-                    showImportPicker = false
-                    Task { await importLocalModel(at: url) }
-                },
-                onCancel: { showImportPicker = false }
-            )
-        }
         .alert("Import failed",
                isPresented: Binding(
                 get: { importError != nil },
@@ -2675,9 +2657,32 @@ struct ModelsManagerView: View {
     /// the user's Files app, then registers the imported folder into the
     /// catalog so it appears in the Installed list immediately.
     private var importLocalRow: some View {
-        Button {
-            showImportPicker = true
-            HapticManager.impact(.light)
+        Menu {
+            Button("Import model folder from Files", systemImage: "folder.badge.plus") {
+                // Folder import is open-in-place; on resigned/sideload builds
+                // iOS denies the grant (folder selectable, "Open" does nothing).
+                // Route those to the in-sandbox App Documents flow instead.
+                if LocalModelDocumentPickerSession.openInPlacePickingIsUsable {
+                    LocalModelDocumentPickerSession.shared.present(
+                        importKind: .folder,
+                        onPick: { url in await importLocalModel(at: url) }
+                    )
+                } else {
+                    showDocumentsImporter = true
+                }
+                HapticManager.impact(.light)
+            }
+            Button("Import complete model file from Files", systemImage: "doc.badge.plus") {
+                LocalModelDocumentPickerSession.shared.present(
+                    importKind: .file,
+                    onPick: { url in await importLocalModel(at: url) }
+                )
+                HapticManager.impact(.light)
+            }
+            Button("Import from App Documents", systemImage: "internaldrive") {
+                showDocumentsImporter = true
+                HapticManager.impact(.light)
+            }
         } label: {
             modelCardShell(accent: T.accent, prominence: 0.08, padding: 14) {
                 HStack(spacing: 12) {
@@ -2712,6 +2717,12 @@ struct ModelsManagerView: View {
             }
         }
         .buttonStyle(.plain)
+        .sheet(isPresented: $showDocumentsImporter) {
+            LocalModelDocumentsImportSheet { url in
+                showDocumentsImporter = false
+                Task { await importLocalModel(at: url) }
+            }
+        }
     }
 
     private func importLocalModel(at url: URL) async {
@@ -2958,7 +2969,7 @@ struct ModelsManagerView: View {
             guard let engine = supportedVoiceEngine(for: model) else {
                 ToastCenter.shared.info(
                     "Voice model downloaded",
-                    detail: "This repo is stored locally, but iOS Local LLM can only switch between Apple System Voice, KittenTTS, and Kokoro right now."
+                    detail: "This repo is stored locally, but OnDevice LLM can only switch between Apple System Voice, KittenTTS, and Kokoro right now."
                 )
                 return
             }

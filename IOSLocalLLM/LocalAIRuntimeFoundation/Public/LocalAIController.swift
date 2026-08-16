@@ -83,7 +83,7 @@ public final class LocalAIController {
                         continuation.yield(.started)
                         if options.toolMode != .disabled {
                             continuation.yield(.warning(
-                                "Tool mode is a host-app feature; this facade streams model text and leaves tool execution to iOS Local LLM."
+                                "Tool mode is a host-app feature; this facade streams model text and leaves tool execution to OnDevice LLM."
                             ))
                         }
 

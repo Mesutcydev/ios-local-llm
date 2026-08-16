@@ -57,7 +57,7 @@ enum SystemSnapshot {
     static func header() -> String {
         let mem = memory()
         var lines: [String] = []
-        lines.append("=== iOS Local LLM diagnostics ===")
+        lines.append("=== OnDevice LLM diagnostics ===")
         lines.append("exported: \(Diagnostics.timestampFormatter.string(from: Date()))")
         lines.append("app: \(appVersion())")
         lines.append("device: \(deviceModelIdentifier()) · iOS \(osVersion())")

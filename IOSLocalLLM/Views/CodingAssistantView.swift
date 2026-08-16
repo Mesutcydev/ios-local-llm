@@ -1039,7 +1039,7 @@ struct CodingAssistantView: View {
         if route != .chat { route = .chat }
         inputText = prefill
 
-        // "Ask iOS Local LLM" App Intent path: fire the prompt automatically so a
+        // "Ask OnDevice LLM" App Intent path: fire the prompt automatically so a
         // Siri/Shortcuts request actually produces an answer. Defer one run
         // loop so the @State write above is committed before sendMessage()
         // reads `inputText`, and give ensureModelReady() a beat to kick in.
@@ -2746,7 +2746,7 @@ struct CodingAssistantView: View {
     private func diagnoseAppErrors() {
         if route != .chat { route = .chat }
         inputFocused = false
-        let instructions = "You are analyzing diagnostics from iOS Local LLM, an on-device iOS AI app that runs local models (MLX / Core ML). Identify the most likely root cause(s), ranked, and give concrete prioritized fixes or user actions. Be concise and specific. If nothing looks wrong, say the device looks healthy. Do not invent log lines that are not present."
+        let instructions = "You are analyzing diagnostics from OnDevice LLM, an on-device iOS AI app that runs local models (MLX / Core ML). Identify the most likely root cause(s), ranked, and give concrete prioritized fixes or user actions. Be concise and specific. If nothing looks wrong, say the device looks healthy. Do not invent log lines that are not present."
         let displayText = loc.t("Diagnose my app's recent errors and suggest fixes.")
         messages.append(ChatMessage(role: .user, content: displayText))
         let reply = ChatMessage(role: .assistant, content: "", isStreaming: true)
@@ -2892,13 +2892,6 @@ struct CodingAssistantView: View {
                     }
                     self.persistCurrentConversation()
                     HapticManager.analysisComplete()
-                    // Bump the meaningful-interaction counter on every
-                    // completed assistant turn. The eligibility check
-                    // (≥5 turns, ≥3 days installed, ≥30 days since last
-                    // prompt) lives inside the service — we just feed
-                    // it the signal and let it decide whether to fire.
-                    ReviewPromptService.shared.recordMeaningfulInteraction()
-                    ReviewPromptService.shared.evaluateAndMaybePrompt()
                 }
             }
         )
@@ -2968,8 +2961,6 @@ struct CodingAssistantView: View {
                     }
                     self.persistCurrentConversation()
                     HapticManager.analysisComplete()
-                    ReviewPromptService.shared.recordMeaningfulInteraction()
-                    ReviewPromptService.shared.evaluateAndMaybePrompt()
                 }
             }
         )
@@ -4368,7 +4359,7 @@ private struct UnsafeModelLoadConfirmationSheet: View {
                     VStack(alignment: .leading, spacing: 14) {
                         riskRow(
                             symbol: "xmark.app.fill",
-                            text: "iOS may terminate iOS Local LLM while the model loads or generates."
+                            text: "iOS may terminate OnDevice LLM while the model loads or generates."
                         )
                         riskRow(
                             symbol: "doc.badge.clock",

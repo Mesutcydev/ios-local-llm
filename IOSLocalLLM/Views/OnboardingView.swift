@@ -87,7 +87,7 @@ struct OnboardingView: View {
             VStack(spacing: 0) {
                 // Wordmark header
                 HStack {
-                    KWordmark(name: "iOS Local LLM", logoAsset: "app_logo_small")
+                    KWordmark(name: "OnDevice LLM", logoAsset: "app_logo_small")
                     Spacer()
                     KMono(text: "v\(appVersion)", size: 10, color: T.ink3)
                     if page < pages.count - 1 {
