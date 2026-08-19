@@ -179,7 +179,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: IOSLocalLLM/IOSLocalLLM.entitlements
         CODE_SIGN_STYLE: Automatic
         VERSIONING_SYSTEM: apple-generic
-        CURRENT_PROJECT_VERSION: "99"
+        CURRENT_PROJECT_VERSION: "106"
         # PCC symbols exist only in the iOS 27 SDK. Enable the implementation
         # and its capability automatically for iOS 27 device/simulator builds;
         # Xcode 26 and iOS 18–26 builds keep the existing local-only binary.
@@ -405,7 +405,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: IOSLocalLLMShareExtension/IOSLocalLLMShareExtension.entitlements
         CODE_SIGN_STYLE: Automatic
         VERSIONING_SYSTEM: apple-generic
-        CURRENT_PROJECT_VERSION: "99"
+        CURRENT_PROJECT_VERSION: "106"
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_EMIT_LOC_STRINGS: YES
 
@@ -459,7 +459,7 @@ schemes:
     build:
       targets:
         IOSLocalLLM: all
-        IOSLocalLLMTests: [test, run]
+        IOSLocalLLMTests: [test]
         IOSLocalLLMUITests: [test]
     test:
       config: Debug

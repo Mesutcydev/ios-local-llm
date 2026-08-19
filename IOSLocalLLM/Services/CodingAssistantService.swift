@@ -168,6 +168,141 @@ struct GGUFLoadPolicy: Equatable, Sendable {
     }
 }
 
+// MARK: - GGUFGenerationProfile
+
+/// Per-model context / output budget policy for imported llama.cpp GGUF
+/// assistants.
+///
+/// Recurrent Gemma GGUF quants (Gemma 3n + Gemma 4 E2B/E4B) are only
+/// stable on iOS with a deliberately compact context — they abort while
+/// reserving larger ones — so they keep the 512 / 128 / 320 profile that
+/// workaround was built for. Every OTHER imported GGUF (Qwen, Llama, Phi,
+/// dense Gemma 4 12B/31B, …) runs fine with a normal bounded 4K window;
+/// applying the compact profile to them truncated every reply to ~128
+/// tokens mid-sentence.
+enum GGUFGenerationProfile: Equatable, Sendable {
+    case compact   // recurrent Gemma 3n / Gemma 4 E-series
+    case standard  // every other imported GGUF
+
+    static let compactContextTokens = 512
+    static let compactMaxOutputTokens = 128
+    static let compactInputBudget = 320
+    /// Bounded window for standard imports: large enough for real
+    /// conversations, small enough to keep the KV cache modest on iOS.
+    static let standardContextTokens = 4_096
+
+    /// Picks the profile from the imported model's identity (repo ID or
+    /// display name) so `local_gemma-4-e4b-…`-style imports are covered
+    /// regardless of how the user named the folder.
+    static func resolve(repoID: String, displayName: String) -> Self {
+        isRecurrentGemma("\(repoID) \(displayName)") ? .compact : .standard
+    }
+
+    /// Gemma 3n (all sizes) and Gemma 4 E2B/E4B share the recurrent /
+    /// sliding-window path that aborts on a 4K iOS context. Dense Gemma 4
+    /// 12B/26B/31B do not, so they keep the standard window.
+    static func isRecurrentGemma(_ identity: String) -> Bool {
+        let id = identity.lowercased()
+        if id.contains("gemma-3n") || id.contains("gemma3n") { return true }
+        let isGemma4 = id.contains("gemma-4") || id.contains("gemma4")
+        guard isGemma4 else { return false }
+        let isDenseOrLarge = id.contains("12b")
+            || id.contains("26b")
+            || id.contains("31b")
+        return !isDenseOrLarge
+    }
+
+    var contextTokens: Int {
+        switch self {
+        case .compact:  return Self.compactContextTokens
+        case .standard: return Self.standardContextTokens
+        }
+    }
+
+    /// Prompt budget for message-level trimming. The bridge re-clamps with
+    /// exact tokenizer counts, so this estimate only steers trimming.
+    func inputBudget(requestedOutputTokens: Int) -> Int {
+        switch self {
+        case .compact:
+            return Self.compactInputBudget
+        case .standard:
+            let outputReserve = min(requestedOutputTokens, Self.standardContextTokens / 2)
+            return max(256, Self.standardContextTokens - outputReserve - 16)
+        }
+    }
+
+    /// Clamps a requested output budget to what the profile allows.
+    func clampedOutputTokens(_ requested: Int) -> Int {
+        switch self {
+        case .compact:  return min(requested, Self.compactMaxOutputTokens)
+        case .standard: return requested
+        }
+    }
+
+    /// Combines the user setting, GGUF profile, and thermal advisor into
+    /// the output budget the UI should advertise.
+    static func outputTokenCap(
+        isGGUF: Bool,
+        profile: GGUFGenerationProfile,
+        requested: Int,
+        thermalCap: Int
+    ) -> Int {
+        let profileCap = isGGUF ? profile.clampedOutputTokens(requested) : requested
+        return min(requested, thermalCap, profileCap)
+    }
+
+    /// Compact / recurrent Gemma templates reject system turns. Recast only
+    /// our bounded conversation-memory record as ordinary chat context so
+    /// long-thread memory survives; persona and tool-use instructions stay
+    /// excluded. Standard-profile GGUFs (Qwen, Llama, Phi, …) handle system
+    /// turns and keep them via their chat template.
+    func messagesForRuntime(_ messages: [ChatMessage]) -> [ChatMessage] {
+        switch self {
+        case .standard:
+            return messages
+        case .compact:
+            return messages.compactMap { message in
+                guard message.role == .system else { return message }
+                guard message.content.hasPrefix("[CONVERSATION MEMORY]") else {
+                    return nil
+                }
+                return ChatMessage(
+                    id: message.id,
+                    role: .user,
+                    content: message.content,
+                    timestamp: message.timestamp
+                )
+            }
+        }
+    }
+
+    /// Builds the string the llama.cpp tokenizer actually sees.
+    /// Standard imports get their real chat template (ChatML, Llama 3, …)
+    /// including the generation cue. Compact / recurrent Gemma stays on
+    /// plain `role: text` plus an `assistant:` cue — their embedded
+    /// tool-oriented special tokens can be invalid for the quantized
+    /// embedding table.
+    func prompt(
+        from messages: [ChatMessage],
+        template: ChatTemplate,
+        enableThinking: Bool
+    ) -> String {
+        switch self {
+        case .standard:
+            return messages.formattedWithTemplate(template, enableThinking: enableThinking)
+        case .compact:
+            let body = messages
+                .filter { $0.role != .system }
+                .map { "\($0.role.rawValue): \($0.contentForModel)" }
+                .joined(separator: "\n\n")
+            let grounded = body.isEmpty
+                ? CodingAssistantService.compactGroundingPrompt
+                : CodingAssistantService.compactGroundingPrompt + "\n\n" + body
+            return grounded + "\n\nassistant:"
+        }
+    }
+}
+
 // MARK: - CodingAssistantService
 // Runs whatever AssistantModel is selected (default: AssistantModelCatalog
 // .presets[0]) on-device via MLX Swift. On first use the model is loaded
@@ -183,18 +318,40 @@ struct GGUFLoadPolicy: Equatable, Sendable {
 final class CodingAssistantService: ObservableObject {
     static let shared = CodingAssistantService()
 
-    /// This recurrent Gemma GGUF is stable on iOS with a deliberately compact
-    /// context. Keep its prompt/output budgets beside that runtime limit so the
-    /// shared MLX history policy can never feed it an 8K–16K-token transcript.
-    private static let importedGGUFContextTokens = 512
-    private static let importedGGUFMaxOutputTokens = 128
-    private static let importedGGUFInputBudget = 320
+    /// Context / output budget policy for the currently selected imported
+    /// GGUF. See `GGUFGenerationProfile` for why only recurrent Gemma 3n /
+    /// Gemma 4 E-series quants get the compact profile.
+    private var ggufProfile: GGUFGenerationProfile {
+        GGUFGenerationProfile.resolve(
+            repoID: activeModel.repoID,
+            displayName: activeModel.displayName
+        )
+    }
 
     @Published private(set) var state: ServiceState = .unloaded
     @Published private(set) var tokenRate: Double = 0
     /// Estimated token count of the trimmed input sent on the last generate().
     /// Used by the UI to render a context-window progress bar.
     @Published private(set) var estimatedInputTokens: Int = 0
+    /// True when the most recent reply ended by exhausting its token
+    /// budget rather than at an end-of-generation token — i.e. the answer is
+    /// truncated and the UI should say so. Reset at each generation start.
+    @Published private(set) var lastGenerationHitTokenLimit = false
+    /// Tokenizer-exact prompt / completion counts from the last finished
+    /// generate(). Local API usage fields and the usage tracker read these
+    /// instead of guessing from streamed pieces or tok/s × elapsed.
+    @Published private(set) var lastPromptTokens: Int = 0
+    @Published private(set) var lastOutputTokens: Int = 0
+    /// Output budget the chrome should advertise: user setting, thermal
+    /// advisor, and (for imported GGUF) the compact-profile 128-token cap.
+    var effectiveOutputTokenCap: Int {
+        GGUFGenerationProfile.outputTokenCap(
+            isGGUF: activeModel.runtime == .llamaCpp,
+            profile: ggufProfile,
+            requested: effectiveGenerationSettings.maxTokens,
+            thermalCap: DeviceSafetyMonitor.shared.recommendedMaxTokens
+        )
+    }
     /// Cloud execution is deliberately tracked separately from local model
     /// residency. A PCC request can fail or be cancelled without making a
     /// downloaded MLX / llama.cpp model appear failed.
@@ -227,7 +384,9 @@ final class CodingAssistantService: ObservableObject {
             )
         }
         if activeModel.runtime == .llamaCpp {
-            return Self.importedGGUFInputBudget
+            return ggufProfile.inputBudget(
+                requestedOutputTokens: effectiveGenerationSettings.maxTokens
+            )
         }
         let executionProfile = MLXAssistantExecutionProfile.resolve(
             repoID: activeModel.repoID
@@ -597,7 +756,8 @@ final class CodingAssistantService: ObservableObject {
     • Documentation and inline comment writing
 
     Rules:
-    - Always output working, runnable code
+    - Prefer working, runnable code when the APIs are in context or widely known
+    - If a file, API, or fact is not in the conversation, say so — do not invent it
     - Prefer clarity over cleverness; name things explicitly
     - Cite the specific line/pattern when reviewing
     - Use markdown with fenced code blocks and language tags
@@ -605,6 +765,21 @@ final class CodingAssistantService: ObservableObject {
       lists for multiple items. Never run headings, labels, or list items
       together without whitespace.
     - Be concise — no filler phrases
+    """
+
+    /// Shared anti-hallucination rules appended to every chat system prompt.
+    /// Local models otherwise invent citations, tool results, and live data
+    /// when a persona only describes tone.
+    nonisolated static let groundingPrompt = """
+    Grounding:
+    - Answer only from the conversation, attached files, and tool results.
+    - Do not invent citations, URLs, quotes, file contents, tool results, or live data (news, weather, prices, sports).
+    - If you do not know, say so. Do not guess to sound complete.
+    """
+
+    /// Short line folded into compact GGUF prompts (no system role).
+    nonisolated static let compactGroundingPrompt = """
+    Answer from this conversation only. Do not invent citations, tool results, URLs, or live data. If unsure, say so.
     """
 
     nonisolated static let responseFormattingPrompt = """
@@ -792,12 +967,14 @@ final class CodingAssistantService: ObservableObject {
                 return
             }
             do {
-                // Gemma 4 E4B uses recurrent + sliding-window state and this
-                // community quant aborts while reserving its advertised 128K
-                // context on iOS. A compact 512-token context matches the
-                // upstream llama-simple execution path and is sufficient for
-                // responsive on-device assistant turns on this 7.5B model.
-                let context = UInt32(Self.importedGGUFContextTokens)
+                // Gemma 4 E4B uses recurrent + sliding-window state and its
+                // community quants abort while reserving the advertised 128K
+                // context on iOS, so only that family keeps the compact
+                // 512-token context (matching the upstream llama-simple
+                // execution path). Every other imported GGUF gets a bounded
+                // 4K window — the previous blanket 512 truncated all replies
+                // to ~128 tokens mid-sentence.
+                let context = UInt32(ggufProfile.contextTokens)
                 let fileBytes = ((try? FileManager.default.attributesOfItem(atPath: modelURL.path))?[.size] as? NSNumber)?.int64Value ?? 0
                 let available = MemoryAdvisor.availableMemoryForModel
                 let loadPolicy = GGUFLoadPolicy.resolve(
@@ -1212,7 +1389,12 @@ final class CodingAssistantService: ObservableObject {
         // pass it (the chat view) match declaration order; callers that omit
         // it (benchmark, compare, quality eval, titler) skip the default.
         onLogprobToken: (@Sendable (TokenLogprob) -> Void)? = nil,
-        onComplete: @escaping @Sendable (Double) -> Void
+        onComplete: @escaping @Sendable (Double) -> Void,
+        // Optional failure channel for API/bridge callers that must
+        // distinguish an error from an empty-but-successful generation.
+        // Local failures invoke it before onComplete(0); user-initiated
+        // cancellation deliberately does not.
+        onError: (@Sendable (String) -> Void)? = nil
     ) {
         if activeExecutionLocation == .applePrivateCloud {
             generateWithApplePrivateCloud(
@@ -1222,7 +1404,8 @@ final class CodingAssistantService: ObservableObject {
                 jsonMode: jsonMode,
                 forceNoThinking: forceNoThinking,
                 onToken: onToken,
-                onComplete: onComplete
+                onComplete: onComplete,
+                onError: onError
             )
             return
         }
@@ -1234,13 +1417,18 @@ final class CodingAssistantService: ObservableObject {
         // back to `.ready`, then retry once.
         if case .generating = state {
             Task { @MainActor [weak self] in
-                guard let self else { onComplete(0); return }
+                guard let self else {
+                    onError?("Service unavailable")
+                    onComplete(0)
+                    return
+                }
                 var waited = 0
                 while case .generating = self.state, waited < 40 {
                     try? await Task.sleep(nanoseconds: 50_000_000)
                     waited += 1
                 }
                 guard case .ready = self.state else {
+                    onError?("The model stayed busy; retry shortly")
                     onComplete(0)
                     return
                 }
@@ -1255,7 +1443,8 @@ final class CodingAssistantService: ObservableObject {
                     forceNoThinking: forceNoThinking,
                     onToken: onToken,
                     onLogprobToken: onLogprobToken,
-                    onComplete: onComplete
+                    onComplete: onComplete,
+                    onError: onError
                 )
             }
             return
@@ -1272,14 +1461,22 @@ final class CodingAssistantService: ObservableObject {
             : resolvedMLXContainer != nil
         if state != .ready || !hasRuntimeModel {
             Task { [weak self] in
-                guard let self else { onComplete(0); return }
+                guard let self else {
+                    onError?("Service unavailable")
+                    onComplete(0)
+                    return
+                }
                 if case .loading = state {
                     // Another caller is already loading — wait it out, with a
                     // deadline so a wedged load (network stall, HubApi hang)
                     // can't spin this poll forever and freeze the send.
                     let deadline = Date().addingTimeInterval(60)
                     while case .loading = self.state {
-                        if Date() >= deadline { onComplete(0); return }
+                        if Date() >= deadline {
+                            onError?("Timed out waiting for the model to load")
+                            onComplete(0)
+                            return
+                        }
                         try? await Task.sleep(nanoseconds: 100_000_000)
                     }
                 } else if state != .ready {
@@ -1300,15 +1497,21 @@ final class CodingAssistantService: ObservableObject {
                         forceNoThinking: forceNoThinking,
                         onToken: onToken,
                         onLogprobToken: onLogprobToken,
-                        onComplete: onComplete
+                        onComplete: onComplete,
+                        onError: onError
                     )
                 } else {
+                    onError?("Failed to load the active model")
                     onComplete(0)
                 }
             }
             return
         }
-        guard case .ready = state else { onComplete(0); return }
+        guard case .ready = state else {
+            onError?("The active model is not ready")
+            onComplete(0)
+            return
+        }
 
         // Device-safety gate — refuse to start a fresh generation only when
         // the device is genuinely at .critical thermal state or under
@@ -1317,12 +1520,16 @@ final class CodingAssistantService: ObservableObject {
         let safety = DeviceSafetyMonitor.shared
         if let reason = safety.stopReason {
             ToastCenter.shared.error(reason.title, detail: reason.detail)
+            onError?("\(reason.title). \(reason.detail)")
             onComplete(0)
             return
         }
 
         generateTask?.cancel()
         state = .generating
+        lastGenerationHitTokenLimit = false
+        lastPromptTokens = 0
+        lastOutputTokens = 0
         // User started inference — cancel any pending background
         // prefetch so it doesn't compete for disk bandwidth with
         // the active generate.
@@ -1422,15 +1629,11 @@ final class CodingAssistantService: ObservableObject {
             topK: topK,
             minP: Float(minP),
             repetitionPenalty: Float(repPenalty),
-            prefillStepSize: executionProfile.prefillStepSize
+            presencePenalty: Float(presPenalty),
+            frequencyPenalty: Float(freqPenalty),
+            prefillStepSize: executionProfile.prefillStepSize,
+            seed: seed
         )
-        // The vendored mlx-swift-lm `GenerateParameters` exposes topK /
-        // minP (wired above) and the KV-cache quantization knobs; it has
-        // no seed parameter, and the frequency / presence penalties are
-        // intentionally left at the package defaults for now. The resolved
-        // values are still computed above (settings UI, sampler presets),
-        // so discard them explicitly to keep them out of dead-code warnings.
-        _ = (freqPenalty, presPenalty, seed)
 
         // --- JSON Mode (Feature #2) ---
         // Inject JSON-output instructions into the last system message.
@@ -1458,30 +1661,12 @@ final class CodingAssistantService: ObservableObject {
         // gate never accounted for. 8-bit KV quantization (above) halves the
         // per-token cost; this cap bounds the count.
         let isImportedGGUF = activeModel.runtime == .llamaCpp
-        let messagesForRuntime: [ChatMessage]
-        if isImportedGGUF {
-            // Imported recurrent Gemma models do not accept system turns, but
-            // long-conversation memory must not disappear with the rest of the
-            // system prompt. Recast only our bounded memory record as ordinary
-            // chat context; persona/tool system instructions remain excluded.
-            messagesForRuntime = effectiveMessages.compactMap { message in
-                guard message.role == .system else { return message }
-                guard message.content.hasPrefix("[CONVERSATION MEMORY]") else {
-                    return nil
-                }
-                return ChatMessage(
-                    id: message.id,
-                    role: .user,
-                    content: message.content,
-                    timestamp: message.timestamp
-                )
-            }
-        } else {
-            messagesForRuntime = effectiveMessages
-        }
+        let messagesForRuntime = isImportedGGUF
+            ? ggufProfile.messagesForRuntime(effectiveMessages)
+            : effectiveMessages
         let deviceContextCap = (DeviceTierAdvisor.current == .max) ? 16_384 : 8_192
         let inputBudget = isImportedGGUF
-            ? Self.importedGGUFInputBudget
+            ? ggufProfile.inputBudget(requestedOutputTokens: safeMaxTokens)
             : executionProfile.inputBudget(
                 modelContextWindowTokens: activeModel.contextWindowTokens,
                 deviceContextCap: deviceContextCap,
@@ -1541,23 +1726,35 @@ final class CodingAssistantService: ObservableObject {
             let generationID = UUID()
             activeGGUFGenerationID = generationID
             let loggedFirstToken = OSAllocatedUnfairLock(initialState: false)
-            let ggufMaxTokens = min(safeMaxTokens, Self.importedGGUFMaxOutputTokens)
+            // Only the recurrent Gemma quants keep the hard 128-token output
+            // cap; other imported GGUFs follow the user's setting (already
+            // clamped by the thermal advisor in safeMaxTokens, and by the
+            // remaining context inside the bridge).
+            let ggufMaxTokens = ggufProfile.clampedOutputTokens(safeMaxTokens)
+            let ggufPrompt = ggufProfile.prompt(
+                from: trimmedMessages,
+                template: template,
+                enableThinking: enableThinking
+            )
+            let ggufSampler = LlamaCppVLM.GGUFSamplerSpec(
+                temperature: Float(temp),
+                topP: Float(topP),
+                topK: Int32(clamping: topK),
+                repetitionPenalty: Float(repPenalty),
+                seed: seed.map { UInt32(truncatingIfNeeded: $0) }
+            )
+            let reuseGGUFContext = ggufProfile == .standard
             Diagnostics.shared.breadcrumb(
                 "GGUF generation start · footprint=\(MemoryAdvisor.physFootprint) · headroom=\(MemoryAdvisor.availableMemoryForModel)",
                 category: "assistant"
             )
             generateTask = Task.detached(priority: .userInitiated) {
                 do {
-                    let rate = try ggufModel.generateText(
-                        // Imported GGUFs are standalone community models. The
-                        // app's MLX-oriented system prompt is hundreds of
-                        // tokens and can drive Gemma 4's recurrent input path
-                        // into an unsafe prefill graph. Keep the actual chat
-                        // turns and let the bridge add BOS during tokenization.
-                        prompt: trimmedMessages.filter { $0.role != .system }.map { message in
-                            "\(message.role.rawValue): \(message.contentForModel)"
-                        }.joined(separator: "\n\n"),
+                    let result = try ggufModel.generateText(
+                        prompt: ggufPrompt,
                         maxTokens: ggufMaxTokens,
+                        sampler: ggufSampler,
+                        reuseContext: reuseGGUFContext,
                         onToken: { token in
                             let isFirst = loggedFirstToken.withLock { logged -> Bool in
                                 guard !logged else { return false }
@@ -1576,8 +1773,9 @@ final class CodingAssistantService: ObservableObject {
                     // `generateText` has returned, so its prompt/decode batches
                     // and generation guard are fully released before the UI can
                     // initiate an automatic recovery/tool follow-up.
+                    let rate = result.tokensPerSecond
                     Diagnostics.shared.breadcrumb(
-                        "GGUF generation complete · rate=\(String(format: "%.2f", rate)) · footprint=\(MemoryAdvisor.physFootprint) · headroom=\(MemoryAdvisor.availableMemoryForModel)",
+                        "GGUF generation complete · rate=\(String(format: "%.2f", rate)) · hitTokenLimit=\(result.hitTokenLimit) · footprint=\(MemoryAdvisor.physFootprint) · headroom=\(MemoryAdvisor.availableMemoryForModel)",
                         category: "assistant"
                     )
                     await MainActor.run {
@@ -1589,9 +1787,13 @@ final class CodingAssistantService: ObservableObject {
                         }
                         if ownsState {
                             service.tokenRate = rate
+                            service.lastGenerationHitTokenLimit = result.hitTokenLimit
+                            service.lastPromptTokens = result.promptTokens
+                            service.lastOutputTokens = result.outputTokens
+                            service.estimatedInputTokens = result.promptTokens
                             ModelUsageTracker.shared.recordGeneration(
                                 modelID: trackerModelID,
-                                tokens: Int(rate),
+                                tokens: result.outputTokens,
                                 tokensPerSecond: rate
                             )
                         }
@@ -1633,6 +1835,7 @@ final class CodingAssistantService: ObservableObject {
                             "GGUF assistant generation failed · \(error.localizedDescription)",
                             category: "assistant"
                         )
+                        onError?(error.localizedDescription)
                         onComplete(0)
                     }
                 }
@@ -1640,7 +1843,11 @@ final class CodingAssistantService: ObservableObject {
             return
         }
 
-        guard let container = resolvedMLXContainer else { onComplete(0); return }
+        guard let container = resolvedMLXContainer else {
+            onError?("The active model is not loaded")
+            onComplete(0)
+            return
+        }
 
         generateTask = Task {
             // Watch for iOS memory warnings — bail out gracefully instead of
@@ -1650,7 +1857,10 @@ final class CodingAssistantService: ObservableObject {
                 for await _ in center.notifications(
                     named: UIApplication.didReceiveMemoryWarningNotification
                 ).map({ _ in () }) {
-                    print("[CodingAssistantService] Memory warning — queueing GPU cache clear")
+                    Diagnostics.shared.breadcrumb(
+                        "memory warning during generation — queueing GPU cache clear",
+                        category: "assistant"
+                    )
                     await MLXGenerationGate.shared.clearCacheWhenIdle()
                     // Keep generating; only stop on repeated rapid warnings.
                     break
@@ -1674,7 +1884,10 @@ final class CodingAssistantService: ObservableObject {
                     guard let self else { break }
                     let s = ProcessInfo.processInfo.thermalState
                     if s == .critical {
-                        print("[CodingAssistantService] Thermal \(s.rawValue) — stopping")
+                        Diagnostics.shared.breadcrumb(
+                            "thermal \(s.rawValue) mid-generation — stopping",
+                            category: "assistant"
+                        )
                         self.stopGeneration()
                         ToastCenter.shared.error(
                             "Stopped — device too hot",
@@ -1693,6 +1906,7 @@ final class CodingAssistantService: ObservableObject {
                 // `Task { @MainActor … }` hop, so reading it back after the
                 // loop raced those hops and recorded a stale (often 0) rate.
                 let finalRate = OSAllocatedUnfairLock<Double>(initialState: 0)
+                let finalUsage = OSAllocatedUnfairLock(initialState: (prompt: 0, output: 0, hitLimit: false))
 
                 // Funnel through MLXGenerationGate to serialize against
                 // FastVLM / MLXVision — concurrent submits to Metal's
@@ -1786,6 +2000,19 @@ final class CodingAssistantService: ObservableObject {
                             if let info = generation.info {
                                 let rate = info.tokensPerSecond
                                 finalRate.withLock { $0 = rate }
+                                finalUsage.withLock {
+                                    let hitLimit: Bool
+                                    if case .length = info.stopReason {
+                                        hitLimit = true
+                                    } else {
+                                        hitLimit = false
+                                    }
+                                    $0 = (
+                                        prompt: info.promptTokenCount,
+                                        output: info.generationTokenCount,
+                                        hitLimit: hitLimit
+                                    )
+                                }
                                 Task { @MainActor [weak self] in self?.tokenRate = rate }
                             }
                         }
@@ -1796,16 +2023,22 @@ final class CodingAssistantService: ObservableObject {
 
                 let elapsed = Date().timeIntervalSince(start)
                 let rate = elapsed > 0 ? finalRate.withLock({ $0 }) : 0
-                // Best-effort token count from the elapsed time × rate
-                let estimatedTokens = Int(rate * elapsed)
+                let usage = finalUsage.withLock { $0 }
+                let recordedTokens = usage.output > 0 ? usage.output : Int(rate * elapsed)
                 await MainActor.run { [weak self] in
                     // Restore .ready only if still generating — unload() may
                     // have torn the container down mid-flight, and flipping
                     // back to .ready would show "ready" with nothing loaded.
                     if case .generating = self?.state { self?.state = .ready }
+                    self?.lastPromptTokens = usage.prompt
+                    self?.lastOutputTokens = usage.output
+                    self?.lastGenerationHitTokenLimit = usage.hitLimit
+                    if usage.prompt > 0 {
+                        self?.estimatedInputTokens = usage.prompt
+                    }
                     ModelUsageTracker.shared.recordGeneration(
                         modelID: trackerModelID,
-                        tokens: estimatedTokens,
+                        tokens: recordedTokens,
                         tokensPerSecond: rate
                     )
                     onComplete(rate)
@@ -1832,6 +2065,7 @@ final class CodingAssistantService: ObservableObject {
             } catch {
                 await MainActor.run { [weak self] in
                     self?.state = .failed(error.localizedDescription)
+                    onError?(error.localizedDescription)
                     onComplete(0)
                 }
             }
@@ -1898,7 +2132,8 @@ final class CodingAssistantService: ObservableObject {
         jsonMode: Bool,
         forceNoThinking: Bool,
         onToken: @escaping @Sendable (String) -> Void,
-        onComplete: @escaping @Sendable (Double) -> Void
+        onComplete: @escaping @Sendable (Double) -> Void,
+        onError: (@Sendable (String) -> Void)? = nil
     ) {
         let settings = AppSettings.shared
         guard settings.hasCurrentApplePCCPrivacyConsent else {
@@ -1906,10 +2141,12 @@ final class CodingAssistantService: ObservableObject {
                 "Review privacy before using Apple Private Cloud",
                 detail: "Choose Apple Private Cloud again to review and accept the disclosure."
             )
+            onError?("Apple Private Cloud privacy consent has not been accepted")
             onComplete(0)
             return
         }
         guard applePrivateCloudGenerationState != .generating else {
+            onError?("Apple Private Cloud is already generating")
             onComplete(0)
             return
         }
@@ -1934,7 +2171,8 @@ final class CodingAssistantService: ObservableObject {
                 self.finishApplePrivateCloudRequest(
                     id: requestID,
                     result: .failure(error),
-                    onComplete: onComplete
+                    onComplete: onComplete,
+                    onError: onError
                 )
                 return
             }
@@ -1942,7 +2180,8 @@ final class CodingAssistantService: ObservableObject {
                 self.finishApplePrivateCloudRequest(
                     id: requestID,
                     result: .failure(.temporary("Apple Private Cloud context information is unavailable.")),
-                    onComplete: onComplete
+                    onComplete: onComplete,
+                    onError: onError
                 )
                 return
             }
@@ -1999,25 +2238,29 @@ final class CodingAssistantService: ObservableObject {
                 self.finishApplePrivateCloudRequest(
                     id: requestID,
                     result: .success(()),
-                    onComplete: onComplete
+                    onComplete: onComplete,
+                    onError: onError
                 )
             } catch is CancellationError {
                 self.finishApplePrivateCloudRequest(
                     id: requestID,
                     result: .failure(.cancelled),
-                    onComplete: onComplete
+                    onComplete: onComplete,
+                    onError: onError
                 )
             } catch let error as ApplePCCError {
                 self.finishApplePrivateCloudRequest(
                     id: requestID,
                     result: .failure(error),
-                    onComplete: onComplete
+                    onComplete: onComplete,
+                    onError: onError
                 )
             } catch {
                 self.finishApplePrivateCloudRequest(
                     id: requestID,
                     result: .failure(.unknown(error.localizedDescription)),
-                    onComplete: onComplete
+                    onComplete: onComplete,
+                    onError: onError
                 )
             }
         }
@@ -2026,7 +2269,8 @@ final class CodingAssistantService: ObservableObject {
     private func finishApplePrivateCloudRequest(
         id: UUID,
         result: Result<Void, ApplePCCError>,
-        onComplete: @escaping @Sendable (Double) -> Void
+        onComplete: @escaping @Sendable (Double) -> Void,
+        onError: (@Sendable (String) -> Void)? = nil
     ) {
         guard activePCCRequestID == id else { return }
         activePCCRequestID = nil
@@ -2042,6 +2286,7 @@ final class CodingAssistantService: ObservableObject {
                 "Apple Private Cloud unavailable",
                 detail: error.localizedDescription
             )
+            onError?(error.localizedDescription)
         }
         onComplete(0)
     }

@@ -207,8 +207,11 @@ final class VoiceConversationService: ObservableObject {
         default: Task { [assistant] in await assistant.load() }
         }
 
-        session = [ChatMessage(role: .system,
-                                content: PersonaStore.shared.active.systemPrompt)]
+        session = [ChatMessage(
+            role: .system,
+            content: PersonaStore.shared.active.systemPrompt
+                + "\n\n" + CodingAssistantService.groundingPrompt
+        )]
         resetLiveReply()
         liveTranscript = ""
         pendingTranscript = ""

@@ -39,6 +39,12 @@ enum ToolRunner {
     `tool_result` block; you should produce your final natural-language
     answer using that result. Only invoke a tool when it directly helps.
 
+    Do not invent a tool result. Never write a `tool_result` block yourself.
+    Do not claim you searched the web, read a file, looked at an image, or
+    generated an image unless a `tool_result` for that call is already in
+    the conversation. If you need current or external data and cannot call
+    a tool, say you do not have it.
+
     Available tools:
       • calculator(expression: string)  — evaluates an arithmetic expression
       • datetime(timezone?: string)     — current date/time, optionally in a tz

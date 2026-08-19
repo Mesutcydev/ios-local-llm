@@ -42,6 +42,9 @@ public struct ChatMessage: Identifiable, Codable, Hashable, Sendable {
     /// conversations written by older builds decode unchanged.
     public var generationModelID: String? = nil
     public var generationExecutionLocation: ModelExecutionLocation? = nil
+    /// True when the runtime stopped because the output budget ran out
+    /// (no EOS). Optional so conversations written by older builds decode.
+    public var hitTokenLimit: Bool? = nil
 
     /// A single image attachment in an interleaved message.
     public struct ImageAttachment: Codable, Hashable, Sendable {
@@ -76,7 +79,8 @@ public struct ChatMessage: Identifiable, Codable, Hashable, Sendable {
         generationTokensPerSecond: Double? = nil,
         generationDuration: TimeInterval? = nil,
         generationModelID: String? = nil,
-        generationExecutionLocation: ModelExecutionLocation? = nil
+        generationExecutionLocation: ModelExecutionLocation? = nil,
+        hitTokenLimit: Bool? = nil
     ) {
         self.id = id
         self.role = role
@@ -93,6 +97,7 @@ public struct ChatMessage: Identifiable, Codable, Hashable, Sendable {
         self.generationDuration = generationDuration
         self.generationModelID = generationModelID
         self.generationExecutionLocation = generationExecutionLocation
+        self.hitTokenLimit = hitTokenLimit
     }
 
     public static func == (lhs: ChatMessage, rhs: ChatMessage) -> Bool {
@@ -108,7 +113,8 @@ public struct ChatMessage: Identifiable, Codable, Hashable, Sendable {
         lhs.generationTokensPerSecond == rhs.generationTokensPerSecond &&
         lhs.generationDuration == rhs.generationDuration &&
         lhs.generationModelID == rhs.generationModelID &&
-        lhs.generationExecutionLocation == rhs.generationExecutionLocation
+        lhs.generationExecutionLocation == rhs.generationExecutionLocation &&
+        lhs.hitTokenLimit == rhs.hitTokenLimit
     }
 
     public func hash(into hasher: inout Hasher) {
@@ -125,6 +131,7 @@ public struct ChatMessage: Identifiable, Codable, Hashable, Sendable {
         hasher.combine(generationDuration)
         hasher.combine(generationModelID)
         hasher.combine(generationExecutionLocation)
+        hasher.combine(hitTokenLimit)
     }
 
     /// Content supplied to a model prompt. Views and exports continue to use

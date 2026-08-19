@@ -253,6 +253,29 @@ final class ModelCategoryInferenceTests: XCTestCase {
         XCTAssertEqual(message.content, "Summarize this.")
     }
 
+    func test_gemmaTemplate_foldsSystemIntoFirstUserTurnOnce() {
+        let messages = [
+            ChatMessage(role: .system, content: "Be brief."),
+            ChatMessage(role: .user, content: "Hello"),
+        ]
+        let prompt = ChatTemplate.gemma.format(messages: messages)
+        XCTAssertTrue(prompt.contains("<start_of_turn>user\nBe brief.\n\nHello<end_of_turn>"))
+        XCTAssertEqual(prompt.components(separatedBy: "Be brief.").count - 1, 1)
+        XCTAssertFalse(prompt.contains("System: Be brief."))
+        XCTAssertTrue(prompt.hasSuffix("<start_of_turn>model\n"))
+    }
+
+    func test_chatMLTemplate_keepsDedicatedSystemTurn() {
+        let messages = [
+            ChatMessage(role: .system, content: "Be brief."),
+            ChatMessage(role: .user, content: "Hello"),
+        ]
+        let prompt = ChatTemplate.chatML.format(messages: messages)
+        XCTAssertTrue(prompt.contains("<|im_start|>system\nBe brief.<|im_end|>"))
+        XCTAssertTrue(prompt.contains("<|im_start|>user\nHello<|im_end|>"))
+        XCTAssertFalse(prompt.contains("Be brief.\n\nHello"))
+    }
+
     func test_assistantOutputSanitizer_removesKnownQwenBoundaryLeaks() {
         XCTAssertEqual(
             AssistantOutputSanitizer.clean("\nassistant: off.\n\n### Result\n**Done**"),

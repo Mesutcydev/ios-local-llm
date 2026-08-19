@@ -633,6 +633,65 @@ final class LocalAPIServerTests: XCTestCase {
         XCTAssertEqual(output.first?["role"] as? String, "assistant")
     }
 
+    func testOpenAIChatCompletionReportsUsage() throws {
+        let data = LocalAPIResponse.openAIChatCompletion(
+            id: "chatcmpl-test",
+            model: "qwen",
+            text: "hi",
+            toolCalls: [],
+            usage: (12, 34)
+        )
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        let usage = try XCTUnwrap(object["usage"] as? [String: Any])
+        XCTAssertEqual(usage["prompt_tokens"] as? Int, 12)
+        XCTAssertEqual(usage["completion_tokens"] as? Int, 34)
+        XCTAssertEqual(usage["total_tokens"] as? Int, 46)
+    }
+
+    func testOpenAIChatCompletionOmitsUsageWhenUnknown() throws {
+        let data = LocalAPIResponse.openAIChatCompletion(
+            id: "chatcmpl-test",
+            model: "qwen",
+            text: "hi",
+            toolCalls: []
+        )
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        XCTAssertNil(object["usage"])
+    }
+
+    func testAnthropicMessageReportsUsage() throws {
+        let data = LocalAPIResponse.anthropicMessage(
+            id: "msg_test",
+            model: "qwen",
+            text: "hi",
+            usage: (8, 16)
+        )
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        let usage = try XCTUnwrap(object["usage"] as? [String: Any])
+        XCTAssertEqual(usage["input_tokens"] as? Int, 8)
+        XCTAssertEqual(usage["output_tokens"] as? Int, 16)
+    }
+
+    func testOllamaChatReportsEvalCountsWhenDone() throws {
+        let data = LocalAPIResponse.ollamaChat(
+            model: "qwen",
+            text: "hi",
+            done: true,
+            usage: (10, 20)
+        )
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        XCTAssertEqual(object["prompt_eval_count"] as? Int, 10)
+        XCTAssertEqual(object["eval_count"] as? Int, 20)
+    }
+
     func testHTTPRequestParsesQueryAndBearer() {
         let request = HTTPRequest(data: Data("""
         POST /v1/chat/completions?trace=1 HTTP/1.1\r
