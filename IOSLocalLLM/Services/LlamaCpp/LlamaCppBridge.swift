@@ -3,6 +3,36 @@ import UIKit
 import CoreImage
 import os   // OSAllocatedUnfairLock
 
+struct LlamaCppTextGenerationResult: Sendable, Equatable {
+    enum StopReason: Sendable, Equatable {
+        case stop
+        case length
+    }
+
+    let tokensPerSecond: Double
+    let promptTokenCount: Int
+    let completionTokenCount: Int
+    let stopReason: StopReason
+}
+
+/// Per-request GGUF sampler knobs. Load-time defaults stay in place for
+/// vision `describe` and any caller that omits a spec.
+struct LlamaCppSamplerSpec: Sendable, Equatable {
+    var temperature: Float
+    var topP: Float
+    var topK: Int32
+    var repetitionPenalty: Float
+    var seed: UInt32
+
+    static let `default` = LlamaCppSamplerSpec(
+        temperature: 0.7,
+        topP: 0.9,
+        topK: 0,
+        repetitionPenalty: 1.0,
+        seed: UInt32.random(in: 1...UInt32.max)
+    )
+}
+
 // MARK: - LlamaCppBridge
 //
 // Swift wrapper for llama.cpp + mtmd (multimodal) C APIs. Loads
@@ -40,7 +70,11 @@ enum LlamaCppError: Error, LocalizedError {
         case .contextInitFailed:           return "Failed to create llama context"
         case .tokenizeFailed(let code):    return "mtmd_tokenize failed with code \(code)"
         case .invalidToken(let token):     return "Tokenizer produced invalid token id \(token)"
-        case .decodeFailed(let code):      return "llama_decode failed with code \(code)"
+        case .decodeFailed(let code):
+            if code == -3 {
+                return "llama.cpp backend compute failed while decoding (code -3)"
+            }
+            return "llama_decode failed with code \(code)"
         case .bitmapInitFailed:            return "Image RGB conversion failed (mtmd_bitmap_init)"
         case .visionUnsupported:           return "Loaded model does not support vision (mmproj mismatch?)"
         case .promptTooLong(let count):    return "Prompt is too long for the GGUF context (\(count) tokens)"
@@ -212,23 +246,90 @@ final class LlamaCppVLM: @unchecked Sendable {
     }
 
     deinit {
+        // Ensure all Metal work submitted by this context has retired before
+        // freeing the sampler/model. Without this barrier a rapid unload →
+        // reload can overlap the old backend's final command buffers with the
+        // new model's allocations and fail the second load near the limit.
+        if let c = ctx { llama_synchronize(c) }
         if let s = sampler { llama_sampler_free(s) }
         if let mc = mtmdCtx { mtmd_free(mc) }
         if let c = ctx { llama_free(c) }
         if let m = model { llama_model_free(m) }
     }
 
+    /// Canonical llama.cpp order: penalties -> top-k -> top-p -> temp -> dist.
+    private static func makeSampler(
+        _ spec: LlamaCppSamplerSpec
+    ) -> UnsafeMutablePointer<llama_sampler>? {
+        let params = llama_sampler_chain_default_params()
+        guard let chain = llama_sampler_chain_init(params) else { return nil }
+        if abs(spec.repetitionPenalty - 1) > 0.001 {
+            llama_sampler_chain_add(
+                chain,
+                llama_sampler_init_penalties(64, spec.repetitionPenalty, 0, 0)
+            )
+        }
+        if spec.topK > 0 {
+            llama_sampler_chain_add(chain, llama_sampler_init_top_k(spec.topK))
+        }
+        llama_sampler_chain_add(chain, llama_sampler_init_top_p(spec.topP, 1))
+        llama_sampler_chain_add(chain, llama_sampler_init_temp(spec.temperature))
+        let seed = spec.seed == 0 ? UInt32.random(in: 1...UInt32.max) : spec.seed
+        llama_sampler_chain_add(chain, llama_sampler_init_dist(seed))
+        return chain
+    }
+
     // MARK: - Text generation
 
-    /// Runs an already chat-formatted prompt through a standalone text GGUF.
+    /// Counts the exact tokens produced by the resident GGUF tokenizer for an
+    /// already formatted prompt without starting inference.
+    func tokenCount(for prompt: String) throws -> Int {
+        guard let m = model else { throw LlamaCppError.contextInitFailed }
+        let vocab = llama_model_get_vocab(m)
+        let required: Int32 = prompt.withCString { ptr in
+            llama_tokenize(vocab, ptr, Int32(strlen(ptr)), nil, 0, true, true)
+        }
+        guard required < 0 else { throw LlamaCppError.tokenizeFailed(required) }
+        var tokens = [llama_token](repeating: 0, count: Int(-required))
+        let written: Int32 = prompt.withCString { ptr in
+            tokens.withUnsafeMutableBufferPointer { buffer in
+                llama_tokenize(
+                    vocab, ptr, Int32(strlen(ptr)), buffer.baseAddress,
+                    Int32(buffer.count), true, true
+                )
+            }
+        }
+        guard written > 0 else { throw LlamaCppError.tokenizeFailed(written) }
+        return Int(written)
+    }
+
+    /// Runs an already chat-formatted prompt through the resident GGUF. This
+    /// also works when an mtmd projector is attached: text-only turns use the
+    /// normal tokenizer/context, while image turns enter `describe` below.
     func generateText(
         prompt: String,
         maxTokens: Int,
+        samplerSpec: LlamaCppSamplerSpec? = nil,
         onToken: @escaping (String) -> Void
-    ) throws -> Double {
-        guard mtmdCtx == nil, let samp = sampler, let m = model else {
+    ) throws -> LlamaCppTextGenerationResult {
+        guard let m = model else {
             throw LlamaCppError.contextInitFailed
         }
+        let ownedSampler: UnsafeMutablePointer<llama_sampler>?
+        let samp: UnsafeMutablePointer<llama_sampler>
+        if let samplerSpec {
+            guard let created = Self.makeSampler(samplerSpec) else {
+                throw LlamaCppError.contextInitFailed
+            }
+            ownedSampler = created
+            samp = created
+        } else if let existing = sampler {
+            ownedSampler = nil
+            samp = existing
+        } else {
+            throw LlamaCppError.contextInitFailed
+        }
+        defer { if let ownedSampler { llama_sampler_free(ownedSampler) } }
         let acquired = textGenerationActive.withLock { active -> Bool in
             guard !active else { return false }
             active = true
@@ -239,11 +340,9 @@ final class LlamaCppVLM: @unchecked Sendable {
         cancelFlag.withLock { $0 = false }
 
         let vocab = llama_model_get_vocab(m)
-        // The imported-model path already supplies explicit role prefixes.
-        // Some community Gemma 4 GGUFs embed a tool-oriented template whose
-        // generated control-token sequence is not valid for their quantized
-        // per-layer embedding table. Tokenize the plain conversation just as
-        // llama-simple does; add_special=true below still supplies BOS.
+        // The imported-model path already supplies a chat-templated prompt
+        // (ChatML / Gemma / Llama-3 / …), including the assistant generation
+        // cue. Tokenize that text; add_special=true still supplies BOS.
         let formattedPrompt = prompt
 
         let required: Int32 = formattedPrompt.withCString { ptr in
@@ -304,6 +403,7 @@ final class LlamaCppVLM: @unchecked Sendable {
         // abort inside ggml_backend_blas_graph_compute before Swift can catch it.
         let physicalBatchSize = 64
         if let oldContext = ctx {
+            llama_synchronize(oldContext)
             llama_free(oldContext)
             ctx = nil
         }
@@ -318,11 +418,12 @@ final class LlamaCppVLM: @unchecked Sendable {
         }
         ctx = c
 
-        // Own one reusable physical prompt batch. `llama_batch_get_one` returns
-        // a struct that borrows Swift array storage, so populate llama_batch's
-        // owned buffers explicitly for each chunk.
-        var promptBatch = llama_batch_init(Int32(physicalBatchSize), 0, 1)
-        defer { llama_batch_free(promptBatch) }
+        // Use llama.cpp's single-sequence helper instead of assigning explicit
+        // positions. Qwen 3.5 mixes recurrent/GDN and attention layers; current
+        // llama.cpp tracks the recurrent sequence state internally, and a
+        // manually restarted position batch can make the second decode graph
+        // fail with code -3. The helper borrows the Swift token buffer only for
+        // the duration of the synchronous decode below.
         let chunkCount = (tokens.count + physicalBatchSize - 1) / physicalBatchSize
         Diagnostics.shared.breadcrumb(
             "GGUF prefill start · tokens=\(tokens.count) · batch=\(physicalBatchSize) · chunks=\(chunkCount)",
@@ -333,21 +434,18 @@ final class LlamaCppVLM: @unchecked Sendable {
         while promptOffset < tokens.count {
             if cancelFlag.withLock({ $0 }) { throw LlamaCppError.cancelled }
             let count = min(physicalBatchSize, tokens.count - promptOffset)
-            promptBatch.n_tokens = Int32(count)
-            for localIndex in 0..<count {
-                let globalIndex = promptOffset + localIndex
-                promptBatch.token[localIndex] = tokens[globalIndex]
-                promptBatch.pos[localIndex] = llama_pos(globalIndex)
-                promptBatch.n_seq_id[localIndex] = 1
-                promptBatch.seq_id[localIndex]?.pointee = 0
-                promptBatch.logits[localIndex] = globalIndex == tokens.count - 1 ? 1 : 0
-            }
             chunkIndex += 1
             Diagnostics.shared.breadcrumb(
                 "GGUF prefill chunk · index=\(chunkIndex)/\(chunkCount) · tokens=\(count) · offset=\(promptOffset)",
                 category: "assistant"
             )
-            let promptStatus = llama_decode(c, promptBatch)
+            let promptStatus = tokens.withUnsafeMutableBufferPointer { buffer in
+                let batch = llama_batch_get_one(
+                    buffer.baseAddress?.advanced(by: promptOffset),
+                    Int32(count)
+                )
+                return llama_decode(c, batch)
+            }
             guard promptStatus == 0 else { throw LlamaCppError.decodeFailed(promptStatus) }
             promptOffset += count
         }
@@ -358,44 +456,53 @@ final class LlamaCppVLM: @unchecked Sendable {
 
         let startTime = Date()
         var tokensGenerated = 0
+        var reachedEndOfGeneration = false
         var pendingUTF8: [UInt8] = []
-        var batch = llama_batch_init(1, 0, 1)
-        defer { llama_batch_free(batch) }
+        pendingUTF8.reserveCapacity(16)
+        var pieceBuffer = [Int8](repeating: 0, count: 256)
+        llama_sampler_reset(samp)
 
         for _ in 0..<generationLimit {
             if cancelFlag.withLock({ $0 }) { throw LlamaCppError.cancelled }
             let tokenID = llama_sampler_sample(samp, c, -1)
             llama_sampler_accept(samp, tokenID)
-            if llama_vocab_is_eog(vocab, tokenID) { break }
+            if llama_vocab_is_eog(vocab, tokenID) {
+                reachedEndOfGeneration = true
+                break
+            }
 
-            var pieceBuffer = [Int8](repeating: 0, count: 256)
             let pieceCount = pieceBuffer.withUnsafeMutableBufferPointer { buffer in
                 llama_token_to_piece(vocab, tokenID, buffer.baseAddress, Int32(buffer.count), 0, true)
             }
             if pieceCount > 0 {
-                pendingUTF8.append(
-                    contentsOf: pieceBuffer.prefix(Int(pieceCount)).map { UInt8(bitPattern: $0) }
-                )
-                let (piece, tail) = Self.splitCompleteUTF8Prefix(pendingUTF8)
-                pendingUTF8 = tail
+                pendingUTF8.reserveCapacity(pendingUTF8.count + Int(pieceCount))
+                for index in 0..<Int(pieceCount) {
+                    pendingUTF8.append(UInt8(bitPattern: pieceBuffer[index]))
+                }
+                let piece = Self.consumeCompleteUTF8Prefix(&pendingUTF8)
                 if !piece.isEmpty { onToken(piece) }
             }
             tokensGenerated += 1
 
-            batch.n_tokens = 1
-            batch.token[0] = tokenID
-            batch.pos[0] = llama_pos(tokens.count + tokensGenerated - 1)
-            batch.n_seq_id[0] = 1
-            batch.seq_id[0]?.pointee = 0
-            batch.logits[0] = 1
-            let status = llama_decode(c, batch)
+            var nextToken = tokenID
+            let status = withUnsafeMutablePointer(to: &nextToken) { tokenPointer in
+                llama_decode(c, llama_batch_get_one(tokenPointer, 1))
+            }
             guard status == 0 else { throw LlamaCppError.decodeFailed(status) }
         }
 
         if !pendingUTF8.isEmpty {
             onToken(String(decoding: pendingUTF8, as: UTF8.self))
         }
-        return Self.tokensPerSec(tokens: tokensGenerated, start: startTime)
+        return LlamaCppTextGenerationResult(
+            tokensPerSecond: Self.tokensPerSec(
+                tokens: tokensGenerated,
+                start: startTime
+            ),
+            promptTokenCount: tokens.count,
+            completionTokenCount: tokensGenerated,
+            stopReason: reachedEndOfGeneration ? .stop : .length
+        )
     }
 
     // MARK: - Describe
@@ -502,6 +609,8 @@ final class LlamaCppVLM: @unchecked Sendable {
         // the longest complete-UTF-8 prefix per token, and retain the
         // partial tail for the next piece.
         var pendingUTF8: [UInt8] = []
+        pendingUTF8.reserveCapacity(16)
+        var pieceBuf = [Int8](repeating: 0, count: 128)
 
         for _ in 0..<maxTokens {
             if cancelFlag.withLock({ $0 }) {
@@ -523,7 +632,6 @@ final class LlamaCppVLM: @unchecked Sendable {
 
             // Token → UTF-8 piece. 128-byte buffer covers any
             // single-token piece (most are <16).
-            var pieceBuf = [Int8](repeating: 0, count: 128)
             let n = pieceBuf.withUnsafeMutableBufferPointer { buf -> Int32 in
                 llama_token_to_piece(vocab, tokenID, buf.baseAddress, Int32(buf.count), 0, true)
             }
@@ -532,10 +640,11 @@ final class LlamaCppVLM: @unchecked Sendable {
                 // both counts: it needs a NUL terminator (absent when the
                 // piece fills the buffer — OOB read) and it mangles a
                 // multi-byte sequence split across tokens.
-                pendingUTF8.append(
-                    contentsOf: pieceBuf.prefix(Int(n)).map { UInt8(bitPattern: $0) })
-                let (piece, tail) = Self.splitCompleteUTF8Prefix(pendingUTF8)
-                pendingUTF8 = tail
+                pendingUTF8.reserveCapacity(pendingUTF8.count + Int(n))
+                for index in 0..<Int(n) {
+                    pendingUTF8.append(UInt8(bitPattern: pieceBuf[index]))
+                }
+                let piece = Self.consumeCompleteUTF8Prefix(&pendingUTF8)
                 if !piece.isEmpty { onToken(piece) }
             }
             tokensGenerated += 1
@@ -575,8 +684,8 @@ final class LlamaCppVLM: @unchecked Sendable {
     /// UTF-8 character and the trailing bytes of an incomplete multi-byte
     /// sequence (0–3 bytes). llama.cpp tokens routinely split a character
     /// across pieces, so the tail is carried over to the next piece.
-    private static func splitCompleteUTF8Prefix(_ bytes: [UInt8]) -> (String, [UInt8]) {
-        guard !bytes.isEmpty else { return ("", []) }
+    private static func consumeCompleteUTF8Prefix(_ bytes: inout [UInt8]) -> String {
+        guard !bytes.isEmpty else { return "" }
         // Walk back over at most 3 trailing continuation bytes to find the
         // lead byte of the final character, then check whether the sequence
         // it starts is complete.
@@ -600,7 +709,12 @@ final class LlamaCppVLM: @unchecked Sendable {
             }
         }
         let prefix = String(decoding: bytes[..<cut], as: UTF8.self)
-        return (prefix, Array(bytes[cut...]))
+        if cut == bytes.count {
+            bytes.removeAll(keepingCapacity: true)
+        } else if cut > 0 {
+            bytes.removeFirst(cut)
+        }
+        return prefix
     }
 
     private static func tokensPerSec(tokens: Int, start: Date) -> Double {

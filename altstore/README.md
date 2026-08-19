@@ -16,7 +16,7 @@ https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/main/altstore/source.
 The source currently lists:
 
 - **ForgeSign** — iOS 16 or newer, version 1.1 (build 2).
-- **On Device: LAS** — iOS 18 or newer, version 3.2.6 (build 140).
+- **On Device: LAS** — iOS 18 or newer, version 3.2.6 (build 143).
 - **MacPair for iOS** — iOS 18 or newer, version 1.0.5 (build 6).
 - **OnDevice LLM** — iOS 18 or newer, version 3.2.6 (build 103).
 - **SiteAgent** — iOS 17 or newer, version 1.16 (build 2026080901).

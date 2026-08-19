@@ -32,12 +32,22 @@
       "versions": [
         {
           "version": "3.2.6",
-          "buildVersion": "140",
-          "date": "2026-08-07T08:43:20Z",
-          "localizedDescription": "Current sideload release with the local API server and coordinated on-device model runtime.",
-          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-140/OnDeviceLAS-sideload-entitled-3.2.6-140.ipa",
-          "size": 31153141,
-          "sha256": "3181ee404bd70d2ed01d57219756893c1f5df83e6189e5729d0b6d80da86cd62",
+          "buildVersion": "143",
+          "date": "2026-08-19T22:47:00Z",
+          "localizedDescription": "Sideload release with HTTP chunked streaming, GGUF chat templates and per-request samplers, Tailscale URL advertising, and Core AI conversation transcripts.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-143/OnDeviceLAS-sideload-entitled-3.2.6-143.ipa",
+          "size": 26346231,
+          "sha256": "420fec5bc8b6b1be1ff2967be3b5eafefeab0e270445473f04c2294d6e4d29da",
+          "minOSVersion": "18.0"
+        },
+        {
+          "version": "3.2.6",
+          "buildVersion": "142",
+          "date": "2026-08-16T16:30:00Z",
+          "localizedDescription": "Sideload release with the local API server, coordinated on-device model runtime, and a sideload-safe Files import fallback.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-142/OnDeviceLAS-sideload-entitled-3.2.6-142.ipa",
+          "size": 31257736,
+          "sha256": "b53c7e4e39737fcd8bfccb2b2e930c6b8fbbeebe51cb609561fd126e55d0fb04",
           "minOSVersion": "18.0"
         }
       ],

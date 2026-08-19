@@ -1,5 +1,9 @@
 import XCTest
+#if canImport(OnDeviceLAS)
+@testable import OnDeviceLAS
+#else
 @testable import IOSLocalLLM
+#endif
 
 // MARK: - Int64FormattedBytesTests
 //
