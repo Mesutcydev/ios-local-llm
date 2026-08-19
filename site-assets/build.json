@@ -2,7 +2,7 @@
   "app": "OnDevice LLM",
   "project": "IOSLocalLLM",
   "version": "3.2.6",
-  "build": "103",
+  "build": "105",
   "bundleId": "com.mesutcydev.ioslocalllm.IOSLocalLLM",
   "verifiedOn": "Xcode archive validation",
   "runtime": "Xcode 26.6 · iOS 26.5 SDK · iOS 18+",
@@ -33,17 +33,20 @@
   "ipa": {
     "product": "OnDevice LLM",
     "version": "3.2.6",
-    "build": "103",
-    "filename": "IOSLocalLLM-3.2.6-103-sideload-entitled.ipa",
-    "download": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-103/IOSLocalLLM-3.2.6-103-sideload-entitled.ipa",
-    "sizeBytes": 50311718,
-    "sha256": "bed89abe89a52ed75c6df857ae6fc01c49c172337681699543447dda62326fac",
+    "build": "105",
+    "filename": "IOSLocalLLM-3.2.6-105-sideload-entitled-full.ipa",
+    "download": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-105/IOSLocalLLM-3.2.6-105-sideload-entitled-full.ipa",
+    "sizeBytes": 50398386,
+    "sha256": "41103e3ad307f9d0fba1197d794034e95e455cea4c0c1661c378627cc334e5cb",
     "signing": "ad-hoc / installer re-sign required",
     "provisioningProfile": false,
     "entitlements": [
       "com.apple.developer.kernel.extended-virtual-addressing",
-      "com.apple.developer.kernel.increased-memory-limit"
+      "com.apple.developer.kernel.increased-memory-limit",
+      "com.apple.security.application-groups",
+      "com.apple.developer.icloud-container-identifiers",
+      "com.apple.developer.icloud-services"
     ],
-    "policy": "The installer re-signs this profile-less IPA with the installer's team; team-scoped iCloud and App Group capabilities are not embedded."
+    "policy": "The installer re-signs this profile-less IPA with the installer's team. App Group, iCloud, and ML memory entitlements are declared in the ad-hoc signature."
   }
 }
