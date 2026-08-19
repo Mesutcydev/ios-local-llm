@@ -282,6 +282,7 @@ struct ChatTemplate: Codable, Hashable {
         }
         if lower.contains("bonsai") { return .chatML }
         if lower.contains("qwen")   { return .chatML }
+        if lower.contains("hermes") { return .chatML }
         if lower.contains("llama")  { return .llama3 }
         if lower.contains("gemma")  { return .gemma }
         if lower.contains("phi")    { return .phi }

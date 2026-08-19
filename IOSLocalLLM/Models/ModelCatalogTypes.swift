@@ -183,7 +183,11 @@ public enum ModelRuntime: String, Codable, Hashable, CaseIterable, Sendable {
     /// Short badge label shown on picker rows and result cards.
     var label: String {
         switch self {
+#if CORE_AI_SERVER_APP
+        case .mlx:      return "Core AI"
+#else
         case .mlx:      return "MLX"
+#endif
         case .llamaCpp: return "GGUF"
         }
     }
@@ -1061,6 +1065,7 @@ struct InstalledModelRecord: Codable, Identifiable, Hashable, Sendable {
     let installedAt: Date
     let validationState: ValidationState
     let downloadBytes: Int64
+    var runtimeLimits: LocalAPIRuntimeLimits?
 
     enum ValidationState: Codable, Hashable, Sendable {
         case valid
@@ -1210,7 +1215,9 @@ final class InstalledModelRegistry: ObservableObject {
         }
 
         // Detect engine
-        let engine: ModelRuntime = LocalModelFileValidator.hasValidGGUFTextModel(in: dir) ? .llamaCpp : .mlx
+        let engine: ModelRuntime = LocalModelFileValidator.hasValidGGUFTextModel(in: dir)
+            ? .llamaCpp
+            : .mlx
 
         // Detect capabilities
         var capabilities = Set<ModelCapability>()
@@ -1234,6 +1241,20 @@ final class InstalledModelRegistry: ObservableObject {
         let displayName = repoID.split(separator: "/").last
             .map(String.init) ?? repoID
 
+        let profile = ModelCapabilityProfile.resolve(
+            repoID: repoID,
+            catalogContextLength: Self.legacyContextWindow(for: repoID),
+            supportsThinking: Self.legacySupportsThinking(repoID: repoID)
+        )
+        let limits = LocalAPIRuntimeLimits(
+            contextWindow: profile.effectiveContextWindow,
+            maximumOutputTokens: profile.maximumOutputTokens,
+            defaultOutputTokens: profile.defaultOutputTokens,
+            limitSource: .migratedLegacy,
+            tokenizerIdentifier: engine == .llamaCpp ? "llama.cpp.gguf" : nil,
+            tokenCountMode: engine == .llamaCpp ? .exact : .conservativeApproximation
+        )
+
         return InstalledModelRecord(
             id: UUID(),
             repoID: repoID,
@@ -1246,8 +1267,27 @@ final class InstalledModelRegistry: ObservableObject {
             parameterCount: nil,
             installedAt: Date(),
             validationState: validation,
-            downloadBytes: (try? fm.allocatedSizeOfDirectory(at: dir)) ?? 0
+            downloadBytes: (try? fm.allocatedSizeOfDirectory(at: dir)) ?? 0,
+            runtimeLimits: limits
         )
+    }
+
+    private static func legacyContextWindow(for repoID: String) -> Int {
+        let lower = repoID.lowercased()
+        if lower.contains("qwen3") { return 32_768 }
+        if lower.contains("qwen2.5") || lower.contains("llama-3") || lower.contains("phi-3.5") {
+            return 8_192
+        }
+        if lower.contains("gemma-2") { return 4_096 }
+        return 4_096
+    }
+
+    private static func legacySupportsThinking(repoID: String) -> Bool {
+        let lower = repoID.lowercased()
+        return lower.contains("qwen3")
+            || lower.contains("thinking")
+            || lower.contains("deepseek-r1")
+            || lower.contains("phi-4")
     }
 
     private static func hasModelWeights(in dir: URL, engine: ModelRuntime) -> Bool {
@@ -1280,7 +1320,26 @@ final class InstalledModelRegistry: ObservableObject {
               let decoded = try? JSONDecoder().decode([InstalledModelRecord].self, from: data) else {
             return
         }
-        records = decoded
+        var migrated = decoded
+        for index in migrated.indices where migrated[index].runtimeLimits == nil {
+            let profile = ModelCapabilityProfile.resolve(
+                repoID: migrated[index].repoID,
+                catalogContextLength: Self.legacyContextWindow(for: migrated[index].repoID),
+                supportsThinking: Self.legacySupportsThinking(repoID: migrated[index].repoID)
+            )
+            migrated[index].runtimeLimits = LocalAPIRuntimeLimits(
+                contextWindow: profile.effectiveContextWindow,
+                maximumOutputTokens: profile.maximumOutputTokens,
+                defaultOutputTokens: profile.defaultOutputTokens,
+                limitSource: .migratedLegacy,
+                tokenizerIdentifier: migrated[index].engine == .llamaCpp ? "llama.cpp.gguf" : nil,
+                tokenCountMode: migrated[index].engine == .llamaCpp ? .exact : .conservativeApproximation
+            )
+        }
+        records = migrated
+        if migrated != decoded {
+            saveToDisk()
+        }
     }
 
     private func saveToDisk() {
