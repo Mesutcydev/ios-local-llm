@@ -321,6 +321,7 @@ struct StoredMessage: Codable {
     var generationDuration: TimeInterval?
     var generationModelID: String?
     var generationExecutionLocation: ModelExecutionLocation?
+    var hitTokenLimit: Bool?
 
     init(_ msg: ChatMessage) {
         self.id = msg.id
@@ -332,6 +333,7 @@ struct StoredMessage: Codable {
         self.generationDuration = msg.generationDuration
         self.generationModelID = msg.generationModelID
         self.generationExecutionLocation = msg.generationExecutionLocation
+        self.hitTokenLimit = msg.hitTokenLimit
     }
 
     var chatMessage: ChatMessage {
@@ -344,7 +346,8 @@ struct StoredMessage: Codable {
             generationTokensPerSecond: generationTokensPerSecond,
             generationDuration: generationDuration,
             generationModelID: generationModelID,
-            generationExecutionLocation: generationExecutionLocation
+            generationExecutionLocation: generationExecutionLocation,
+            hitTokenLimit: hitTokenLimit
         )
     }
 }

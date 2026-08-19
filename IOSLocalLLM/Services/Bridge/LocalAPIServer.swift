@@ -1,3 +1,4 @@
+import CryptoKit
 import Darwin
 import Foundation
 import Network
@@ -18,6 +19,30 @@ enum LocalAPIValidation {
     static func isReachableLANInterface(_ name: String) -> Bool {
         let excludedPrefixes = ["lo", "utun", "ipsec", "awdl", "llw", "pdp_ip"]
         return !excludedPrefixes.contains(where: name.hasPrefix)
+    }
+
+    /// Approved browser origins parsed from the comma-separated settings
+    /// value. Empty list means CORS stays off — the API serves terminal
+    /// clients, and a wildcard would let any web page on the LAN read
+    /// responses.
+    static func corsAllowedOrigins(settingValue: String) -> [String] {
+        settingValue
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
+    /// Reflects the request origin only when it appears in the approved
+    /// list. Returns nil for absent (terminal clients), empty, or
+    /// unapproved origins — the response then carries no CORS headers and
+    /// browsers block cross-origin reads.
+    static func allowedCORSOrigin(origin: String?, settingValue: String) -> String? {
+        guard let origin,
+              !origin.isEmpty,
+              corsAllowedOrigins(settingValue: settingValue).contains(origin) else {
+            return nil
+        }
+        return origin
     }
 }
 
@@ -911,7 +936,8 @@ enum LocalAPIResponse {
         id: String,
         model: String,
         text: String,
-        toolCalls: [LocalAPIToolCall]
+        toolCalls: [LocalAPIToolCall],
+        usage: (input: Int, output: Int)? = nil
     ) -> Data {
         var message: [String: Any] = ["role": "assistant"]
         if toolCalls.isEmpty {
@@ -929,7 +955,7 @@ enum LocalAPIResponse {
                 ]
             }
         }
-        return json([
+        var object: [String: Any] = [
             "id": id,
             "object": "chat.completion",
             "created": Int(Date().timeIntervalSince1970),
@@ -939,23 +965,42 @@ enum LocalAPIResponse {
                 "message": message,
                 "finish_reason": toolCalls.isEmpty ? "stop" : "tool_calls"
             ]]
-        ])
+        ]
+        if let usage {
+            object["usage"] = [
+                "prompt_tokens": usage.input,
+                "completion_tokens": usage.output,
+                "total_tokens": usage.input + usage.output
+            ]
+        }
+        return json(object)
     }
 
-    static func ollamaChat(model: String, text: String, done: Bool) -> Data {
-        json([
+    static func ollamaChat(
+        model: String,
+        text: String,
+        done: Bool,
+        usage: (input: Int, output: Int)? = nil
+    ) -> Data {
+        var object: [String: Any] = [
             "model": model,
             "created_at": ISO8601DateFormatter().string(from: Date()),
             "message": ["role": "assistant", "content": text],
             "done": done,
             "done_reason": done ? "stop" : NSNull()
-        ])
+        ]
+        if done, let usage {
+            object["prompt_eval_count"] = usage.input
+            object["eval_count"] = usage.output
+        }
+        return json(object)
     }
 
     static func ollamaToolCalls(
         model: String,
         calls: [LocalAPIToolCall],
-        done: Bool
+        done: Bool,
+        usage: (input: Int, output: Int)? = nil
     ) -> Data {
         let toolCalls: [[String: Any]] = calls.map { call in
             let arguments = (try? JSONSerialization.jsonObject(
@@ -968,7 +1013,7 @@ enum LocalAPIResponse {
                 ]
             ]
         }
-        return json([
+        var object: [String: Any] = [
             "model": model,
             "created_at": ISO8601DateFormatter().string(from: Date()),
             "message": [
@@ -978,20 +1023,40 @@ enum LocalAPIResponse {
             ],
             "done": done,
             "done_reason": done ? "stop" : NSNull()
-        ])
+        ]
+        if done, let usage {
+            object["prompt_eval_count"] = usage.input
+            object["eval_count"] = usage.output
+        }
+        return json(object)
     }
 
-    static func ollamaGenerate(model: String, text: String, done: Bool) -> Data {
-        json([
+    static func ollamaGenerate(
+        model: String,
+        text: String,
+        done: Bool,
+        usage: (input: Int, output: Int)? = nil
+    ) -> Data {
+        var object: [String: Any] = [
             "model": model,
             "created_at": ISO8601DateFormatter().string(from: Date()),
             "response": text,
             "done": done,
             "done_reason": done ? "stop" : NSNull()
-        ])
+        ]
+        if done, let usage {
+            object["prompt_eval_count"] = usage.input
+            object["eval_count"] = usage.output
+        }
+        return json(object)
     }
 
-    static func anthropicMessage(id: String, model: String, text: String) -> Data {
+    static func anthropicMessage(
+        id: String,
+        model: String,
+        text: String,
+        usage: (input: Int, output: Int)? = nil
+    ) -> Data {
         json([
             "id": id,
             "type": "message",
@@ -1000,14 +1065,18 @@ enum LocalAPIResponse {
             "content": [["type": "text", "text": text]],
             "stop_reason": "end_turn",
             "stop_sequence": NSNull(),
-            "usage": ["input_tokens": 0, "output_tokens": 0]
+            "usage": [
+                "input_tokens": usage?.input ?? 0,
+                "output_tokens": usage?.output ?? 0
+            ]
         ])
     }
 
     static func anthropicToolMessage(
         id: String,
         model: String,
-        calls: [LocalAPIToolCall]
+        calls: [LocalAPIToolCall],
+        usage: (input: Int, output: Int)? = nil
     ) -> Data {
         let content: [[String: Any]] = calls.map { call in
             [
@@ -1027,11 +1096,20 @@ enum LocalAPIResponse {
             "content": content,
             "stop_reason": "tool_use",
             "stop_sequence": NSNull(),
-            "usage": ["input_tokens": 0, "output_tokens": 0]
+            "usage": [
+                "input_tokens": usage?.input ?? 0,
+                "output_tokens": usage?.output ?? 0
+            ]
         ])
     }
 
-    static func openAIResponse(id: String, model: String, text: String, status: String = "completed") -> Data {
+    static func openAIResponse(
+        id: String,
+        model: String,
+        text: String,
+        status: String = "completed",
+        usage: (input: Int, output: Int)? = nil
+    ) -> Data {
         json([
             "id": id,
             "object": "response",
@@ -1053,9 +1131,9 @@ enum LocalAPIResponse {
             "error": NSNull(),
             "incomplete_details": NSNull(),
             "usage": [
-                "input_tokens": 0,
-                "output_tokens": 0,
-                "total_tokens": 0
+                "input_tokens": usage?.input ?? 0,
+                "output_tokens": usage?.output ?? 0,
+                "total_tokens": (usage?.input ?? 0) + (usage?.output ?? 0)
             ]
         ])
     }
@@ -1092,6 +1170,15 @@ actor LocalAPIServer {
     private var activeInference: ActiveInference?
     private let maxRequestBytes = 4 * 1024 * 1024
     private let requestTimeout: TimeInterval = 15
+
+    /// Brute-force guard on bearer authentication, mirroring the
+    /// `/v1/pair` lockout in BridgeServer.
+    private var failedAuthAttempts: [Date] = []
+    private var authLockedUntil: Date?
+    private static let maxFailedAuthAttempts = 5
+    private static let authAttemptWindow: TimeInterval = 60
+    private static let authLockoutDuration: TimeInterval = 60
+
     var onEvent: (@Sendable (Event) -> Void)?
 
     func setEventHandler(_ handler: @escaping @Sendable (Event) -> Void) {
@@ -1102,7 +1189,9 @@ actor LocalAPIServer {
         guard listener == nil else { return }
         let params = NWParameters.tcp
         params.allowLocalEndpointReuse = true
-        params.includePeerToPeer = true
+        // Opt-in: AWDL advertisement reaches nearby devices that are not
+        // on the user's network. The API is designed for the trusted LAN.
+        params.includePeerToPeer = AppSettings.shared.localAPIIncludePeerToPeer
         guard let endpointPort = NWEndpoint.Port(rawValue: port) else {
             throw LocalAPIProtocolError.malformed("Invalid port")
         }
@@ -1169,43 +1258,63 @@ actor LocalAPIServer {
     private func receive(_ connection: NWConnection, timeout: TimeInterval) async throws -> Data {
         try await withCheckedThrowingContinuation { continuation in
             let once = LocalAPIResumeOnce(continuation)
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 65_536) {
-                data, _, _, error in
-                if let error { once.resume(throwing: error) }
-                else { once.resume(returning: data ?? Data()) }
-            }
-            Task {
+            // Deadline task is created first and cancelled by the receive
+            // callback, so a fast multi-chunk request does not pile up
+            // sleeping timeout tasks that each hold the connection alive.
+            let timeoutTask = Task {
                 try? await Task.sleep(for: .seconds(timeout))
                 if once.resume(throwing: LocalAPIProtocolError.malformed("Request timed out")) {
                     connection.cancel()
                 }
             }
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 65_536) {
+                data, _, _, error in
+                timeoutTask.cancel()
+                if let error { once.resume(throwing: error) }
+                else { once.resume(returning: data ?? Data()) }
+            }
         }
     }
 
     private func route(_ request: HTTPRequest, connection: NWConnection) async {
+        let corsOrigin = LocalAPIValidation.allowedCORSOrigin(
+            origin: request.headers["origin"],
+            settingValue: AppSettings.shared.localAPICORSOrigins
+        )
         // Browser clients send a preflight before requests carrying
         // Authorization / x-api-key. Answer it before authentication so web
-        // agents can reach the same local endpoint as terminal clients.
+        // agents can reach the same local endpoint as terminal clients;
+        // unapproved origins get no CORS headers and browsers block them.
         if request.method == "OPTIONS" {
             await respond(
                 connection,
                 status: 204,
                 contentType: "text/plain",
-                data: Data()
+                data: Data(),
+                corsOrigin: corsOrigin
             )
             return
         }
-        let key = LocalAPIKeyStore.key()
-        let authorized = request.headers["authorization"] == "Bearer \(key)"
-            || request.headers["x-api-key"] == key
-        guard authorized else {
-            await error(connection, status: 401, message: "Invalid or missing API key", dialect: request.path == "/v1/messages" ? .anthropic : .openAIChat)
+        if let locked = authLockedUntil, locked > Date() {
+            await error(connection, status: 429, message: "Too many failed attempts; retry later", dialect: request.path == "/v1/messages" ? .anthropic : .openAIChat, corsOrigin: corsOrigin)
             return
         }
+        let key = LocalAPIKeyStore.key()
+        let presentedBearer = request.headers["authorization"].flatMap {
+            $0.hasPrefix("Bearer ") ? String($0.dropFirst(7)) : nil
+        }
+        let authorized = (presentedBearer.map { Self.tokensMatch($0, key) } ?? false)
+            || (request.headers["x-api-key"].map { Self.tokensMatch($0, key) } ?? false)
+        guard authorized else {
+            recordFailedAuthAttempt()
+            await error(connection, status: 401, message: "Invalid or missing API key", dialect: request.path == "/v1/messages" ? .anthropic : .openAIChat, corsOrigin: corsOrigin)
+            return
+        }
+        failedAuthAttempts.removeAll()
+        authLockedUntil = nil
         switch (request.method, request.path) {
         case ("GET", "/v1/models"):
-            await listOpenAIModels(connection)
+            await listOpenAIModels(connection, corsOrigin: corsOrigin)
         case ("POST", "/v1/chat/completions"):
             await run(request, connection: connection, dialect: .openAIChat)
         case ("POST", "/v1/responses"):
@@ -1213,7 +1322,7 @@ actor LocalAPIServer {
         case ("POST", "/v1/messages"):
             await run(request, connection: connection, dialect: .anthropic)
         case ("GET", "/api/tags"):
-            await listOllamaModels(connection)
+            await listOllamaModels(connection, corsOrigin: corsOrigin)
         case ("POST", "/api/show"):
             await showOllamaModel(request, connection: connection)
         case ("POST", "/api/chat"):
@@ -1221,19 +1330,46 @@ actor LocalAPIServer {
         case ("POST", "/api/generate"):
             await run(request, connection: connection, dialect: .ollamaGenerate)
         default:
-            await error(connection, status: 404, message: "Endpoint not supported", dialect: request.path == "/v1/messages" ? .anthropic : .openAIChat)
+            await error(connection, status: 404, message: "Endpoint not supported", dialect: request.path == "/v1/messages" ? .anthropic : .openAIChat, corsOrigin: corsOrigin)
         }
     }
 
     private enum Dialect { case openAIChat, openAIResponses, anthropic, ollamaChat, ollamaGenerate }
 
+    /// Constant-time comparison of SHA-256 digests so a timing side
+    /// channel cannot reveal how much of the bearer key matched.
+    private static func tokensMatch(_ presented: String, _ key: String) -> Bool {
+        let presentedDigest = SHA256.hash(data: Data(presented.utf8))
+        let keyDigest = SHA256.hash(data: Data(key.utf8))
+        // XOR-accumulate every digest byte; no early exit on mismatch.
+        var diff = UInt8(0)
+        for (a, b) in zip(presentedDigest, keyDigest) {
+            diff |= a ^ b
+        }
+        return diff == 0
+    }
+
+    private func recordFailedAuthAttempt() {
+        let cutoff = Date().addingTimeInterval(-Self.authAttemptWindow)
+        failedAuthAttempts.removeAll { $0 < cutoff }
+        failedAuthAttempts.append(Date())
+        if failedAuthAttempts.count >= Self.maxFailedAuthAttempts {
+            authLockedUntil = Date().addingTimeInterval(Self.authLockoutDuration)
+            failedAuthAttempts.removeAll()
+        }
+    }
+
     private func run(_ request: HTTPRequest, connection: NWConnection, dialect: Dialect) async {
+        let corsOrigin = LocalAPIValidation.allowedCORSOrigin(
+            origin: request.headers["origin"],
+            settingValue: AppSettings.shared.localAPICORSOrigins
+        )
         guard request.headers["content-type"]?.lowercased().hasPrefix("application/json") == true else {
-            await error(connection, status: 415, message: "Content-Type must be application/json", dialect: dialect)
+            await error(connection, status: 415, message: "Content-Type must be application/json", dialect: dialect, corsOrigin: corsOrigin)
             return
         }
         guard let body = request.body else {
-            await error(connection, status: 400, message: "JSON body required", dialect: dialect)
+            await error(connection, status: 400, message: "JSON body required", dialect: dialect, corsOrigin: corsOrigin)
             return
         }
         let decoded: LocalAPIChatRequest
@@ -1251,10 +1387,10 @@ actor LocalAPIServer {
             case .malformed(let value), .unsupported(let value): message = value
             case .unknownModel: message = "Unknown model"
             }
-            await self.error(connection, status: 400, message: message, dialect: dialect)
+            await self.error(connection, status: 400, message: message, dialect: dialect, corsOrigin: corsOrigin)
             return
         } catch {
-            await self.error(connection, status: 400, message: "Malformed request", dialect: dialect)
+            await self.error(connection, status: 400, message: "Malformed request", dialect: dialect, corsOrigin: corsOrigin)
             return
         }
 
@@ -1266,15 +1402,17 @@ actor LocalAPIServer {
             && (dialect == .ollamaChat || dialect == .ollamaGenerate)
         guard usesCurrentOllamaModel
                 || LocalAPIValidation.modelMatches(decoded.model, id: snapshot.0, repoID: snapshot.1) else {
-            await error(connection, status: 404, message: "Model '\(decoded.model)' is not loaded", dialect: dialect)
+            // Fixed message: echoing the requested model name reflects
+            // attacker-controlled input back into the response.
+            await error(connection, status: 404, message: "Unknown or unloaded model", dialect: dialect, corsOrigin: corsOrigin)
             return
         }
         guard snapshot.2 else {
-            await error(connection, status: 503, message: "The active model is not loaded or is busy", dialect: dialect)
+            await error(connection, status: 503, message: "The active model is not loaded or is busy", dialect: dialect, corsOrigin: corsOrigin)
             return
         }
         guard let lease = await RemoteInferenceGate.shared.acquire() else {
-            await error(connection, status: 503, message: "Model busy", dialect: dialect)
+            await error(connection, status: 503, message: "Model busy", dialect: dialect, corsOrigin: corsOrigin)
             return
         }
 
@@ -1339,7 +1477,7 @@ actor LocalAPIServer {
         )
 
         if decoded.stream {
-            await writeStreamingHeaders(connection, dialect: dialect, model: snapshot.0)
+            await writeStreamingHeaders(connection, dialect: dialect, model: snapshot.0, corsOrigin: corsOrigin)
             let requestID = dialect == .openAIResponses
                 ? "resp_\(UUID().uuidString.replacingOccurrences(of: "-", with: ""))"
                 : "chatcmpl-\(UUID().uuidString)"
@@ -1383,6 +1521,14 @@ actor LocalAPIServer {
                                 startsStream: true
                             )
                         }
+                    }
+                    if let failure = inferenceSignal.failure, !streamsAsText, calls.isEmpty {
+                        try? await sendFinal(
+                            connection,
+                            streamingErrorPayload(dialect: dialect, message: failure)
+                        )
+                        connection.cancel()
+                        return
                     }
                     if streamsAsText {
                         try await finishToolAwareTextStream(
@@ -1554,6 +1700,14 @@ actor LocalAPIServer {
                 do { try await send(connection, payload) }
                 catch { await cancelInference(); connection.cancel(); return }
             }
+            if let failure = inferenceSignal.failure, streamedOutput.isEmpty {
+                try? await sendFinal(
+                    connection,
+                    streamingErrorPayload(dialect: dialect, message: failure)
+                )
+                connection.cancel()
+                return
+            }
             switch dialect {
             case .openAIChat:
                 try? await sendFinal(connection, Data("data: ".utf8) + LocalAPIResponse.openAIChunk(id: requestID, model: snapshot.0, text: "", finishReason: "stop") + Data("\n\ndata: [DONE]\n\n".utf8))
@@ -1569,7 +1723,8 @@ actor LocalAPIServer {
                     "response": (try? JSONSerialization.jsonObject(with: LocalAPIResponse.openAIResponse(
                         id: requestID,
                         model: snapshot.0,
-                        text: streamedOutput
+                        text: streamedOutput,
+                        usage: inferenceSignal.usage
                     ))) ?? [:]
                 ]))
             case .anthropic:
@@ -1579,15 +1734,15 @@ actor LocalAPIServer {
                 try? await send(connection, LocalAPIResponse.anthropicEvent("message_delta", object: [
                     "type": "message_delta",
                     "delta": ["stop_reason": "end_turn", "stop_sequence": NSNull()],
-                    "usage": ["output_tokens": 0]
+                    "usage": ["output_tokens": inferenceSignal.usage.output]
                 ]))
                 try? await sendFinal(connection, LocalAPIResponse.anthropicEvent("message_stop", object: [
                     "type": "message_stop"
                 ]))
             case .ollamaChat:
-                try? await sendFinal(connection, LocalAPIResponse.ollamaChat(model: snapshot.0, text: "", done: true) + Data("\n".utf8))
+                try? await sendFinal(connection, LocalAPIResponse.ollamaChat(model: snapshot.0, text: "", done: true, usage: inferenceSignal.usage) + Data("\n".utf8))
             case .ollamaGenerate:
-                try? await sendFinal(connection, LocalAPIResponse.ollamaGenerate(model: snapshot.0, text: "", done: true) + Data("\n".utf8))
+                try? await sendFinal(connection, LocalAPIResponse.ollamaGenerate(model: snapshot.0, text: "", done: true, usage: inferenceSignal.usage) + Data("\n".utf8))
             }
             connection.cancel()
         } else {
@@ -1607,6 +1762,11 @@ actor LocalAPIServer {
                     }
                 }
             }
+            if let failure = inferenceSignal.failure, output.isEmpty, detectedCalls.isEmpty {
+                await error(connection, status: 500, message: failure, dialect: dialect, corsOrigin: corsOrigin)
+                return
+            }
+            let usage = inferenceSignal.usage
             let payload: Data
             switch dialect {
             case .openAIChat:
@@ -1621,13 +1781,15 @@ actor LocalAPIServer {
                     id: "chatcmpl-\(UUID().uuidString)",
                     model: snapshot.0,
                     text: output,
-                    toolCalls: calls
+                    toolCalls: calls,
+                    usage: usage
                 )
             case .openAIResponses:
                 payload = LocalAPIResponse.openAIResponse(
                     id: "resp_\(UUID().uuidString.replacingOccurrences(of: "-", with: ""))",
                     model: snapshot.0,
-                    text: output
+                    text: output,
+                    usage: usage
                 )
             case .anthropic:
                 let calls = toolCallingEnabled
@@ -1641,12 +1803,14 @@ actor LocalAPIServer {
                     ? LocalAPIResponse.anthropicMessage(
                         id: "msg_\(UUID().uuidString.replacingOccurrences(of: "-", with: ""))",
                         model: snapshot.0,
-                        text: output
+                        text: output,
+                        usage: usage
                     )
                     : LocalAPIResponse.anthropicToolMessage(
                         id: "msg_\(UUID().uuidString.replacingOccurrences(of: "-", with: ""))",
                         model: snapshot.0,
-                        calls: calls
+                        calls: calls,
+                        usage: usage
                     )
             case .ollamaChat:
                 let calls = toolCallingEnabled
@@ -1660,17 +1824,19 @@ actor LocalAPIServer {
                     ? LocalAPIResponse.ollamaChat(
                         model: snapshot.0,
                         text: output,
-                        done: true
+                        done: true,
+                        usage: usage
                     )
                     : LocalAPIResponse.ollamaToolCalls(
                         model: snapshot.0,
                         calls: calls,
-                        done: true
+                        done: true,
+                        usage: usage
                     )
             case .ollamaGenerate:
-                payload = LocalAPIResponse.ollamaGenerate(model: snapshot.0, text: output, done: true)
+                payload = LocalAPIResponse.ollamaGenerate(model: snapshot.0, text: output, done: true, usage: usage)
             }
-            await respond(connection, status: 200, contentType: "application/json", data: payload)
+            await respond(connection, status: 200, contentType: "application/json", data: payload, corsOrigin: corsOrigin)
         }
     }
 
@@ -1689,13 +1855,52 @@ actor LocalAPIServer {
                     maxTokensOverride: maxTokens,
                     temperatureOverride: temperature,
                     topPOverride: topP,
-                    onToken: { continuation.yield($0) },
-                    onComplete: { _ in signal.finish() }
+                    onToken: { token in
+                        signal.noteOutputToken()
+                        continuation.yield(token)
+                    },
+                    onComplete: { _ in
+                        // Usage lives on the MainActor service; hop so the
+                        // final snapshot is captured before the stream
+                        // closes and callers read `signal.usage`.
+                        Task { @MainActor in
+                            let service = CodingAssistantService.shared
+                            let input = service.lastPromptTokens > 0
+                                ? service.lastPromptTokens
+                                : service.estimatedInputTokens
+                            if service.lastOutputTokens > 0 {
+                                signal.setUsage(input: input, output: service.lastOutputTokens)
+                            } else {
+                                signal.setUsage(input: input, output: signal.usage.output)
+                            }
+                            signal.finish()
+                        }
+                    },
+                    onError: { message in signal.fail(message) }
                 )
             }
             continuation.onTermination = { _ in
                 Task { @MainActor in CodingAssistantService.shared.stopGeneration() }
             }
+        }
+    }
+
+    /// Dialect-appropriate in-stream error frame for SSE responses that
+    /// already sent 200 + streaming headers and cannot switch to an HTTP
+    /// error status anymore.
+    private func streamingErrorPayload(dialect: Dialect, message: String) -> Data {
+        switch dialect {
+        case .openAIChat, .openAIResponses:
+            return Data("data: ".utf8)
+                + LocalAPIResponse.json(["error": ["message": message, "type": "server_error"]])
+                + Data("\n\n".utf8)
+        case .anthropic:
+            return LocalAPIResponse.anthropicEvent("error", object: [
+                "type": "error",
+                "error": ["type": "api_error", "message": message]
+            ])
+        case .ollamaChat, .ollamaGenerate:
+            return LocalAPIResponse.json(["error": message]) + Data("\n".utf8)
         }
     }
 
@@ -1749,7 +1954,7 @@ actor LocalAPIServer {
         }
     }
 
-    private func listOpenAIModels(_ connection: NWConnection) async {
+    private func listOpenAIModels(_ connection: NWConnection, corsOrigin: String?) async {
         let model = await MainActor.run { CodingAssistantService.shared.activeModel }
         let payload = LocalAPIResponse.json([
             "object": "list",
@@ -1760,10 +1965,10 @@ actor LocalAPIServer {
                 "owned_by": "on-device"
             ]]
         ])
-        await respond(connection, status: 200, contentType: "application/json", data: payload)
+        await respond(connection, status: 200, contentType: "application/json", data: payload, corsOrigin: corsOrigin)
     }
 
-    private func listOllamaModels(_ connection: NWConnection) async {
+    private func listOllamaModels(_ connection: NWConnection, corsOrigin: String?) async {
         let model = await MainActor.run { CodingAssistantService.shared.activeModel }
         let payload = LocalAPIResponse.json([
             "models": [[
@@ -1775,21 +1980,25 @@ actor LocalAPIServer {
                 "details": ["family": model.repoID, "format": model.runtime == .llamaCpp ? "gguf" : "mlx"]
             ]]
         ])
-        await respond(connection, status: 200, contentType: "application/json", data: payload)
+        await respond(connection, status: 200, contentType: "application/json", data: payload, corsOrigin: corsOrigin)
     }
 
     private func showOllamaModel(_ request: HTTPRequest, connection: NWConnection) async {
+        let corsOrigin = LocalAPIValidation.allowedCORSOrigin(
+            origin: request.headers["origin"],
+            settingValue: AppSettings.shared.localAPICORSOrigins
+        )
         guard request.headers["content-type"]?.lowercased().hasPrefix("application/json") == true,
               let body = request.body,
               let raw = try? JSONSerialization.jsonObject(with: body) as? [String: Any] else {
-            await error(connection, status: 400, message: "JSON body required", dialect: .ollamaChat)
+            await error(connection, status: 400, message: "JSON body required", dialect: .ollamaChat, corsOrigin: corsOrigin)
             return
         }
         let model = await MainActor.run { CodingAssistantService.shared.activeModel }
         let requested = (raw["model"] ?? raw["name"]) as? String
         guard requested == nil || requested?.isEmpty == true
                 || LocalAPIValidation.modelMatches(requested!, id: model.id, repoID: model.repoID) else {
-            await error(connection, status: 404, message: "Model '\(requested!)' is not loaded", dialect: .ollamaChat)
+            await error(connection, status: 404, message: "Unknown or unloaded model", dialect: .ollamaChat, corsOrigin: corsOrigin)
             return
         }
         let payload = LocalAPIResponse.json([
@@ -1803,7 +2012,7 @@ actor LocalAPIServer {
             ],
             "model_info": ["general.architecture": model.repoID]
         ])
-        await respond(connection, status: 200, contentType: "application/json", data: payload)
+        await respond(connection, status: 200, contentType: "application/json", data: payload, corsOrigin: corsOrigin)
     }
 
     private func sendToolAwareTextDelta(
@@ -2008,23 +2217,23 @@ actor LocalAPIServer {
     private func writeStreamingHeaders(
         _ connection: NWConnection,
         dialect: Dialect,
-        model: String
+        model: String,
+        corsOrigin: String? = nil
     ) async {
         let contentType = (dialect == .openAIChat || dialect == .openAIResponses || dialect == .anthropic)
             ? "text/event-stream"
             : "application/x-ndjson"
-        let header = """
-        HTTP/1.1 200 OK\r
-        Content-Type: \(contentType)\r
-        Cache-Control: no-cache, no-transform\r
-        X-Accel-Buffering: no\r
-        Access-Control-Allow-Origin: *\r
-        Access-Control-Allow-Methods: GET, POST, OPTIONS\r
-        Access-Control-Allow-Headers: Authorization, Content-Type, X-API-Key, Anthropic-Version, Anthropic-Beta\r
-        Connection: close\r
-        \r
-
-        """
+        var header = "HTTP/1.1 200 OK\r\n"
+        header += "Content-Type: \(contentType)\r\n"
+        header += "Cache-Control: no-cache, no-transform\r\n"
+        header += "X-Accel-Buffering: no\r\n"
+        if let corsOrigin {
+            header += "Access-Control-Allow-Origin: \(corsOrigin)\r\n"
+            header += "Vary: Origin\r\n"
+        }
+        header += "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
+        header += "Access-Control-Allow-Headers: Authorization, Content-Type, X-API-Key, Anthropic-Version, Anthropic-Beta\r\n"
+        header += "Connection: close\r\n\r\n"
         try? await send(connection, Data(header.utf8))
         if dialect == .anthropic {
             let messageID = "msg_\(UUID().uuidString.replacingOccurrences(of: "-", with: ""))"
@@ -2040,7 +2249,7 @@ actor LocalAPIServer {
         }
     }
 
-    private func error(_ connection: NWConnection, status: Int, message: String, dialect: Dialect) async {
+    private func error(_ connection: NWConnection, status: Int, message: String, dialect: Dialect, corsOrigin: String? = nil) async {
         let payload: Data
         if dialect == .anthropic {
             payload = LocalAPIResponse.json([
@@ -2052,10 +2261,10 @@ actor LocalAPIServer {
         } else {
             payload = LocalAPIResponse.json(["error": message])
         }
-        await respond(connection, status: status, contentType: "application/json", data: payload)
+        await respond(connection, status: status, contentType: "application/json", data: payload, corsOrigin: corsOrigin)
     }
 
-    private func respond(_ connection: NWConnection, status: Int, contentType: String, data: Data) async {
+    private func respond(_ connection: NWConnection, status: Int, contentType: String, data: Data, corsOrigin: String? = nil) async {
         let reason: String
         switch status {
         case 200: reason = "OK"
@@ -2064,20 +2273,21 @@ actor LocalAPIServer {
         case 401: reason = "Unauthorized"
         case 404: reason = "Not Found"
         case 415: reason = "Unsupported Media Type"
+        case 429: reason = "Too Many Requests"
         case 503: reason = "Service Unavailable"
         default: reason = "Internal Server Error"
         }
-        var payload = Data("""
-        HTTP/1.1 \(status) \(reason)\r
-        Content-Type: \(contentType)\r
-        Content-Length: \(data.count)\r
-        Access-Control-Allow-Origin: *\r
-        Access-Control-Allow-Methods: GET, POST, OPTIONS\r
-        Access-Control-Allow-Headers: Authorization, Content-Type, X-API-Key, Anthropic-Version, Anthropic-Beta\r
-        Connection: close\r
-        \r
-
-        """.utf8)
+        var header = "HTTP/1.1 \(status) \(reason)\r\n"
+        header += "Content-Type: \(contentType)\r\n"
+        header += "Content-Length: \(data.count)\r\n"
+        if let corsOrigin {
+            header += "Access-Control-Allow-Origin: \(corsOrigin)\r\n"
+            header += "Vary: Origin\r\n"
+        }
+        header += "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
+        header += "Access-Control-Allow-Headers: Authorization, Content-Type, X-API-Key, Anthropic-Version, Anthropic-Beta\r\n"
+        header += "Connection: close\r\n\r\n"
+        var payload = Data(header.utf8)
         payload.append(data)
         try? await sendFinal(connection, payload)
         connection.cancel()
@@ -2145,6 +2355,7 @@ private final class LocalAPIInferenceSignal: @unchecked Sendable {
     private let lock = NSLock()
     private var continuation: AsyncStream<String>.Continuation?
     private var finished = false
+    private var failureMessage: String?
 
     func attach(_ continuation: AsyncStream<String>.Continuation) {
         lock.lock()
@@ -2155,6 +2366,49 @@ private final class LocalAPIInferenceSignal: @unchecked Sendable {
         }
         self.continuation = continuation
         lock.unlock()
+    }
+
+    /// Records the generation failure and ends the stream. Callers that
+    /// observe `failure` after the stream ends map it to an HTTP error or
+    /// an SSE error frame instead of an empty success.
+    func fail(_ message: String) {
+        lock.lock()
+        if failureMessage == nil { failureMessage = message }
+        lock.unlock()
+        finish()
+    }
+
+    var failure: String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return failureMessage
+    }
+
+    // MARK: - Usage accounting
+
+    private var outputTokenCount = 0
+    private var inputTokenEstimate = 0
+
+    /// Called once per streamed piece from the model.
+    func noteOutputToken() {
+        lock.lock()
+        outputTokenCount += 1
+        lock.unlock()
+    }
+
+    /// Overwrites both counts when the runtime reports tokenizer-exact usage.
+    func setUsage(input: Int, output: Int) {
+        lock.lock()
+        inputTokenEstimate = input
+        outputTokenCount = output
+        lock.unlock()
+    }
+
+    /// Final (input, output) token counts for response `usage` fields.
+    var usage: (input: Int, output: Int) {
+        lock.lock()
+        defer { lock.unlock() }
+        return (inputTokenEstimate, outputTokenCount)
     }
 
     func finish() {
@@ -2279,29 +2533,6 @@ final class LocalAPIManager: ObservableObject {
             if result == 0 { results.insert(String(cString: host)) }
         }
         return results.sorted()
-    }
-
-    private func start(port: UInt16) async {
-        updateIdleTimer(running: true)
-        state = .starting
-        addresses = Self.localIPv4Addresses()
-        await server.setEventHandler { [weak self] event in
-            Task { @MainActor in
-                guard let self else { return }
-                switch event {
-                case .ready: self.state = .running(port: port)
-                case .failed(let message):
-                    self.state = .failed(message)
-                    self.updateIdleTimer(running: false)
-                }
-            }
-        }
-        do {
-            try await server.start(port: port)
-        } catch {
-            state = .failed(error.localizedDescription)
-            updateIdleTimer(running: false)
-        }
     }
 
     private func updateIdleTimer(running: Bool) {

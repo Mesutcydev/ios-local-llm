@@ -72,6 +72,16 @@ final class StoredConversationTests: XCTestCase {
         XCTAssertEqual(restored.generationDuration, 4.2)
     }
 
+    func test_storedMessage_preservesHitTokenLimit() {
+        let original = ChatMessage(
+            role: .assistant,
+            content: "Partial answer",
+            hitTokenLimit: true
+        )
+        let restored = StoredMessage(original).chatMessage
+        XCTAssertEqual(restored.hitTokenLimit, true)
+    }
+
     func test_storedMessage_preservesHiddenModelContext() {
         let original = ChatMessage(
             role: .user,

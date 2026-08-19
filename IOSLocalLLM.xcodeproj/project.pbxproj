@@ -200,6 +200,10 @@
 		950A6D32880F0C9FD662545F /* SpeechPlaybackCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39A7489F295F0E5720F4854 /* SpeechPlaybackCoordinator.swift */; };
 		95E83375C2B5FA9D4D8F2D94 /* LiquidPinkBackdrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 409DED3ACA8D796184E3D615 /* LiquidPinkBackdrop.swift */; };
 		96110C8E0338B2A21CE21B1F /* DiagnosticsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFCD8C11EA0CAAAE74B0DAA8 /* DiagnosticsTests.swift */; };
+		A1B2C3D4E5F60718293A4B61 /* AssistantActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B51 /* AssistantActivity.swift */; };
+		A1B2C3D4E5F60718293A4B62 /* AssistantActivityCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B52 /* AssistantActivityCards.swift */; };
+		A1B2C3D4E5F60718293A4B82 /* AssistantActivityCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B81 /* AssistantActivityCardTests.swift */; };
+		A1B2C3D4E5F60718293A4B84 /* GGUFGenerationProfileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B83 /* GGUFGenerationProfileTests.swift */; };
 		9695F1F59CFC6B5F076DEDFC /* ModelCacheProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29718E2CF8CE23EDED4BA46B /* ModelCacheProbe.swift */; };
 		97899A1197ABBFF567DD21BA /* WhisperService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E869D376C8A1B3BB6FBA9C3F /* WhisperService.swift */; };
 		98C224B750997E4BA26CDFE6 /* AudioQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B13BFDB00D06DCDB278F707E /* AudioQueue.swift */; };
@@ -721,6 +725,10 @@
 		ED81EDA91AC946C48B58BA36 /* MarkupCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkupCanvasView.swift; sourceTree = "<group>"; };
 		EF54DA9F2D20B1E8BB4F942E /* SnippetPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetPickerView.swift; sourceTree = "<group>"; };
 		EFCD8C11EA0CAAAE74B0DAA8 /* DiagnosticsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B51 /* AssistantActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantActivity.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B52 /* AssistantActivityCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantActivityCards.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B81 /* AssistantActivityCardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantActivityCardTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B83 /* GGUFGenerationProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GGUFGenerationProfileTests.swift; sourceTree = "<group>"; };
 		EFE2927120C9D7BAE0C301CE /* WebSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSettingsView.swift; sourceTree = "<group>"; };
 		F018B0A322EF52F1F27E2410 /* SetupBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupBannerView.swift; sourceTree = "<group>"; };
 		F08BCB309343D1E7BAEAFF45 /* VoiceStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceStatusView.swift; sourceTree = "<group>"; };
@@ -1171,9 +1179,19 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		A1B2C3D4E5F60718293A4B70 /* Assistant */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60718293A4B51 /* AssistantActivity.swift */,
+				A1B2C3D4E5F60718293A4B52 /* AssistantActivityCards.swift */,
+			);
+			path = Assistant;
+			sourceTree = "<group>";
+		};
 		8B56AAAB54951250CAA837BD /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D4E5F60718293A4B70 /* Assistant */,
 				CD1B3C3691B311F606743387 /* Bridge */,
 				DE6B7E2D7870ECEDB857DEA7 /* Components */,
 				BC17645D73E1210D61F4A911 /* Legal */,
@@ -1367,6 +1385,8 @@
 				EBEF6C375F29115D5BE9DAFE /* BridgePairingStoreTests.swift */,
 				49C4EE82B36F81E5A4E7D2DB /* DeviceTierAdvisorTests.swift */,
 				EFCD8C11EA0CAAAE74B0DAA8 /* DiagnosticsTests.swift */,
+				A1B2C3D4E5F60718293A4B81 /* AssistantActivityCardTests.swift */,
+				A1B2C3D4E5F60718293A4B83 /* GGUFGenerationProfileTests.swift */,
 				9254564509AE1BC2EB135493 /* FastVLMPromptBuilderTests.swift */,
 				D365B142EB8A92F7028E4613 /* HighRiskServiceTests.swift */,
 				C35A539EDBBB34389F2F5A4B /* Int64FormattedBytesTests.swift */,
@@ -1752,6 +1772,8 @@
 				C595BE23795D1A59CCDBBD83 /* BridgePairingStoreTests.swift in Sources */,
 				F2B0D6DEAB98591E51C0B732 /* DeviceTierAdvisorTests.swift in Sources */,
 				96110C8E0338B2A21CE21B1F /* DiagnosticsTests.swift in Sources */,
+				A1B2C3D4E5F60718293A4B82 /* AssistantActivityCardTests.swift in Sources */,
+				A1B2C3D4E5F60718293A4B84 /* GGUFGenerationProfileTests.swift in Sources */,
 				0168FB1A521187C6CFBD1E7C /* FastVLMPromptBuilderTests.swift in Sources */,
 				64E426253B2FE7617E14F93D /* HighRiskServiceTests.swift in Sources */,
 				D5C3A482566EFD4A349486DF /* Int64FormattedBytesTests.swift in Sources */,
@@ -1859,6 +1881,8 @@
 				41B575B5530B2CCA9B59C4F7 /* CodeTask.swift in Sources */,
 				E19939719C1C75614BA25A29 /* CodingAssistantService.swift in Sources */,
 				9ACCD2D6D581D9DCCFC87106 /* CodingAssistantView.swift in Sources */,
+				A1B2C3D4E5F60718293A4B61 /* AssistantActivity.swift in Sources */,
+				A1B2C3D4E5F60718293A4B62 /* AssistantActivityCards.swift in Sources */,
 				F6CE18534C1D7FF419539475 /* CompareView.swift in Sources */,
 				6DD3F56398A826A4F0DF9B2C /* Configuration.swift in Sources */,
 				A13C44AD7E534575D658FAA4 /* ContentView.swift in Sources */,
@@ -2221,7 +2245,7 @@
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "IOSLocalLLM/IOSLocalLLM-Catalyst.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 99;
+				CURRENT_PROJECT_VERSION = 106;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
 				ENABLE_TESTABILITY = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -2376,7 +2400,7 @@
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "IOSLocalLLM/IOSLocalLLM-Catalyst.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 99;
+				CURRENT_PROJECT_VERSION = 106;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
 				ENABLE_TESTABILITY = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -2437,7 +2461,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = IOSLocalLLMShareExtension/IOSLocalLLMShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 99;
+				CURRENT_PROJECT_VERSION = 106;
 				INFOPLIST_FILE = IOSLocalLLMShareExtension/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2458,7 +2482,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = IOSLocalLLMShareExtension/IOSLocalLLMShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 99;
+				CURRENT_PROJECT_VERSION = 106;
 				INFOPLIST_FILE = IOSLocalLLMShareExtension/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (

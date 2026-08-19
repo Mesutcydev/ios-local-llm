@@ -342,4 +342,10 @@ final class ToolRunnerTests: XCTestCase {
         let b = ToolCall(name: "calculator", args: ["expression": "2+2"])
         XCTAssertEqual(a, b, "ToolCall equality only considers name")
     }
+
+    func test_systemPromptAddendum_forbidsInventedToolResults() {
+        XCTAssertTrue(ToolRunner.systemPromptAddendum.contains("Do not invent a tool result"))
+        XCTAssertTrue(ToolRunner.systemPromptAddendum.contains("Never write a `tool_result`"))
+        XCTAssertTrue(CodingAssistantService.groundingPrompt.contains("Do not invent citations"))
+    }
 }

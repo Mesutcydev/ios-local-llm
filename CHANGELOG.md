@@ -5,6 +5,25 @@ and intends to use semantic version tags for source releases.
 
 ## [Unreleased]
 
+### Fixed
+
+- Imported GGUF assistants now receive their chat template, sampler
+  settings, and system/tool prompts. Recurrent Gemma 3n / Gemma 4 E-series
+  keep the compact 512/128 workaround; dense Gemma 4 12B/31B do not.
+- MLX seed, frequency penalty, and presence penalty settings are applied.
+- Local API chat/responses/messages replies report real token usage.
+- Truncated replies are labeled in the chat chrome; the compact GGUF
+  128-token cap is visible on the token-cap chip.
+- Release-styled app builds no longer embed the unit-test bundle.
+- Chat prompts no longer invite invented tool results, citations, or live
+  data. Gemma templates fold the system prompt into the first user turn
+  once instead of duplicating it.
+
+### Added
+
+- In-chat streaming, approval, and running-tool cards. Web/file tool
+  consent stays in the transcript; the generate loop is unchanged.
+
 ## [3.2.6] - 2026-07-29
 
 ### Added
