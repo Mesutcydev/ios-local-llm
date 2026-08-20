@@ -206,6 +206,177 @@ final class GGUFGenerationProfileTests: XCTestCase {
         XCTAssertFalse(prompt.contains("Ignore this persona."))
     }
 
+    func test_standardQwenPrompt_keepsToolInstructions() {
+        let system = "Be brief." + ToolRunner.systemPromptAddendum
+        let messages = [
+            ChatMessage(role: .system, content: system),
+            ChatMessage(role: .user, content: "What is 2+2 and search if needed"),
+        ]
+        let kept = GGUFGenerationProfile.standard.messagesForRuntime(messages)
+        XCTAssertTrue(kept.contains { $0.content.contains("web_search") })
+        XCTAssertTrue(kept.contains { $0.content.contains("file_read") })
+        let prompt = GGUFGenerationProfile.standard.prompt(
+            from: kept,
+            template: .chatML,
+            enableThinking: false
+        )
+        XCTAssertTrue(prompt.contains("```tool"))
+        XCTAssertTrue(prompt.contains("web_search"))
+        XCTAssertTrue(prompt.contains("file_read"))
+        XCTAssertTrue(prompt.contains("calculator"))
+        XCTAssertTrue(prompt.contains("Do not invent a tool result"))
+    }
+
+    func test_compactPrompt_stillOmitsToolAddendum() {
+        let messages = [
+            ChatMessage(role: .system, content: "Be brief." + ToolRunner.systemPromptAddendum),
+            ChatMessage(role: .user, content: "Hi"),
+        ]
+        let prompt = GGUFGenerationProfile.compact.prompt(
+            from: messages,
+            template: .gemma,
+            enableThinking: false
+        )
+        XCTAssertFalse(prompt.contains("web_search"))
+        XCTAssertFalse(prompt.contains("```tool"))
+    }
+
+    func test_continuationPrompt_leavesLastAssistantOpen() {
+        let messages = [
+            ChatMessage(role: .system, content: "Be brief."),
+            ChatMessage(role: .user, content: "Write a story"),
+            ChatMessage(role: .assistant, content: "Once upon a time"),
+        ]
+        let prompt = GGUFGenerationProfile.standard.prompt(
+            from: messages,
+            template: .chatML,
+            enableThinking: false,
+            leaveLastAssistantOpen: true
+        )
+        XCTAssertTrue(prompt.hasSuffix("<|im_start|>assistant\nOnce upon a time"))
+        XCTAssertFalse(prompt.hasSuffix("<|im_start|>assistant\n /no_think"))
+        XCTAssertFalse(prompt.contains("Please continue from where you left off"))
+    }
+
+    func test_compactContinuationPrompt_doesNotAddSecondAssistantCue() {
+        let messages = [
+            ChatMessage(role: .user, content: "Write a story"),
+            ChatMessage(role: .assistant, content: "Once upon"),
+        ]
+        let prompt = GGUFGenerationProfile.compact.prompt(
+            from: messages,
+            template: .gemma,
+            enableThinking: false,
+            leaveLastAssistantOpen: true
+        )
+        XCTAssertTrue(prompt.hasSuffix("assistant: Once upon"))
+        XCTAssertFalse(prompt.hasSuffix("assistant: Once upon\n\nassistant:"))
+    }
+
+    func test_prefixCache_reusesSharedTokens() {
+        XCTAssertEqual(GGUFPrefixCache.commonPrefixLength([1, 2, 3, 4], [1, 2, 9]), 2)
+        XCTAssertEqual(
+            GGUFPrefixCache.reuseOffset(cached: [1, 2, 3], next: [1, 2, 3, 4, 5], reuseContext: true),
+            3
+        )
+        XCTAssertEqual(
+            GGUFPrefixCache.reuseOffset(cached: [1, 2, 3], next: [1, 2, 3, 4], reuseContext: false),
+            0
+        )
+        XCTAssertEqual(
+            GGUFPrefixCache.reuseOffset(cached: [9, 8], next: [1, 2], reuseContext: true),
+            0
+        )
+    }
+
+    func test_continuationStartsAfterCachedSequence() {
+        XCTAssertEqual(
+            GGUFPrefixCache.continuationDecodePosition(
+                cachedTokenCount: 120,
+                generatedSinceResume: 0
+            ),
+            120
+        )
+        XCTAssertEqual(
+            GGUFPrefixCache.continuationDecodePosition(
+                cachedTokenCount: 120,
+                generatedSinceResume: 3
+            ),
+            123
+        )
+    }
+
+    func test_continuationLimitLeavesContextSentinelSpace() {
+        XCTAssertEqual(
+            GGUFPrefixCache.continuationLimit(
+                contextSize: 512,
+                cachedTokenCount: 400,
+                requested: 256
+            ),
+            111
+        )
+        XCTAssertEqual(
+            GGUFPrefixCache.continuationLimit(
+                contextSize: 512,
+                cachedTokenCount: 511,
+                requested: 256
+            ),
+            0
+        )
+    }
+
+    func test_mlXProfileDoesNotCapGGUFOutput() {
+        XCTAssertEqual(
+            AssistantGenerationBudget.maxTokens(
+                runtime: .llamaCpp,
+                requested: 2_048,
+                thermalCap: 4_096,
+                backendCap: 256
+            ),
+            2_048
+        )
+        XCTAssertEqual(
+            AssistantGenerationBudget.maxTokens(
+                runtime: .mlx,
+                requested: 2_048,
+                thermalCap: 4_096,
+                backendCap: 256
+            ),
+            256
+        )
+    }
+
+    func test_ornithUsesQwen35PromptContract() {
+        XCTAssertEqual(
+            ChatTemplate.detect(for: "local_Ornith-1.5-9B-Q5_K_M").format,
+            ChatTemplate.qwen35.format
+        )
+    }
+
+    func test_prefetchPolicyRequiresChargingAndNominalThermalState() {
+        XCTAssertTrue(
+            ModelResidency.allowsBackgroundPrefetch(
+                thermalState: .nominal,
+                isCharging: true,
+                lowPowerMode: false
+            )
+        )
+        XCTAssertFalse(
+            ModelResidency.allowsBackgroundPrefetch(
+                thermalState: .nominal,
+                isCharging: false,
+                lowPowerMode: false
+            )
+        )
+        XCTAssertFalse(
+            ModelResidency.allowsBackgroundPrefetch(
+                thermalState: .serious,
+                isCharging: true,
+                lowPowerMode: false
+            )
+        )
+    }
+
     func test_samplerSpec_preservesUserSettings() {
         let spec = LlamaCppVLM.GGUFSamplerSpec(
             temperature: 0.2,

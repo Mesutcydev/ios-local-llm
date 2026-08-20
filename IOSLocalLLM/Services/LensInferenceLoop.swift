@@ -917,8 +917,9 @@ final class LensInferenceLoop: ObservableObject {
                 }
                 await MainActor.run {
                     self.state = .ready
-                    // Re-arm prefetch now that the VLM is idle again.
-                    ModelResidency.shared.schedulePrefetch(currentTab: .lens)
+                    // Prefetch is intentionally not re-armed after inference.
+                    // The optimization is load-triggered and charging-only;
+                    // repeated idle disk reads made long sessions warmer.
                 }
             } catch is CancellationError {
                 await MainActor.run { self.state = .ready; onComplete(0) }

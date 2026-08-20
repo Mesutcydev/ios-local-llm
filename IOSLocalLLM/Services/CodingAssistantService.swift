@@ -180,6 +180,59 @@ struct GGUFLoadPolicy: Equatable, Sendable {
 /// dense Gemma 4 12B/31B, …) runs fine with a normal bounded 4K window;
 /// applying the compact profile to them truncated every reply to ~128
 /// tokens mid-sentence.
+enum GGUFPrefixCache {
+    static func commonPrefixLength<T: Equatable>(_ a: [T], _ b: [T]) -> Int {
+        let limit = min(a.count, b.count)
+        var index = 0
+        while index < limit, a[index] == b[index] {
+            index += 1
+        }
+        return index
+    }
+
+    /// How many leading tokens of `next` are already in the KV cache.
+    /// Compact / recreate runtimes always return 0 so they full-prefill.
+    static func reuseOffset<T: Equatable>(cached: [T], next: [T], reuseContext: Bool) -> Int {
+        guard reuseContext, !cached.isEmpty, !next.isEmpty else { return 0 }
+        return commonPrefixLength(cached, next)
+    }
+
+    /// The first token sampled after a cached sequence is decoded at the
+    /// sequence length, not at `length - 1` (the latter is the position of
+    /// the last token already present in the KV cache).
+    static func continuationDecodePosition(
+        cachedTokenCount: Int,
+        generatedSinceResume: Int
+    ) -> Int {
+        max(0, cachedTokenCount + generatedSinceResume)
+    }
+
+    static func continuationLimit(
+        contextSize: Int,
+        cachedTokenCount: Int,
+        requested: Int
+    ) -> Int {
+        guard contextSize > 0, requested > 0 else { return 0 }
+        return min(requested, max(0, contextSize - cachedTokenCount - 1))
+    }
+}
+
+/// Applies only the cap owned by the selected backend. MLX family profiles
+/// describe MLX allocator/KV behavior; they must never silently shorten a
+/// llama.cpp GGUF request merely because both models share a display name.
+enum AssistantGenerationBudget {
+    static func maxTokens(
+        runtime: ModelRuntime,
+        requested: Int,
+        thermalCap: Int,
+        backendCap: Int?
+    ) -> Int {
+        let thermalLimited = min(max(1, requested), max(1, thermalCap))
+        guard runtime == .mlx, let backendCap else { return thermalLimited }
+        return min(thermalLimited, max(1, backendCap))
+    }
+}
+
 enum GGUFGenerationProfile: Equatable, Sendable {
     case compact   // recurrent Gemma 3n / Gemma 4 E-series
     case standard  // every other imported GGUF
@@ -285,11 +338,16 @@ enum GGUFGenerationProfile: Equatable, Sendable {
     func prompt(
         from messages: [ChatMessage],
         template: ChatTemplate,
-        enableThinking: Bool
+        enableThinking: Bool,
+        leaveLastAssistantOpen: Bool = false
     ) -> String {
         switch self {
         case .standard:
-            return messages.formattedWithTemplate(template, enableThinking: enableThinking)
+            return messages.formattedWithTemplate(
+                template,
+                enableThinking: enableThinking,
+                leaveLastAssistantOpen: leaveLastAssistantOpen
+            )
         case .compact:
             let body = messages
                 .filter { $0.role != .system }
@@ -298,6 +356,9 @@ enum GGUFGenerationProfile: Equatable, Sendable {
             let grounded = body.isEmpty
                 ? CodingAssistantService.compactGroundingPrompt
                 : CodingAssistantService.compactGroundingPrompt + "\n\n" + body
+            if leaveLastAssistantOpen, messages.last?.role == .assistant {
+                return grounded
+            }
             return grounded + "\n\nassistant:"
         }
     }
@@ -337,6 +398,9 @@ final class CodingAssistantService: ObservableObject {
     /// budget rather than at an end-of-generation token — i.e. the answer is
     /// truncated and the UI should say so. Reset at each generation start.
     @Published private(set) var lastGenerationHitTokenLimit = false
+    /// True when the last standard-GGUF reply hit the token budget and the
+    /// native KV is still resident. Compact Gemma never sets this.
+    @Published private(set) var canResumeFromCache = false
     /// Tokenizer-exact prompt / completion counts from the last finished
     /// generate(). Local API usage fields and the usage tracker read these
     /// instead of guessing from streamed pieces or tok/s × elapsed.
@@ -1384,6 +1448,7 @@ final class CodingAssistantService: ObservableObject {
         jsonMode: Bool = false,
         collectLogprobs: Bool = false,
         forceNoThinking: Bool = false,
+        resumeTruncatedReply: Bool = false,
         onToken: @escaping @Sendable (String) -> Void,
         // Optional logprob stream sits before onComplete so call sites that
         // pass it (the chat view) match declaration order; callers that omit
@@ -1441,6 +1506,7 @@ final class CodingAssistantService: ObservableObject {
                     jsonMode: jsonMode,
                     collectLogprobs: collectLogprobs,
                     forceNoThinking: forceNoThinking,
+                    resumeTruncatedReply: resumeTruncatedReply,
                     onToken: onToken,
                     onLogprobToken: onLogprobToken,
                     onComplete: onComplete,
@@ -1495,6 +1561,7 @@ final class CodingAssistantService: ObservableObject {
                         jsonMode: jsonMode,
                         collectLogprobs: collectLogprobs,
                         forceNoThinking: forceNoThinking,
+                        resumeTruncatedReply: resumeTruncatedReply,
                         onToken: onToken,
                         onLogprobToken: onLogprobToken,
                         onComplete: onComplete,
@@ -1528,6 +1595,9 @@ final class CodingAssistantService: ObservableObject {
         generateTask?.cancel()
         state = .generating
         lastGenerationHitTokenLimit = false
+        if !resumeTruncatedReply {
+            canResumeFromCache = false
+        }
         lastPromptTokens = 0
         lastOutputTokens = 0
         // User started inference — cancel any pending background
@@ -1554,9 +1624,12 @@ final class CodingAssistantService: ObservableObject {
                 ?? s.assistantMaxTokens,
             safety.recommendedMaxTokens
         )
-        let safeMaxTokens = executionProfile.maxOutputTokens.map {
-            min(requestedMaxTokens, $0)
-        } ?? requestedMaxTokens
+        let safeMaxTokens = AssistantGenerationBudget.maxTokens(
+            runtime: activeModel.runtime,
+            requested: requestedMaxTokens,
+            thermalCap: safety.recommendedMaxTokens,
+            backendCap: executionProfile.maxOutputTokens
+        )
 
         // --- Full Sampler Control (Feature #1) ---
         // Resolution order: per-call samplerConfig > per-call overrides >
@@ -1688,8 +1761,15 @@ final class CodingAssistantService: ObservableObject {
             && wantsThinking
             && !forceNoThinking
         let manualPrompt: String? = template.supportsThinking
-            ? trimmedMessages.formattedWithTemplate(template, enableThinking: enableThinking)
-            : trimmedMessages.formattedWithTemplate(template)
+            ? trimmedMessages.formattedWithTemplate(
+                template,
+                enableThinking: enableThinking,
+                leaveLastAssistantOpen: resumeTruncatedReply
+            )
+            : trimmedMessages.formattedWithTemplate(
+                template,
+                leaveLastAssistantOpen: resumeTruncatedReply
+            )
 
         // NOTE: the MLXLMCommon `[Chat.Message]` for the fallback path is built
         // INSIDE the generation closure (below), from `trimmedMessages`. That
@@ -1734,7 +1814,8 @@ final class CodingAssistantService: ObservableObject {
             let ggufPrompt = ggufProfile.prompt(
                 from: trimmedMessages,
                 template: template,
-                enableThinking: enableThinking
+                enableThinking: enableThinking,
+                leaveLastAssistantOpen: resumeTruncatedReply
             )
             let ggufSampler = LlamaCppVLM.GGUFSamplerSpec(
                 temperature: Float(temp),
@@ -1750,26 +1831,39 @@ final class CodingAssistantService: ObservableObject {
             )
             generateTask = Task.detached(priority: .userInitiated) {
                 do {
-                    let result = try ggufModel.generateText(
-                        prompt: ggufPrompt,
-                        maxTokens: ggufMaxTokens,
-                        sampler: ggufSampler,
-                        reuseContext: reuseGGUFContext,
-                        onToken: { token in
-                            let isFirst = loggedFirstToken.withLock { logged -> Bool in
-                                guard !logged else { return false }
-                                logged = true
-                                return true
-                            }
-                            if isFirst {
-                                Diagnostics.shared.breadcrumb(
-                                    "GGUF first token · footprint=\(MemoryAdvisor.physFootprint) · headroom=\(MemoryAdvisor.availableMemoryForModel)",
-                                    category: "assistant"
-                                )
-                            }
-                            onToken(token)
+                    let emitToken: (String) -> Void = { token in
+                        let isFirst = loggedFirstToken.withLock { logged -> Bool in
+                            guard !logged else { return false }
+                            logged = true
+                            return true
                         }
-                    )
+                        if isFirst {
+                            Diagnostics.shared.breadcrumb(
+                                "GGUF first token · footprint=\(MemoryAdvisor.physFootprint) · headroom=\(MemoryAdvisor.availableMemoryForModel)",
+                                category: "assistant"
+                            )
+                        }
+                        onToken(token)
+                    }
+                    let resumeFromCache = resumeTruncatedReply
+                        && reuseGGUFContext
+                        && ggufModel.hasContinuableCache
+                    let result = try {
+                        if resumeFromCache {
+                            return try ggufModel.continueText(
+                                maxTokens: ggufMaxTokens,
+                                sampler: ggufSampler,
+                                onToken: emitToken
+                            )
+                        }
+                        return try ggufModel.generateText(
+                            prompt: ggufPrompt,
+                            maxTokens: ggufMaxTokens,
+                            sampler: ggufSampler,
+                            reuseContext: reuseGGUFContext,
+                            onToken: emitToken
+                        )
+                    }()
                     // `generateText` has returned, so its prompt/decode batches
                     // and generation guard are fully released before the UI can
                     // initiate an automatic recovery/tool follow-up.
@@ -1788,6 +1882,7 @@ final class CodingAssistantService: ObservableObject {
                         if ownsState {
                             service.tokenRate = rate
                             service.lastGenerationHitTokenLimit = result.hitTokenLimit
+                            service.canResumeFromCache = reuseGGUFContext && result.hitTokenLimit
                             service.lastPromptTokens = result.promptTokens
                             service.lastOutputTokens = result.outputTokens
                             service.estimatedInputTokens = result.promptTokens
@@ -1933,7 +2028,8 @@ final class CodingAssistantService: ObservableObject {
                         // is kept for models where the template is .generic (ChatML),
                         // and is also forced ON when image inputs are attached —
                         // manualPrompt is text-only, so it can't carry pixels.
-                        let useManualPrompt = !template.format.hasPrefix("generic") && !useVisionChat
+                        let useManualPrompt = resumeTruncatedReply
+                            || (!template.format.hasPrefix("generic") && !useVisionChat)
                         let userInput: UserInput
                         if useManualPrompt, let manualPrompt {
                             userInput = UserInput(prompt: manualPrompt)
@@ -2042,11 +2138,10 @@ final class CodingAssistantService: ObservableObject {
                         tokensPerSecond: rate
                     )
                     onComplete(rate)
-                    // Re-arm the background prefetch now that the LLM
-                    // is idle again. If the user is between messages
-                    // we'll prime the VLM's page cache for the next
-                    // tab switch.
-                    ModelResidency.shared.schedulePrefetch(currentTab: .assistant)
+                    // Do not start speculative disk I/O after every reply.
+                    // Prefetch is scheduled only after an explicit model load;
+                    // repeatedly warming the other model here made the phone
+                    // keep working between messages and increased heat.
                 }
 
             } catch is CancellationError {
@@ -2449,6 +2544,8 @@ final class CodingAssistantService: ObservableObject {
         }
         pccGenerateTask?.cancel()
         ggufModel?.cancelCurrent()
+        ggufModel?.invalidateTokenCache()
+        canResumeFromCache = false
         generateTask?.cancel()
         // Do not expose `.ready` until the native decode has observed the
         // cancellation and fully unwound. Starting another request while the

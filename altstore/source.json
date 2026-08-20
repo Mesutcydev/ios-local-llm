@@ -131,12 +131,12 @@
       "versions": [
         {
           "version": "3.2.6",
-          "buildVersion": "103",
-          "date": "2026-08-13T20:46:53Z",
-          "localizedDescription": "Sideload build with the local AI workbench, share extension, and bundled memory entitlements.",
-          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-103/IOSLocalLLM-3.2.6-103-sideload-entitled.ipa",
-          "size": 50311718,
-          "sha256": "bed89abe89a52ed75c6df857ae6fc01c49c172337681699543447dda62326fac",
+          "buildVersion": "109",
+          "date": "2026-08-20T11:06:52Z",
+          "localizedDescription": "Sideload build with the local AI workbench, share extension, and full memory entitlements.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-109/IOSLocalLLM-3.2.6-109-sideload-entitled-full.ipa",
+          "size": 50407384,
+          "sha256": "75c430e5bc5abed96cc8f7babb4806ff74c6a700fc9f91914ce121f286814ecb",
           "minOSVersion": "18.0"
         }
       ],

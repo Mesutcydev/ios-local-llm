@@ -148,6 +148,12 @@ final class AppSettings: ObservableObject {
     @AppStorage("localAPIEnabled") var localAPIEnabled: Bool = false
     @AppStorage("localAPIPort") var localAPIPort: Int = 11434
     @AppStorage("localAPIKeepScreenAwake") var localAPIKeepScreenAwake: Bool = true
+    /// AWDL / peer-to-peer advertisement. Main previously hardcoded this
+    /// on; keep that default so existing LAN clients still find the API.
+    @AppStorage("localAPIIncludePeerToPeer") var localAPIIncludePeerToPeer: Bool = true
+    /// Comma-separated browser origins allowed to read API responses.
+    /// Empty keeps CORS off (terminal / native clients only).
+    @AppStorage("localAPICORSOrigins") var localAPICORSOrigins: String = ""
 
     // FastVLM pipeline
     // OCR fallback defaults OFF: the lens starts in visual (describe) mode, so

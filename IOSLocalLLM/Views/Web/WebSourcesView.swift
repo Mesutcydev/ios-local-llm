@@ -20,7 +20,7 @@ struct WebSourcesView: View {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 6) {
                     Image(systemName: "globe").font(.system(size: 10))
-                    Text("Used \(visible.count) web source\(visible.count == 1 ? "" : "s")")
+                    Text(AssistantActivity.citationTitle(visibleCount: visible.count))
                         .font(T.mono(10, .semibold))
                         .tracking(0.3)
                 }

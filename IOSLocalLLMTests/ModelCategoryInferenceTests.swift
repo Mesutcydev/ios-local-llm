@@ -276,6 +276,20 @@ final class ModelCategoryInferenceTests: XCTestCase {
         XCTAssertFalse(prompt.contains("Be brief.\n\nHello"))
     }
 
+    func test_chatMLTemplate_leaveLastAssistantOpen_skipsGenerationCue() {
+        let messages = [
+            ChatMessage(role: .user, content: "Write a story"),
+            ChatMessage(role: .assistant, content: "Once upon a time"),
+        ]
+        let open = ChatTemplate.chatML.format(
+            messages: messages,
+            leaveLastAssistantOpen: true
+        )
+        XCTAssertEqual(open, "<|im_start|>user\nWrite a story<|im_end|>\n<|im_start|>assistant\nOnce upon a time")
+        let closed = ChatTemplate.chatML.format(messages: messages)
+        XCTAssertTrue(closed.contains("<|im_end|>\n<|im_start|>assistant\n /no_think"))
+    }
+
     func test_assistantOutputSanitizer_removesKnownQwenBoundaryLeaks() {
         XCTAssertEqual(
             AssistantOutputSanitizer.clean("\nassistant: off.\n\n### Result\n**Done**"),

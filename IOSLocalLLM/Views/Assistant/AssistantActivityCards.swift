@@ -54,49 +54,58 @@ private struct ActivityCardHeader: View {
     }
 }
 
-// MARK: - Streaming status
+// MARK: - Live status (blends with bubble meta)
+
+struct AssistantLiveStatusRow: View {
+    let title: String
+    var symbol: String? = nil
+
+    @Environment(\.koduTheme) private var T
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(T.accent)
+                .frame(width: 6, height: 6)
+                .opacity(reduceMotion ? 0.7 : 0.9)
+            if let symbol {
+                Image(systemName: symbol)
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            Text(title)
+                .font(T.sans(11.5, .medium))
+            Spacer(minLength: 0)
+        }
+        .foregroundStyle(T.ink3)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 2)
+        .accessibilityLabel(title)
+    }
+}
+
+// MARK: - Streaming status (kept for call sites that still pass content)
 
 struct AssistantStreamingStatusCard: View {
     let content: String
     let detectedToolName: String?
-
-    @Environment(\.koduTheme) private var T
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var status: AssistantActivity.Status {
         AssistantActivity.streamingStatus(content: content, detectedToolName: detectedToolName)
     }
 
     var body: some View {
-        ActivityCardChrome {
-            ActivityCardHeader(
-                symbol: symbol,
-                title: AssistantActivity.statusTitle(status),
-                subtitle: subtitle,
-                pulsing: !reduceMotion
-            )
-        }
-        .accessibilityLabel(AssistantActivity.statusTitle(status))
-    }
-
-    private var symbol: String {
-        switch status {
-        case .generating: return "text.cursor"
-        case .reasoning: return "brain.head.profile"
-        case .preparingTool(let name): return AssistantActivity.symbol(forTool: name)
-        case .runningTool(let name): return AssistantActivity.symbol(forTool: name)
-        case .awaitingApproval(let name): return AssistantActivity.symbol(forTool: name)
-        }
-    }
-
-    private var subtitle: String {
-        switch status {
-        case .generating: return "On device · live tokens"
-        case .reasoning: return "Reasoning before the answer"
-        case .preparingTool: return "Stopping decode to run the tool"
-        case .runningTool: return "Waiting for the tool result"
-        case .awaitingApproval: return "Nothing left the device yet"
-        }
+        AssistantLiveStatusRow(
+            title: AssistantActivity.statusTitle(status),
+            symbol: {
+                switch status {
+                case .preparingTool(let name), .runningTool(let name), .awaitingApproval(let name):
+                    return AssistantActivity.symbol(forTool: name)
+                default:
+                    return nil
+                }
+            }()
+        )
     }
 }
 
@@ -106,14 +115,10 @@ struct AssistantRunningToolCard: View {
     let name: String
 
     var body: some View {
-        ActivityCardChrome {
-            ActivityCardHeader(
-                symbol: AssistantActivity.symbol(forTool: name),
-                title: AssistantActivity.statusTitle(.runningTool(name)),
-                subtitle: "On device · not a cloud call unless you approved web",
-                pulsing: true
-            )
-        }
+        AssistantLiveStatusRow(
+            title: AssistantActivity.statusTitle(.runningTool(name)),
+            symbol: AssistantActivity.symbol(forTool: name)
+        )
         .accessibilityLabel(AssistantActivity.statusTitle(.runningTool(name)))
     }
 }
@@ -250,6 +255,59 @@ struct AssistantFileApprovalCard: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Decline file access")
             }
+        }
+    }
+}
+
+// MARK: - Image generation
+
+struct AssistantImageGenerationCard: View {
+    let status: AssistantActivity.ImageStatus
+    let detail: String
+
+    var body: some View {
+        ActivityCardChrome {
+            VStack(alignment: .leading, spacing: 10) {
+                ActivityCardHeader(
+                    symbol: "photo.on.rectangle.angled",
+                    title: "Image generation",
+                    subtitle: AssistantActivity.imageGenerationSubtitle(status),
+                    pulsing: true
+                )
+                if !detail.isEmpty {
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .accessibilityLabel(AssistantActivity.imageGenerationSubtitle(status))
+    }
+}
+
+// MARK: - Citations
+
+struct AssistantCitationCard: View {
+    let citations: [WebSourceCitation]
+    let citedIndices: Set<Int>
+
+    var body: some View {
+        let visible = citations.filter { citedIndices.contains($0.index) }
+        if !visible.isEmpty {
+            ActivityCardChrome {
+                VStack(alignment: .leading, spacing: 10) {
+                    ActivityCardHeader(
+                        symbol: "quote.opening",
+                        title: AssistantActivity.citationTitle(visibleCount: visible.count),
+                        subtitle: "Quoted from this turn's web results"
+                    )
+                    ForEach(visible) { citation in
+                        WebSourceRowView(citation: citation)
+                    }
+                }
+            }
+            .accessibilityLabel(AssistantActivity.citationTitle(visibleCount: visible.count))
         }
     }
 }

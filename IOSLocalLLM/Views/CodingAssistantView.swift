@@ -44,6 +44,7 @@ struct CodingAssistantView: View {
     @ObservedObject private var personaStore = PersonaStore.shared
     @ObservedObject private var legal = LegalAcceptanceManager.shared
     @ObservedObject private var loc = LocalizationService.shared
+    @ObservedObject private var imageGen = ImageGenerationService.shared
 
     @State private var messages: [ChatMessage] = []
     @State private var inputText: String = ""
@@ -366,18 +367,6 @@ struct CodingAssistantView: View {
                                     }
                                 }
                                 activityCards
-                                // Web sources panel, shown only when the last
-                                // assistant reply used the Web Tool.
-                                if !lastUsedCitedIndices.isEmpty {
-                                    WebSourcesView(
-                                        citations: lastWebCitations,
-                                        citedIndices: lastUsedCitedIndices,
-                                        onRetryWithWeb: nil,
-                                        onAnswerOffline: nil
-                                    )
-                                    .padding(.horizontal, 16)
-                                    .padding(.top, 8)
-                                }
                                 // The safe-area inset reserves the composer's
                                 // measured height. This small tail is only visual
                                 // breathing room below the final message.
@@ -1429,18 +1418,23 @@ struct CodingAssistantView: View {
                 .accessibilityLabel("Reply length capped at \(effectiveMax) tokens")
             }
             if assistant.lastGenerationHitTokenLimit, assistant.state != .generating {
-                HStack(spacing: 2) {
-                    Image(systemName: "text.append")
-                        .font(.system(size: 8, weight: .semibold))
-                    Text("cut off")
-                        .font(T.mono(10, .semibold))
+                Button {
+                    continueTruncatedReply()
+                } label: {
+                    HStack(spacing: 2) {
+                        Image(systemName: "text.append")
+                            .font(.system(size: 8, weight: .semibold))
+                        Text("cut off")
+                            .font(T.mono(10, .semibold))
+                    }
+                    .foregroundColor(T.warn)
+                    .padding(.horizontal, 5).padding(.vertical, 2)
+                    .background(T.warn.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(T.warn.opacity(0.3), lineWidth: 0.5))
                 }
-                .foregroundColor(T.warn)
-                .padding(.horizontal, 5).padding(.vertical, 2)
-                .background(T.warn.opacity(0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 4))
-                .overlay(RoundedRectangle(cornerRadius: 4).stroke(T.warn.opacity(0.3), lineWidth: 0.5))
-                .accessibilityLabel("Reply reached the token limit")
+                .buttonStyle(.plain)
+                .accessibilityLabel("Reply reached the token limit. Continue from here.")
             }
             if case .loading = assistant.state {
                 ProgressView().progressViewStyle(.circular).scaleEffect(0.6).tint(T.accent)
@@ -2594,10 +2588,11 @@ struct CodingAssistantView: View {
            last.isStreaming,
            pendingToolWeb == nil,
            pendingToolFile == nil,
-           runningToolName == nil {
-            AssistantStreamingStatusCard(
-                content: last.content,
-                detectedToolName: detectedStreamingToolCalls[last.id]?.name
+           runningToolName == nil,
+           let name = detectedStreamingToolCalls[last.id]?.name {
+            AssistantLiveStatusRow(
+                title: AssistantActivity.statusTitle(.preparingTool(name)),
+                symbol: AssistantActivity.symbol(forTool: name)
             )
         }
         if let req = pendingToolWeb {
@@ -2637,6 +2632,25 @@ struct CodingAssistantView: View {
         }
         if let name = runningToolName, pendingToolWeb == nil, pendingToolFile == nil {
             AssistantRunningToolCard(name: name)
+        }
+        if let status = imageActivityStatus {
+            AssistantImageGenerationCard(status: status, detail: imageGen.statusMessage)
+        }
+        if !lastUsedCitedIndices.isEmpty {
+            AssistantCitationCard(
+                citations: lastWebCitations,
+                citedIndices: lastUsedCitedIndices
+            )
+        }
+    }
+
+    private var imageActivityStatus: AssistantActivity.ImageStatus? {
+        switch imageGen.state {
+        case .downloading(let p): return .downloading(p)
+        case .loading: return .loading
+        case .generating(let p): return .generating(p)
+        case .failed(let msg): return .failed(msg)
+        case .idle, .ready: return nil
         }
     }
 
@@ -3725,6 +3739,11 @@ struct CodingAssistantView: View {
     /// state machinery (streaming message append, web tool decision,
     /// stop-button toolbar, etc.) keeps working unchanged.
     private func sendQuickAction(_ kind: QuickActionKind) {
+        if kind == .continueReply,
+           AssistantActivity.continuationMessageIndex(in: messages) != nil {
+            continueTruncatedReply()
+            return
+        }
         let prompt: String = {
             switch kind {
             case .continueReply:
@@ -3738,11 +3757,70 @@ struct CodingAssistantView: View {
             }
         }()
         HapticManager.impact(.light)
-        // Route through sendOffline rather than mutating inputText so the
-        // composer field stays untouched — the user might already have
-        // typed a draft they don't want overwritten. sendOffline is the
-        // same code path the Send button uses below the web-tool gate.
         sendOffline(text: prompt)
+    }
+
+    /// Resume the last truncated assistant turn in the same bubble.
+    /// Standard GGUFs keep the native KV when possible; otherwise this
+    /// re-prefills an open assistant turn (still no fake "continue" user message).
+    private func continueTruncatedReply() {
+        guard assistant.state == .ready,
+              let idx = AssistantActivity.continuationMessageIndex(in: messages)
+        else { return }
+        userAbortedToolTurn = false
+        pendingToolWeb = nil
+        pendingToolFile = nil
+        showToolFilePicker = false
+        runningToolName = nil
+        messages[idx].isStreaming = true
+        messages[idx].hitTokenLimit = false
+        messages[idx].wasInterrupted = false
+        let msgID = messages[idx].id
+        let context = preparedRuntimeContext(messages)
+        HapticManager.impact(.light)
+        assistant.generate(
+            messages: context,
+            resumeTruncatedReply: true,
+            onToken: { token in
+                Task { @MainActor in
+                    if let i = self.messages.firstIndex(where: { $0.id == msgID }) {
+                        self.messages[i].content += token
+                        self.stopAfterCompleteToolCallIfNeeded(messageID: msgID)
+                    }
+                }
+            },
+            onComplete: { rate in
+                Task { @MainActor in
+                    if let i = self.messages.firstIndex(where: { $0.id == msgID }) {
+                        self.messages[i].isStreaming = false
+                        self.recordGenerationMetrics(
+                            messageID: msgID,
+                            tokensPerSecond: rate
+                        )
+                    }
+                    let streamedCall = self.detectedStreamingToolCalls.removeValue(forKey: msgID)
+                    let toolCall = AppSettings.shared.toolsEnabled
+                        ? streamedCall ?? self.messages
+                            .first(where: { $0.id == msgID })
+                            .flatMap({ ToolRunner.extractCall(from: $0.content) })
+                        : nil
+                    if let call = toolCall {
+                        self.messages.removeAll { $0.id == msgID }
+                        self.persistCurrentConversation()
+                        await self.executeToolCallAndFollowUp(call)
+                        return
+                    }
+                    if self.recoverUnfinishedReasoningIfNeeded(
+                        messageID: msgID,
+                        contextMessages: context
+                    ) {
+                        return
+                    }
+                    self.persistCurrentConversation()
+                    HapticManager.analysisComplete()
+                }
+            }
+        )
     }
 
     // MARK: - Regenerate
@@ -4862,8 +4940,15 @@ struct MessageBubble: View, Equatable {
                 // On-device meta footer (replaces the old speaker divider).
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
-                        Image(systemName: assistantMetaIcon)
-                            .font(.system(size: 10, weight: .semibold))
+                        if message.isStreaming {
+                            Circle()
+                                .fill(T.accent)
+                                .frame(width: 6, height: 6)
+                                .opacity(0.85)
+                        } else {
+                            Image(systemName: assistantMetaIcon)
+                                .font(.system(size: 10, weight: .semibold))
+                        }
                         Text(assistantMeta)
                             .font(T.sans(11.5, .medium))
                             .lineLimit(2)
@@ -4897,9 +4982,10 @@ struct MessageBubble: View, Equatable {
                 }
                 .padding(.leading, 4)
             }
-            Spacer(minLength: 48)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Spacer(minLength: 12)
         }
-        .padding(.horizontal, 18)
+        .padding(.horizontal, 14)
         .padding(.vertical, 6)
     }
 
@@ -4918,7 +5004,12 @@ struct MessageBubble: View, Equatable {
                 ?? id.components(separatedBy: "/").last
                 ?? id
         }()
-        if message.isStreaming { return "On-device · \(model) · generating…" }
+        if message.isStreaming {
+            if AssistantActivity.isOpenReasoning(message.content) {
+                return "On-device · \(model) · thinking…"
+            }
+            return "On-device · \(model) · generating…"
+        }
         if message.wasInterrupted { return "On-device · \(model) · stopped · \(time)" }
         return "On-device · \(model) · \(time)"
     }
@@ -5034,7 +5125,7 @@ private struct AssistantToolResultCard: View {
                         Text(title)
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(T.ink)
-                        Text("Completed on device")
+                        Text(AssistantActivity.toolResultSummary(name: name, result: result))
                             .font(.caption)
                             .foregroundStyle(T.ink3)
                     }

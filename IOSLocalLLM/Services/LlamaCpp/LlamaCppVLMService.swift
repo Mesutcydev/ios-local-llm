@@ -480,7 +480,9 @@ final class LlamaCppVLMService: ObservableObject {
                             // mid-flight, and flipping back to .ready
                             // would show "ready" with nothing loaded.
                             if case .generating = self?.state { self?.state = .ready }
-                            ModelResidency.shared.schedulePrefetch(currentTab: .lens)
+                            // Do not re-arm speculative disk I/O after every
+                            // vision response; load-triggered prefetch is
+                            // sufficient and avoids heating idle sessions.
                             // Persist per-model avg tok/s so the picker can
                             // surface a perf pill alongside the install /
                             // RAM badges. tokens=0 because mtmd doesn't

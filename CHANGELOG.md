@@ -18,11 +18,22 @@ and intends to use semantic version tags for source releases.
 - Chat prompts no longer invite invented tool results, citations, or live
   data. Gemma templates fold the system prompt into the first user turn
   once instead of duplicating it.
+- Standard GGUF assistants no longer inherit the smaller MLX-family output
+  cap; Ornith continuation resumes at the correct KV-cache position.
+- Speculative model prefetch now runs only after model load while charging and
+  thermally nominal, reducing idle disk work and phone heat.
 
 ### Added
 
-- In-chat streaming, approval, and running-tool cards. Web/file tool
-  consent stays in the transcript; the generate loop is unchanged.
+- In-chat streaming, approval, running-tool, citation, and image-generation
+  cards. Web/file tool consent stays in the transcript.
+- True Continue: tap Continue or the cut-off chip to resume the same
+  assistant turn. Standard GGUFs reuse the live KV when it is still
+  resident; otherwise the open assistant turn is re-prefills. No fake
+  "please continue" user message.
+- Standard imported GGUFs reuse matching prompt-prefix KV across turns
+  instead of clearing the cache every send. Compact Gemma 3n / E-series
+  still recreate context.
 
 ## [3.2.6] - 2026-07-29
 
