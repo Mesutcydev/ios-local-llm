@@ -92,3 +92,11 @@ tmp/
 *.bak
 *.swp
 *~
+# Local GitHub Pages preview output and Codex workspace notes. The published
+# site is maintained on the gh-pages branch, not in the source checkout.
+/.zcode/
+/index.html
+/codelens.html
+/script*.js
+/styles*.css
+/site-assets/

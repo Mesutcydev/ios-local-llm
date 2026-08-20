@@ -7,6 +7,8 @@ and intends to use semantic version tags for source releases.
 
 ### Fixed
 
+- Sideload build 110 restores the OnDevice LLM display name and preserves the
+  share extension's application-group entitlement during ad-hoc packaging.
 - Imported GGUF assistants now receive their chat template, sampler
   settings, and system/tool prompts. Recurrent Gemma 3n / Gemma 4 E-series
   keep the compact 512/128 workaround; dense Gemma 4 12B/31B do not.

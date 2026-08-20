@@ -9,7 +9,7 @@ Core ML. No account. No telemetry. No cloud inference by default.
 [![License: MIT](https://img.shields.io/badge/original%20code-MIT-2ea44f.svg)](LICENSE)
 [![Swift](https://img.shields.io/badge/Swift-5.10-F05138.svg)](https://www.swift.org/)
 [![Platform](https://img.shields.io/badge/platform-iOS%2018%2B%20%7C%20Mac%20Catalyst-blue.svg)](SETUP_INSTRUCTIONS.md)
-[![Website](https://img.shields.io/badge/website-mesut.uk-0A66C2.svg)](https://mesut.uk/apps/codelens)
+[![Website](https://img.shields.io/badge/website-GitHub%20Pages-0A66C2.svg)](https://mesutcydev.github.io/ios-local-llm/)
 
 > Part of the **OnDevice** product line. Independent open-source project — not
 > affiliated with or endorsed by Apple Inc.

@@ -131,26 +131,29 @@
       "versions": [
         {
           "version": "3.2.6",
-          "buildVersion": "109",
-          "date": "2026-08-20T11:06:52Z",
+          "buildVersion": "110",
+          "date": "2026-08-20T11:33:58Z",
           "localizedDescription": "Sideload build with the local AI workbench, share extension, and full memory entitlements.",
-          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-109/IOSLocalLLM-3.2.6-109-sideload-entitled-full.ipa",
-          "size": 50407384,
-          "sha256": "75c430e5bc5abed96cc8f7babb4806ff74c6a700fc9f91914ce121f286814ecb",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-110/IOSLocalLLM-3.2.6-110-sideload-entitled-full.ipa",
+          "size": 50407702,
+          "sha256": "e8061facab5b957a98128e0fd341ad2b4bce90521f659381f6e31f73d6ac24ee",
           "minOSVersion": "18.0"
         }
       ],
       "appPermissions": {
         "entitlements": [
+          "com.apple.developer.icloud-container-identifiers",
+          "com.apple.developer.icloud-services",
           "com.apple.developer.kernel.extended-virtual-addressing",
-          "com.apple.developer.kernel.increased-memory-limit"
+          "com.apple.developer.kernel.increased-memory-limit",
+          "com.apple.security.application-groups"
         ],
         "privacy": {
-          "NSCameraUsageDescription": "iOS Local LLM uses the back camera to capture live video of your terminal or code editor for real-time analysis.",
-          "NSLocalNetworkUsageDescription": "iOS Local LLM can expose your on-device language model to computers on your local network when you enable the Local API Server.",
-          "NSMicrophoneUsageDescription": "iOS Local LLM uses the microphone for hold-to-talk dictation in the chat composer. Audio is transcribed on-device and never leaves your phone.",
-          "NSPhotoLibraryUsageDescription": "iOS Local LLM can analyze code from photos in your library.",
-          "NSSpeechRecognitionUsageDescription": "iOS Local LLM uses on-device speech recognition to convert your voice into text for the chat composer."
+          "NSCameraUsageDescription": "OnDevice LLM uses the back camera to capture live video of your terminal or code editor for real-time analysis.",
+          "NSLocalNetworkUsageDescription": "OnDevice LLM can expose your on-device language model to computers on your local network when you enable the Local API Server.",
+          "NSMicrophoneUsageDescription": "OnDevice LLM uses the microphone for hold-to-talk dictation in the chat composer. Audio is transcribed on-device and never leaves your phone.",
+          "NSPhotoLibraryUsageDescription": "OnDevice LLM can analyze code from photos in your library.",
+          "NSSpeechRecognitionUsageDescription": "OnDevice LLM uses on-device speech recognition to convert your voice into text for the chat composer."
         }
       }
     },

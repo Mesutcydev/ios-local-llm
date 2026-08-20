@@ -12,10 +12,10 @@ die() {
 }
 
 usage() {
-  echo "Usage: $0 /path/to/App.app [output.ipa] [entitlements.plist]" >&2
+  echo "Usage: $0 /path/to/App.app [output.ipa] [entitlements.plist] [extension-entitlements.plist]" >&2
 }
 
-[[ $# -ge 1 && $# -le 3 ]] || { usage; exit 2; }
+[[ $# -ge 1 && $# -le 4 ]] || { usage; exit 2; }
 
 app_path="$1"
 [[ -d "$app_path" ]] || die "app bundle not found: $app_path"
@@ -27,6 +27,14 @@ esac
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 entitlements_path="${3:-$script_dir/sideload_entitlements.plist}"
 [[ -f "$entitlements_path" ]] || die "entitlements plist not found: $entitlements_path"
+
+extension_entitlements_path=""
+if [[ $# -ge 4 ]]; then
+  extension_entitlements_path="$4"
+  [[ -f "$extension_entitlements_path" ]] || die "extension entitlements plist not found: $extension_entitlements_path"
+elif [[ -f "$script_dir/../IOSLocalLLMShareExtension/IOSLocalLLMShareExtension.entitlements" ]]; then
+  extension_entitlements_path="$script_dir/../IOSLocalLLMShareExtension/IOSLocalLLMShareExtension.entitlements"
+fi
 
 command -v codesign >/dev/null || die "codesign is required (run on macOS with Xcode tools)"
 command -v ditto >/dev/null || die "ditto is required (run on macOS)"
@@ -72,7 +80,11 @@ sign_nested() {
 
   while IFS= read -r -d '' target; do
     echo "Signing nested code: $target"
-    codesign --force --sign - --timestamp=none "$target"
+    if [[ -n "$extension_entitlements_path" ]]; then
+      codesign --force --sign - --timestamp=none --entitlements "$extension_entitlements_path" "$target"
+    else
+      codesign --force --sign - --timestamp=none "$target"
+    fi
   done < <(find "$staged_app" -type d -name '*.appex' -print0)
 }
 
@@ -89,6 +101,20 @@ plutil -lint "$entitlements_path" >/dev/null || die "requested entitlements are 
 plutil -convert binary1 -o "$work_dir/expected-entitlements.plist" "$entitlements_path"
 plutil -convert binary1 -o "$work_dir/actual-entitlements.plist.bin" "$actual_entitlements"
 cmp -s "$work_dir/expected-entitlements.plist" "$work_dir/actual-entitlements.plist.bin" || die "signed entitlements differ from the requested sideload entitlements"
+
+if [[ -n "$extension_entitlements_path" ]]; then
+  extension_count=0
+  while IFS= read -r -d '' extension_target; do
+    extension_count=$((extension_count + 1))
+    actual_extension_entitlements="$work_dir/actual-extension-entitlements-${extension_count}.plist"
+    codesign -d --entitlements :- "$extension_target" > "$actual_extension_entitlements" 2> /dev/null || die "could not extract share extension entitlements"
+    plutil -lint "$actual_extension_entitlements" >/dev/null || die "share extension entitlements are invalid"
+    plutil -convert binary1 -o "$work_dir/expected-extension-entitlements.plist" "$extension_entitlements_path"
+    plutil -convert binary1 -o "$work_dir/actual-extension-entitlements-${extension_count}.plist.bin" "$actual_extension_entitlements"
+    cmp -s "$work_dir/expected-extension-entitlements.plist" "$work_dir/actual-extension-entitlements-${extension_count}.plist.bin" || die "share extension entitlements differ from the requested extension entitlements"
+  done < <(find "$staged_app" -type d -name '*.appex' -print0)
+  [[ "$extension_count" -gt 0 ]] || die "extension entitlements were provided but no share extension was packaged"
+fi
 
 if [[ -n "$(find "$staged_app" -name embedded.mobileprovision -print -quit)" ]]; then
   die "profile unexpectedly appeared in the staged app"
@@ -113,4 +139,7 @@ echo "Created verified ad-hoc sideload IPA: $output_abs"
 echo "Bundle: $bundle_id"
 echo "Version: $version ($build_number)"
 echo "Signing: ad-hoc / installer re-sign required"
+if [[ -n "$extension_entitlements_path" ]]; then
+  echo "Extension entitlements: $extension_entitlements_path"
+fi
 echo "SHA256: $(shasum -a 256 "$output_abs" | awk '{print $1}')"
