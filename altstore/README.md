@@ -15,16 +15,21 @@ https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/main/altstore/source.
 
 The source currently lists:
 
-- **ForgeSign** — iOS 16 or newer, version 1.1 (build 2).
 - **On Device: LAS** — iOS 18 or newer, version 3.2.6 (build 143).
+- **ForgeSign** — iOS/iPadOS 16 or newer, version 2.1 (build 13).
 - **MacPair for iOS** — iOS 18 or newer, version 1.0.5 (build 6).
 - **OnDevice LLM** — iOS 18 or newer, version 3.2.6 (build 103).
 - **SiteAgent** — iOS 17 or newer, version 1.16 (build 2026080901).
-- **Core AI: LAS** — iOS 27 or newer, version 3.2.6 (build 138).
+- **Core AI: LAS** — iOS 27 or newer, version 3.2.6 (build 140).
+- **Hubr** — iOS 17 or newer, version 2.1 (build 6).
+- **Vamp Stream** — iPadOS 18 or newer, version 0.1.0 (build 12).
+- **Vamp Assistant** — iPadOS 18 or newer, version 0.1.33 (build 54).
+- **Bell Link** — iPadOS 17 or newer, version 1.1.0 (build 2026083101).
+- **Diffusion Forge** — iPadOS 26 or newer, version 1.0 (build 16).
 
-The OnDevice LLM IPA and the SiteAgent icon are hosted as assets
-on the current `ios-local-llm` sideload release. Bell Link is not listed because
-the available Bell Link artifact is a macOS app, not an iOS/iPadOS IPA.
+The latest seven-app sideload suite is hosted on the
+`sideload-suite-2026-08-31` GitHub release. Vamp Sync is the macOS host; its
+sideloadable iPad companion is listed as Vamp Stream.
 
 The Core AI build is intentionally hidden on older iOS versions through its
 `minOSVersion` value.
@@ -51,7 +56,8 @@ declared app permissions. It does not download or install an IPA.
    declared permissions before installation.
 5. Run the validator and merge the source update.
 
-Both current builds declare the increased-memory-limit and extended
-virtual-addressing entitlements. A signing workflow that removes either
-entitlement may cause AltStore's permission check to reject the app or may
-prevent larger local models from loading after installation.
+The current On Device: LAS and Core AI: LAS builds declare the
+increased-memory-limit and extended-virtual-addressing entitlements. A signing
+workflow that removes either entitlement may cause AltStore's permission check
+to reject the app or may prevent larger local models from loading after
+installation.

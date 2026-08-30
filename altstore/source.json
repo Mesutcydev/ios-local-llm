@@ -1,17 +1,17 @@
 {
   "name": "Mesutcydev Apps",
-  "subtitle": "On-device AI tools for iPhone",
-  "description": "A source for Mesutcydev's local-first iOS apps. These builds run supported AI workloads on the device and expose network access only through the app's explicit, authenticated features.",
+  "subtitle": "Local-first apps for iPhone and iPad",
+  "description": "A source for Mesutcydev's sideloadable iOS and iPadOS apps, including local AI, remote-control, media, and developer tools.",
   "iconURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/b751e7444ce198d323d25c44e7cf2a85b90a4f29/IOSLocalLLM/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
   "headerURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/59060017c4f8931950041f7e32382c5ca74bf60e/Docs/Images/ios-local-llm-spec-chart.png",
   "website": "https://mesutcydev.github.io/ios-local-llm/",
   "tintColor": "#5EEAD4",
   "featuredApps": [
+    "com.tvpad.app",
+    "com.mesutcy.remotedesktop.stream",
+    "com.beetcode.remote.ios",
     "com.forgesign.mobile",
-    "com.mesutcydev.ondevicelas",
-    "uk.mesut.screenharbor.ios",
-    "com.mesutcydev.ioslocalllm.IOSLocalLLM",
-    "uk.mesut.SiteAgent"
+    "com.mesutcydev.coreaiondevicelas"
   ],
   "apps": [
     {
@@ -76,6 +76,16 @@
         "https://raw.githubusercontent.com/Mesutcydev/ForgeSign-iOS/main/docs/screens/screenshot-library-dark.png"
       ],
       "versions": [
+        {
+          "version": "2.1",
+          "buildVersion": "13",
+          "date": "2026-08-30T21:35:47Z",
+          "localizedDescription": "Current unsigned sideload build with the latest signing and file-selection fixes.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-suite-2026-08-31/ForgeSign-2.1-fixed.ipa",
+          "size": 2262838,
+          "sha256": "4892eec9d476d7f4eb50a8395ac3b89c21365c81036e2d50073d3ff914a33bb3",
+          "minOSVersion": "16.0"
+        },
         {
           "version": "1.1",
           "buildVersion": "2",
@@ -212,6 +222,16 @@
       "versions": [
         {
           "version": "3.2.6",
+          "buildVersion": "140",
+          "date": "2026-08-30T20:51:08Z",
+          "localizedDescription": "Current Core AI sideload release with the authenticated local model server and required memory entitlements.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-suite-2026-08-31/CoreAIOnDeviceLAS-sideload-entitled-3.2.6-140.ipa",
+          "size": 4917900,
+          "sha256": "74c884bfe70f4b219710e26e31a5858ef564fe77691d7be75a406dbe2a00b80b",
+          "minOSVersion": "27.0"
+        },
+        {
+          "version": "3.2.6",
           "buildVersion": "138",
           "date": "2026-08-07T08:43:20Z",
           "localizedDescription": "Current Core AI sideload release.",
@@ -228,6 +248,162 @@
         ],
         "privacy": {
           "NSLocalNetworkUsageDescription": "Core AI: LAS exposes your selected on-device Core AI model to trusted computers on your local network."
+        }
+      }
+    },
+    {
+      "name": "Hubr",
+      "bundleIdentifier": "com.tvpad.app",
+      "developerName": "Mesutcydev",
+      "subtitle": "A smart TV remote with fast text entry.",
+      "localizedDescription": "Hubr discovers supported smart TVs on your local network and provides remote controls, pairing, text entry, and optional on-device voice dictation.",
+      "iconURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-suite-2026-08-31/Hubr-AppIcon-1024.png",
+      "tintColor": "#F97316",
+      "category": "utilities",
+      "screenshots": [],
+      "versions": [
+        {
+          "version": "2.1",
+          "buildVersion": "6",
+          "date": "2026-08-30T21:17:29Z",
+          "localizedDescription": "Current unsigned sideload build with the latest smart-TV text-entry fix.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-suite-2026-08-31/Hubr-2.1.6-TextEntryFix-Sideload.ipa",
+          "size": 1142648,
+          "sha256": "96f91667bcff73e3e304b4a676ab5467d51243ee3a98c15a28119c384c226864",
+          "minOSVersion": "17.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSLocalNetworkUsageDescription": "Hubr finds your smart TVs on your Wi-Fi to pair with them and send remote-control commands. Your video, audio, and account data never leave your home.",
+          "NSMicrophoneUsageDescription": "Hubr uses the microphone for voice dictation so you can type into TV apps like Netflix and YouTube by speaking instead of using the on-screen keyboard.",
+          "NSSpeechRecognitionUsageDescription": "Hubr transcribes your voice on-device so dictated text can be sent to the TV's text field. Audio never leaves your iPhone."
+        }
+      }
+    },
+    {
+      "name": "Vamp Stream",
+      "bundleIdentifier": "com.mesutcy.remotedesktop.stream",
+      "developerName": "Mesutcydev",
+      "subtitle": "The iPad streaming companion for Vamp Sync.",
+      "localizedDescription": "Vamp Stream connects an iPad to an approved Mac running Vamp Sync, Vamp Host, or Vamp Assistant for private local-network screen streaming and remote interaction.",
+      "iconURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-suite-2026-08-31/VampStream-AppIcon-1024.png",
+      "tintColor": "#7C3AED",
+      "category": "utilities",
+      "screenshots": [],
+      "versions": [
+        {
+          "version": "0.1.0",
+          "buildVersion": "12",
+          "date": "2026-08-29T11:54:40Z",
+          "localizedDescription": "Current unsigned AltStore build of the iPad streaming client for Vamp Sync.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-suite-2026-08-31/VampStream-iOS-0.1.0-build-12-altstore-unsigned.ipa",
+          "size": 15431112,
+          "sha256": "01b45f84135528f13b62095575dceb81460fea68f186dc5955385ecc3055674e",
+          "minOSVersion": "18.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSCameraUsageDescription": "Vamp Stream uses the camera to scan the private Vamp Assistant pairing QR code.",
+          "NSLocalNetworkUsageDescription": "Vamp Stream uses your local network to discover and connect to Macs running Vamp Host or Vamp Assistant."
+        }
+      }
+    },
+    {
+      "name": "Vamp Assistant",
+      "bundleIdentifier": "com.beetcode.remote.ios",
+      "developerName": "Mesutcydev",
+      "subtitle": "Your Mac assistant in your pocket.",
+      "localizedDescription": "Vamp Assistant pairs with an approved Mac so you can continue assistant sessions, control the pointer and keyboard, and use private LAN or Tailscale connectivity from iPhone or iPad.",
+      "iconURL": "https://raw.githubusercontent.com/Mesutcydev/vamp-assistant/main/App/Assets.xcassets/AppIcon.appiconset/icon_1024.png",
+      "tintColor": "#8B5CF6",
+      "category": "utilities",
+      "screenshots": [],
+      "versions": [
+        {
+          "version": "0.1.33",
+          "buildVersion": "54",
+          "date": "2026-08-30T21:02:42Z",
+          "localizedDescription": "Current unsigned iPhone and iPad companion build with secure Mac pairing and remote input.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-suite-2026-08-31/Vamp-Assistant-iOS-0.1.33-build-54-unsigned.ipa",
+          "size": 11072691,
+          "sha256": "a91dff3a6b0c13ca4aabb426b9ad3d42c9fefa93ade19134a9796366f92102e4",
+          "minOSVersion": "18.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSCameraUsageDescription": "Vamp Assistant scans the one-time pairing QR code shown by your Mac.",
+          "NSLocalNetworkUsageDescription": "Vamp Assistant connects to Vamp Assistant running on your trusted Mac.",
+          "NSMicrophoneUsageDescription": "Vamp Assistant can dictate text onto your Mac from the Control keyboard.",
+          "NSSpeechRecognitionUsageDescription": "Vamp Assistant turns on-device speech into keystrokes on your Mac."
+        }
+      }
+    },
+    {
+      "name": "Bell Link",
+      "bundleIdentifier": "uk.mesut.ApiChatLite",
+      "developerName": "Mesutcydev",
+      "subtitle": "A focused multi-provider AI chat client.",
+      "localizedDescription": "Bell Link is a lightweight chat client with provider selection, photo attachments, and optional voice dictation.",
+      "iconURL": "https://raw.githubusercontent.com/Mesutcydev/BellLink/main/BellLink/Assets.xcassets/AppIcon.appiconset/icon_512x512%402x.png",
+      "tintColor": "#2563EB",
+      "category": "utilities",
+      "screenshots": [],
+      "versions": [
+        {
+          "version": "1.1.0",
+          "buildVersion": "2026083101",
+          "date": "2026-08-30T22:10:37Z",
+          "localizedDescription": "Current unsigned sideload build with multi-provider chat, photo attachments, and voice dictation.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-suite-2026-08-31/BellLink-iOS-1.1.0-sideload.ipa",
+          "size": 7796851,
+          "sha256": "334389a78a9694f53d05b62be14585b7b79d83bafd5e7883674cbe2d62c1d5cd",
+          "minOSVersion": "17.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSCameraUsageDescription": "Bell Link can attach photos you take to a chat when you choose to use the camera.",
+          "NSMicrophoneUsageDescription": "Bell Link uses the microphone for optional voice dictation into the chat composer.",
+          "NSPhotoLibraryUsageDescription": "Bell Link lets you choose photos to attach to a chat.",
+          "NSSpeechRecognitionUsageDescription": "Bell Link uses speech recognition to turn your speech into text in the composer."
+        }
+      }
+    },
+    {
+      "name": "Diffusion Forge",
+      "bundleIdentifier": "org.example.IOSImageGeneration",
+      "developerName": "Mesutcydev",
+      "subtitle": "Generate images locally on iPhone and iPad.",
+      "localizedDescription": "Diffusion Forge is an on-device image-generation studio with local model downloads, text-to-image and image-to-image workflows, and photo-library export.",
+      "iconURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-suite-2026-08-31/DiffusionForge-AppIcon-1024.png",
+      "tintColor": "#EC4899",
+      "category": "photo-video",
+      "screenshots": [],
+      "versions": [
+        {
+          "version": "1.0",
+          "buildVersion": "16",
+          "date": "2026-08-30T21:39:12Z",
+          "localizedDescription": "Current unsigned sideload build for on-device image generation.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-suite-2026-08-31/IOSImageGeneration-1.0-16-unsigned-20260831-003910.ipa",
+          "size": 36560009,
+          "sha256": "b2750b0f51c4dc4608909682c281e8bb92c36011b0e35a3d667e2fe3bd5c8ac6",
+          "minOSVersion": "26.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSDocumentsFolderUsageDescription": "iOS Image Generation needs access to store downloaded models and generated images.",
+          "NSPhotoLibraryAddUsageDescription": "iOS Image Generation needs access to save generated images to your photo library.",
+          "NSPhotoLibraryUsageDescription": "iOS Image Generation needs access to your photo library for image-to-image generation."
         }
       }
     }
