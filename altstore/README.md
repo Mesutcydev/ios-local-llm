@@ -26,8 +26,9 @@ The source currently lists:
 - **Vamp Assistant** — iPadOS 18 or newer, version 0.1.33 (build 54).
 - **Bell Link** — iPadOS 17 or newer, version 1.1.0 (build 2026083101).
 - **Diffusion Forge** — iPadOS 26 or newer, version 1.0 (build 16).
+- **CompressKit** — iOS/iPadOS 18 or newer, unlocked version 1.4 (build 8).
 
-The latest seven-app sideload suite is hosted on the
+The latest eight-app sideload suite is hosted on the
 `sideload-suite-2026-08-31` GitHub release. Vamp Sync is the macOS host; its
 sideloadable iPad companion is listed as Vamp Stream.
 

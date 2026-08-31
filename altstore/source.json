@@ -406,6 +406,38 @@
           "NSPhotoLibraryUsageDescription": "iOS Image Generation needs access to your photo library for image-to-image generation."
         }
       }
+    },
+    {
+      "name": "CompressKit",
+      "bundleIdentifier": "com.compresskit.app",
+      "developerName": "Mesutcydev",
+      "subtitle": "Private on-device file compression and conversion.",
+      "localizedDescription": "CompressKit compresses and converts images, videos, audio, PDFs, and archives entirely on your device. This sideload build enables all Pro compression and conversion controls without StoreKit.",
+      "iconURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-suite-2026-08-31/icon1024.png",
+      "tintColor": "#FF6B35",
+      "category": "utilities",
+      "screenshots": [],
+      "versions": [
+        {
+          "version": "1.4",
+          "buildVersion": "8",
+          "date": "2026-08-03T09:39:35Z",
+          "localizedDescription": "Unsigned unlocked sideload build with all Pro features enabled and the CompressKit share extension included.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-suite-2026-08-31/CompressKit-1.4-8-Unsigned-Unlocked.ipa",
+          "size": 3777690,
+          "sha256": "e67ed2b5ae62d6ec45c69175697d88d09f33f53dff659c5f62c103da64cd9de3",
+          "minOSVersion": "18.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [
+          "com.apple.security.application-groups"
+        ],
+        "privacy": {
+          "NSPhotoLibraryAddUsageDescription": "CompressKit needs permission to save your compressed and converted files to your photo library.",
+          "NSPhotoLibraryUsageDescription": "CompressKit needs access to your photo library to import Live Photos and extract their video."
+        }
+      }
     }
   ],
   "news": []
