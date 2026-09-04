@@ -79,7 +79,7 @@
     {
       "name": "onnxruntime-objc",
       "SPDXID": "SPDXRef-Package-onnxruntime-objc",
-      "versionInfo": "1.23.0",
+      "versionInfo": "1.29.0",
       "downloadLocation": "https://cdn.cocoapods.org/",
       "filesAnalyzed": false,
       "licenseConcluded": "MIT",

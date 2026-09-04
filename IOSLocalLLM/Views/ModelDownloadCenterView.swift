@@ -380,7 +380,7 @@ struct ModelDownloadCenterView: View {
                         .foregroundColor(T.good)
                     VStack(alignment: .leading, spacing: 2) {
                         KMono(text: "privacy", size: 11, weight: .semibold, color: T.ink)
-                        Text("All models run 100% on-device after download. No data is sent to any server.")
+                        Text("Downloaded models run locally. Optional web search, private-cloud models, and paired tools use the network when you enable them.")
                             .font(T.sans(11))
                             .foregroundColor(T.ink2)
                             .fixedSize(horizontal: false, vertical: true)
@@ -627,7 +627,7 @@ struct ModelDownloadCard: View {
                 if isFailed {
                     // VLM gets an extra one-tap auto-find that probes every
                     // known FastVLM mirror and picks the first one alive.
-                    if model.supportsCategory(.vlm) {
+                    if model.id == FastVLMService.modelID {
                         Button {
                             Task { await runAutoDiscover() }
                         } label: {

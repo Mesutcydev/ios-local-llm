@@ -223,7 +223,7 @@ enum LegalDocuments {
     - **Heat** — your device will become warm, sometimes hot, during model loading and long replies. This is normal for sustained GPU/Neural-Engine work and is the same effect you'd see from a long gaming session or a long video-call.
     - **Battery drain** — battery percentage will drop faster than during normal use. Heavy daily use will also accelerate long-term battery wear, the same as other intensive apps.
     - **Background termination** — iOS may suspend or terminate the app to recover memory or thermal headroom, especially on older devices or when many apps are running.
-    - **Network usage** — only when you download a model. Downloads can be several gigabytes; use Wi-Fi.
+    - **Network usage** — model discovery and downloads, optional web search and iCloud sync, and enabled local-network integrations use a connection. Downloads can be several gigabytes; use Wi-Fi.
 
     ## What we do to protect your device
     - **Thermal-aware token caps** — when iOS reports the device is "warm," we shorten replies. When "hot," we pause generation and tell you.

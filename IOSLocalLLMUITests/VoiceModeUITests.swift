@@ -55,3 +55,72 @@ final class VoiceModeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["endButton"].waitForExistence(timeout: 8))
     }
 }
+
+
+final class ReleaseScreensUITests: XCTestCase {
+    override func setUpWithError() throws { continueAfterFailure = false }
+
+    private func launch(_ screen: String, large: Bool = false, dark: Bool = false) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = ["-releaseUITestMode"]
+        app.launchEnvironment["RELEASE_SCREEN"] = screen
+        app.launchEnvironment["RELEASE_LARGE"] = large ? "1" : "0"
+        app.launchEnvironment["RELEASE_DARK"] = dark ? "1" : "0"
+        app.launch()
+        return app
+    }
+
+    private func capture(_ app: XCUIApplication, _ name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
+        for _ in 0..<12 {
+            if element.exists && element.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(element.exists && element.isHittable)
+    }
+
+    func testFilterOnlySearchAndPreflight() {
+        let app = launch("search")
+        XCTAssertTrue(app.buttons["download"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Show model details"].exists)
+        capture(app, "search-light")
+        app.buttons["download"].tap()
+        XCTAssertTrue(app.navigationBars["Before downloading"].waitForExistence(timeout: 5))
+        capture(app, "download-preflight")
+        reveal(app.buttons["Download model"], in: app)
+        capture(app, "download-confirmation")
+    }
+
+    func testSearchWithLargeTextAndDarkAppearance() {
+        let app = launch("search", large: true, dark: true)
+        XCTAssertTrue(app.buttons["download"].waitForExistence(timeout: 10))
+        capture(app, "search-large-dark")
+        reveal(app.buttons["download"], in: app)
+        capture(app, "search-large-actions")
+    }
+
+    func testOnboardingHasReachableNext() {
+        let app = launch("onboarding", large: true)
+        XCTAssertTrue(app.buttons["onboarding.next"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["onboarding.next"].isHittable)
+        capture(app, "onboarding-large")
+        app.buttons["onboarding.next"].tap()
+        app.buttons["onboarding.next"].tap()
+        XCTAssertTrue(app.buttons["Chat"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["onboarding.install"].isHittable)
+        reveal(app.buttons["Chat"], in: app)
+        capture(app, "setup-goal-picker")
+    }
+
+    func testHomeScreenshot() {
+        let app = launch("home")
+        XCTAssertTrue(app.staticTexts["Studio"].waitForExistence(timeout: 5))
+        capture(app, "home-current")
+    }
+}

@@ -34,7 +34,7 @@ CocoaPods. Their source and license files are not copied into this repository.
 | MLX Swift (PrismML fork) | <https://github.com/PrismML-Eng/mlx-swift> | MIT |
 | MLX Swift LM | <https://github.com/ml-explore/mlx-swift-lm> | MIT |
 | swift-transformers-mlx | <https://github.com/DePasqualeOrg/swift-transformers-mlx> | MIT |
-| ONNX Runtime | <https://github.com/microsoft/onnxruntime> | MIT |
+| ONNX Runtime 1.29.0 | <https://github.com/microsoft/onnxruntime> | MIT |
 
 Transitive packages are recorded in `Package.resolved` and retain their own
 licenses in their source distributions. The source-distribution inventory is
@@ -57,3 +57,9 @@ The following are deliberately excluded from Git:
 
 Anyone redistributing a build is responsible for reviewing and satisfying the
 licenses of every model and binary they add.
+
+ONNX Runtime 1.29.0 is resolved from the official `onnxruntime-objc` and
+`onnxruntime-c` CocoaPods (Microsoft, MIT). The runtime environment disables
+optional POSIX telemetry before initialization with `ORT_DISABLE_TELEMETRY=1`.
+The upstream license from the resolved pod is preserved in
+[`LICENSES/ONNX-Runtime-MIT.txt`](LICENSES/ONNX-Runtime-MIT.txt).

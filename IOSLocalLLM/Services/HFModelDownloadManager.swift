@@ -87,6 +87,12 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
     // MARK: - Private
 
     private var downloadTask: Task<Void, Never>?
+    private var cleanupTask: Task<Void, Never>?
+    private var cleanupID: UUID?
+    private var cleanupError: Error?
+    private var isDeleting = false
+    private var generation = UUID()
+    private let fetchData: (URLRequest) async throws -> (Data, URLResponse)
 
     // MARK: - Init
 
@@ -94,20 +100,37 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         repoID: String,
         destination: URL,
         branch: String = "main",
-        fileAllowlist: [String]? = nil
+        fileAllowlist: [String]? = nil,
+        fetchData: @escaping (URLRequest) async throws -> (Data, URLResponse) = {
+            try await URLSession.shared.data(for: $0)
+        }
     ) {
         self.id          = repoID
         self.repoID      = repoID
         self.branch      = branch
         self.destination = destination
         self.fileAllowlist = fileAllowlist
+        self.fetchData = fetchData
     }
 
     // MARK: - Public API
 
     func start() {
-        guard !state.isActive else { return }
-        downloadTask = Task { await run() }
+        guard !state.isActive, !isDeleting else { return }
+        let pendingCleanup = cleanupTask
+        let runID = UUID()
+        generation = runID
+        // Claim the slot synchronously: two taps must not enqueue two runs.
+        state = .enumerating
+        downloadTask = Task {
+            await pendingCleanup?.value
+            guard !Task.isCancelled, generation == runID else { return }
+            if let cleanupError {
+                state = .failed(cleanupError.localizedDescription)
+                return
+            }
+            await run()
+        }
         NotificationCenter.default.post(
             name: .hfModelDownloadStarted,
             object: self,
@@ -115,61 +138,56 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         )
     }
 
-    /// Cancels the in-flight download task(s) WITHOUT touching files on disk.
-    /// Used by delete()/redownload(), which do their own file handling.
-    private func cancelDownloadTasks() {
-        downloadTask?.cancel()
-        downloadTask = nil
-        // Also cancel any in-flight URLSession download tasks
-        Task { @MainActor in
-            await BackgroundDownloadCoordinator.shared.cancelTasks(matching: destination.path)
-        }
-        if state.isActive { state = .idle }
-    }
-
     func cancel() {
-        downloadTask?.cancel()
+        generation = UUID()
+        let cancellationGeneration = generation
+        let identifier = UUID()
+        cleanupID = identifier
+        let previous = downloadTask
+        let previousCleanup = cleanupTask
+        previous?.cancel()
         downloadTask = nil
-        // Cancelling is a user-initiated ABANDON (the UI cancel buttons call
-        // this). A multi-file fetch leaves its already-completed files in
-        // `destination`; left behind, they sit forever as an .idle,
-        // never-ready model whose bytes the orphan sweep won't reclaim
-        // (required models are protected). Reclaim them once the tasks are
-        // truly cancelled — AFTER the await so we don't race a final move,
-        // and only this variant's tracked files (allowlist-safe), never a
-        // shared sibling's. Not followed by start(), so no redownload race.
-        Task { @MainActor in
-            await BackgroundDownloadCoordinator.shared.cancelTasks(matching: destination.path)
-            self.removeTrackedFiles()
+        cleanupTask = Task {
+            await previousCleanup?.value
+            // URLSession cancellation is scoped to the exact file task. Wait
+            // for its delegate/continuation and the old run before deleting.
+            await previous?.value
+            do {
+                try removeTrackedFiles()
+                cleanupError = nil
+            } catch {
+                cleanupError = error
+                if generation == cancellationGeneration { state = .failed(error.localizedDescription) }
+            }
+            if cleanupID == identifier { cleanupID = nil }
         }
         if state.isActive { state = .idle }
     }
 
-    func delete() throws {
-        cancelDownloadTasks()
-        // Allowlisted downloads share their destination root with sibling
-        // variants (KittenTTS Nano/Mini share VoiceModels/KittenTTS; the two
-        // Whisper models share HFModels/ggerganov_whisper.cpp). Removing the
-        // whole directory wiped the sibling too — only remove tracked paths,
-        // mirroring redownload().
-        if fileAllowlist != nil {
-            removeTrackedFiles()
-        } else if FileManager.default.fileExists(atPath: destination.path) {
+    /// Also used by callers that must wait before removing registry entries.
+    func waitForCleanup() async {
+        await cleanupTask?.value
+    }
+
+    func delete() async throws {
+        guard !isDeleting else {
+            throw CocoaError(.fileWriteUnknown, userInfo: [
+                NSLocalizedDescriptionKey: "A deletion is already in progress."
+            ])
+        }
+        isDeleting = true
+        defer { isDeleting = false }
+        cancel()
+        await waitForCleanup()
+        if let cleanupError { throw cleanupError }
+        if fileAllowlist == nil, FileManager.default.fileExists(atPath: destination.path) {
             try FileManager.default.removeItem(at: destination)
         }
         reset()
     }
 
-    /// Clears the files this downloader owns and starts a fresh fetch.
-    /// Used when the bytes on disk exist but failed a higher-level
-    /// validation step (for example a voice bundle whose files are present
-    /// but cannot be parsed). For allowlisted downloads we only remove the
-    /// tracked paths so sibling variants sharing the same destination root
-    /// survive.
     func redownload() {
-        cancelDownloadTasks()
-        removeTrackedFiles()
-        reset()
+        cancel()
         start()
     }
 
@@ -178,7 +196,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         // refreshAllStates() fires on every foreground transition, and without
         // this guard a partially-completed download would flip to .ready as
         // soon as the user backgrounds and returns to the app.
-        if state.isActive { return }
+        if state.isActive || cleanupID != nil || isDeleting { return }
 
         let fm = FileManager.default
         if let allowlist = fileAllowlist {
@@ -299,6 +317,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             // 1. List files from HF API (retried — the tree endpoint is
             //    rate-limited and 429s/5xxs under load like the LFS hosts).
             let allFiles = try await withRetries { try await self.fetchFileList() }
+            try Task.checkCancellation()
             let files: [HFFileMeta]
             if let allowlist = fileAllowlist {
                 files = allFiles.filter { f in
@@ -411,6 +430,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
                 alreadyDownloadedBytesSnapshot = downloadedBytes
 
                 _ = try await downloadFile(meta: meta, to: dest)
+                try Task.checkCancellation()
 
                 // Resync byte counter from disk so it survives reconnects.
                 if let attrs = try? FileManager.default.attributesOfItem(atPath: dest.path),
@@ -454,6 +474,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             // CancellationError — treat it the same so a Cancel tap doesn't
             // show a "Download failed" toast.
         } catch let authErr as HFAuthError {
+            guard !Task.isCancelled else { return }
             // Auth-specific failure: tag the kind so the catalog UI
             // can offer "Set Token" inline instead of a generic Retry.
             // Skip the failure toast in this case — the inline CTA
@@ -469,6 +490,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
                 reason: authErr.errorDescription ?? "Authentication required"
             )
         } catch {
+            guard !Task.isCancelled else { return }
             lastFailureKind = .generic
             state = .failed(error.localizedDescription)
             DownloadLiveActivityManager.shared.fail(repoID: repoID,
@@ -510,17 +532,16 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         request.timeoutInterval = 30
         HFTokenStore.authorize(&request)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await fetchData(request)
         guard let http = response as? HTTPURLResponse else {
             throw NSError(domain: "HFDownload", code: -1, userInfo: [
                 NSLocalizedDescriptionKey: "No HTTP response from huggingface.co"
             ])
         }
 
-        // Diagnostic — log the URL + first 200 chars of body on error
+        // Remote error bodies can contain account details; log only status.
         if http.statusCode != 200 {
-            let body = String(data: data.prefix(400), encoding: .utf8) ?? "<binary>"
-            print("[HFDownload] \(http.statusCode) for \(urlString)\n  body: \(body)")
+            print("[HFDownload] File listing failed with HTTP \(http.statusCode)")
         }
 
         guard http.statusCode == 200 else {
@@ -550,8 +571,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         }
 
         guard let raw = try? JSONSerialization.jsonObject(with: data) else {
-            let body = String(data: data.prefix(400), encoding: .utf8) ?? "<binary>"
-            print("[HFDownload] JSON parse failed for \(urlString)\n  body: \(body)")
+            print("[HFDownload] File listing JSON could not be decoded")
             throw NSError(domain: "HFDownload", code: -2, userInfo: [
                 NSLocalizedDescriptionKey: "Could not parse file tree from huggingface.co"
             ])
@@ -567,8 +587,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         } else if let dict = raw as? [String: Any], let siblings = dict["siblings"] as? [[String: Any]] {
             json = siblings    // /api/models/{repo} returns "siblings" with {rfilename}
         } else {
-            let preview = String(data: data.prefix(200), encoding: .utf8) ?? ""
-            print("[HFDownload] Unexpected JSON shape from \(urlString)\n  preview: \(preview)")
+            print("[HFDownload] Unexpected file listing JSON shape")
             throw NSError(domain: "HFDownload", code: -3, userInfo: [
                 NSLocalizedDescriptionKey: "Unexpected response shape from huggingface.co"
             ])
@@ -717,7 +736,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         request.setValue("ios-local-llm/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         HFTokenStore.authorize(&request)
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await fetchData(request)
         guard let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let siblings = dict["siblings"] as? [[String: Any]] else { return [] }
         var blobs: [HFFileMeta] = []
@@ -747,7 +766,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         request.timeoutInterval = 15
         HFTokenStore.authorize(&request)
         do {
-            let (_, response) = try await URLSession.shared.data(for: request)
+            let (_, response) = try await fetchData(request)
             guard let http = response as? HTTPURLResponse,
                   http.statusCode == 200 else { return nil }
             if let len = http.value(forHTTPHeaderField: "Content-Length"),
@@ -783,6 +802,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         }
 
         let snapshot = alreadyDownloadedBytesSnapshot
+        let runID = generation
 
         // Retry transient failures (dropped connection, timeout, 5xx, 429)
         // with exponential backoff + jitter (Retry-After honored when the
@@ -794,13 +814,14 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         var attempt = 0
         while true {
             do {
+                try Task.checkCancellation()
                 _ = try await BackgroundDownloadCoordinator.shared.download(
                     from: url,
                     to: destination,
                     expectedSize: meta.size
                 ) { [weak self] received, _ in
                     Task { @MainActor [weak self] in
-                        guard let self else { return }
+                        guard let self, self.generation == runID else { return }
                         self.downloadedBytes = snapshot + received
                         if self.totalBytes > 0 {
                             self.progress = Double(self.downloadedBytes) / Double(self.totalBytes)
@@ -964,13 +985,13 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         return size == meta.size
     }
 
-    private func removeTrackedFiles() {
+    private func removeTrackedFiles() throws {
         let fm = FileManager.default
         if let allowlist = fileAllowlist {
             for rule in allowlist {
                 let url = destination.appendingPathComponent(rule)
                 if fm.fileExists(atPath: url.path) {
-                    try? fm.removeItem(at: url)
+                    try fm.removeItem(at: url)
                 }
                 // Prune now-empty intermediate dirs up from THIS file's parent
                 // (e.g. `nano/foo.mlmodelc/` → `nano/`) — but never the shared
@@ -980,7 +1001,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             return
         }
         if fm.fileExists(atPath: destination.path) {
-            try? fm.removeItem(at: destination)
+            try fm.removeItem(at: destination)
         }
     }
 

@@ -12,7 +12,9 @@ struct IOSLocalLLMApp: App {
     var body: some Scene {
         WindowGroup {
             #if DEBUG
-            if VoiceUITestLaunch.isActive {
+            if ProcessInfo.processInfo.arguments.contains("-releaseUITestMode") {
+                ReleaseUITestFixtureView()
+            } else if VoiceUITestLaunch.isActive {
                 VoiceUITestFixtureView()
                     .koduTheme(KoduTheme.make(
                         appearance: settings.appearance,

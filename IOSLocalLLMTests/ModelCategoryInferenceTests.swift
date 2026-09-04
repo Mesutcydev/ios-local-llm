@@ -465,3 +465,82 @@ final class ModelCategoryInferenceTests: XCTestCase {
         }
     }
 }
+
+
+@MainActor
+final class HFSearchReleaseTests: XCTestCase {
+    private func response(_ name: String) -> (Data, URLResponse) {
+        (Data("[{\"id\":\"test/\(name)\"}]".utf8),
+         HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: 200,
+                         httpVersion: nil, headerFields: nil)!)
+    }
+
+    func testOlderResponseCannotReplaceNewerResults() async {
+        var pending: [String: CheckedContinuation<(Data, URLResponse), Error>] = [:]
+        let service = HFSearchService { request in
+            let query = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)!
+                .queryItems!.first { $0.name == "search" }!.value!
+            return try await withCheckedThrowingContinuation { pending[query] = $0 }
+        }
+        let first = Task { await service.search(query: "old") }
+        while pending["old"] == nil { await Task.yield() }
+        let second = Task { await service.search(query: "new") }
+        while pending["new"] == nil { await Task.yield() }
+        pending.removeValue(forKey: "new")!.resume(returning: response("new"))
+        await second.value
+        pending.removeValue(forKey: "old")!.resume(returning: response("old"))
+        await first.value
+        XCTAssertEqual(service.results.map(\.id), ["test/new"])
+        XCTAssertEqual(service.lastQuery, "new")
+        XCTAssertFalse(service.isSearching)
+    }
+
+    func testOlderFailureDoesNotStopNewerSearch() async {
+        var pending: [String: CheckedContinuation<(Data, URLResponse), Error>] = [:]
+        let service = HFSearchService { request in
+            let query = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)!
+                .queryItems!.first { $0.name == "search" }!.value!
+            return try await withCheckedThrowingContinuation { pending[query] = $0 }
+        }
+        let first = Task { await service.search(query: "old") }
+        while pending["old"] == nil { await Task.yield() }
+        let second = Task { await service.search(query: "new") }
+        while pending["new"] == nil { await Task.yield() }
+        pending.removeValue(forKey: "old")!.resume(throwing: URLError(.timedOut))
+        await first.value
+        XCTAssertTrue(service.isSearching)
+        XCTAssertNil(service.lastError)
+        pending.removeValue(forKey: "new")!.resume(returning: response("new"))
+        await second.value
+        XCTAssertEqual(service.results.map(\.id), ["test/new"])
+        XCTAssertFalse(service.isSearching)
+    }
+
+    func testClearingQueryInvalidatesPendingResponse() async {
+        var pending: CheckedContinuation<(Data, URLResponse), Error>?
+        let service = HFSearchService { _ in
+            try await withCheckedThrowingContinuation { pending = $0 }
+        }
+        let first = Task { await service.search(query: "old") }
+        while pending == nil { await Task.yield() }
+        await service.search(query: "  ")
+        XCTAssertFalse(service.isSearching)
+        pending!.resume(returning: response("old"))
+        await first.value
+        XCTAssertTrue(service.results.isEmpty)
+        XCTAssertNil(service.lastError)
+    }
+
+    func testCancellationDoesNotShowSearchFailure() async {
+        let service = HFSearchService { _ in throw URLError(.cancelled) }
+        await service.search(query: "test")
+        XCTAssertNil(service.lastError)
+        XCTAssertFalse(service.isSearching)
+    }
+
+    func testFilterOnlySearchReturnsModels() async {
+        let service = HFSearchService { _ in self.response("model") }
+        await service.search(query: "", filter: .mlx)
+        XCTAssertEqual(service.results.map(\.id), ["test/model"])
+    }
+}

@@ -19,6 +19,7 @@ Automated, repeatable checks currently include:
 | VoiceAgentOrb package | `swift test --package-path Packages/VoiceAgentOrb` | macOS CI |
 | XcodeGen consistency | `xcodegen generate` followed by a clean diff | macOS |
 | App workspace build | `xcodebuild build -workspace IOSLocalLLM.xcworkspace -scheme IOSLocalLLM -destination 'platform=iOS Simulator,name=iPhone 17'` | iPhone 17 simulator, iOS 27 |
+| App tests and Release compile gate | `./scripts/validate_app_release.sh` | macOS CI or local Xcode; installed iPhone Simulator |
 | App unit and UI tests | `xcodebuild test -workspace IOSLocalLLM.xcworkspace -scheme IOSLocalLLM -destination 'platform=iOS Simulator,name=iPhone 17'` | iPhone 17 simulator, iOS 27 |
 
 On 29 July 2026, the open-source workspace built successfully and the
@@ -31,6 +32,19 @@ physical-device validation requirement.
 Do not pass `CODE_SIGNING_ALLOWED=NO` to the test command. Simulator tests are
 ad-hoc signed without a paid developer account, and the Keychain-backed
 pairing and credential-wipe tests require the resulting Keychain entitlement.
+
+The release gate requires the native frameworks, XcodeGen project, and locked
+CocoaPods installation described in `SETUP_INSTRUCTIONS.md`. Set
+`DEVELOPER_DIR` to a full Xcode installation if Command Line Tools is selected.
+`AUDIT_SIMULATOR_ID` and `AUDIT_DERIVED_DATA` optionally select the Simulator
+and build directory. The script runs the full app unit/UI suite, then a generic
+iOS Simulator Release build. The `app-release` CI job builds native dependencies
+from pinned submodules first. Runtime tests that require staged model weights
+can skip; a passing CI job does not satisfy the physical-device matrix.
+
+Deterministic `ReleaseScreensUITests` attach screenshots of the actual search,
+installation preflight, onboarding, and Home views. Search metadata is synthetic
+and no model is downloaded. Attachments are retained in the test `.xcresult`.
 
 ## Required physical-device matrix
 

@@ -145,6 +145,19 @@ final class Diagnostics: @unchecked Sendable {
     /// Full text bundle for the share sheet — environment header + trail.
     func exportText() -> String {
         var out = SystemSnapshot.header()
+        out += """
+
+
+        === RELEASE VALIDATION ===
+        This export contains diagnostics, not a test certification.
+        Load / generate / cancel / switch / unload: not recorded
+        Memory-pressure recovery: not recorded
+        Thermal escalation and cooldown: not recorded
+        Background cleanup: not recorded
+        VoiceOver and largest Dynamic Type: not recorded
+        Record device, OS, app build, model, procedure, and result when testing.
+        Simulator results do not validate physical-device thermals or Metal residency.
+        """
         if let c = CrashReporter.shared.lastCrash {
             out += "\n\n=== LAST CRASH ===\n\(c.kind): \(c.detail)"
             if !c.trail.isEmpty {

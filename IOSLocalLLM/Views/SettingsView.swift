@@ -206,7 +206,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(loc.t("On-device & private"))
                     .font(T.sans(17, .bold)).foregroundColor(T.ink)
-                Text(loc.t("No account. Your data never leaves this iPhone."))
+                Text(loc.t("No account required for local models. Network features are optional."))
                     .font(T.sans(13)).foregroundColor(T.ink2)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -274,6 +274,7 @@ struct SettingsView: View {
                     thermalProtectionSection
                     developerSection
                 case .privacyLegal:
+                    CloudSyncSettingsSection()
                     privacyResetSection
                     legalSection
                 }
@@ -1624,7 +1625,7 @@ struct SettingsView: View {
                 ("framework", "core ml · mlx swift · vision"),
                 ("runtime",   "mlx-swift-examples 2.21"),
                 ("ios",       "18.0+"),
-                ("privacy",   "100% on-device"),
+                ("privacy",   "Local by default"),
             ], keyWidth: 80)
         }
         .padding(.horizontal, 16)
@@ -1861,5 +1862,32 @@ private struct WhisperSTTBlock: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
+    }
+}
+
+
+private struct CloudSyncSettingsSection: View {
+    @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var sync = CloudSyncService.shared
+
+    var body: some View {
+        KSection(title: "optional_icloud_sync") {
+            VStack(alignment: .leading, spacing: 12) {
+                Toggle("Enable iCloud conversation sync", isOn: $settings.iCloudSyncEnabled)
+                Text("When enabled, Sync Now uploads conversation history to your private iCloud database and merges it with your other devices. Turning this off stops new sync work; it does not delete copies already in iCloud.")
+                    .font(.footnote)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let date = sync.lastSyncAt {
+                    Text("Last successful sync: \(date.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.footnote)
+                } else {
+                    Text("No successful sync in this session").font(.footnote)
+                }
+                if let error = sync.lastError { Text(error).foregroundStyle(.red).font(.footnote) }
+                Button(sync.isSyncing ? "Syncing…" : "Sync Now") { Task { await sync.syncNow() } }
+                    .disabled(!settings.iCloudSyncEnabled || sync.isSyncing)
+            }
+            .padding(14)
+        }
     }
 }

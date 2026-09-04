@@ -1,7 +1,8 @@
 # Release verification
 
-Official releases contain source only. They do not contain an App Store build,
-signed IPA, generated native framework, or model weights.
+Version tags (`v*`) publish source-only archives. Separate `sideload-*` releases
+may publish ad-hoc device IPAs for installer re-signing. Source archives never
+contain signed apps, generated frameworks, or model weights.
 
 Starting with `v3.2.6`, the `Source release` GitHub Actions workflow creates a
 reproducible source archive from the tagged commit, publishes its SHA-256
@@ -36,3 +37,30 @@ The attestation proves the workflow identity and artifact digest. It does not
 change the licenses of the source, dependencies, or separately downloaded
 models. Review `LICENSE`, `THIRD_PARTY_NOTICES.md`, and `PROVENANCE.md` before
 redistribution.
+
+## Sideload IPA verification
+
+The current OnDevice LLM build is **3.2.7 (111)**, published separately under
+`sideload-3.2.7-111`. Download the IPA, its `.sha256` file, and verification JSON
+from that release. Run `shasum -a 256 --check` on the checksum file in the same
+directory as the IPA.
+
+The ZIP contains `Payload/IOSLocalLLM.app`, an arm64 iPhoneOS executable, its
+embedded native frameworks, and `PlugIns/IOSLocalLLMShareExtension.appex`.
+The app and extension versions match. The ad-hoc signatures retain the source
+entitlement dictionaries; the package has no embedded provisioning profile.
+The iOS 27 SDK build includes the Private Cloud Compute entitlement alongside
+App Groups, CloudKit, increased memory, and extended virtual addressing.
+
+An ad-hoc signature is not an Apple installation authorization. The installer
+must supply its own team signature and provisioning. App Groups, iCloud,
+Private Cloud Compute, and memory capabilities need authorization from that
+profile; preserving the entitlement keys in this download does not grant them
+to an unsupported signing account. Check the installed app's entitlements if
+your installer changes or strips capabilities.
+
+No model weights are included. `ThirdPartyNotices.txt` inside the app preserves
+licenses from the resolved native and Swift dependencies. The attached source
+audit records Simulator tests and build checks; physical-device inference,
+thermal/battery behavior, live iCloud, and audio comparisons are not certified
+by packaging verification.

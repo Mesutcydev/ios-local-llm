@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 // MARK: - HFSearchService
 // Queries the public Hugging Face Hub search API for models.
@@ -18,6 +19,15 @@ final class HFSearchService: ObservableObject {
     @Published private(set) var isSearching = false
     @Published private(set) var lastError: String?
     @Published private(set) var lastQuery: String = ""
+
+    private var activeSearchID = UUID()
+    private let fetch: (URLRequest) async throws -> (Data, URLResponse)
+
+    init(fetch: @escaping (URLRequest) async throws -> (Data, URLResponse) = {
+        try await URLSession.shared.data(for: $0)
+    }) {
+        self.fetch = fetch
+    }
 
     // MARK: - Filter options
 
@@ -50,20 +60,25 @@ final class HFSearchService: ObservableObject {
     // MARK: - Search
 
     func search(query: String, filter: Filter = .all, limit: Int = 30) async {
+        let searchID = UUID()
+        activeSearchID = searchID
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        lastError = nil
+        lastQuery = trimmed
         // Allow filter-only browsing (empty query) when the caller has picked
         // a non-.all filter — that's how the download manager's "browse visual
         // models" / "browse audio models" landing pages populate without
         // forcing the user to type a keyword first.
         if trimmed.isEmpty && filter.hfFilters.isEmpty {
             results = []
+            isSearching = false
             return
         }
 
         isSearching = true
-        defer { isSearching = false }
-        lastError  = nil
-        lastQuery  = trimmed
+        defer {
+            if activeSearchID == searchID { isSearching = false }
+        }
 
         do {
             var components = URLComponents(string: "https://huggingface.co/api/models")!
@@ -87,7 +102,9 @@ final class HFSearchService: ObservableObject {
             // Attach HF token when present + enabled — lets the user
             // discover gated repos they have access to.
             HFTokenStore.authorize(&request)
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await fetch(request)
+            guard activeSearchID == searchID else { return }
+            try Task.checkCancellation()
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
                 throw URLError(.badServerResponse)
             }
@@ -96,6 +113,10 @@ final class HFSearchService: ObservableObject {
             results = raw.map(HFModelSummary.init(json:))
 
         } catch {
+            guard activeSearchID == searchID else { return }
+            // Typing another query or closing search is not a network failure.
+            guard !Task.isCancelled, !(error is CancellationError),
+                  (error as? URLError)?.code != .cancelled else { return }
             lastError = error.localizedDescription
             results = []
         }

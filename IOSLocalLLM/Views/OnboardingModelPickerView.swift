@@ -2,33 +2,15 @@ import SwiftUI
 import Combine
 
 // MARK: - OnboardingModelPickerView
-//
-// Final step of the onboarding flow: ask the user to pick one assistant
-// LLM and one visual VLM before they reach the main app. This avoids
-// the previous "land on home tab, see a download going, wonder what's
-// happening" pattern.
-//
-// Two-section layout matches the Choose-a-Model reference:
-//   • Assistant — text-only OR multimodal both qualify. We curate 3
-//     options across small/medium/large so the user can pick by
-//     device class.
-//   • Visual — ONLY multimodal models. Pre-filtering at the source
-//     means the user CAN'T pick a text-only model in this slot (the
-//     filter is structural, not a runtime warning).
-//
-// Each card carries a vendor thumb, capability pills, and a clear
-// pick (radio). Selecting both unlocks the primary CTA which kicks
-// off the downloads and dismisses onboarding.
-//
-// Skip leaves AppSettings on its tier-appropriate defaults — the
-// home tab still works because BundledVLMInstaller pre-installs
-// SmolVLM2 GGUF and the assistant picks a tier-fitting default
-// via DeviceTierAdvisor.
+
+// Choose a goal, then download a compatible model for that goal. Source-only
+// installs contain no weights; Skip leaves setup available from Models.
 
 struct OnboardingModelPickerView: View {
 
     @ObservedObject private var settings = AppSettings.shared
     @ObservedObject private var center   = ModelDownloadCenter.shared
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.koduTheme) private var T
 
     /// Called by the parent OnboardingView when the user finishes
@@ -47,10 +29,14 @@ struct OnboardingModelPickerView: View {
     @State private var pickedVisualRepoID: String = "ggml-org/SmolVLM2-500M-Video-Instruct-GGUF"
 
     /// Onboarding splits into the model picker and a download gate. The gate
-    /// blocks entry until both picks finish downloading — but with a Skip so a
+    /// waits for the selected goal's model to finish downloading — but with a Skip so a
     /// flaky network can never lock a first launch out of the app.
     private enum Phase { case picking, downloading }
     @State private var phase: Phase = .picking
+    private enum Goal: String, CaseIterable { case chat = "Chat", lens = "Lens", voice = "Voice" }
+    @State private var goal: Goal = .chat
+    private var needsAssistant: Bool { goal != .lens }
+    private var needsVision: Bool { goal == .lens }
     /// Bumped by a 0.5s timer while downloading so progress bars re-render and
     /// the completion/failure checks run (download progress lives on the
     /// downloader, which doesn't republish `center.models`).
@@ -139,8 +125,8 @@ struct OnboardingModelPickerView: View {
         VisualPick(
             id: "ggml-org/SmolVLM2-500M-Video-Instruct-GGUF",
             displayName: "SmolVLM 2 500M",
-            summary: "Tiny, fast multimodal. Already bundled — no download needed.",
-            sizeLabel: "bundled",
+            summary: "A compact vision model. Download once, then use it offline.",
+            sizeLabel: "~520 MB",
             vendor: .huggingFace,
             capabilities: [.vision, .recommended]
         ),
@@ -168,9 +154,17 @@ struct OnboardingModelPickerView: View {
         ScrollView {
             VStack(spacing: 24) {
                 heroBlock
-                assistantSection
-                visualSection
-                Color.clear.frame(height: 100)   // breathing room under CTA bar
+                Picker("Start with", selection: $goal) {
+                    ForEach(Goal.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                if needsAssistant { assistantSection }
+                if needsVision { visualSection }
+                if goal == .voice {
+                    Text("Start with an assistant model. The Voice tab guides you through speech-model downloads and microphone permission when you are ready.")
+                        .font(T.sans(14))
+                }
+                Color.clear.frame(height: 16)
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
@@ -183,7 +177,7 @@ struct OnboardingModelPickerView: View {
             // copy (the top of a tall gate sits in the transparent zone).
             if phase == .downloading { gateOverlay }
         }
-        .overlay(alignment: .bottom) {
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             if phase == .picking { ctaBar }
         }
         .onReceive(Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()) { _ in
@@ -234,7 +228,7 @@ struct OnboardingModelPickerView: View {
                     .font(T.display(26, .semibold))
                     .tracking(-0.5)
                     .foregroundColor(T.ink)
-                Text("Pick one assistant and one vision model. Both run entirely on your device — no servers, no API keys.")
+                Text("Choose what you want to try first. Download only the model you need now; add the others later in Models.")
                     .font(T.sans(13.5))
                     .foregroundColor(T.ink2)
                     .multilineTextAlignment(.center)
@@ -277,6 +271,7 @@ struct OnboardingModelPickerView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
                 KCaption(text: eyebrow)
+                    .fixedSize(horizontal: true, vertical: false)
                 Rectangle().fill(T.rule).frame(height: 1)
             }
             Text(title)
@@ -347,14 +342,19 @@ struct OnboardingModelPickerView: View {
     ) -> some View {
         Button(action: action) {
             HStack(alignment: .top, spacing: 12) {
-                KVendorThumb(vendor: vendor, size: .card)
+                if !dynamicTypeSize.isAccessibilitySize {
+                    KVendorThumb(vendor: vendor, size: .card)
+                }
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    let titleLayout = dynamicTypeSize.isAccessibilitySize
+                        ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
+                        : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 6))
+                    titleLayout {
                         Text(title)
                             .font(T.display(15, .semibold))
                             .tracking(-0.2)
                             .foregroundColor(T.ink)
-                            .lineLimit(1)
+                            .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 0)
                         Text(sizeLabel)
                             .font(T.mono(9.5, .semibold))
@@ -388,6 +388,7 @@ struct OnboardingModelPickerView: View {
                     radius: 10, y: 3)
         }
         .buttonStyle(.plain)
+        .accessibilityValue(selected ? "Selected" : "Not selected")
         .animation(.spring(response: 0.25, dampingFraction: 0.85), value: selected)
     }
 
@@ -442,30 +443,29 @@ struct OnboardingModelPickerView: View {
 
     private var ctaBar: some View {
         VStack(spacing: 6) {
-            KPrimaryButton(
-                label: ctaLabel,
-                systemImage: needsAnyDownload ? "arrow.down.circle" : "arrow.right",
-                trailing: nil
-            ) {
-                commit()
+            Button(action: commit) {
+                Label(needsAnyDownload ? "Download model" : "Continue",
+                      systemImage: needsAnyDownload ? "arrow.down.circle" : "arrow.right")
+                    .font(T.sans(16, .semibold))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .padding(12)
+                    .foregroundStyle(T.bg)
+                    .background(T.ink, in: RoundedRectangle(cornerRadius: 12))
             }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("onboarding.install")
             .padding(.horizontal, 16)
         }
         .padding(.top, 12)
         .padding(.bottom, 14)
-        .background(
-            LinearGradient(colors: [T.bg.opacity(0), T.bg, T.bg],
-                           startPoint: .top, endPoint: .bottom)
-        )
+        .background(T.bg)
     }
 
     // MARK: - Download gate
     //
-    // Shown after the user taps Download & Continue when either pick still
-    // needs downloading. Blocks entry until both finish — but with a Skip so a
-    // slow / offline first launch can't lock the user out (camera works from
-    // the bundled models regardless; the picks just keep downloading in the
-    // background after Skip).
+    // Downloads can continue after Skip. A source-only install still needs
+    // compatible weights before running inference.
 
     private var assistantDLModel: DownloadableModel? {
         center.models.first { $0.id == pickedAssistantID }
@@ -475,8 +475,8 @@ struct OnboardingModelPickerView: View {
     }
     /// "Settled" = on disk, OR no catalog entry to track (so we never hang the
     /// gate waiting on something that can't report readiness).
-    private var assistantSettled: Bool { assistantDLModel.map { $0.isReady } ?? true }
-    private var visualSettled: Bool { visualDLModel.map { $0.isReady } ?? true }
+    private var assistantSettled: Bool { !needsAssistant || (assistantDLModel.map { $0.isReady } ?? false) }
+    private var visualSettled: Bool { !needsVision || (visualDLModel.map { $0.isReady } ?? false) }
 
     private func isFailed(_ m: DownloadableModel?) -> Bool {
         guard let s = m?.state else { return false }
@@ -484,7 +484,7 @@ struct OnboardingModelPickerView: View {
         return false
     }
     private var anyDownloadFailed: Bool {
-        isFailed(assistantDLModel) || isFailed(visualDLModel)
+        (needsAssistant && (assistantDLModel == nil || isFailed(assistantDLModel))) || (needsVision && (visualDLModel == nil || isFailed(visualDLModel)))
     }
 
     /// Full-screen blocking overlay for the download phase: a dimming scrim
@@ -506,7 +506,7 @@ struct OnboardingModelPickerView: View {
                 Text("Setting up your models")
                     .font(T.display(17, .semibold))
                     .foregroundColor(T.ink)
-                Text("Downloading your picks so everything runs on-device. One-time setup — it works offline afterwards. The camera already works from the built-in model; you can Skip and your picks keep downloading in the background (track them in the Models tab).")
+                Text("Your selected model is downloading for offline use. You can continue to the app and track progress in Models.")
                     .font(T.sans(11.5))
                     .foregroundColor(T.ink2)
                     .multilineTextAlignment(.center)
@@ -515,8 +515,8 @@ struct OnboardingModelPickerView: View {
             }
 
             VStack(spacing: 10) {
-                gateProgressRow(label: "Assistant", model: assistantDLModel, settled: assistantSettled)
-                gateProgressRow(label: "Vision", model: visualDLModel, settled: visualSettled)
+                if needsAssistant { gateProgressRow(label: "Assistant", model: assistantDLModel, settled: assistantSettled) }
+                if needsVision { gateProgressRow(label: "Vision", model: visualDLModel, settled: visualSettled) }
             }
 
             if anyDownloadFailed {
@@ -601,16 +601,9 @@ struct OnboardingModelPickerView: View {
     }
 
     private func retryDownloads() {
-        if let a = assistantDLModel, !a.isReady { a.start() }
-        if let v = visualDLModel, !v.isReady { v.start() }
+        if needsAssistant, let a = assistantDLModel, !a.isReady { a.start() }
+        if needsVision, let v = visualDLModel, !v.isReady { v.start() }
         HapticManager.impact(.light)
-    }
-
-    private var ctaLabel: String {
-        if needsAnyDownload {
-            return "Download & Continue · \(downloadSizeLabel)"
-        }
-        return "Continue"
     }
 
     /// True iff at least one picked model isn't already on disk.
@@ -619,44 +612,10 @@ struct OnboardingModelPickerView: View {
     }
 
     private var pickedAssistantIsReady: Bool {
-        center.models.first(where: { $0.id == pickedAssistantID })?.isReady ?? false
+        !needsAssistant || (center.models.first(where: { $0.id == pickedAssistantID })?.isReady ?? false)
     }
     private var pickedVisualIsReady: Bool {
-        center.models.first(where: { $0.id == pickedVisualRepoID })?.isReady ?? false
-    }
-
-    /// Combined download-size label for the CTA. Sums only the picks
-    /// that aren't already on disk.
-    private var downloadSizeLabel: String {
-        var total: Double = 0
-        if !pickedAssistantIsReady,
-           let pick = assistantPicks.first(where: { $0.id == pickedAssistantID }) {
-            total += approxGB(from: pick.sizeLabel)
-        }
-        if !pickedVisualIsReady,
-           let pick = visualPicks.first(where: { $0.id == pickedVisualRepoID }) {
-            total += approxGB(from: pick.sizeLabel)
-        }
-        if total <= 0 { return "ready" }
-        if total < 1 { return String(format: "≈%d MB", Int(total * 1024)) }
-        return String(format: "≈%.1f GB", total)
-    }
-
-    /// Lossy parse of a "~1.7 GB" / "~520 MB" / "bundled" label.
-    /// Returns 0 for "bundled" / "ready" / unparseable strings.
-    private func approxGB(from label: String) -> Double {
-        let cleaned = label
-            .lowercased()
-            .replacingOccurrences(of: "~", with: "")
-            .replacingOccurrences(of: "≈", with: "")
-            .trimmingCharacters(in: .whitespaces)
-        if cleaned.contains("bundled") || cleaned.contains("ready") { return 0 }
-        // Split numeric prefix
-        let parts = cleaned.split(separator: " ", maxSplits: 1)
-        guard let num = parts.first.flatMap({ Double($0) }) else { return 0 }
-        if cleaned.contains("mb") { return num / 1024.0 }
-        if cleaned.contains("gb") { return num }
-        return 0
+        !needsVision || (center.models.first(where: { $0.id == pickedVisualRepoID })?.isReady ?? false)
     }
 
     // MARK: - Commit
@@ -666,26 +625,30 @@ struct OnboardingModelPickerView: View {
     /// where the Models tab Installing section surfaces progress.
     private func commit() {
         // Save assistant pick.
-        settings.assistantModelID = pickedAssistantID
-        settings.hasPickedAssistantModel = true
+        if needsAssistant {
+            settings.assistantModelID = pickedAssistantID
+            settings.hasPickedAssistantModel = true
+        }
 
         // Save visual pick — written as the camera-visual repo ID so
         // the lens tab picks it up without further plumbing.
-        LocalModelRegistry.setVisionSelection(pickedVisualRepoID, settings: settings)
-        settings.hasPickedCameraVisualModel = true
+        if needsVision {
+            LocalModelRegistry.setVisionSelection(pickedVisualRepoID, settings: settings)
+            settings.hasPickedCameraVisualModel = true
+        }
 
         // Trigger downloads where needed.
-        if let assistant = center.models.first(where: { $0.id == pickedAssistantID }),
+        if needsAssistant, let assistant = center.models.first(where: { $0.id == pickedAssistantID }),
            !assistant.isReady {
             assistant.start()
         }
-        if let visual = center.models.first(where: { $0.id == pickedVisualRepoID }),
+        if needsVision, let visual = center.models.first(where: { $0.id == pickedVisualRepoID }),
            !visual.isReady {
             visual.start()
         }
 
-        // If both picks are already on disk, enter right away. Otherwise show
-        // the download gate, which blocks entry until both finish (with a Skip
+        // If the selected goal's model is already on disk, enter right away. Otherwise show
+        // the download gate, which blocks entry until the required download finishes (with a Skip
         // escape so a slow/offline launch can't lock the user out).
         if assistantSettled && visualSettled {
             HapticManager.notification(.success)

@@ -119,6 +119,12 @@ final class KittenTTSService: LocalVoiceEngine, ObservableObject {
            FileManager.default.fileExists(atPath: selectedConfiguration.voiceDataURL.path) {
             do {
                 try Self.validateInstallation(selectedConfiguration)
+                // ONNX 1.29 can include POSIX telemetry. Disable it before
+                // creating the runtime environment, including in test hosts.
+                guard setenv("ORT_DISABLE_TELEMETRY", "1", 1) == 0 else {
+                    throw NSError(domain: "KittenTTS", code: -1,
+                                  userInfo: [NSLocalizedDescriptionKey: "Could not disable runtime telemetry."])
+                }
                 let environment = try ORTEnv(loggingLevel: .warning)
                 let options = try ORTSessionOptions()
                 try options.setLogSeverityLevel(.warning)

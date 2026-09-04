@@ -134,7 +134,7 @@ struct HomeView: View {
             HStack(spacing: 8) {
                 Circle().fill(state.dot)
                     .frame(width: 7, height: 7)
-                Text(loc.t("Running on-device").uppercased())
+                Text(loc.t("Local by default").uppercased())
                     .font(T.sans(12, .bold)).tracking(0)
                     .foregroundColor(T.ink3)
                 Spacer()

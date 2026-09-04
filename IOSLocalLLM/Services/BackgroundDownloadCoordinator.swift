@@ -79,7 +79,10 @@ final class BackgroundDownloadCoordinator: NSObject {
         expectedSize: Int64,
         progress: @escaping (Int64, Int64) -> Void
     ) async throws -> URL {
-        return try await withCheckedThrowingContinuation { continuation in
+        let cancellation = DownloadCancellation()
+        return try await withTaskCancellationHandler {
+            try Task.checkCancellation()
+            return try await withCheckedThrowingContinuation { continuation in
             var request = URLRequest(url: url)
             request.timeoutInterval = 60
             // Attach HF token for huggingface.co downloads only — the
@@ -136,6 +139,10 @@ final class BackgroundDownloadCoordinator: NSObject {
                 continuation: continuation
             )
             task.resume()
+            cancellation.install(task)
+            }
+        } onCancel: {
+            cancellation.cancel()
         }
     }
 
@@ -368,5 +375,30 @@ extension BackgroundDownloadCoordinator: URLSessionDownloadDelegate {
             self?.systemCompletionHandler?()
             self?.systemCompletionHandler = nil
         }
+    }
+}
+
+
+/// Bridges cooperative cancellation to exactly one URLSession task, including
+/// cancellation arriving before the task has been registered.
+final class DownloadCancellation: @unchecked Sendable {
+    private let lock = NSLock()
+    private var task: URLSessionTask?
+    private var cancelled = false
+
+    func install(_ task: URLSessionTask) {
+        lock.lock()
+        self.task = task
+        let shouldCancel = cancelled
+        lock.unlock()
+        if shouldCancel { task.cancel() }
+    }
+
+    func cancel() {
+        lock.lock()
+        cancelled = true
+        let current = task
+        lock.unlock()
+        current?.cancel()
     }
 }

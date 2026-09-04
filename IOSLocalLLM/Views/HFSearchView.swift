@@ -6,7 +6,8 @@ import SwiftUI
 
 struct HFSearchView: View {
 
-    @StateObject private var search = HFSearchService()
+    @StateObject private var search: HFSearchService
+    private let estimateSizes: Bool
     @State private var query: String
     @State private var filter: HFSearchService.Filter
     @State private var debounceTask: Task<Void, Never>?
@@ -18,7 +19,10 @@ struct HFSearchView: View {
     /// Lets callers pre-seed a category-specific landing page. The download
     /// manager uses this so "browse visual models" and "browse audio models"
     /// open the search already scoped to VLM / TTS / ASR respectively.
-    init(initialFilter: HFSearchService.Filter = .mlx, initialQuery: String = "") {
+    init(initialFilter: HFSearchService.Filter = .mlx, initialQuery: String = "",
+         service: HFSearchService? = nil, estimateSizes: Bool = true) {
+        _search = StateObject(wrappedValue: service ?? HFSearchService())
+        self.estimateSizes = estimateSizes
         _filter = State(initialValue: initialFilter)
         _query  = State(initialValue: initialQuery)
     }
@@ -28,11 +32,14 @@ struct HFSearchView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
+            ScrollView {
+              VStack(spacing: 0) {
                 filterBar
                 Rectangle().fill(T.rule).frame(height: 1)
                 resultsList
+              }
             }
+            .refreshable { await search.search(query: query, filter: filter) }
             .background(LiquidPinkBackdrop())
             .navigationTitle("Find Models")
             .navigationBarTitleDisplayMode(.inline)
@@ -45,6 +52,7 @@ struct HFSearchView: View {
             }
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: "search models (qwen, llama, kokoro…)")
+            .onDisappear { debounceTask?.cancel() }
             .onChange(of: query) { _, _ in scheduleSearch() }
             .onChange(of: filter) { _, _ in scheduleSearch() }
             // Fire on appear when either a query is already set OR the user
@@ -89,7 +97,8 @@ struct HFSearchView: View {
                         .font(T.sans(14, .medium))
                         .foregroundColor(T.ink)
                         .padding(.horizontal, 12)
-                        .frame(height: 38)
+                        .padding(.vertical, 8)
+                        .frame(minHeight: 44)
                         .kGlassCapsule(fallbackFill: T.surface, fallbackStroke: T.glassBorder)
                 }
 
@@ -106,7 +115,7 @@ struct HFSearchView: View {
 
             Toggle(isOn: $showOnlyCompatible) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Fits this iPhone")
+                    Text("Fits this device")
                         .font(T.sans(14, .medium))
                         .foregroundColor(T.ink)
                     Text("Hide models that cannot run on this device")
@@ -130,7 +139,7 @@ struct HFSearchView: View {
     private var resultsList: some View {
         if search.isSearching && results.isEmpty {
             // Skeleton rows for native-feeling loading
-            ScrollView {
+            Group {
                 LazyVStack(spacing: 12) {
                     ForEach(0..<5, id: \.self) { _ in
                         SearchRowSkeleton()
@@ -145,6 +154,8 @@ struct HFSearchView: View {
                     .font(.system(size: 30))
                     .foregroundColor(T.ink3)
                 KMono(text: "search failed", size: 12, color: T.ink2)
+                Button("Retry") { scheduleSearch() }
+                    .buttonStyle(.bordered)
                 Text(err)
                     .font(T.sans(11))
                     .foregroundColor(T.ink3)
@@ -152,7 +163,7 @@ struct HFSearchView: View {
                     .padding(.horizontal, 30)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if query.isEmpty {
+        } else if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && filter == .all {
             promotedSuggestions
         } else if results.isEmpty {
             VStack(spacing: 10) {
@@ -164,25 +175,23 @@ struct HFSearchView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            ScrollView {
+            Group {
                 LazyVStack(spacing: 12) {
                     ForEach(results) { model in
-                        HFSearchRow(model: model)
+                        HFSearchRow(model: model, estimateSize: estimateSizes)
                     }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
             }
-            .refreshable {
-                await search.search(query: query, filter: filter)
-            }
+
         }
     }
 
     // MARK: - Promoted suggestions when no query
 
     private var promotedSuggestions: some View {
-        ScrollView {
+        Group {
             VStack(alignment: .leading, spacing: 12) {
                 KCaption(text: "Suggestions")
                     .padding(.horizontal, 16)
@@ -266,6 +275,7 @@ struct HFSearchView: View {
 
 struct HFSearchRow: View {
     let model: HFModelSummary
+    private let estimateSize: Bool
 
     @State private var isExpanded = false
     @State private var estimatedSize: Int64? = nil
@@ -273,9 +283,12 @@ struct HFSearchRow: View {
 
     @StateObject private var downloader: HFModelDownloadManager
     @State private var didStartDownload = false
+    @State private var showPreflight = false
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.koduTheme) private var T
 
-    init(model: HFModelSummary) {
+    init(model: HFModelSummary, estimateSize: Bool = true) {
+        self.estimateSize = estimateSize
         self.model = model
         // Reuse an existing catalog-registered downloader when possible so
         // search and download-center views share the same progress state.
@@ -292,7 +305,10 @@ struct HFSearchRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
+            let headerLayout = dynamicTypeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+                : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+            headerLayout {
                 Image(systemName: pipelineIcon)
                     .foregroundColor(T.accent)
                     .font(.system(size: 17, weight: .semibold))
@@ -303,11 +319,10 @@ struct HFSearchRow: View {
                     )
 
                 VStack(alignment: .leading, spacing: 3) {
-                    KModelName(
-                        model.modelName,
-                        font: T.display(16, .semibold),
-                        color: T.ink
-                    )
+                    Text(model.modelName)
+                        .font(T.display(16, .semibold))
+                        .foregroundStyle(T.ink)
+                        .fixedSize(horizontal: false, vertical: true)
                     Text(model.author)
                         .font(T.sans(11))
                         .foregroundColor(T.ink3)
@@ -358,7 +373,10 @@ struct HFSearchRow: View {
 
             Rectangle().fill(T.rule).frame(height: 1)
 
-            HStack(spacing: 8) {
+            let actionsLayout = dynamicTypeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+                : AnyLayout(HStackLayout(spacing: 8))
+            actionsLayout {
                 downloadButton
 
                 Spacer()
@@ -368,9 +386,11 @@ struct HFSearchRow: View {
                         Image(systemName: "arrow.up.right")
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(T.ink2)
-                            .frame(width: 34, height: 34)
+                            .frame(width: 44, height: 44)
                             .background(Circle().fill(T.surface2))
                     }
+                    .accessibilityLabel("Open model on Hugging Face")
+                    .accessibilityValue(model.modelName)
                 }
 
                 Button {
@@ -379,10 +399,12 @@ struct HFSearchRow: View {
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(T.ink2)
-                        .frame(width: 34, height: 34)
+                        .frame(width: 44, height: 44)
                         .background(Circle().fill(T.surface2))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(isExpanded ? "Hide model details" : "Show model details")
+                .accessibilityValue(model.modelName)
             }
 
             if isExpanded { expandedDetail }
@@ -390,11 +412,59 @@ struct HFSearchRow: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .kGlass(cornerRadius: 22, fallbackFill: T.surface, fallbackStroke: T.glassBorder)
+        .sheet(isPresented: $showPreflight) { installationPreflight }
         .task {
-            if !didFetchSize {
+            if estimateSize && !didFetchSize {
                 didFetchSize = true
                 estimatedSize = await HFSearchService.estimatedSize(for: model.id)
             }
+        }
+    }
+
+    private func beginDownload() {
+                downloader.start()
+                didStartDownload = true
+                // Register in the catalog so the user can find it later
+                ModelDownloadCenter.shared.registerCustom(
+                    repoID: model.id,
+                    displayName: model.modelName,
+                    subtitle: model.id,
+                    category: categoryGuess,
+                    sizeLabel: estimatedSize?.formattedBytes ?? "?",
+                    docURL: model.hfURL?.absoluteString,
+                    downloader: downloader
+                )
+                HapticManager.impact(.medium)
+    }
+
+    private var installationPreflight: some View {
+        NavigationStack {
+            Form {
+                Section(model.modelName) {
+                    Text(model.id)
+                    LabeledContent("Format", value: chipTags.first ?? "Check repository")
+                    LabeledContent("Estimated download", value: estimatedSize?.formattedBytes ?? "Unknown")
+                    LabeledContent("Available storage", value: HFModelDownloadManager.freeDiskBytes()?.formattedBytes ?? "Unknown")
+                    if let params = OnDeviceCompatibility.paramCount(repoID: model.id) {
+                        LabeledContent("Estimated memory", value: OnDeviceCompatibility.estimatedFootprint(
+                            params: params, tags: model.tags, repoID: model.id).formattedBytes)
+                    } else {
+                        LabeledContent("Estimated memory", value: "Unknown")
+                    }
+                    Text("Size is a repository estimate and may include multiple variants. Runtime memory also depends on context length and other active features.")
+                }
+                Section("Device compatibility") { compatibilityBadge }
+                Section("License") {
+                    Text(model.licenseTag ?? "No license tag supplied. Review the repository's license before downloading.")
+                    if let url = model.hfURL { Link("Review model and license", destination: url) }
+                }
+                Section {
+                    Button("Download model") { showPreflight = false; beginDownload() }
+                    Text("Downloads use your network. Installation does not change the active model; choose it in Models once it is ready.")
+                }
+            }
+            .navigationTitle("Before downloading")
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showPreflight = false } } }
         }
     }
 
@@ -466,36 +536,27 @@ struct HFSearchRow: View {
             }
             .foregroundColor(T.accent2)
             .padding(.horizontal, 14)
-            .frame(height: 36)
+            .padding(.vertical, 8)
+                .frame(minHeight: 44)
             .background(Capsule().fill(T.accent2.opacity(0.12)))
         } else {
         switch state {
         case .idle, .failed:
             let isFailed: Bool = { if case .failed = state { return true } else { return false } }()
             Button {
-                downloader.start()
-                didStartDownload = true
-                // Register in the catalog so the user can find it later
-                ModelDownloadCenter.shared.registerCustom(
-                    repoID: model.id,
-                    displayName: model.modelName,
-                    subtitle: model.id,
-                    category: categoryGuess,
-                    sizeLabel: estimatedSize?.formattedBytes ?? "?",
-                    docURL: model.hfURL?.absoluteString,
-                    downloader: downloader
-                )
-                HapticManager.impact(.medium)
+                showPreflight = true
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: isFailed ? "arrow.clockwise" : "arrow.down")
                         .font(.system(size: 12, weight: .semibold))
                     Text(isFailed ? "retry" : (isBlocked ? "incompatible" : "download"))
                         .font(T.sans(13, .semibold))
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .foregroundColor(.white)
                 .padding(.horizontal, 14)
-                .frame(height: 36)
+                .padding(.vertical, 8)
+                .frame(minHeight: 44)
                 .background(Capsule().fill(isBlocked ? T.ink3 : T.accentStrong))
             }
             .buttonStyle(.plain)
@@ -527,8 +588,11 @@ struct HFSearchRow: View {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundColor(T.warn)
+                        .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Cancel download")
+                .accessibilityValue(model.modelName)
             }
         case .ready:
             KStatusBadge(glyph: .ready, label: "downloaded", color: T.good)

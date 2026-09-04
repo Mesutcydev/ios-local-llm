@@ -6,6 +6,7 @@ import SwiftUI
 
 struct OnboardingView: View {
     @ObservedObject private var settings = AppSettings.shared
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var page = 0
     @Environment(\.koduTheme) private var T
 
@@ -22,61 +23,24 @@ struct OnboardingView: View {
 
     private let pages: [OnboardingPage] = [
         OnboardingPage(
-            caption: "local-first vision",
-            title: "Scan code\nfrom your\ncamera.",
-            body: "Point your camera at any terminal or editor. Apple Vision finds text regions in real-time and FastVLM extracts the code on-device.",
+            caption: "start with what you need",
+            title: "Your AI.\nOn your device.",
+            body: "Chat, understand images, or talk hands-free. Choose a model to get started; you can add more capabilities later.",
             matrix: [
-                ("detection", "Apple Vision · system"),
-                ("vision",    "FastViT-HD encoder"),
-                ("decoder",   "Qwen2-0.5B · MLX"),
-                ("fallback",  "VNRecognizeTextRequest"),
+                ("Chat", "Ask questions, write, and work with code"),
+                ("Lens", "Understand a photo or camera view"),
+                ("Voice", "Talk with your assistant"),
             ]
         ),
         OnboardingPage(
-            caption: "on-device assistant",
-            title: "Ask Qwen3\nanything\nabout code.",
-            body: "A 4-bit quantised Qwen3-4B model runs entirely on your device. Send captured code to the assistant for review, debugging, or refactoring.",
+            caption: "local by default",
+            title: "You choose\nwhen to connect.",
+            body: "Downloaded models run locally. Model downloads, optional web search, private-cloud models, and paired-device tools use the network when you choose those features.",
             matrix: [
-                ("model",       "Qwen3-4B-Instruct · 4-bit"),
-                ("runtime",     "MLX 0.21 · Metal · ANE"),
-                ("streaming",   "token-by-token"),
-                ("storage",     "sandboxed · encrypted"),
+                ("Account", "No account required for local models"),
+                ("Downloads", "Review size and license before installing"),
+                ("Help", "User Guide in Settings"),
             ]
-        ),
-        OnboardingPage(
-            caption: "text-to-image · local",
-            title: "Generate\nimages\non-device.",
-            body: "Type a prompt and create images entirely on your phone. Stable Diffusion and SDXL-Turbo run through MLX — quantised on-device, no cloud, no API keys.",
-            matrix: [
-                ("models",   "SD 1.5 · 2.1 · SDXL-Turbo"),
-                ("fastest",  "SD-Turbo · 1 step"),
-                ("artistic", "DreamShaper 8"),
-                ("runtime",  "MLX · Metal · quantised"),
-            ]
-        ),
-        OnboardingPage(
-            caption: "no servers · no keys · no metrics",
-            title: "100%\nprivate.",
-            body: "All models run on-device. Your camera frames, captured code, and chat conversations never leave the phone.",
-            matrix: [
-                ("network",  "model download only"),
-                ("analytics","none"),
-                ("telemetry","none"),
-                ("source",   "huggingface.co"),
-            ],
-            isLast: false
-        ),
-        OnboardingPage(
-            caption: "learn & explore",
-            title: "Detailed\nUser Guide\nin Settings.",
-            body: "Need help? A comprehensive User Guide with instructions for every function, camera mode, voice dictation, and Mac Bridge is always available inside App Settings.",
-            matrix: [
-                ("location", "Settings ➔ User Guide"),
-                ("screenshots", "annotated visuals"),
-                ("contents",  "all menus & functions"),
-                ("updates",   "local-first documentation")
-            ],
-            isLast: true
         ),
     ]
 
@@ -87,9 +51,12 @@ struct OnboardingView: View {
             VStack(spacing: 0) {
                 // Wordmark header
                 HStack {
-                    KWordmark(name: "iOS Local LLM", logoAsset: "app_logo_small")
+                    if !dynamicTypeSize.isAccessibilitySize {
+                    KWordmark(name: "OnDevice LLM", logoAsset: "app_logo_small")
                     Spacer()
                     KMono(text: "v\(appVersion)", size: 10, color: T.ink3)
+                    }
+                    if dynamicTypeSize.isAccessibilitySize { Spacer() }
                     if page < pages.count - 1 {
                         Button {
                             settings.hasSeenOnboarding = true
@@ -120,12 +87,12 @@ struct OnboardingView: View {
                 .tabViewStyle(.page(indexDisplayMode: .never))
             }
 
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             // Bottom: dots + continue (hidden on the picker page —
             // it brings its own primary CTA).
             if !onPickerPage {
-                VStack {
-                    Spacer()
-                    VStack(spacing: 14) {
+                VStack(spacing: 14) {
                         HStack(spacing: 6) {
                             ForEach(0..<totalTabs, id: \.self) { i in
                                 Capsule()
@@ -149,19 +116,24 @@ struct OnboardingView: View {
                             }
                             .foregroundColor(T.bg)
                             .padding(.horizontal, 16)
-                            .frame(height: 50)
+                            .padding(.vertical, 12)
+                            .frame(minHeight: 50)
                             .background(RoundedRectangle(cornerRadius: 10).fill(T.ink))
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("onboarding.next")
+                        .accessibilityLabel("Next")
 
-                        Text("nothing leaves the device.")
+                        if !dynamicTypeSize.isAccessibilitySize {
+                        Text("local by default. network features are optional.")
                             .font(T.mono(9))
                             .tracking(0.4)
                             .foregroundColor(T.ink3)
+                        }
                     }
                     .padding(.horizontal, 22)
-                    .padding(.bottom, 40)
-                }
+                    .padding(.vertical, 14)
+                    .background(T.bg)
                 .transition(.opacity)
             }
         }
@@ -170,6 +142,7 @@ struct OnboardingView: View {
 
     @ViewBuilder
     private func pageView(_ p: OnboardingPage) -> some View {
+        ScrollView {
         VStack(alignment: .leading, spacing: 18) {
             Spacer().frame(height: 12)
 
@@ -209,9 +182,10 @@ struct OnboardingView: View {
             }
             .kGlass(cornerRadius: 8, fallbackFill: T.surface)
 
-            Spacer().frame(height: 130)   // room for bottom nav
+            Spacer().frame(height: 16)   // room for bottom nav
         }
         .padding(.horizontal, 22)
+        }
     }
 }
 

@@ -168,7 +168,7 @@ final class DownloadableModel: ObservableObject, Identifiable {
         downloader?.start()
     }
     func cancel() { downloader?.cancel() }
-    func delete() throws { try downloader?.delete() }
+    func delete() async throws { try await downloader?.delete() }
     func redownload() { downloader?.redownload() }
     func checkIfReady() { downloader?.checkIfReady() }
 }
@@ -947,22 +947,24 @@ final class ModelDownloadCenter: ObservableObject {
     /// stale id survives the delete. Failures surface as a toast instead
     /// of being swallowed by `try?`.
     func handleDeletion(of model: DownloadableModel) {
-        resetActiveSelections(for: model)
-        do {
-            try model.delete()
-        } catch {
-            ToastCenter.shared.error("Couldn't delete \(model.displayName)",
-                                      detail: error.localizedDescription)
-            return
+        Task { @MainActor in
+            resetActiveSelections(for: model)
+            do {
+                try await model.delete()
+            } catch {
+                ToastCenter.shared.error("Couldn't delete \(model.displayName)",
+                                          detail: error.localizedDescription)
+                return
+            }
+            // Custom (HF-searched / imported) models also leave the catalog —
+            // built-in entries stay so the user can re-download.
+            if !model.isRequired {
+                unregisterCustom(repoID: model.id)
+            }
+            HapticManager.impact(.medium)
+            ToastCenter.shared.info("Deleted \(model.displayName)")
+            refreshStorageStats()
         }
-        // Custom (HF-searched / imported) models also leave the catalog —
-        // built-in entries stay so the user can re-download.
-        if !model.isRequired {
-            unregisterCustom(repoID: model.id)
-        }
-        HapticManager.impact(.medium)
-        ToastCenter.shared.info("Deleted \(model.displayName)")
-        refreshStorageStats()
     }
 
     /// Clears any active selection pointing at `model` (back to its default)

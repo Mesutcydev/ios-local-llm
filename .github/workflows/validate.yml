@@ -23,3 +23,27 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Test VoiceAgentOrb
         run: swift test --package-path Packages/VoiceAgentOrb
+
+  app-release:
+    runs-on: macos-26
+    timeout-minutes: 120
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: recursive
+      - name: Check toolchain
+        run: xcodebuild -version
+      - name: Install build tools
+        run: |
+          brew install xcodegen cmake
+          sudo gem install cocoapods --version 1.17.0 --no-document
+      - name: Build pinned native frameworks
+        run: ./scripts/build_native_frameworks.sh
+      - name: Generate workspace using locked dependencies
+        run: |
+          xcodegen generate
+          pod install --deployment
+      - name: Test app and compile Release
+        run: ./scripts/validate_app_release.sh

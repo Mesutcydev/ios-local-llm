@@ -360,19 +360,33 @@ struct KoduTheme {
     /// that don't have the file.
     func display(_ size: CGFloat, _ weight: Font.Weight = .semibold) -> Font {
         Self.named("Geist", size: size, weight: weight)
-            ?? .system(size: size, weight: weight, design: .default)
+            ?? .system(Self.textStyle(for: size), design: .default).weight(weight)
     }
 
     func sans(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         Self.named("Geist", size: size, weight: weight)
-            ?? .system(size: size, weight: weight, design: .default)
+            ?? .system(Self.textStyle(for: size), design: .default).weight(weight)
     }
 
     /// Monospaced — pervasive in this design language. Prefers Geist Mono,
     /// falls back to the system monospaced face.
     func mono(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         Self.named("Geist Mono", size: size, weight: weight)
-            ?? .system(size: size, weight: weight, design: .monospaced)
+            ?? .system(Self.textStyle(for: size), design: .monospaced).weight(weight)
+    }
+
+    static func textStyle(for size: CGFloat) -> Font.TextStyle {
+        switch size {
+        case ..<12: return .caption2
+        case ..<13: return .caption
+        case ..<15: return .footnote
+        case ..<17: return .subheadline
+        case ..<20: return .body
+        case ..<22: return .title3
+        case ..<28: return .title2
+        case ..<34: return .title
+        default: return .largeTitle
+        }
     }
 
     /// Returns nil when the family isn't registered with UIFont — the caller
@@ -381,13 +395,13 @@ struct KoduTheme {
     private static func named(_ family: String, size: CGFloat, weight: Font.Weight) -> Font? {
         let key = "\(family)|\(weight.weightString)"
         if let cached = fontCache[key] {
-            return cached.map { Font.custom($0, size: size).weight(weight) }
+            return cached.map { Font.custom($0, size: size, relativeTo: textStyle(for: size)).weight(weight) }
         }
         // Probe UIFont — cheap miss is fine, we'll cache the negative result.
         let candidate = uiFontName(family: family, weight: weight)
         if UIFont(name: candidate, size: size) != nil {
             fontCache[key] = candidate
-            return Font.custom(candidate, size: size).weight(weight)
+            return Font.custom(candidate, size: size, relativeTo: textStyle(for: size)).weight(weight)
         }
         fontCache[key] = .some(nil)   // negative cache
         return nil

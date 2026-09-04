@@ -82,6 +82,7 @@
 		31491B161FB6FB281DC1DE8A /* LensPromptPresetSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5034F7691BB0E09FCC55322 /* LensPromptPresetSheet.swift */; };
 		32C8674092F947DC88EA7BA7 /* LiveOCROverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C08A09143A2EC9C5581761FC /* LiveOCROverlayView.swift */; };
 		32CFB0ECAA09B3F8B224FE85 /* VoiceStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F08BCB309343D1E7BAEAFF45 /* VoiceStatusView.swift */; };
+		3383A64E6571AEA3AF49BC99 /* libPods-IOSLocalLLMTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F1C87972DA024B6FF4591FC /* libPods-IOSLocalLLMTests.a */; };
 		370F3AF3AD5D62C1F592CEB6 /* VoiceIsolatedContainers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590AE986A238DF034531D09C /* VoiceIsolatedContainers.swift */; };
 		379DA8230DD448CD5DF0BEA7 /* MacroChain.swift in Sources */ = {isa = PBXBuildFile; fileRef = C72CC3D47E0C1BAB7B4E1EE6 /* MacroChain.swift */; };
 		37D2E2933B3AB812F2E4645B /* VoiceRuntimeDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 791D19F3F04B70A57DF7E9CF /* VoiceRuntimeDiagnostics.swift */; };
@@ -234,7 +235,6 @@
 		B125ECF2CBCC97CA9DBAE36F /* PendingIndexQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39E1A4C888278D166B564E8 /* PendingIndexQueue.swift */; };
 		B1E46705BE9D1744841CECE7 /* CodeModeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0BD29C438D162C4D9B13DA /* CodeModeController.swift */; };
 		B1E9B59858125F3A237AFE6B /* ConversationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 538207FE10BF132D65772B5A /* ConversationStore.swift */; };
-		B33D6C84D4E2E501C71114FE /* libPods-IOSLocalLLM.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A64F33C399EBCFFCC3FE2E5 /* libPods-IOSLocalLLM.a */; };
 		B4BA86702BFF2E2C515626A1 /* whisper.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1418065A4D8FA0ECD4AED77C /* whisper.xcframework */; };
 		B716DA060B837F876D136CAB /* VoiceSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78AF63C1FC36ADA9F070FE3B /* VoiceSettingsStore.swift */; };
 		B78851755760731B1C9F66D4 /* KeyboardDismiss.swift in Sources */ = {isa = PBXBuildFile; fileRef = 243D53EE7D48D6308A9F05EF /* KeyboardDismiss.swift */; };
@@ -296,6 +296,7 @@
 		D84E0CDD792456DB269247C3 /* LocalizationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26A27B2B7EB8DE856B884E04 /* LocalizationService.swift */; };
 		D84EBCA016BC0716F36DE920 /* AssistantActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B6503C08AE87603569C2001 /* AssistantActivity.swift */; };
 		D89DD62F91ACBE68DA43DE47 /* ReasoningStripperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCE9D5D15D5523CE1E00B79D /* ReasoningStripperTests.swift */; };
+		D9292E2E17FFA844BE93228D /* CameraRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FC74D2E98E3401CB4E499D5 /* CameraRootView.swift */; };
 		DAB1B8AE6888C894C5A6CA11 /* QualityEvalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE487CF6A5B7DEDC484622AE /* QualityEvalView.swift */; };
 		DAC17F9185910181739598D0 /* LlamaCppBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B258D8DB6CEF26E963A8CF /* LlamaCppBridge.swift */; };
 		DBF76C0241DC913DD2073096 /* Detection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A15CA2FFACFE41DA8EA782A /* Detection.swift */; };
@@ -312,6 +313,7 @@
 		DFFD3F63989450B4A8DC0CF9 /* VoicePresentationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29268789CD493A61490E8BB2 /* VoicePresentationModels.swift */; };
 		E042EC0B89E076C2FF3490B7 /* ImageGenerationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5DE21C3396DB615DF85ADA6 /* ImageGenerationService.swift */; };
 		E19939719C1C75614BA25A29 /* CodingAssistantService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 638DD1443D708B8F18A171CD /* CodingAssistantService.swift */; };
+		E3D024CAAB8BC6797CE63029 /* ModelDownloadRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C80E3EDEB8892136EADD41F /* ModelDownloadRows.swift */; };
 		E4DF6607A09BBD8479EB4B8B /* LoRAAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A27D7FEBC27519412B8192B9 /* LoRAAdapter.swift */; };
 		E4F649ADF720AE79F6F09FA5 /* VisualModelComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEE7063F617524AEDF343E7F /* VisualModelComparisonView.swift */; };
 		E6403A69B0875EE9C56080FD /* MetricKitHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3423145053079A386D4B0AA7 /* MetricKitHandler.swift */; };
@@ -319,7 +321,6 @@
 		E7917C8DAAD8B1C83765CCC9 /* KnowledgeBaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 721AF66241BAE3071970A51F /* KnowledgeBaseView.swift */; };
 		E85D6C3E601878A1E6E320F6 /* VoiceSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEBE7409133843E14CFB20B8 /* VoiceSettingsViewModel.swift */; };
 		E930BF4F527336F5B16E27AC /* SpeechDictationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 713F51F04E4F96FD9C27E05C /* SpeechDictationService.swift */; };
-		E9A01A603C5DAE2DC5B319CC /* libPods-IOSLocalLLMTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5ECFE2D57142FBCA135940E2 /* libPods-IOSLocalLLMTests.a */; };
 		EBFFBFDE95E407916ECD0554 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA3D5B542D7CB0D3AFCEDB0D /* ChatMessage.swift */; };
 		EC003C20944B31769D20904B /* ThinkingOrbShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 3B189515DED8A745F17BE939 /* ThinkingOrbShaders.metal */; };
 		EC6ADC44E775E1CDA9EBF983 /* MLXGenerationGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58EC66C0E38FC7C6F09CF20C /* MLXGenerationGate.swift */; };
@@ -345,7 +346,9 @@
 		F71F9D8D6C6291F08CBCD860 /* MLXFast in Frameworks */ = {isa = PBXBuildFile; productRef = 10579A4588568604C37649BA /* MLXFast */; };
 		F83C4DA01C958045409A7786 /* ReasoningCompletionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36A7D9DEA648412B5DD0254A /* ReasoningCompletionGuard.swift */; };
 		F9E8A65958A777FBD2FD4C33 /* BridgePairingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A005706C3EA0DBB59A52365 /* BridgePairingStore.swift */; };
+		F9F029CF1BCAC2A7227FAA68 /* AssistantExecutionPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE1E8953AF9639A20147010 /* AssistantExecutionPolicy.swift */; };
 		FA49A6E0222BE73BD0D05E8D /* CodeModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5AE99A446FB4636A401B4D7 /* CodeModeView.swift */; };
+		FA76743A2F068B79892669D4 /* libPods-IOSLocalLLM.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B0986BD07F1A50DC989BECFB /* libPods-IOSLocalLLM.a */; };
 		FCA5DDB8D1FDC15968ABBFA0 /* VoiceUITestFixtureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEFCD8FCA3620024E366D317 /* VoiceUITestFixtureView.swift */; };
 		FCC019564645EA53DE18C8FD /* WebActivityLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68977EC14F82E0F0BDD358B8 /* WebActivityLogger.swift */; };
 		FD57592582FD94C1404E4794 /* SamplerPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99FE3DF6BF247F70051BCFAF /* SamplerPreset.swift */; };
@@ -423,7 +426,6 @@
 		097739886326FBD2A709B1C2 /* SystemStatusService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemStatusService.swift; sourceTree = "<group>"; };
 		0A029F1CE1673A11E43491DA /* VoiceProfileRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceProfileRegistryTests.swift; sourceTree = "<group>"; };
 		0A45D99983EDD15FBB217141 /* KoduTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KoduTheme.swift; sourceTree = "<group>"; };
-		0BB9E2B6C655BE6089066EC5 /* Pods-IOSLocalLLM.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-IOSLocalLLM.debug.xcconfig"; path = "Target Support Files/Pods-IOSLocalLLM/Pods-IOSLocalLLM.debug.xcconfig"; sourceTree = "<group>"; };
 		0C93AC2CE9F5D08652E3D78E /* VoiceSessionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSessionState.swift; sourceTree = "<group>"; };
 		0CC601B10EDA2C765A916D95 /* VisualModelPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualModelPickerView.swift; sourceTree = "<group>"; };
 		0EF59A29B6E92B16BA75E0CF /* Image.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Image.swift; sourceTree = "<group>"; };
@@ -465,14 +467,13 @@
 		29268789CD493A61490E8BB2 /* VoicePresentationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicePresentationModels.swift; sourceTree = "<group>"; };
 		29718E2CF8CE23EDED4BA46B /* ModelCacheProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelCacheProbe.swift; sourceTree = "<group>"; };
 		2A005706C3EA0DBB59A52365 /* BridgePairingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgePairingStore.swift; sourceTree = "<group>"; };
-		2A64F33C399EBCFFCC3FE2E5 /* libPods-IOSLocalLLM.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-IOSLocalLLM.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2A91A6142F8C2DB2A5252B99 /* AgentProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentProtocol.swift; sourceTree = "<group>"; };
 		2B00ABE07DF6E53AB3E4129A /* SpotlightIndexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightIndexer.swift; sourceTree = "<group>"; };
 		2C796A1E20B6CD32C80AFD82 /* ReasoningCompletionGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReasoningCompletionGuardTests.swift; sourceTree = "<group>"; };
 		2C8B5E31BE5C3CE8DB5D2107 /* VoiceModeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceModeUITests.swift; sourceTree = "<group>"; };
 		2D1E4B9EE0E0A4495DB4BC62 /* LegalDocuments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalDocuments.swift; sourceTree = "<group>"; };
 		2D8EA4A16FE99B18765296D0 /* BonjourPublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BonjourPublisher.swift; sourceTree = "<group>"; };
-		2E1E7955E15919B252EC2034 /* Pods-IOSLocalLLMTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-IOSLocalLLMTests.release.xcconfig"; path = "Target Support Files/Pods-IOSLocalLLMTests/Pods-IOSLocalLLMTests.release.xcconfig"; sourceTree = "<group>"; };
+		2F1C87972DA024B6FF4591FC /* libPods-IOSLocalLLMTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-IOSLocalLLMTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		305459B9C85D1D4976C51D11 /* VoiceStatusPillTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceStatusPillTests.swift; sourceTree = "<group>"; };
 		309B47675794314897099A95 /* FastVLMRepoAutoDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastVLMRepoAutoDiscovery.swift; sourceTree = "<group>"; };
 		309F28AD2CC3B36AC6B3A5AD /* ModelResidency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelResidency.swift; sourceTree = "<group>"; };
@@ -491,7 +492,6 @@
 		3C0BD29C438D162C4D9B13DA /* CodeModeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeModeController.swift; sourceTree = "<group>"; };
 		3C368BC3AF10EFC2D82D8D21 /* LensTaskPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensTaskPanel.swift; sourceTree = "<group>"; };
 		3D74A2CE112D680B565AB81F /* WebToolService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebToolService.swift; sourceTree = "<group>"; };
-		3EC3F2864F02BC115B82F25F /* Pods-IOSLocalLLM.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-IOSLocalLLM.release.xcconfig"; path = "Target Support Files/Pods-IOSLocalLLM/Pods-IOSLocalLLM.release.xcconfig"; sourceTree = "<group>"; };
 		3FB0F3B640CBDC5A5167BA60 /* LegalAcceptanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalAcceptanceView.swift; sourceTree = "<group>"; };
 		409DED3ACA8D796184E3D615 /* LiquidPinkBackdrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidPinkBackdrop.swift; sourceTree = "<group>"; };
 		4207F26A0FC6FFA0C08728B8 /* VoiceProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceProfile.swift; sourceTree = "<group>"; };
@@ -524,12 +524,14 @@
 		58EC66C0E38FC7C6F09CF20C /* MLXGenerationGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLXGenerationGate.swift; sourceTree = "<group>"; };
 		590AE986A238DF034531D09C /* VoiceIsolatedContainers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceIsolatedContainers.swift; sourceTree = "<group>"; };
 		59485D1B529F9FFF9B0639F4 /* PhonemizerEN.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhonemizerEN.swift; sourceTree = "<group>"; };
+		597CBC674B4E10EF2F882C8D /* Pods-IOSLocalLLM.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-IOSLocalLLM.debug.xcconfig"; path = "Target Support Files/Pods-IOSLocalLLM/Pods-IOSLocalLLM.debug.xcconfig"; sourceTree = "<group>"; };
+		5AB7240BA799B6BE2249EF14 /* Pods-IOSLocalLLMTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-IOSLocalLLMTests.debug.xcconfig"; path = "Target Support Files/Pods-IOSLocalLLMTests/Pods-IOSLocalLLMTests.debug.xcconfig"; sourceTree = "<group>"; };
 		5B7B0BF3D72636E7556698E4 /* VoiceModelPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceModelPickerView.swift; sourceTree = "<group>"; };
 		5B8815F9F485AA9A186BE8F9 /* AppBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBridge.swift; sourceTree = "<group>"; };
 		5BD6D9337D83C9DAE3B832AE /* BridgeAgentMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeAgentMode.swift; sourceTree = "<group>"; };
 		5C13C7CD4EEC23DF270B8666 /* DownloadLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadLiveActivity.swift; sourceTree = "<group>"; };
 		5CCF5D3CF42F2E7356173F90 /* VoiceSoakHarnessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSoakHarnessTests.swift; sourceTree = "<group>"; };
-		5ECFE2D57142FBCA135940E2 /* libPods-IOSLocalLLMTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-IOSLocalLLMTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		5EFC12BABDE56B84AAE24881 /* Pods-IOSLocalLLMTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-IOSLocalLLMTests.release.xcconfig"; path = "Target Support Files/Pods-IOSLocalLLMTests/Pods-IOSLocalLLMTests.release.xcconfig"; sourceTree = "<group>"; };
 		5F8CC53BBB7B486CB0E63769 /* LensDebugOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensDebugOverlay.swift; sourceTree = "<group>"; };
 		6008DB575A0E7876C98FC27B /* KaraokeTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaraokeTimelineTests.swift; sourceTree = "<group>"; };
 		6037EBD1E417179D0E2236AF /* AppleFoundationModelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleFoundationModelService.swift; sourceTree = "<group>"; };
@@ -561,6 +563,7 @@
 		6EC160013CF67967CDF0A8E2 /* HFSearchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HFSearchService.swift; sourceTree = "<group>"; };
 		6F2815611515CF0E04A12EDB /* BackgroundDownloadCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundDownloadCoordinator.swift; sourceTree = "<group>"; };
 		6F4DEA8A75C3D4C512AE216C /* VoiceLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceLibraryView.swift; sourceTree = "<group>"; };
+		703F04DD84FBC3B7A1679014 /* Pods-IOSLocalLLM.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-IOSLocalLLM.release.xcconfig"; path = "Target Support Files/Pods-IOSLocalLLM/Pods-IOSLocalLLM.release.xcconfig"; sourceTree = "<group>"; };
 		70B42D06B98D56798186AADF /* HubApiDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubApiDownloader.swift; sourceTree = "<group>"; };
 		70B90912E09A237E7674B699 /* ToastCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastCenter.swift; sourceTree = "<group>"; };
 		70CFFAC2D82BA93F04548697 /* AssistantModelPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantModelPickerView.swift; sourceTree = "<group>"; };
@@ -592,12 +595,14 @@
 		8778BFA165A9B2B1D7C9166C /* BenchmarkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkView.swift; sourceTree = "<group>"; };
 		87FE163E96CA25656C2A84DB /* LocalModelImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalModelImportService.swift; sourceTree = "<group>"; };
 		883CFC699595B2AD4CB1CBEB /* DiffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiffView.swift; sourceTree = "<group>"; };
+		8C80E3EDEB8892136EADD41F /* ModelDownloadRows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDownloadRows.swift; sourceTree = "<group>"; };
 		8C898BB73FE00984ADBA314F /* VoiceStatusPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceStatusPill.swift; sourceTree = "<group>"; };
 		8D6C8469A7BC0E2E44F349D4 /* LifecycleController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifecycleController.swift; sourceTree = "<group>"; };
 		8E10788E55E0B74A22F7224F /* StoredConversationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredConversationTests.swift; sourceTree = "<group>"; };
 		8E2DFA325DA2DE52568EBEE4 /* ModelDownloadCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDownloadCenterView.swift; sourceTree = "<group>"; };
 		8E9F29327854177A7DFE8A79 /* GGUFGenerationProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GGUFGenerationProfileTests.swift; sourceTree = "<group>"; };
 		8EE6F3D316E1B7C04C629604 /* IOSLocalLLM-Catalyst.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "IOSLocalLLM-Catalyst.entitlements"; sourceTree = "<group>"; };
+		8FC74D2E98E3401CB4E499D5 /* CameraRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraRootView.swift; sourceTree = "<group>"; };
 		901EE1E81CB5805BF315E723 /* UserGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserGuideView.swift; sourceTree = "<group>"; };
 		90C3DD968FB17EB45D474BEE /* LocalModelFileValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalModelFileValidator.swift; sourceTree = "<group>"; };
 		9105B0E6DC63DF3357548A71 /* LegalAcceptanceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalAcceptanceManager.swift; sourceTree = "<group>"; };
@@ -636,13 +641,13 @@
 		AC02AF2654D532FF24C662F7 /* HFSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HFSearchView.swift; sourceTree = "<group>"; };
 		AC27046C60EF0BD98B4CF6D9 /* ApplePrivateCloudTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplePrivateCloudTests.swift; sourceTree = "<group>"; };
 		AC6058C9E18CD6AE17FA6ABD /* HFTokenSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HFTokenSheet.swift; sourceTree = "<group>"; };
-		AD398FDA3A71BAD2AEFF44CE /* Pods-IOSLocalLLMTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-IOSLocalLLMTests.debug.xcconfig"; path = "Target Support Files/Pods-IOSLocalLLMTests/Pods-IOSLocalLLMTests.debug.xcconfig"; sourceTree = "<group>"; };
 		AD459BCCFBCF2901DBE9BCD4 /* VoiceModelBundleValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceModelBundleValidator.swift; sourceTree = "<group>"; };
 		AD933702AC2248C3D3FA6F6F /* MemoryAdvisor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryAdvisor.swift; sourceTree = "<group>"; };
 		AD97BACE932EA0CC1C66BC8F /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
 		AE955FB2DB9A6F47B71EE54E /* Tokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tokenizer.swift; sourceTree = "<group>"; };
 		AEBE7409133843E14CFB20B8 /* VoiceSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSettingsViewModel.swift; sourceTree = "<group>"; };
 		B05499A613EB55EDB55CA9E4 /* KittenRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KittenRuntimeTests.swift; sourceTree = "<group>"; };
+		B0986BD07F1A50DC989BECFB /* libPods-IOSLocalLLM.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-IOSLocalLLM.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B0CDD2B7E65FFD2024303ED9 /* ModelQualityEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelQualityEval.swift; sourceTree = "<group>"; };
 		B0E2FDF35B921F5027818C09 /* VoiceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceService.swift; sourceTree = "<group>"; };
 		B13BFDB00D06DCDB278F707E /* AudioQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioQueue.swift; sourceTree = "<group>"; };
@@ -702,6 +707,7 @@
 		DAD9C7DDE4A3C75681407F7D /* SpeechTimingProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechTimingProvider.swift; sourceTree = "<group>"; };
 		DBB79B634A09D732D431B4C5 /* KeyboardToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardToolbar.swift; sourceTree = "<group>"; };
 		DC13DE01AE82B9999662E6F1 /* LiveOCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveOCRService.swift; sourceTree = "<group>"; };
+		DDE1E8953AF9639A20147010 /* AssistantExecutionPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantExecutionPolicy.swift; sourceTree = "<group>"; };
 		DE762D865B883C834D379E76 /* AttributionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributionsView.swift; sourceTree = "<group>"; };
 		DE85367B6A092FB48377CC95 /* KaraokeCueTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaraokeCueTrack.swift; sourceTree = "<group>"; };
 		DEE267E7EC529C3233A60DFD /* SystemStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemStatusView.swift; sourceTree = "<group>"; };
@@ -774,15 +780,15 @@
 				F71F9D8D6C6291F08CBCD860 /* MLXFast in Frameworks */,
 				61803324DC810077791D3A1E /* llama.xcframework in Frameworks */,
 				B4BA86702BFF2E2C515626A1 /* whisper.xcframework in Frameworks */,
-				B33D6C84D4E2E501C71114FE /* libPods-IOSLocalLLM.a in Frameworks */,
+				FA76743A2F068B79892669D4 /* libPods-IOSLocalLLM.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		EC68B33F643F5F3D3F764FDE /* Frameworks */ = {
+		D1431C589F1ED6BD7FF67180 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E9A01A603C5DAE2DC5B319CC /* libPods-IOSLocalLLMTests.a in Frameworks */,
+				3383A64E6571AEA3AF49BC99 /* libPods-IOSLocalLLMTests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -907,6 +913,7 @@
 				BC09C2C135F05153A40A06BE /* AnalysisService.swift */,
 				6037EBD1E417179D0E2236AF /* AppleFoundationModelService.swift */,
 				9B0A862C61315A4322EA37DA /* ApplePrivateCloudRuntime.swift */,
+				DDE1E8953AF9639A20147010 /* AssistantExecutionPolicy.swift */,
 				C673F4C5FA5EEC4CCA0A95FC /* AudioTranscriptionService.swift */,
 				6F2815611515CF0E04A12EDB /* BackgroundDownloadCoordinator.swift */,
 				808816437CAEB346B750B22D /* BenchmarkService.swift */,
@@ -1011,10 +1018,22 @@
 			children = (
 				1CA3A4EAF4DC522F64359FE8 /* llama.xcframework */,
 				1418065A4D8FA0ECD4AED77C /* whisper.xcframework */,
-				2A64F33C399EBCFFCC3FE2E5 /* libPods-IOSLocalLLM.a */,
-				5ECFE2D57142FBCA135940E2 /* libPods-IOSLocalLLMTests.a */,
+				B0986BD07F1A50DC989BECFB /* libPods-IOSLocalLLM.a */,
+				2F1C87972DA024B6FF4591FC /* libPods-IOSLocalLLMTests.a */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		551786A234C69931474DFBED /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				597CBC674B4E10EF2F882C8D /* Pods-IOSLocalLLM.debug.xcconfig */,
+				703F04DD84FBC3B7A1679014 /* Pods-IOSLocalLLM.release.xcconfig */,
+				5AB7240BA799B6BE2249EF14 /* Pods-IOSLocalLLMTests.debug.xcconfig */,
+				5EFC12BABDE56B84AAE24881 /* Pods-IOSLocalLLMTests.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 		5C54CDB33718A0167E092CE3 /* Pipeline */ = {
@@ -1183,6 +1202,7 @@
 				70CFFAC2D82BA93F04548697 /* AssistantModelPickerView.swift */,
 				8778BFA165A9B2B1D7C9166C /* BenchmarkView.swift */,
 				7830F858420CD08EC80FE319 /* CameraPreviewView.swift */,
+				8FC74D2E98E3401CB4E499D5 /* CameraRootView.swift */,
 				E5AE99A446FB4636A401B4D7 /* CodeModeView.swift */,
 				F66999841E408F85E5C58E8E /* CodePanelView.swift */,
 				158659B7B5A203CD4BECBEA0 /* CodingAssistantView.swift */,
@@ -1211,6 +1231,7 @@
 				ED81EDA91AC946C48B58BA36 /* MarkupCanvasView.swift */,
 				1D0372D6C7CA48C80A64AA2E /* MicDictationButton.swift */,
 				8E2DFA325DA2DE52568EBEE4 /* ModelDownloadCenterView.swift */,
+				8C80E3EDEB8892136EADD41F /* ModelDownloadRows.swift */,
 				EC052BF15927CC2136D7B7F6 /* ModelsManagerView.swift */,
 				FDB43FBBD1A98ED4F912189A /* ModelStorageCleanupView.swift */,
 				1D1C1C1B7029D5226F1B76F5 /* OnboardingModelPickerView.swift */,
@@ -1359,7 +1380,7 @@
 				8DF1B0293661BF7CF6627310 /* Packages */,
 				53BB26CD68559B00FC1336A2 /* Frameworks */,
 				7BA25EB20AD94880D0D83E00 /* Products */,
-				FC99908D6266AE32B6C080A5 /* Pods */,
+				551786A234C69931474DFBED /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1474,18 +1495,6 @@
 			path = Storage;
 			sourceTree = "<group>";
 		};
-		FC99908D6266AE32B6C080A5 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				0BB9E2B6C655BE6089066EC5 /* Pods-IOSLocalLLM.debug.xcconfig */,
-				3EC3F2864F02BC115B82F25F /* Pods-IOSLocalLLM.release.xcconfig */,
-				AD398FDA3A71BAD2AEFF44CE /* Pods-IOSLocalLLMTests.debug.xcconfig */,
-				2E1E7955E15919B252EC2034 /* Pods-IOSLocalLLMTests.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
-			sourceTree = "<group>";
-		};
 		FF52D200EE9C2A377EA47A00 /* LocalAIRuntimeFoundation */ = {
 			isa = PBXGroup;
 			children = (
@@ -1505,7 +1514,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5CDEAFB9F7F142CC702A73AA /* Build configuration list for PBXNativeTarget "IOSLocalLLM" */;
 			buildPhases = (
-				ED5687C6523EF430589F328F /* [CP] Check Pods Manifest.lock */,
+				FEA81E72B6E729F5B698007E /* [CP] Check Pods Manifest.lock */,
 				FC9919E7442159F6D9C49FE6 /* Sources */,
 				01B5D3B8481B858E8B5DF4DC /* Copy bundled VLM (SmolVLM2 GGUF) */,
 				002289B961A54D99A766BC7C /* Copy bundled voice models (Silero VAD) */,
@@ -1555,9 +1564,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4ACA55057D5B9D48BABE8112 /* Build configuration list for PBXNativeTarget "IOSLocalLLMTests" */;
 			buildPhases = (
-				9F8ABB1CD552C94236B26628 /* [CP] Check Pods Manifest.lock */,
+				50ADDBB19076E00A733EE715 /* [CP] Check Pods Manifest.lock */,
 				01161802A7422596999569AA /* Sources */,
-				EC68B33F643F5F3D3F764FDE /* Frameworks */,
+				D1431C589F1ED6BD7FF67180 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -1714,7 +1723,7 @@
 			shellPath = /bin/sh;
 			shellScript = "set -e\nSRC=\"${SRCROOT}/IOSLocalLLM/Models/FastVLM-0.5B-fp16/fastvithd.mlpackage\"\nDEST_DIR=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\nDEST_PACKAGE=\"${DEST_DIR}/fastvithd.mlpackage\"\nDEST_COMPILED=\"${DEST_DIR}/fastvithd.mlmodelc\"\nif [ ! -d \"$SRC\" ]; then\n  echo \"warning: fastvithd.mlpackage not found at $SRC — FastVLM lens path will be unavailable on this build.\"\n  exit 0\nfi\n# Prefer shipping the pre-compiled .mlmodelc so the first\n# camera tap doesn't pay the ~2-3 s on-device compile cost.\n# coremlcompiler is the Xcode-bundled tool that runs the\n# same compile step Xcode's build system uses for sources.\nCOREMLC=\"$(xcrun --find coremlcompiler 2>/dev/null || true)\"\nif [ -n \"$COREMLC\" ] && [ -x \"$COREMLC\" ]; then\n  rm -rf \"$DEST_COMPILED\"\n  \"$COREMLC\" compile \"$SRC\" \"$DEST_DIR\" >/dev/null\n  # coremlcompiler writes <name>.mlmodelc into the dest dir,\n  # so DEST_COMPILED is now populated. Drop the raw\n  # mlpackage so we don't ship both.\n  rm -rf \"$DEST_PACKAGE\"\n  echo \"Compiled FastVLM encoder to $DEST_COMPILED\"\nelse\n  # Fallback: ship the raw mlpackage. FastVLMCoreMLStub\n  # handles runtime compilation via MLModel.compileModel,\n  # which costs a few seconds on first launch but is\n  # functionally equivalent.\n  rsync -a --delete \"$SRC/\" \"$DEST_PACKAGE/\"\n  echo \"Copied raw FastVLM encoder mlpackage to $DEST_PACKAGE (no coremlcompiler available — will compile at runtime)\"\nfi\n";
 		};
-		9F8ABB1CD552C94236B26628 /* [CP] Check Pods Manifest.lock */ = {
+		50ADDBB19076E00A733EE715 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1736,7 +1745,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		ED5687C6523EF430589F328F /* [CP] Check Pods Manifest.lock */ = {
+		FEA81E72B6E729F5B698007E /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1843,6 +1852,7 @@
 				D84EBCA016BC0716F36DE920 /* AssistantActivity.swift in Sources */,
 				EF822B13B9228925A45D2B90 /* AssistantActivityCards.swift in Sources */,
 				FEF1E068BF16471B2ED08CF3 /* AssistantChatComponents.swift in Sources */,
+				F9F029CF1BCAC2A7227FAA68 /* AssistantExecutionPolicy.swift in Sources */,
 				2B8AA5CD1B3620FCA456C8AC /* AssistantModelCatalog.swift in Sources */,
 				5B474CA001497BE1CCF60D03 /* AssistantModelPickerView.swift in Sources */,
 				7ADD0735D2D94DD4A827E9EA /* AttributionsView.swift in Sources */,
@@ -1870,6 +1880,7 @@
 				457834BB3A4C525C2791B489 /* BridgeWakeup.swift in Sources */,
 				2B49DB8FD6280E50EFAD881B /* BundledVLMInstaller.swift in Sources */,
 				D452B9AF24389C2BA748EF98 /* CameraPreviewView.swift in Sources */,
+				D9292E2E17FFA844BE93228D /* CameraRootView.swift in Sources */,
 				AE2863E5EFC6CB025206A4EB /* CameraService.swift in Sources */,
 				480C5DBFE0A76AB883E4974B /* CapabilityPill.swift in Sources */,
 				EBFFBFDE95E407916ECD0554 /* ChatMessage.swift in Sources */,
@@ -1987,6 +1998,7 @@
 				CE1CE6FEEAF445460914C31B /* ModelCatalogTypes.swift in Sources */,
 				6D2D475C70BB67D5B7455FF5 /* ModelDownloadCenter.swift in Sources */,
 				D06B8A4AD1BC560F5E1E5FB8 /* ModelDownloadCenterView.swift in Sources */,
+				E3D024CAAB8BC6797CE63029 /* ModelDownloadRows.swift in Sources */,
 				DFFAAE243E0B5DA7D2BC6483 /* ModelPrefetcher.swift in Sources */,
 				4CD1E4D922070D833F2956D5 /* ModelQualityEval.swift in Sources */,
 				039B3E292A20C21AC46327E1 /* ModelResidency.swift in Sources */,
@@ -2204,7 +2216,7 @@
 		};
 		191A6D60E7000E96612ACE70 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2E1E7955E15919B252EC2034 /* Pods-IOSLocalLLMTests.release.xcconfig */;
+			baseConfigurationReference = 5EFC12BABDE56B84AAE24881 /* Pods-IOSLocalLLMTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -2236,7 +2248,7 @@
 		};
 		43D4022F6A7EB5B4CDE5143A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0BB9E2B6C655BE6089066EC5 /* Pods-IOSLocalLLM.debug.xcconfig */;
+			baseConfigurationReference = 597CBC674B4E10EF2F882C8D /* Pods-IOSLocalLLM.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
@@ -2245,7 +2257,7 @@
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "IOSLocalLLM/IOSLocalLLM-Catalyst.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 110;
+				CURRENT_PROJECT_VERSION = 111;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
 				ENABLE_TESTABILITY = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -2359,7 +2371,7 @@
 		};
 		7E72E41FC98248BC57305C89 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AD398FDA3A71BAD2AEFF44CE /* Pods-IOSLocalLLMTests.debug.xcconfig */;
+			baseConfigurationReference = 5AB7240BA799B6BE2249EF14 /* Pods-IOSLocalLLMTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -2391,7 +2403,7 @@
 		};
 		80DFF1E2A1C809E7A59B27A3 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3EC3F2864F02BC115B82F25F /* Pods-IOSLocalLLM.release.xcconfig */;
+			baseConfigurationReference = 703F04DD84FBC3B7A1679014 /* Pods-IOSLocalLLM.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
@@ -2400,7 +2412,7 @@
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "IOSLocalLLM/IOSLocalLLM-Catalyst.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 110;
+				CURRENT_PROJECT_VERSION = 111;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
 				ENABLE_TESTABILITY = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -2461,7 +2473,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = IOSLocalLLMShareExtension/IOSLocalLLMShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 110;
+				CURRENT_PROJECT_VERSION = 111;
 				INFOPLIST_FILE = IOSLocalLLMShareExtension/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2482,7 +2494,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = IOSLocalLLMShareExtension/IOSLocalLLMShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 110;
+				CURRENT_PROJECT_VERSION = 111;
 				INFOPLIST_FILE = IOSLocalLLMShareExtension/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (

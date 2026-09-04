@@ -123,4 +123,32 @@ enum VoiceUITestLaunch {
     }
 }
 
+
+/// Uses real release views with deterministic search data and no download.
+struct ReleaseUITestFixtureView: View {
+    private let environment = ProcessInfo.processInfo.environment
+
+    var body: some View {
+        content
+            .koduTheme(KoduTheme.make(appearance: environment["RELEASE_DARK"] == "1" ? "dark" : "light",
+                                      accent: KoduTheme.appAccent))
+            .preferredColorScheme(environment["RELEASE_DARK"] == "1" ? .dark : .light)
+            .dynamicTypeSize(environment["RELEASE_LARGE"] == "1" ? .accessibility5 : .large)
+    }
+
+    @ViewBuilder private var content: some View {
+        switch environment["RELEASE_SCREEN"] {
+        case "onboarding": OnboardingView()
+        case "settings": SettingsView(assistant: CodingAssistantService.shared)
+        case "home": HomeView(onNewChat: {}, onOpenLens: {}, onOpenVoice: {}, onOpenModels: {},
+                              onOpenMac: {}, onGenerateImage: {}, onOpenSettings: {}, onOpenConversation: { _ in })
+        default:
+            HFSearchView(service: HFSearchService { request in
+                let data = Data(#"[{"id":"mlx-community/Qwen2.5-Coder-1.5B-Instruct-4bit","tags":["mlx","license:apache-2.0"],"pipeline_tag":"text-generation","downloads":1200}]"#.utf8)
+                return (data, HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+            }, estimateSizes: false)
+        }
+    }
+}
+
 #endif

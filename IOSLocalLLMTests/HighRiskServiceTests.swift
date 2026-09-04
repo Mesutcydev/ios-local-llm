@@ -102,3 +102,137 @@ final class CloudSyncServiceTests: XCTestCase {
         XCTAssertNil(CloudSyncTombstones.deletionDate(id.uuidString))
     }
 }
+
+@MainActor
+final class DownloadLifecycleReleaseTests: XCTestCase {
+    func testCancelThenRetryWaitsForOldRunAndPreservesReplacement() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("config.json")
+        try Data("old".utf8).write(to: file)
+        var first: CheckedContinuation<(Data, URLResponse), Error>?
+        var calls = 0
+        let manager = HFModelDownloadManager(repoID: "test/model", destination: root) { request in
+            calls += 1
+            if calls == 1 {
+                return try await withCheckedThrowingContinuation { first = $0 }
+            }
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            try Data("{}".utf8).write(to: file)
+            return (Data(#"[{"type":"file","path":"config.json","size":2}]"#.utf8),
+                    HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+        }
+        manager.start()
+        manager.start()
+        while first == nil { await Task.yield() }
+        XCTAssertEqual(calls, 1)
+        manager.cancel()
+        manager.start()
+        await Task.yield()
+        XCTAssertEqual(calls, 1, "Retry must wait for the old operation")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: file.path))
+        first!.resume(throwing: URLError(.cancelled))
+        for _ in 0..<10_000 {
+            if manager.state == .ready { break }
+            await Task.yield()
+        }
+        XCTAssertEqual(manager.state, .ready)
+        XCTAssertEqual(try Data(contentsOf: file), Data("{}".utf8))
+        XCTAssertEqual(calls, 2)
+    }
+
+    func testSecondDeletionCannotReportSuccessBeforeTheFirstFinishes() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        var pending: CheckedContinuation<(Data, URLResponse), Error>?
+        let manager = HFModelDownloadManager(repoID: "test/model", destination: root) { _ in
+            try await withCheckedThrowingContinuation { pending = $0 }
+        }
+        manager.start()
+        while pending == nil { await Task.yield() }
+        let deletion = Task { try await manager.delete() }
+        while manager.state.isActive { await Task.yield() }
+        do {
+            try await manager.delete()
+            XCTFail("A duplicate caller must not unregister a model while deletion is pending")
+        } catch {
+            XCTAssertEqual((error as? CocoaError)?.code, .fileWriteUnknown)
+        }
+        pending!.resume(throwing: URLError(.cancelled))
+        try await deletion.value
+    }
+
+    func testDeletingAllowlistedVariantPreservesSibling() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let sibling = root.appendingPathComponent("sibling.bin")
+        let selected = root.appendingPathComponent("selected.bin")
+        try Data([1]).write(to: sibling)
+        try Data([2]).write(to: selected)
+        let manager = HFModelDownloadManager(repoID: "test/model", destination: root,
+                                            fileAllowlist: ["selected.bin"])
+        try await manager.delete()
+        XCTAssertTrue(FileManager.default.fileExists(atPath: sibling.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: selected.path))
+    }
+
+    func testCancellationBeforeTaskRegistrationCancelsOnlyThatTask() {
+        let session = URLSession(configuration: .ephemeral)
+        defer { session.invalidateAndCancel() }
+        let first = session.downloadTask(with: URL(string: "https://example.com/a")!)
+        let sibling = session.downloadTask(with: URL(string: "https://example.com/b")!)
+        let cancellation = DownloadCancellation()
+        cancellation.cancel()
+        cancellation.install(first)
+        XCTAssertTrue(first.state == .canceling || first.state == .completed)
+        XCTAssertEqual(sibling.state, .suspended)
+    }
+}
+
+@MainActor
+final class CloudSyncReleaseTests: XCTestCase {
+    func testAllPagesAreCollectedIncludingAnEmptyIntermediatePage() async throws {
+        var cursors: [Int?] = []
+        let result: [Int] = try await CloudSyncService.collectPages { (cursor: Int?) in
+            cursors.append(cursor)
+            switch cursor {
+            case nil: return ([1, 2], 1)
+            case 1: return ([], 2)
+            default: return ([3], nil)
+            }
+        }
+        XCTAssertEqual(result, [1, 2, 3])
+        XCTAssertEqual(cursors.count, 3)
+    }
+
+    func testPageFailureDoesNotReturnPartialHistory() async {
+        do {
+            let _: [Int] = try await CloudSyncService.collectPages { (cursor: Int?) in
+                if cursor == nil { return ([1], 1) }
+                throw URLError(.networkConnectionLost)
+            }
+            XCTFail("Partial history must not be merged")
+        } catch { XCTAssertEqual((error as? URLError)?.code, .networkConnectionLost) }
+    }
+
+    func testConcurrentSyncAndOptOutDuringAvailability() async {
+        var pending: CheckedContinuation<Bool, Never>?
+        var enabled = true
+        var syncCount = 0
+        let service = CloudSyncService(availability: {
+            await withCheckedContinuation { pending = $0 }
+        }, synchronize: { syncCount += 1 }, isEnabled: { enabled })
+        let first = Task { await service.syncNow() }
+        while pending == nil { await Task.yield() }
+        XCTAssertTrue(service.isSyncing)
+        await service.syncNow()
+        enabled = false
+        pending!.resume(returning: true)
+        await first.value
+        XCTAssertEqual(syncCount, 0)
+        XCTAssertNil(service.lastSyncAt)
+        XCTAssertNil(service.lastError)
+        XCTAssertFalse(service.isSyncing)
+    }
+}

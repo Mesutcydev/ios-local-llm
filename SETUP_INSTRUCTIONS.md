@@ -144,5 +144,11 @@ xcodebuild test \
 
 The exact Simulator name depends on the runtimes installed on your Mac.
 
+For the complete app test and Simulator Release compile gate, run
+`./scripts/validate_app_release.sh` after completing dependency setup. It selects
+an installed iPhone Simulator automatically; set `AUDIT_SIMULATOR_ID` to choose
+one explicitly. Select a full Xcode installation with `DEVELOPER_DIR` if your
+default toolchain is Command Line Tools.
+
 Thermal, Jetsam, Metal-residency, and battery claims require physical-device
 validation; see [Docs/VALIDATION.md](Docs/VALIDATION.md).

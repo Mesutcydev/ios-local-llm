@@ -43,6 +43,8 @@ Releases; there is currently no official App Store binary from this repo.
 | Models | Local vision onboarding |
 | <img src="Docs/Images/Screenshots/models.png" width="320" alt="Model discovery and management screen"> | <img src="Docs/Images/Screenshots/local-vision.png" width="320" alt="Local vision onboarding screen"> |
 
+Home was refreshed from the current Home view on iPhone 17 Simulator (4 September 2026), using an empty-history UI fixture. Other screenshots illustrate earlier builds.
+
 These are unedited iPhone Simulator captures from the open-source source build.
 They contain no user content, accounts, tokens, or model weights. Simulator UI
 validation does not substitute for physical-device thermal, memory, or
@@ -170,7 +172,7 @@ capability, and optional model step.
 
 ## Releases
 
-Official releases are source-only. Starting with `v3.2.6`, each release
+Version-tagged source releases are source-only. Starting with `v3.2.6`, each source release
 includes a reproducible source archive, SHA-256 checksum, and GitHub/Sigstore
 provenance attestation. See
 [release verification](Docs/RELEASE_VERIFICATION.md) for the exact download
@@ -217,3 +219,7 @@ references are explained in [TRADEMARKS.md](TRADEMARKS.md).
 Project decisions and contribution roles are documented in
 [GOVERNANCE.md](GOVERNANCE.md), [ROADMAP.md](ROADMAP.md), and
 [MAINTAINERS.md](MAINTAINERS.md).
+
+### Sideload build
+
+[Download OnDevice LLM 3.2.7 (111)](https://github.com/Mesutcydev/ios-local-llm/releases/tag/sideload-3.2.7-111). The device IPA is ad-hoc signed with the app and share-extension entitlements preserved; your sideloading installer must re-sign it. No model weights are bundled. See [verification and signing requirements](Docs/RELEASE_VERIFICATION.md).
