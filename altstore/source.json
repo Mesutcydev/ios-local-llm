@@ -139,16 +139,26 @@
       "developerName": "Mesutcydev",
       "subtitle": "A local-first AI workbench for iPhone.",
       "localizedDescription": "OnDevice LLM runs supported language, vision, voice, and image-generation workloads on your iPhone. It includes local model management, camera and voice features, retrieval tools, and an authenticated local API without silently falling back to a cloud service.",
-      "iconURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/52d0c61a8179ee60ca4efacff92881fd0c8e7284/IOSLocalLLM/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
+      "iconURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/53727c22b5f77c6931491c42758de2d6b7aa9217/IOSLocalLLM/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
       "tintColor": "#5EEAD4",
       "category": "developer",
       "screenshots": [
-        "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/b751e7444ce198d323d25c44e7cf2a85b90a4f29/Docs/Images/Screenshots/home.png",
+        "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/53727c22b5f77c6931491c42758de2d6b7aa9217/Docs/Images/Screenshots/home.png",
         "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/b751e7444ce198d323d25c44e7cf2a85b90a4f29/Docs/Images/Screenshots/assistant.png",
         "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/b751e7444ce198d323d25c44e7cf2a85b90a4f29/Docs/Images/Screenshots/models.png",
         "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/b751e7444ce198d323d25c44e7cf2a85b90a4f29/Docs/Images/Screenshots/local-vision.png"
       ],
       "versions": [
+        {
+          "version": "3.2.7",
+          "buildVersion": "111",
+          "date": "2026-09-04T20:51:32Z",
+          "localizedDescription": "Reliability and accessibility update: safer download retry/deletion, sync reconciliation and controls, guided setup, installation preflight, and ONNX Runtime 1.29.0. Full app and share-extension entitlements retained; installer re-signing required. Models download on demand.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.7-111/IOSLocalLLM-3.2.7-111-sideload-entitled-full.ipa",
+          "size": 52067738,
+          "sha256": "efd32375e4a1c4a0bb80fd8de6906f8cd2be79b767df3b3193983a9002527056",
+          "minOSVersion": "18.0"
+        },
         {
           "version": "3.2.6",
           "buildVersion": "103",
@@ -162,15 +172,19 @@
       ],
       "appPermissions": {
         "entitlements": [
+          "com.apple.developer.icloud-container-identifiers",
+          "com.apple.developer.icloud-services",
           "com.apple.developer.kernel.extended-virtual-addressing",
-          "com.apple.developer.kernel.increased-memory-limit"
+          "com.apple.developer.kernel.increased-memory-limit",
+          "com.apple.developer.private-cloud-compute",
+          "com.apple.security.application-groups"
         ],
         "privacy": {
-          "NSCameraUsageDescription": "iOS Local LLM uses the back camera to capture live video of your terminal or code editor for real-time analysis.",
-          "NSLocalNetworkUsageDescription": "iOS Local LLM can expose your on-device language model to computers on your local network when you enable the Local API Server.",
-          "NSMicrophoneUsageDescription": "iOS Local LLM uses the microphone for hold-to-talk dictation in the chat composer. Audio is transcribed on-device and never leaves your phone.",
-          "NSPhotoLibraryUsageDescription": "iOS Local LLM can analyze code from photos in your library.",
-          "NSSpeechRecognitionUsageDescription": "iOS Local LLM uses on-device speech recognition to convert your voice into text for the chat composer."
+          "NSCameraUsageDescription": "OnDevice LLM uses the back camera to capture live video of your terminal or code editor for real-time analysis.",
+          "NSLocalNetworkUsageDescription": "OnDevice LLM can expose your on-device language model to computers on your local network when you enable the Local API Server.",
+          "NSMicrophoneUsageDescription": "OnDevice LLM uses the microphone for hold-to-talk dictation in the chat composer. Audio is transcribed on-device and never leaves your phone.",
+          "NSPhotoLibraryUsageDescription": "OnDevice LLM can analyze code from photos in your library.",
+          "NSSpeechRecognitionUsageDescription": "OnDevice LLM uses on-device speech recognition to convert your voice into text for the chat composer."
         }
       }
     },
