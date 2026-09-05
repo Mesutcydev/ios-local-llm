@@ -321,3 +321,7 @@ h1 em, h2 span { color: var(--muted); font-style: normal; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   .reveal { opacity: 1; transform: none; }
 }
+
+/* Keep both edition download choices visible beside their release cards. */
+.build-section--editions { align-items: start; }
+.build-section--editions > * { min-width: 0; }
