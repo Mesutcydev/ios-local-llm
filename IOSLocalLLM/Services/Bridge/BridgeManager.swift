@@ -172,7 +172,7 @@ final class BridgeManager: ObservableObject {
         guard let data = qrJSON.data(using: .utf8),
               let payload = try? JSONDecoder().decode(MacQRPayload.self, from: data),
               payload.v == 1 else {
-            pairingPhase = .failed("Unrecognised QR — scan an iOS Local LLM Mac QR.")
+            pairingPhase = .failed("Unrecognised QR — scan an OnDevice Mac QR.")
             return
         }
 
@@ -181,7 +181,7 @@ final class BridgeManager: ObservableObject {
         // into insecure pairing. Without TLS + cert pinning a LAN attacker
         // could sniff the bearer mid-handshake and impersonate the Mac.
         if payload.macCertFingerprint == nil && !AppSettings.shared.allowInsecureBridgePairing {
-            pairingPhase = .failed("This Mac doesn't support encrypted pairing. Update the iOS Local LLM Mac app, or enable “Allow insecure pairing” in Settings → Mac to continue over your local network.")
+            pairingPhase = .failed("This Mac doesn't support encrypted pairing. Update the OnDevice Mac app, or enable “Allow insecure pairing” in Settings → Mac to continue over your local network.")
             return
         }
 

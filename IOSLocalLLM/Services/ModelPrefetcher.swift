@@ -28,7 +28,7 @@ final class ModelPrefetcher: ObservableObject {
     /// link is expensive (cellular/hotspot) or constrained (data saver).
     private let pathMonitor: NWPathMonitor = {
         let monitor = NWPathMonitor()
-        monitor.start(queue: DispatchQueue(label: "com.mesutcydev.ioslocalllm.prefetch-path-monitor"))
+        monitor.start(queue: DispatchQueue(label: "com.mesutcydev.ondevicecore.prefetch-path-monitor"))
         return monitor
     }()
 

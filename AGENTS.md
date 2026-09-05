@@ -94,6 +94,21 @@ Use an installed Simulator name when the example destination is unavailable.
 For focused changes, run the smallest relevant test selection first, then the
 repository validator.
 
+## Local IPA release packaging
+
+When a user explicitly requests a sideload IPA and valid Apple profiles are not
+available for both the app and share extension, run:
+
+```bash
+./scripts/build_sideload_ipa.sh build/releases
+```
+
+Treat this script as the source of truth for the Xcode 27 Release archive,
+profile-less IPA structure, nested code signing, PCC/app-group/iCloud
+entitlements, and final verification. The result requires installer-side
+re-signing. See `Docs/RELEASE_VERIFICATION.md` for the full two-track release
+scheme. Never commit the generated IPA, archive, profiles, or credentials.
+
 ## Editing rules
 
 - Prefer focused changes that follow nearby Swift and SwiftUI conventions.

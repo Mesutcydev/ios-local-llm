@@ -193,8 +193,21 @@ final class VoiceConversationService: ObservableObject {
             return false
         }
 
+        if DeviceSafetyMonitor.shared.shouldStopHeavyWork,
+           let reason = DeviceSafetyMonitor.shared.stopReason {
+            phase = .failed(reason.detail)
+            return false
+        }
+
         await applyVoiceModelOverrideIfNeeded()
         await voice.load()
+
+        let preferredVoice = VoiceEngineKind(rawValue: AppSettings.shared.voiceEngine) ?? .appleSystem
+        if preferredVoice != .appleSystem, !voice.isPreferredEngineReady {
+            teardownPlaybackSession()
+            phase = .failed("Download \(preferredVoice.shortName) in Voice settings before starting a conversation.")
+            return false
+        }
 
         // The assistant LLM must be resident to answer — start() previously
         // loaded only the TTS engine, so first-use voice (no chat model
@@ -207,8 +220,11 @@ final class VoiceConversationService: ObservableObject {
         default: Task { [assistant] in await assistant.load() }
         }
 
-        session = [ChatMessage(role: .system,
-                                content: PersonaStore.shared.active.systemPrompt)]
+        session = [ChatMessage(
+            role: .system,
+            content: PersonaStore.shared.active.systemPrompt
+                + "\n\n" + CodingAssistantService.groundingPrompt
+        )]
         resetLiveReply()
         liveTranscript = ""
         pendingTranscript = ""
@@ -431,6 +447,10 @@ final class VoiceConversationService: ObservableObject {
         guard force || current != voiceID else { return }
         if savedChatModelID == nil {
             savedChatModelID = current
+        }
+        if let model = AssistantModelCatalog.selection(forStoredID: voiceID) {
+            await assistant.switchTo(model, persistAsDefault: false)
+            return
         }
         if let preset = AssistantModelCatalog.model(forID: voiceID) {
             await assistant.switchTo(preset, persistAsDefault: false)

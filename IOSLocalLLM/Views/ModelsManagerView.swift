@@ -63,6 +63,7 @@ struct ModelsManagerView: View {
     @ObservedObject private var voiceSvc  = VoiceService.shared
     @ObservedObject private var voiceCatalog = VoiceCatalogStore.shared
     @ObservedObject private var settings  = AppSettings.shared
+    @ObservedObject private var coreAIStore = CoreAIModelStore.shared
     @ObservedObject private var loc       = LocalizationService.shared
     @ObservedObject private var bridge    = AppBridge.shared
     @StateObject   private var search     = HFSearchService()
@@ -83,8 +84,8 @@ struct ModelsManagerView: View {
     @State private var showDownloadedOnly = false
     @State private var searchTask: Task<Void, Never>?
     @State private var pendingDelete: DownloadableModel?
+    @State private var showImportPicker = false
     @State private var importError: String?
-    @State private var showDocumentsImporter = false
     /// Installed model currently being copied to a user-selected Files
     /// location. The export picker works from the downloader's real directory,
     /// preserving config, tokenizer, and every weight shard together.
@@ -178,6 +179,7 @@ struct ModelsManagerView: View {
             }
         }
         .onAppear {
+            coreAIStore.refresh()
             applyRequestedSection(bridge.requestedModelsSection)
         }
         .onChange(of: bridge.requestedModelsSection) { _, section in
@@ -235,9 +237,18 @@ struct ModelsManagerView: View {
             ImageGenerationView()
                 .preferredColorScheme(settings.resolvedColorScheme)
         }
-        // Import-local alerts live on the page body so they work from the
-        // utilities footer on every category page. The picker itself is owned
-        // by LocalModelDocumentPickerSession.shared (not a SwiftUI sheet).
+        // Import-local picker + its alerts, formerly attached to the Installed
+        // section. They now live on the page body so they work from the
+        // utilities footer on every category page.
+        .sheet(isPresented: $showImportPicker) {
+            LocalModelDocumentPicker(
+                onPick: { url in
+                    showImportPicker = false
+                    Task { await importLocalModel(at: url) }
+                },
+                onCancel: { showImportPicker = false }
+            )
+        }
         .sheet(item: $exportingModel) { model in
             if let directory = model.downloader?.destination {
                 LocalModelExportPicker(
@@ -736,14 +747,15 @@ struct ModelsManagerView: View {
                 .submitLabel(.search)
                 .onSubmit { runSearch() }
                 .onChange(of: searchText) { _, new in
-                    // Hub results render inline without forcing a tab change.
+                    // Search results render inline at the bottom of the
+                    // current category page, filtered to that category — no
+                    // tab hop. The query stays where the user is browsing.
                     debouncedSearch(query: new)
                 }
             if !searchText.isEmpty {
                 Button {
                     searchText = ""
                     searchTask?.cancel()
-                    search.clear()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 14))
@@ -766,10 +778,7 @@ struct ModelsManagerView: View {
         searchTask?.cancel()
         guard !showDownloadedOnly else { return }
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !q.isEmpty else {
-            search.clear()
-            return
-        }
+        guard !q.isEmpty else { return }
         searchTask = Task {
             try? await Task.sleep(nanoseconds: 350_000_000)
             if Task.isCancelled { return }
@@ -797,6 +806,7 @@ struct ModelsManagerView: View {
     /// outside ModelDownloadCenter.
     private var downloadedOnlyFilter: some View {
         let downloadedCount = center.models.filter(\.isReady).count
+            + coreAIStore.installations.count
             + ImageGenerationService.catalog.filter { imageGen.isInstalled($0) }.count
         return Toggle(isOn: Binding(
             get: { showDownloadedOnly },
@@ -931,9 +941,15 @@ struct ModelsManagerView: View {
                 || model.subtitle.localizedCaseInsensitiveContains(query)
                 || model.id.localizedCaseInsensitiveContains(query)
         }
+        let downloadedCoreAI = coreAIStore.installations.filter { installed in
+            guard !query.isEmpty else { return true }
+            return installed.manifest.displayName.localizedCaseInsensitiveContains(query)
+                || installed.manifest.id.localizedCaseInsensitiveContains(query)
+                || installed.manifest.modelFamily.localizedCaseInsensitiveContains(query)
+        }
 
         LazyVStack(spacing: 12) {
-            if downloaded.isEmpty && downloadedImages.isEmpty {
+            if downloaded.isEmpty && downloadedImages.isEmpty && downloadedCoreAI.isEmpty {
                 emptyState(
                     icon: query.isEmpty ? "internaldrive" : "magnifyingglass",
                     title: query.isEmpty
@@ -949,6 +965,9 @@ struct ModelsManagerView: View {
                     glyph: "internaldrive.fill",
                     tint: T.good
                 )
+                if !downloadedCoreAI.isEmpty {
+                    CoreAIModelsSectionView(showsCatalog: false, query: query)
+                }
                 ForEach(downloaded) { model in
                     if model.isRequired {
                         installedRow(model, activationCategory: model.category)
@@ -992,6 +1011,11 @@ struct ModelsManagerView: View {
 
             if section == .assistant && !isSearching {
                 recommendedSetupsCard
+                // Core AI is a separate on-disk format/runtime, so it owns its
+                // download/install lifecycle while living on the same
+                // Assistant page as MLX/GGUF. None of the existing catalog
+                // rows or downloads are replaced.
+                CoreAIModelsSectionView()
             }
             activeRoleHeader(for: section)
 
@@ -1007,7 +1031,11 @@ struct ModelsManagerView: View {
             }
 
             if isSearching {
-                huggingFaceSearchResults
+                if section == .voice {
+                    voiceCatalogBlock(query: searchText)
+                } else {
+                    scopedSearchResults(category)
+                }
             } else {
                 if category == .imageGen {
                     imageSuggestionsBlock
@@ -1331,8 +1359,8 @@ struct ModelsManagerView: View {
     }
 
     /// Edge / developer toggle. OFF (default): a normal user sees only models
-    /// that safely fit. ON reveals tight models, but MLX still keeps its load
-    /// reserve because its eagerly materialized weights cannot be paged.
+    /// that safely fit — zero OOM risk. ON: "tight" edge models are revealed
+    /// and the load gate drops its reserve so they can actually run.
     private var edgeToggle: some View {
         let on = settings.showEdgeModels
         return Button {
@@ -1347,7 +1375,7 @@ struct ModelsManagerView: View {
                         .font(T.mono(9.5, .semibold))
                         .tracking(0.3)
                     Text(on
-                         ? loc.t("Tight models shown — MLX load safety remains enforced")
+                         ? loc.t("Tight models shown — experimental, may be unstable")
                          : loc.t("Only models that safely fit this device are shown"))
                         .font(T.mono(8.5))
                         .foregroundColor((on ? T.warn : T.ink3).opacity(0.9))
@@ -1743,10 +1771,13 @@ struct ModelsManagerView: View {
         }
     }
 
-    // MARK: - Hugging Face search results
+    // MARK: - Scoped Hugging Face search results
 
     @ViewBuilder
-    private var huggingFaceSearchResults: some View {
+    private func scopedSearchResults(_ category: DownloadableModel.Category) -> some View {
+        let results = search.results.filter {
+            LocalModelRegistry.category(for: $0) == category
+        }
         VStack(spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
@@ -1754,47 +1785,19 @@ struct ModelsManagerView: View {
                     .foregroundColor(T.accent)
                 KCaption(text: loc.t("Hugging Face results").uppercased(), color: T.accent)
                 Rectangle().fill(T.rule).frame(height: 1)
-                if !search.results.isEmpty {
-                    Text("\(search.results.count)")
-                        .font(T.mono(9, .semibold))
-                        .foregroundColor(T.ink3)
-                }
             }
             if search.isSearching {
                 ProgressView().tint(T.accent).padding(.vertical, 20)
-            } else if let error = search.lastError {
-                modelCardShell(accent: T.bad, prominence: 0.08, padding: 14) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Label(loc.t("Hugging Face search failed"), systemImage: "wifi.exclamationmark")
-                            .font(T.sans(14, .semibold))
-                            .foregroundColor(T.bad)
-                        Text(error)
-                            .font(T.sans(12))
-                            .foregroundColor(T.ink2)
-                            .fixedSize(horizontal: false, vertical: true)
-                        HStack(spacing: 8) {
-                            cardButton(label: loc.t("Retry"), kind: .primary) {
-                                runSearch()
-                            }
-                            cardButton(label: loc.t("HF Token"), kind: .secondary) {
-                                showingHFTokenSheet = true
-                            }
-                            Spacer(minLength: 0)
-                        }
-                    }
-                }
-            } else if search.results.isEmpty {
+            } else if results.isEmpty {
                 emptyState(
                     icon: "magnifyingglass",
                     title: loc.t("No matching models"),
-                    subtitle: loc.t("Try a broader model name or paste owner/repository.")
+                    subtitle: search.results.isEmpty
+                        ? loc.t("Try a different search term.")
+                        : loc.t("No results in this category — check the other tabs.")
                 )
             } else {
-                // Search is global even while a role tab is selected. Each
-                // row identifies its inferred role and Download routes it to
-                // the right tab, so valid results never disappear merely
-                // because the user happened to be browsing Lens or Voice.
-                ForEach(search.results) { result in
+                ForEach(results) { result in
                     discoverRow(result)
                 }
             }
@@ -2600,6 +2603,15 @@ struct ModelsManagerView: View {
             importLocalRow
             cleanupRow
         }
+        .sheet(isPresented: $showImportPicker) {
+            LocalModelDocumentPicker(
+                onPick: { url in
+                    showImportPicker = false
+                    Task { await importLocalModel(at: url) }
+                },
+                onCancel: { showImportPicker = false }
+            )
+        }
         .alert("Import failed",
                isPresented: Binding(
                 get: { importError != nil },
@@ -2680,32 +2692,9 @@ struct ModelsManagerView: View {
     /// the user's Files app, then registers the imported folder into the
     /// catalog so it appears in the Installed list immediately.
     private var importLocalRow: some View {
-        Menu {
-            Button("Import model folder from Files", systemImage: "folder.badge.plus") {
-                // Folder import is open-in-place; on resigned/sideload builds
-                // iOS denies the grant (folder selectable, "Open" does nothing).
-                // Route those to the in-sandbox App Documents flow instead.
-                if LocalModelDocumentPickerSession.openInPlacePickingIsUsable {
-                    LocalModelDocumentPickerSession.shared.present(
-                        importKind: .folder,
-                        onPick: { url in await importLocalModel(at: url) }
-                    )
-                } else {
-                    showDocumentsImporter = true
-                }
-                HapticManager.impact(.light)
-            }
-            Button("Import complete model file from Files", systemImage: "doc.badge.plus") {
-                LocalModelDocumentPickerSession.shared.present(
-                    importKind: .file,
-                    onPick: { url in await importLocalModel(at: url) }
-                )
-                HapticManager.impact(.light)
-            }
-            Button("Import from App Documents", systemImage: "internaldrive") {
-                showDocumentsImporter = true
-                HapticManager.impact(.light)
-            }
+        Button {
+            showImportPicker = true
+            HapticManager.impact(.light)
         } label: {
             modelCardShell(accent: T.accent, prominence: 0.08, padding: 14) {
                 HStack(spacing: 12) {
@@ -2739,13 +2728,7 @@ struct ModelsManagerView: View {
                 }
             }
         }
-        .menuStyle(.borderlessButton)
-        .sheet(isPresented: $showDocumentsImporter) {
-            LocalModelDocumentsImportSheet { url in
-                showDocumentsImporter = false
-                Task { await importLocalModel(at: url) }
-            }
-        }
+        .buttonStyle(.plain)
     }
 
     private func importLocalModel(at url: URL) async {
@@ -2951,36 +2934,6 @@ struct ModelsManagerView: View {
         }
     }
 
-    private func loadCatalogModel(
-        _ model: DownloadableModel,
-        as activationCategory: DownloadableModel.Category
-    ) {
-        HapticManager.impact(.medium)
-
-        switch activationCategory {
-        case .assistant:
-            guard let assistantModel = LocalModelRegistry
-                .descriptor(for: model, forcedRole: .assistant)
-                .assistantModel else {
-                ToastCenter.shared.error(
-                    "Model cannot be loaded",
-                    detail: "The installed files did not produce a text-model descriptor."
-                )
-                return
-            }
-            assistant.startSwitchTo(assistantModel, persistAsDefault: true)
-            ToastCenter.shared.info("Loading (model.displayName)…")
-
-        case .vlm:
-            // Reuse the same prewarm/commit path as the Lens picker so the
-            // catalog card cannot persist a model that fails its load gate.
-            setActive(model, as: .vlm)
-
-        case .voice, .imageGen:
-            setActive(model, as: activationCategory)
-        }
-    }
-
     private func setActive(
         _ model: DownloadableModel,
         as activationCategory: DownloadableModel.Category? = nil
@@ -3022,7 +2975,7 @@ struct ModelsManagerView: View {
             guard let engine = supportedVoiceEngine(for: model) else {
                 ToastCenter.shared.info(
                     "Voice model downloaded",
-                    detail: "This repo is stored locally, but iOS Local LLM can only switch between Apple System Voice, KittenTTS, and Kokoro right now."
+                    detail: "This repo is stored locally, but OnDevice can only switch between Apple System Voice, KittenTTS, and Kokoro right now."
                 )
                 return
             }
@@ -3433,27 +3386,14 @@ struct ModelsManagerView: View {
             case .ready:
                 HStack(spacing: 6) {
                     statusPill(text: loc.t("ready"), color: T.good)
-                    // A ready catalog entry is loadable now. Keep the action
-                    // on the same card so users do not have to jump to the
-                    // Installed section just to make a downloaded model
-                    // resident.
-                    if roleCategory == .assistant || roleCategory == .vlm {
-                        cardButton(label: loc.t("Load"), kind: .primary) {
-                            loadCatalogModel(model, as: roleCategory)
-                        }
-                        if !active, canSetActive(model, as: roleCategory) {
-                            cardButton(
-                                label: loc.t(
-                                    roleCategory == .assistant
-                                        ? "Set as default"
-                                        : "Set as active"
-                                ),
-                                kind: .secondary
-                            ) {
-                                setActive(model, as: roleCategory)
-                            }
-                        }
-                    } else if !active, canSetActive(model, as: roleCategory) {
+                    // The Catalog row used to dead-end at "ready" with
+                    // only a Delete button — the user had to navigate
+                    // to Installed to activate the model. Showing
+                    // "Set as active" here turns Catalog into a
+                    // one-tap activation surface for any downloaded
+                    // entry, which is the natural place to do it
+                    // when the user is already browsing the catalog.
+                    if !active, canSetActive(model, as: roleCategory) {
                         cardButton(
                             label: loc.t(
                                 roleCategory == .assistant
@@ -3518,9 +3458,6 @@ struct ModelsManagerView: View {
                 }
             case .idle:
                 HStack(spacing: 6) {
-                    if !model.sizeLabel.isEmpty, model.sizeLabel != "—" {
-                        statusPill(text: model.sizeLabel, color: T.ink3)
-                    }
                     if model.platformCompatibility?.supportsCurrentPlatform ?? true {
                         cardButton(label: loc.t("Download"), kind: .primary) {
                             HapticManager.impact(.medium)
@@ -3667,12 +3604,6 @@ struct ModelsManagerView: View {
                             .background(RoundedRectangle(cornerRadius: 3)
                                 .fill(ModelCapability.gated.tint.opacity(0.15)))
                     }
-                    Text(huggingFaceRoleLabel(for: result))
-                        .font(T.mono(8, .semibold))
-                        .tracking(0.4)
-                        .foregroundColor(T.ink2)
-                        .padding(.horizontal, 4).padding(.vertical, 1)
-                        .background(RoundedRectangle(cornerRadius: 3).fill(T.surface2))
                 }
             }
             Spacer(minLength: 0)
@@ -3737,15 +3668,6 @@ struct ModelsManagerView: View {
         }
         HapticManager.impact(.medium)
         ToastCenter.shared.info("Download started", detail: result.id)
-    }
-
-    private func huggingFaceRoleLabel(for result: HFModelSummary) -> String {
-        switch LocalModelRegistry.category(for: result) {
-        case .assistant: return loc.t("Assistant")
-        case .vlm:       return loc.t("Lens")
-        case .voice:     return loc.t("Voice")
-        case .imageGen:  return loc.t("Image")
-        }
     }
 
     // MARK: - View helpers

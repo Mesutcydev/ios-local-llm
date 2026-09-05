@@ -258,7 +258,10 @@ final class AnalysisService: ObservableObject {
         let captureID = UUID().uuidString.prefix(8)
         let pw = CVPixelBufferGetWidth(pixelBuffer)
         let ph = CVPixelBufferGetHeight(pixelBuffer)
-        print("[AnalysisService] capture \(captureID) raw=\(pw)×\(ph) frameIdx=\(latestFrameIndex)")
+        Diagnostics.shared.breadcrumb(
+            "capture \(captureID) raw=\(pw)×\(ph) frameIdx=\(latestFrameIndex)",
+            category: "analysis"
+        )
         let detection = Detection(
             boundingBox: CGRect(x: 0, y: 0, width: 1, height: 1),
             confidence: 1.0,
@@ -1031,7 +1034,10 @@ extension AnalysisService: CameraServiceDelegate {
         // Debug trace: log dimensions + source + the resolved CG
         // orientation so the validation pass can tell at a glance
         // both what was decided and why.
-        print("[AnalysisService] orient: raw=\(Int(ciImage.extent.width))×\(Int(ciImage.extent.height)) source=\(source) device=\(UIDevice.current.orientation.rawValue) cgOrient=\(cgOrient.rawValue) → out=\(cg.width)×\(cg.height)")
+        Diagnostics.shared.breadcrumb(
+            "orient: raw=\(Int(ciImage.extent.width))×\(Int(ciImage.extent.height)) source=\(source) device=\(UIDevice.current.orientation.rawValue) cgOrient=\(cgOrient.rawValue) → out=\(cg.width)×\(cg.height)",
+            category: "analysis"
+        )
 
         // Mode-specific prompt. Code mode is intentionally directive so the
         // model emits raw code rather than narrative. Visual mode reads the
@@ -1151,7 +1157,10 @@ extension AnalysisService: CameraServiceDelegate {
             return false
         }
         let uiImage = UIImage(cgImage: cg)
-        print("[AnalysisService][llama] orient: raw=\(Int(ciImage.extent.width))×\(Int(ciImage.extent.height)) source=\(source) device=\(UIDevice.current.orientation.rawValue) cgOrient=\(cgOrient.rawValue) → out=\(cg.width)×\(cg.height)")
+        Diagnostics.shared.breadcrumb(
+            "llama orient: raw=\(Int(ciImage.extent.width))×\(Int(ciImage.extent.height)) source=\(source) device=\(UIDevice.current.orientation.rawValue) cgOrient=\(cgOrient.rawValue) → out=\(cg.width)×\(cg.height)",
+            category: "analysis"
+        )
 
         let prompt: String = {
             if mode == .code {

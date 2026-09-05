@@ -2,20 +2,6 @@ import Foundation
 import UIKit
 import SwiftUI
 
-enum LifecycleBackgroundCleanupAction: Equatable, Sendable {
-    case cancelQueuedMLX
-    case awaitNativeGeneration
-    case unloadResidentRuntimes
-}
-
-struct LifecycleBackgroundCleanupPlan: Equatable, Sendable {
-    let actions: [LifecycleBackgroundCleanupAction]
-
-    /// Cancellation is signalled immediately, while native Metal retirement
-    /// and model ownership are left out of the short iOS background assertion.
-    static let referenceCompatible = Self(actions: [.cancelQueuedMLX])
-}
-
 // MARK: - LifecycleController
 //
 // Single authority for reacting to scene-phase transitions.
@@ -29,9 +15,8 @@ struct LifecycleBackgroundCleanupPlan: Equatable, Sendable {
 //     switcher preview). Models are NOT unloaded; only camera-feed submission
 //     is paused.
 //  4. `.background` does bounded cleanup: cancel inference cooperatively, stop
-//     camera, persist a small recovery breadcrumb, and invalidate queued MLX
-//     work. It never waits for an active Metal command buffer or tears down a
-//     runtime that command buffer may still own.
+//     camera, persist a small recovery breadcrumb, schedule MLX teardown with
+//     an iOS background task. It does NOT block suspension.
 //  5. `.active` cancels any obsolete background cleanup and resumes camera only
 //     after permissions + runtime state are valid. Models are NOT auto-reloaded.
 
@@ -158,9 +143,8 @@ final class LifecycleController: Sendable {
         // writes immediately but is small JSON.
         ConversationStore.shared.flush()
 
-        // Take a short background assertion only for the bounded bookkeeping
-        // below. Native generation and runtime teardown are deliberately not
-        // awaited under this assertion.
+        // Begin a background task for MLX teardown. If the system needs the
+        // CPU/GPU back, the expiration handler fires and we bail.
         bgTaskExpired = false
         bgTaskID = UIApplication.shared.beginBackgroundTask(
             withName: "LifecycleCleanup"
@@ -182,37 +166,35 @@ final class LifecycleController: Sendable {
     private func performBackgroundCleanup(epoch: UInt64) async {
         Diagnostics.shared.breadcrumb("background cleanup begin · epoch=\(epoch)", category: "lifecycle")
 
-        // Cancel inference when focus is lost, but never keep an iOS
-        // background task alive while waiting
-        // for an already-submitted Metal command buffer. A long MLX prefill is
-        // not synchronously cancellable. Awaiting it here made the background
-        // task expire, and iOS watchdog-terminated the otherwise healthy app
-        // with the final breadcrumb "draining generation task".
-        //
-        // `cancelAll()` invalidates queued work and returns without waiting for
-        // the active command buffer. The resident model remains owned and can
-        // finish retiring safely. MemoryPressureCoordinator is the sole low-
-        // headroom authority and may still unload on a genuine pressure event.
-        for action in LifecycleBackgroundCleanupPlan.referenceCompatible.actions {
-            switch action {
-            case .cancelQueuedMLX:
-                await MLXGenerationGate.shared.cancelAll()
-            case .awaitNativeGeneration:
-                await CodingAssistantService.shared.cancelAndDrainInference()
-            case .unloadResidentRuntimes:
-                await CodingAssistantService.shared.unloadAndWaitForCleanup()
-                LensInferenceLoop.shared.unload()
-                FastVLMService.shared.unload()
-                await LlamaCppVLMService.shared.unloadAndWaitForCleanup()
-            }
+        // 1. Cancel any in-flight MLX inference cooperatively.
+        //    stopGeneration() was called above; now wait for the task to unwind.
+        await CodingAssistantService.shared.cancelAndDrainInference()
+
+        ConversationStore.shared.flush()
+
+        guard epoch == lifecycleEpoch else { return }
+        guard !bgTaskExpired else {
+            Diagnostics.shared.breadcrumb("background cleanup aborted · expiration", category: "lifecycle")
+            return
         }
 
-        guard epoch == lifecycleEpoch, !bgTaskExpired else { return }
+        // 2. Unload heavy MLX runtimes. Single-heavy-runtime policy enforced
+        //    by CodingAssistantService.unload() and LensInferenceLoop.unload().
+        await CodingAssistantService.shared.unloadAndWaitForCleanup()
+        LensInferenceLoop.shared.unload()
+        FastVLMService.shared.unload()
+        await LlamaCppVLMService.shared.unloadAndWaitForCleanup()
 
-        Diagnostics.shared.breadcrumb(
-            "background cleanup complete · inference cancelled · runtime retained · epoch=\(epoch)",
-            category: "lifecycle"
-        )
+        guard epoch == lifecycleEpoch else { return }
+        guard !bgTaskExpired else {
+            Diagnostics.shared.breadcrumb("background cleanup aborted · expiration during unload", category: "lifecycle")
+            return
+        }
+
+        // 3. Clear MLX GPU caches after all runtimes are released.
+        await MLXGenerationGate.shared.clearCacheWhenIdle()
+
+        Diagnostics.shared.breadcrumb("background cleanup complete · epoch=\(epoch)", category: "lifecycle")
     }
 
     // MARK: - .active

@@ -20,7 +20,9 @@ struct KaraokeTranscriptView: View {
     @State private var showFollowButton = false
     @State private var prepared = KaraokePreparedTranscript.empty
     @State private var displayAttributed = AttributedString()
-    @State private var lastScrollPhraseID: UUID?
+    @State private var lastScrollSegmentID: Int?
+    @State private var visibleSegments: Set<Int> = []
+    @State private var segments: [StudioTranscriptSegment] = []
     @State private var lastScrollAt = Date.distantPast
 
     private let collapsedMin: CGFloat = 150
@@ -40,15 +42,21 @@ struct KaraokeTranscriptView: View {
             header
             ScrollViewReader { proxy in
                 ScrollView {
-                    Text(displayAttributed)
-                        .font(T.sans(15))
-                        .lineSpacing(4)
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .textSelection(.enabled)
-                        .accessibilityLabel(text)
-                        .accessibilityHint("Assistant response transcript")
-                        .id("karaoke-body")
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(segments) { segment in
+                            Text(attributedSegment(segment))
+                                .font(T.conversationBody)
+                                .lineSpacing(4)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .textSelection(.enabled)
+                                .id(segment.id)
+                                .onScrollVisibilityChange(threshold: 0.5) { visible in
+                                    if visible { visibleSegments.insert(segment.id) }
+                                    else { visibleSegments.remove(segment.id) }
+                                }
+                        }
+                    }
+                    .accessibilityHint("Assistant response transcript")
                     Color.clear
                         .frame(height: 1)
                         .id("karaoke-bottom")
@@ -63,6 +71,13 @@ struct KaraokeTranscriptView: View {
                         }
                     }
                 )
+                .onChange(of: followSpeech) { _, following in
+                    if following {
+                        lastScrollSegmentID = nil
+                        lastScrollAt = .distantPast
+                        scrollToActiveSegment(proxy: proxy)
+                    }
+                }
                 .onChange(of: highlightToken) { _, _ in
                     // Phrase + spoken end land together — one highlight pass.
                     refreshHighlight()
@@ -108,7 +123,7 @@ struct KaraokeTranscriptView: View {
             if empty {
                 followSpeech = true
                 showFollowButton = false
-                lastScrollPhraseID = nil
+                lastScrollSegmentID = nil
             }
         }
     }
@@ -126,7 +141,8 @@ struct KaraokeTranscriptView: View {
                     showFollowButton = false
                 } label: {
                     Label("Follow speech", systemImage: "text.alignleft")
-                        .font(T.mono(9, .semibold))
+                        .font(T.mono(11, .semibold))
+                        .frame(minHeight: 44)
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(T.accent)
@@ -134,15 +150,30 @@ struct KaraokeTranscriptView: View {
             }
             Button(action: onToggleExpand) {
                 Text(isExpanded ? "Collapse" : "Expand")
-                    .font(T.mono(9, .semibold))
+                    .font(T.mono(11, .semibold))
                     .foregroundStyle(T.ink2)
+                    .frame(minHeight: 44)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(isExpanded ? "Collapse transcript" : "Expand transcript")
         }
     }
 
+    private func attributedSegment(_ segment: StudioTranscriptSegment) -> AttributedString {
+        guard let range = Range(segment.range, in: displayAttributed) else { return AttributedString(segment.text) }
+        return AttributedString(displayAttributed[range])
+    }
+
+    private var activeSegmentID: Int? {
+        StudioTranscriptSegment.activeID(in: segments, utf16Offset: activeRange?.location ?? max(0, spokenUTF16End - 1))
+    }
+
+    private func scrollToActiveSegment(proxy: ScrollViewProxy) {
+        if let id = activeSegmentID { proxy.scrollTo(id, anchor: .center) }
+    }
+
     private func rebuildPrepared(text: String) {
+        segments = StudioTranscriptSegment.make(text)
         prepared = KaraokePreparedTranscript.prepare(
             text: text,
             ink: T.ink,
@@ -162,18 +193,19 @@ struct KaraokeTranscriptView: View {
 
     private func autoScroll(proxy: ScrollViewProxy, phraseID: UUID?) {
         guard followSpeech else { return }
-        guard phraseID != lastScrollPhraseID else { return }
+        guard let segmentID = activeSegmentID, !visibleSegments.contains(segmentID),
+              segmentID != lastScrollSegmentID else { return }
         // Cap scroll rate (~3/s).
         let now = Date()
         guard now.timeIntervalSince(lastScrollAt) >= 0.34 else { return }
-        lastScrollPhraseID = phraseID
+        lastScrollSegmentID = segmentID
         lastScrollAt = now
         VoicePerformanceMonitor.shared.noteAutoScroll()
         // Instant scroll — animated scroll transactions contend with the orb TimelineView.
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {
-            proxy.scrollTo("karaoke-bottom", anchor: .bottom)
+            scrollToActiveSegment(proxy: proxy)
         }
     }
 }
@@ -222,7 +254,7 @@ struct KaraokePreparedTranscript {
            let spoken = Range(NSRange(location: 0, length: spokenLen), in: result) {
             // Color only — NEVER font. The old code set `.body` (17pt system)
             // on spoken text and semibold on the active phrase while the base
-            // renders T.sans(15): every phrase boundary re-laid out the whole
+            // uses the shared conversation font: every phrase boundary re-laid out the whole
             // transcript and the karaoke line visibly jumped.
             result[spoken].foregroundColor = ink
         }
@@ -250,7 +282,7 @@ struct VoiceUserTranscriptBubble: View {
                 .tracking(0.6)
                 .foregroundStyle(T.ink2)
             Text(text)
-                .font(T.sans(14.5))
+                .font(T.conversationBody)
                 .foregroundStyle(T.ink)
                 .multilineTextAlignment(.trailing)
                 .fixedSize(horizontal: false, vertical: true)

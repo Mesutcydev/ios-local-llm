@@ -33,7 +33,7 @@ final class CameraService: NSObject, ObservableObject {
     private var videoDevice: AVCaptureDevice?
 
     // Frame management
-    private let processingQueue = DispatchQueue(label: "com.mesutcydev.ioslocalllm.camera", qos: .userInteractive)
+    private let processingQueue = DispatchQueue(label: "com.mesutcydev.ondevicecore.camera", qos: .userInteractive)
     private var frameIndex: Int = 0
     // Was a plain Bool. Promoted to a lock so the read-then-flip inside
     // captureOutput is one atomic critical section — the serial-queue
@@ -237,7 +237,10 @@ final class CameraService: NSObject, ObservableObject {
             applyFrameDurations(device, format: format, targetFPS: targetFPS)
             device.unlockForConfiguration()
         } catch {
-            print("[CameraService] lockForConfiguration failed: \(error)")
+            Diagnostics.shared.warning(
+                "lockForConfiguration failed: \(error.localizedDescription)",
+                category: "camera"
+            )
         }
     }
 
@@ -253,7 +256,10 @@ final class CameraService: NSObject, ObservableObject {
             applyFrameDurations(device, format: device.activeFormat, targetFPS: targetFPS)
             device.unlockForConfiguration()
         } catch {
-            print("[CameraService] frame-rate retune failed: \(error)")
+            Diagnostics.shared.warning(
+                "frame-rate retune failed: \(error.localizedDescription)",
+                category: "camera"
+            )
         }
     }
 
@@ -333,7 +339,10 @@ final class CameraService: NSObject, ObservableObject {
                 self?.zoomFactor = clamped
             }
         } catch {
-            print("[CameraService] zoom failed: \(error)")
+            Diagnostics.shared.warning(
+                "zoom failed: \(error.localizedDescription)",
+                category: "camera"
+            )
         }
     }
 
@@ -360,7 +369,10 @@ final class CameraService: NSObject, ObservableObject {
             }
             device.unlockForConfiguration()
         } catch {
-            print("[CameraService] focus failed: \(error)")
+            Diagnostics.shared.warning(
+                "focus failed: \(error.localizedDescription)",
+                category: "camera"
+            )
             return
         }
 
@@ -390,7 +402,10 @@ final class CameraService: NSObject, ObservableObject {
                 self?.torchOn = on
             }
         } catch {
-            print("[CameraService] torch failed: \(error)")
+            Diagnostics.shared.warning(
+                "torch failed: \(error.localizedDescription)",
+                category: "camera"
+            )
         }
     }
 

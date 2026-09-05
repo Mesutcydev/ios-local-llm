@@ -76,22 +76,22 @@ struct VoicePlaybackStatusBadge: View {
 // MARK: - SpeakerAnimationView
 
 struct SpeakerAnimationView: View {
-    @State private var phase: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        HStack(spacing: 2) {
-            ForEach(0..<3) { i in
-                Capsule()
-                    .fill(T.ink2)
-                    .frame(width: 2, height: 4 + CGFloat(sin(phase + Double(i) * .pi / 2)) * 3)
+        TimelineView(.animation(minimumInterval: 1.0 / 20, paused: reduceMotion || scenePhase != .active)) { context in
+            let phase = reduceMotion ? 0 : context.date.timeIntervalSinceReferenceDate * .pi * 2
+            HStack(spacing: 2) {
+                ForEach(0..<3) { i in
+                    Capsule()
+                        .fill(T.ink2)
+                        .frame(width: 2, height: 5 + CGFloat(sin(phase + Double(i) * .pi / 2)) * 3)
+                }
             }
+            .frame(width: 12, height: 12)
         }
-        .frame(width: 12, height: 12)
-        .onAppear {
-            withAnimation(.linear(duration: 0.8).repeatForever(autoreverses: false)) {
-                phase = .pi * 2
-            }
-        }
+        .accessibilityHidden(true)
     }
 }

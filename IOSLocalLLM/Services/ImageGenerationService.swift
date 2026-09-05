@@ -273,6 +273,8 @@ final class ImageGenerationService: ObservableObject {
             directDownloadErrors[model.id] = nil
             objectWillChange.send()
             ToastCenter.shared.success("Downloaded \(model.displayName)")
+        } catch is CancellationError {
+            directDownloadProgress[model.id] = nil
         } catch {
             directDownloadProgress[model.id] = nil
             directDownloadErrors[model.id] = Self.downloadFailureMessage(for: model, error: error)
@@ -348,24 +350,16 @@ final class ImageGenerationService: ObservableObject {
             state = .failed(Self.crashBlockedMessage(for: model))
             return
         }
-        // 1. Free RAM/GPU held by OTHER models — and any previous diffusion
-        //    run's pooled buffers — BEFORE measuring. This must happen first:
-        //    otherwise a model that just ran (e.g. SDXL-Turbo) leaves weights
-        //    resident, `processAvailableMemory` reads artificially low, and a
-        //    SMALLER model like SD 2.1 gets wrongly refused ("~3.0 GB needed,
-        //    ~2.6 GB free") even though it would comfortably fit once the
-        //    previous model is released.
-        // Await the assistant LLM's FULL teardown (it's the largest consumer
-        // and the most likely to be mid-generate). Plain `unload()` returns
-        // before its deferred cache clear runs when a generation is in flight,
-        // leaving multi-GB weights resident when the gate measures below —
-        // exactly the "smaller model wrongly refused" case this block exists
-        // to prevent. The VLM unloads stay synchronous (no awaitable variant),
-        // but the explicit gated clear + the assistant await reclaim the
-        // bulk of the memory before measurement.
+        if DeviceSafetyMonitor.shared.shouldStopHeavyWork {
+            let reason = DeviceSafetyMonitor.shared.stopReason
+            state = .failed(reason?.detail ?? "The device is too hot or under memory pressure.")
+            statusMessage = ""
+            return
+        }
         await CodingAssistantService.shared.unloadAndWaitForCleanup()
         MLXVisionService.shared.unload()
         FastVLMService.shared.unload()
+        await LlamaCppVLMService.shared.unloadAndWaitForCleanup()
         // Flush MLX's idle buffer pool now. The clear shares the global gate,
         // so cancelled VLM Metal work must drain before reclamation and before
         // the memory measurement below.
@@ -381,7 +375,14 @@ final class ImageGenerationService: ObservableObject {
         // Turbo to ~14 GB needed on devices where the measured working set fits.
         let avail = MemoryAdvisor.availableMemoryForModel
         let needed = model.approxRAMBytes + MemoryAdvisor.loadHeadroomReserve
-        guard avail <= 0 || avail >= needed else {
+        if avail <= 0 {
+            Diagnostics.shared.warning(
+                "imagegen refused — memory measurement unavailable, blocking conservatively",
+                category: "imagegen")
+            state = .failed("Could not measure available memory. Close other apps, restart, and retry.")
+            return
+        }
+        guard avail >= needed else {
             let needGB = Double(needed) / 1_000_000_000
             let haveGB = Double(avail) / 1_000_000_000
             Diagnostics.shared.warning(
@@ -390,16 +391,6 @@ final class ImageGenerationService: ObservableObject {
             state = .failed(String(
                 format: "Not enough memory for %@ (~%.1f GB needed, ~%.1f GB free). Close other apps and retry.",
                 model.displayName, needGB, haveGB))
-            return
-        }
-        // When memory measurement is unavailable (avail == 0, uncommon on
-        // device), refuse anyway with a conservative floor — an unsized
-        // model is safer to block than to let through into a likely OOM.
-        if avail <= 0 {
-            Diagnostics.shared.warning(
-                "imagegen refused — memory measurement unavailable, blocking conservatively",
-                category: "imagegen")
-            state = .failed("Could not measure available memory. Close other apps, restart, and retry.")
             return
         }
 
@@ -418,6 +409,11 @@ final class ImageGenerationService: ObservableObject {
                     guard let self else { return }
                     if case .downloading = self.state { self.state = .downloading(frac) }
                 }
+            } catch is CancellationError {
+                Diagnostics.shared.breadcrumb("imagegen cancelled", category: "imagegen")
+                state = isInstalled(model) ? .ready : .idle
+                statusMessage = ""
+                return
             } catch {
                 let ns = error as NSError
                 if ns.domain == NSURLErrorDomain,
@@ -442,7 +438,11 @@ final class ImageGenerationService: ObservableObject {
             )
             return
         }
-        guard !Task.isCancelled else { state = .ready; return }
+        guard !Task.isCancelled else {
+            Diagnostics.shared.breadcrumb("imagegen cancelled", category: "imagegen")
+            state = isInstalled(model) ? .ready : .idle
+            return
+        }
 
         // 3b. Background guard (mirrors the VLM describe path). The download
         //     above can run for minutes; the user often locks the screen or
@@ -454,14 +454,22 @@ final class ImageGenerationService: ObservableObject {
         //     "crash while downloading image models" report). The weights are
         //     on disk now; leave the model ready and let the user tap Generate
         //     again once the app is foreground.
-        guard UIApplication.shared.applicationState == .active,
-              !DeviceSafetyMonitor.shared.shouldStopHeavyWork else {
+        guard UIApplication.shared.applicationState == .active else {
             state = isInstalled(model) ? .ready : .idle
             statusMessage = isInstalled(model)
                 ? "Downloaded — tap Generate to create your image."
                 : ""
             Diagnostics.shared.breadcrumb(
-                "imagegen deferred — app not active / unsafe after download",
+                "imagegen deferred — app not active after download",
+                category: "imagegen")
+            return
+        }
+        if DeviceSafetyMonitor.shared.shouldStopHeavyWork {
+            let reason = DeviceSafetyMonitor.shared.stopReason
+            state = .failed(reason?.detail ?? "The device is too hot or under memory pressure.")
+            statusMessage = ""
+            Diagnostics.shared.breadcrumb(
+                "imagegen refused after download — thermal/memory",
                 category: "imagegen")
             return
         }
@@ -695,7 +703,7 @@ final class ImageGenerationService: ObservableObject {
             // A user cancel returns between files (the in-flight URLSession
             // transfer keeps going in the background and is reused next time);
             // the caller's `Task.isCancelled` check then takes the cancel path.
-            if Task.isCancelled { return }
+            if Task.isCancelled { throw CancellationError() }
 
             let dest = dir.appendingPathComponent(rel)
             // Already on disk → count and skip. The coordinator only writes to
@@ -726,7 +734,7 @@ final class ImageGenerationService: ObservableObject {
                     }
                     break
                 } catch {
-                    if Task.isCancelled { return }
+                    if Task.isCancelled { throw CancellationError() }
                     attempt += 1
                     guard attempt < maxAttempts, Self.isRetryableDownloadError(error) else { throw error }
                     Diagnostics.shared.breadcrumb(

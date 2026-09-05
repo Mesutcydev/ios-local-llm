@@ -5,7 +5,7 @@ import Security
 // One item per token; the token is used as the account key.
 final class BridgePairingStore {
     static let shared = BridgePairingStore()
-    private static let service = "com.mesutcydev.ioslocalllm.bridge.pairings"
+    private static let service = "com.mesutcydev.ondevicecore.bridge.pairings"
     private init() {}
 
     /// Three new optional fields landed with the agent channel:

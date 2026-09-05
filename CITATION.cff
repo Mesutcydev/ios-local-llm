@@ -9,7 +9,7 @@ authors:
 repository-code: "https://github.com/Mesutcydev/ios-local-llm"
 url: "https://mesut.uk/apps/codelens"
 license: MIT
-version: 3.2.6
+version: 1.0.0
 date-released: 2026-07-29
 keywords:
   - OnDevice

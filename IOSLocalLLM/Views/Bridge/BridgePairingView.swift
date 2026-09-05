@@ -342,7 +342,7 @@ struct BridgePairingView: View {
                 Text("Pair with Mac")
                     .font(T.mono(15, .semibold))
                     .foregroundColor(T.ink)
-                Text("Open iOS Local LLM Bridge on your Mac, click \"Show QR\", then scan it here.")
+                Text("Open OnDevice on your Mac, click \"Show QR\", then scan it here.")
                     .font(T.mono(12, .regular))
                     .foregroundColor(T.ink3)
                     .multilineTextAlignment(.center)
@@ -756,31 +756,25 @@ private struct LocalAPIServerCard: View {
                     .font(theme.sans(12))
                     .foregroundColor(theme.warn)
             } else {
-                ForEach(Array(connectionEntries(port: port).enumerated()), id: \.offset) { _, entry in
+                ForEach(manager.addresses, id: \.self) { address in
                     CopyableAPIEndpoint(
-                        label: entry.label,
-                        value: entry.value,
+                        label: "OpenAI",
+                        value: "http://\(address):\(port)/v1",
+                        theme: theme
+                    )
+                    CopyableAPIEndpoint(
+                        label: "Ollama",
+                        value: "http://\(address):\(port)",
+                        theme: theme
+                    )
+                    CopyableAPIEndpoint(
+                        label: "Anthropic",
+                        value: "http://\(address):\(port)",
                         theme: theme
                     )
                 }
             }
         }
-    }
-
-    private func connectionEntries(port: UInt16) -> [(label: String, value: String)] {
-        var seen = Set<String>()
-        var entries: [(label: String, value: String)] = []
-        for address in manager.addresses {
-            let openAI = "http://\(address):\(port)/v1"
-            let localBase = "http://\(address):\(port)"
-            if seen.insert(openAI).inserted {
-                entries.append(("OpenAI", openAI))
-            }
-            if seen.insert(localBase).inserted {
-                entries.append(("Ollama · Anthropic", localBase))
-            }
-        }
-        return entries
     }
 
     private var keyControls: some View {

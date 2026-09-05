@@ -13,15 +13,16 @@ struct AssistantModelPickerView: View {
     @ObservedObject private var registry = InstalledModelRegistry.shared
     @ObservedObject private var safety = DeviceSafetyMonitor.shared
     @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var coreAIStore = CoreAIModelStore.shared
     @Environment(\.dismiss) private var dismiss
     @Environment(\.koduTheme) private var T
 
     @State private var selectedID: String = AssistantModelCatalog.currentSelection().id
     @State private var customRepoID: String = ""
+    @State private var showLocalImport = false
     @State private var showApplePrivateCloudDisclosure = false
     @State private var isImporting = false
     @State private var isActivating = false
-    @State private var showDocumentsImporter = false
 
     init(downloadedOnly: Bool = false) {
         self.downloadedOnly = downloadedOnly
@@ -29,6 +30,16 @@ struct AssistantModelPickerView: View {
 
     private var recommendedAssistant: AssistantModel? {
         AssistantModelCatalog.model(forID: DeviceTierAdvisor.recommendedModelID)
+    }
+
+    private var installedCoreAIAssistants: [AssistantModel] {
+        coreAIStore.installedAssistantModels().sorted {
+            let lhsActive = $0.id == assistant.activeModel.id
+            let rhsActive = $1.id == assistant.activeModel.id
+            if lhsActive != rhsActive { return lhsActive }
+            return $0.displayName.localizedCaseInsensitiveCompare($1.displayName)
+                == .orderedAscending
+        }
     }
 
     /// Models that have actually been pulled onto the device — catalog-pipeline
@@ -179,8 +190,20 @@ struct AssistantModelPickerView: View {
                             onShowLimitOptions: ApplePrivateCloud.showLimitIncreaseOptions
                         )
                     }
+                    if !installedCoreAIAssistants.isEmpty {
+                        modelSection(title: "Core AI · Installed") {
+                            LazyVStack(spacing: 12) {
+                                ForEach(installedCoreAIAssistants) { model in
+                                    row(for: model)
+                                }
+                            }
+                        }
+                    } else if !downloadedOnly {
+                        coreAIEmptySection
+                    }
                     if downloadedOnly {
-                        if downloadedOnlyAssistantModels.isEmpty {
+                        if downloadedOnlyAssistantModels.isEmpty
+                            && installedCoreAIAssistants.isEmpty {
                             VStack(spacing: 18) {
                                 ContentUnavailableView(
                                     "No downloaded assistant models",
@@ -206,7 +229,7 @@ struct AssistantModelPickerView: View {
                                 .padding(.horizontal, 24)
                             }
                             .padding(.top, 48)
-                        } else {
+                        } else if !downloadedOnlyAssistantModels.isEmpty {
                             modelSection(title: "Downloaded") {
                                 LazyVStack(spacing: 12) {
                                     ForEach(downloadedOnlyAssistantModels) { model in
@@ -236,6 +259,15 @@ struct AssistantModelPickerView: View {
                 }
                 .padding(.bottom, 32)
             }
+            .sheet(isPresented: $showLocalImport) {
+                LocalModelDocumentPicker(
+                    onPick: { url in
+                        showLocalImport = false
+                        Task { await importLocal(url) }
+                    },
+                    onCancel: { showLocalImport = false }
+                )
+            }
             .sheet(isPresented: $showApplePrivateCloudDisclosure) {
                 ApplePrivateCloudPrivacyDisclosureView {
                     settings.applePCCPrivacyConsentVersion =
@@ -252,11 +284,41 @@ struct AssistantModelPickerView: View {
                 }
             }
             .onAppear {
+                coreAIStore.refresh()
                 selectedID = assistant.activeSelectionID
                 if ApplePrivateCloud.isSupportedOnCurrentOS {
                     Task { await assistant.refreshApplePrivateCloudStatus() }
                 }
             }
+        }
+    }
+
+    private var coreAIEmptySection: some View {
+        modelSection(title: "Core AI · iOS 27") {
+            VStack(alignment: .leading, spacing: 10) {
+                Label("No Core AI pack installed", systemImage: "cpu")
+                    .font(T.sans(14, .semibold))
+                    .foregroundColor(T.ink)
+                Text("Install a ready-to-run .aimodel pack from Models. MLX and GGUF models remain available and unchanged.")
+                    .font(T.sans(12))
+                    .foregroundColor(T.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button {
+                    dismiss()
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(250))
+                        AppBridge.shared.requestTab(.models)
+                    }
+                } label: {
+                    Label("Browse Core AI packs", systemImage: "arrow.down.circle")
+                        .font(T.sans(13, .semibold))
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(T.accent)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .kGlass(cornerRadius: 22, fallbackFill: T.surface)
         }
     }
 
@@ -690,33 +752,9 @@ struct AssistantModelPickerView: View {
 
     private var importSection: some View {
         KSection(title: "from_files") {
-            Menu {
-                Button("Import model folder from Files", systemImage: "folder.badge.plus") {
-                    // Folder import is open-in-place; on resigned/sideload
-                    // builds iOS denies the grant (folder selectable, "Open"
-                    // does nothing). Route those to the in-sandbox App
-                    // Documents flow instead.
-                    if LocalModelDocumentPickerSession.openInPlacePickingIsUsable {
-                        LocalModelDocumentPickerSession.shared.present(
-                            importKind: .folder,
-                            onPick: { url in await importLocal(url) }
-                        )
-                    } else {
-                        showDocumentsImporter = true
-                    }
-                    HapticManager.impact(.light)
-                }
-                Button("Import complete model file from Files", systemImage: "doc.badge.plus") {
-                    LocalModelDocumentPickerSession.shared.present(
-                        importKind: .file,
-                        onPick: { url in await importLocal(url) }
-                    )
-                    HapticManager.impact(.light)
-                }
-                Button("Import from App Documents", systemImage: "internaldrive") {
-                    showDocumentsImporter = true
-                    HapticManager.impact(.light)
-                }
+            Button {
+                showLocalImport = true
+                HapticManager.impact(.light)
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "tray.and.arrow.down")
@@ -746,14 +784,8 @@ struct AssistantModelPickerView: View {
                 .padding(.vertical, 12)
                 .contentShape(Rectangle())
             }
-            .menuStyle(.borderlessButton)
+            .buttonStyle(.plain)
             .disabled(isImporting)
-            .sheet(isPresented: $showDocumentsImporter) {
-                LocalModelDocumentsImportSheet { url in
-                    showDocumentsImporter = false
-                    Task { await importLocal(url) }
-                }
-            }
         }
     }
 

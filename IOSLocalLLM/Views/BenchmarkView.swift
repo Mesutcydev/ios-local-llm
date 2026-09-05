@@ -258,7 +258,7 @@ struct BenchmarkView: View {
                     .tracking(0.5)
                     .foregroundColor(T.accent)
                 Spacer()
-                Text("\(r.outputTokens) tok")
+                Text("\(r.outputTokens) \(r.outputCountKind == "streamChunks" ? "chunks" : "tok")")
                     .font(T.mono(10))
                     .foregroundColor(T.ink3)
             }

@@ -66,9 +66,11 @@ final class DiagnosticsTests: XCTestCase {
     func test_exportContainsHeaderAndEntry() {
         Diagnostics.shared.error("boom", category: "test")
         let text = Diagnostics.shared.exportText()
-        XCTAssertTrue(text.contains("iOS Local LLM diagnostics"))
+        XCTAssertTrue(text.contains("OnDevice diagnostics"))
         XCTAssertTrue(text.contains("boom"))
-        XCTAssertTrue(text.contains("RECENT LOG (1 entries)"))
+        // The shared Diagnostics singleton can hold entries logged by the app
+        // during launch, so assert the section header shape, not an exact count.
+        XCTAssertTrue(text.contains("RECENT LOG ("))
     }
 
     func test_entryLineFormatIncludesLevelAndCategory() {

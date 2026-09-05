@@ -30,7 +30,7 @@ final class LiveOCRService: ObservableObject {
     /// Frames per second cap for OCR — anything over ~2 fps makes the phone
     /// hotter without materially improving tap targets.
     private let throttleFPS: Double = 2.0
-    private let recognitionQueue = DispatchQueue(label: "com.mesutcydev.ioslocalllm.live-ocr",
+    private let recognitionQueue = DispatchQueue(label: "com.mesutcydev.ondevicecore.live-ocr",
                                                  qos: .utility)
     private var recognitionInFlight = false
 

@@ -145,6 +145,44 @@ final class ToolRunnerTests: XCTestCase {
         XCTAssertNil(ToolRunner.extractCall(from: #"{"name":"Kareem","args":{"age":30}}"#))
     }
 
+    func test_coreAIRequiresCuratedToolSupport() {
+        XCTAssertFalse(ToolRunner.toolsEnabled(
+            settingEnabled: true,
+            runtime: .coreAI,
+            modelSupportsTools: false
+        ))
+        XCTAssertTrue(ToolRunner.toolsEnabled(
+            settingEnabled: true,
+            runtime: .coreAI,
+            modelSupportsTools: true
+        ))
+    }
+
+    func test_MLXAndGGUFRetainExistingToolBehavior() {
+        XCTAssertTrue(ToolRunner.toolsEnabled(
+            settingEnabled: true,
+            runtime: .mlx,
+            modelSupportsTools: false
+        ))
+        XCTAssertTrue(ToolRunner.toolsEnabled(
+            settingEnabled: true,
+            runtime: .llamaCpp,
+            modelSupportsTools: false
+        ))
+        XCTAssertFalse(ToolRunner.toolsEnabled(
+            settingEnabled: false,
+            runtime: .mlx,
+            modelSupportsTools: true
+        ))
+    }
+
+    func test_removingPersistedToolPromptLeavesConversationInstructions() {
+        let original = "Be concise." + ToolRunner.systemPromptAddendum
+        let stripped = ToolRunner.removingSystemPromptAddendum(from: original)
+        XCTAssertEqual(stripped, "Be concise.")
+        XCTAssertFalse(stripped.contains("knowledge_base"))
+    }
+
     // MARK: - Calculator (via run)
 
     func test_calculator_simpleAddition() async {
@@ -341,5 +379,11 @@ final class ToolRunnerTests: XCTestCase {
         let a = ToolCall(name: "calculator", args: ["expression": "1+1"])
         let b = ToolCall(name: "calculator", args: ["expression": "2+2"])
         XCTAssertEqual(a, b, "ToolCall equality only considers name")
+    }
+
+    func test_systemPromptAddendum_forbidsInventedToolResults() {
+        XCTAssertTrue(ToolRunner.systemPromptAddendum.contains("Do not invent a tool result"))
+        XCTAssertTrue(ToolRunner.systemPromptAddendum.contains("Never write a `tool_result`"))
+        XCTAssertTrue(CodingAssistantService.groundingPrompt.contains("Do not invent citations"))
     }
 }

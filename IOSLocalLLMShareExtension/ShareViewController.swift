@@ -11,9 +11,9 @@ import SwiftUI
 // the main app via a custom URL scheme.
 //
 // Hand-off URLs:
-//   ios-local-llm://share?file=<jpg-name>          → image (lens tab)
-//   ios-local-llm://share?text=<percent-encoded>   → text snippet (assistant tab)
-//   ios-local-llm://share?url=<percent-encoded>    → URL (assistant tab)
+//   ondevice-core://share?file=<jpg-name>          → image (lens tab)
+//   ondevice-core://share?text=<percent-encoded>   → text snippet (assistant tab)
+//   ondevice-core://share?url=<percent-encoded>    → URL (assistant tab)
 //
 // Long text shares (>1500 chars) go through the file-staging path instead of
 // the URL — iOS truncates open URLs around 2KB and Safari/Mail share
@@ -22,8 +22,8 @@ import SwiftUI
 final class ShareViewController: UIViewController {
 
     // App Group identifier — must match the main app's entitlements.
-    private static let appGroupID = "group.com.mesutcydev.ioslocalllm.shared"
-    private static let urlScheme  = "ios-local-llm"
+    private static let appGroupID = "group.com.mesutcydev.ondevicecore.shared"
+    private static let urlScheme  = "ondevice-core"
 
     /// Threshold above which we stash text in a file and hand the
     /// filename to the main app instead of inlining via URL query.
@@ -52,30 +52,31 @@ final class ShareViewController: UIViewController {
             return
         }
 
-        // Two passes: first look for an image (highest-fidelity payload),
-        // then for text/URL fallbacks. Some share sheets attach BOTH an
-        // image and a URL (e.g. Safari's "share page"), and the user
-        // almost always wants the image when one is present.
-        for attachment in attachments {
-            if attachment.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
-                do {
-                    let imageData = try await loadImageData(from: attachment)
-                    let stagedURL = try writeToAppGroup(imageData,
-                                                       subdir: "SharedImages",
-                                                       ext: "jpg")
+        // Prefer a URL when present so Safari "Share page" reaches Assistant
+        // instead of Lens analyzing the preview thumbnail. Image-only shares
+        // still take the image path.
+        let hasURL = attachments.contains {
+            $0.hasItemConformingToTypeIdentifier(UTType.url.identifier)
+        }
+        if !hasURL {
+            for attachment in attachments {
+                if attachment.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
                     do {
-                        let openURL = try imageOpenURL(for: stagedURL)
-                        await openMainApp(with: openURL)
+                        let imageData = try await loadImageData(from: attachment)
+                        let stagedURL = try writeToAppGroup(imageData,
+                                                           subdir: "SharedImages",
+                                                           ext: "jpg")
+                        do {
+                            let openURL = try imageOpenURL(for: stagedURL)
+                            await openMainApp(with: openURL)
+                        } catch {
+                            try? FileManager.default.removeItem(at: stagedURL)
+                            throw error
+                        }
+                        return
                     } catch {
-                        try? FileManager.default.removeItem(at: stagedURL)
-                        throw error
+                        print("[ShareExtension] image load failed: \(error)")
                     }
-                    return
-                } catch {
-                    // Don't dismiss on image failure — fall through to
-                    // text/URL handling so a Safari "share page" still
-                    // works when the page screenshot can't be decoded.
-                    print("[ShareExtension] image load failed: \(error)")
                 }
             }
         }
@@ -318,7 +319,7 @@ final class ShareViewController: UIViewController {
         // the responder chain. Two failure modes used to be swallowed by an
         // unconditional `success: true`, closing the share sheet while nothing
         // actually happened: (1) no UIApplication in the chain, and (2) the
-        // open being refused (iOS Local LLM not installed / scheme unhandled).
+        // open being refused (OnDevice not installed / scheme unhandled).
         // Surface both so the user isn't left staring at a no-op.
         var responder: UIResponder? = self
         var app: UIApplication?
@@ -327,14 +328,14 @@ final class ShareViewController: UIViewController {
             responder = r.next
         }
         guard let app else {
-            await dismiss(success: false, error: "Couldn't reach the app to open iOS Local LLM.")
+            await dismiss(success: false, error: "Couldn't reach the app to open OnDevice.")
             return
         }
         let opened: Bool = await withCheckedContinuation { cont in
             app.open(url, options: [:]) { success in cont.resume(returning: success) }
         }
         await dismiss(success: opened,
-                      error: opened ? nil : "iOS Local LLM couldn't be opened. Is it installed?")
+                      error: opened ? nil : "OnDevice couldn't be opened. Is it installed?")
     }
 
     @MainActor

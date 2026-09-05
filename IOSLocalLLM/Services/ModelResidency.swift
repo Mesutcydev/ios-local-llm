@@ -151,27 +151,46 @@ final class ModelResidency: ObservableObject {
 
     private var prefetchTask: Task<Void, Never>?
 
+    /// Page-cache warming is speculative work. Keep it off battery and out of
+    /// an already-warm thermal session; a model load remains correct without
+    /// this optimization.
+    nonisolated static func allowsBackgroundPrefetch(
+        thermalState: ProcessInfo.ThermalState,
+        isCharging: Bool,
+        lowPowerMode: Bool
+    ) -> Bool {
+        thermalState == .nominal && isCharging && !lowPowerMode
+    }
+
     /// Schedule a background prefetch of the OTHER tab's weight files
     /// after `idleDelay` seconds. Cancels any pending prefetch.
     ///
-    /// Call from CodingAssistantService when the LLM finishes loading
-    /// or generating, passing `.assistant` as the currently-active tab
-    /// (so we prefetch the VLM's files). Symmetric from LensInferenceLoop.
+    /// Call after an active model finishes loading, passing `.assistant` as
+    /// the currently-active tab (so we prefetch the VLM's files). Symmetric
+    /// from LensInferenceLoop.
     func schedulePrefetch(currentTab: ActiveTab, idleDelay: TimeInterval = 4.0) {
         prefetchTask?.cancel()
-        // Runtime policy is single-resident, so the other tab always benefits
-        // from a small disk-only prefetch even when its raw weights could have
-        // fit alongside the current model.
-        // Speculative disk-only work: skip when the device is already warm
-        // or the user is conserving power — priming the page cache is a
-        // nice-to-have, not worth any thermal/battery cost.
-        guard DeviceSafetyMonitor.shared.effectiveThermalState == .nominal,
-              !ProcessInfo.processInfo.isLowPowerModeEnabled else { return }
+        // Runtime policy is single-resident, so the other tab can benefit from
+        // a small disk-only prefetch after an explicit model load. It is never
+        // required for correctness and must not run on battery.
+        guard Self.allowsBackgroundPrefetch(
+            thermalState: DeviceSafetyMonitor.shared.effectiveThermalState,
+            isCharging: DeviceSafetyMonitor.shared.isCharging,
+            lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled
+        ) else { return }
 
         let otherTab = currentTab.opposite
         prefetchTask = Task.detached(priority: .background) {
             try? await Task.sleep(nanoseconds: UInt64(idleDelay * 1_000_000_000))
             if Task.isCancelled { return }
+            let stillAllowed = await MainActor.run {
+                Self.allowsBackgroundPrefetch(
+                    thermalState: DeviceSafetyMonitor.shared.effectiveThermalState,
+                    isCharging: DeviceSafetyMonitor.shared.isCharging,
+                    lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled
+                )
+            }
+            guard stillAllowed else { return }
             await Self.primeCacheForOtherTab(otherTab)
         }
     }

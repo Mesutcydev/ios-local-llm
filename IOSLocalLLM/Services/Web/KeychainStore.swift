@@ -7,26 +7,20 @@ import Security
 // survive backup OFF the device's keychain but stay locked when the device
 // is asleep.
 //
-// Used by the Web Tool's API-key providers and the local API's bearer key.
+// Used ONLY by the Web Tool's API-key providers (Brave / Tavily / Exa).
 // Never persists chat history, prompts, or any user content.
 
 public enum KeychainStore {
 
     /// Account name namespace — keep it scoped to the web-tool so other parts
     /// of the app can use their own keychain space if they want one.
-    // Keep this product's keychain namespace separate from the reference app.
-    // A sideloaded clone must not read or overwrite the reference app's keys.
-    public static let service = "com.mesutcydev.ondevicelas.webtool"
+    public static let service = "com.mesutcydev.ondevicecore.webtool"
 
-    public static func set(
-        _ value: String,
-        account: String,
-        serviceName: String = KeychainStore.service
-    ) {
+    public static func set(_ value: String, account: String) {
         guard let data = value.data(using: .utf8) else { return }
         let q: [String: Any] = [
             kSecClass as String:       kSecClassGenericPassword,
-            kSecAttrService as String: serviceName,
+            kSecAttrService as String: service,
             kSecAttrAccount as String: account
         ]
         // Try update first; fall back to add.
@@ -40,13 +34,10 @@ public enum KeychainStore {
         }
     }
 
-    public static func get(
-        account: String,
-        serviceName: String = KeychainStore.service
-    ) -> String? {
+    public static func get(account: String) -> String? {
         let q: [String: Any] = [
             kSecClass as String:       kSecClassGenericPassword,
-            kSecAttrService as String: serviceName,
+            kSecAttrService as String: service,
             kSecAttrAccount as String: account,
             kSecReturnData as String:  true,
             kSecMatchLimit as String:  kSecMatchLimitOne
@@ -61,13 +52,10 @@ public enum KeychainStore {
         return str
     }
 
-    public static func delete(
-        account: String,
-        serviceName: String = KeychainStore.service
-    ) {
+    public static func delete(account: String) {
         let q: [String: Any] = [
             kSecClass as String:       kSecClassGenericPassword,
-            kSecAttrService as String: serviceName,
+            kSecAttrService as String: service,
             kSecAttrAccount as String: account
         ]
         SecItemDelete(q as CFDictionary)
@@ -87,10 +75,7 @@ public enum KeychainStore {
         "localAPI.bearerKey",
     ]
 
-    public static func has(
-        account: String,
-        serviceName: String = KeychainStore.service
-    ) -> Bool {
-        get(account: account, serviceName: serviceName) != nil
+    public static func has(account: String) -> Bool {
+        get(account: account) != nil
     }
 }

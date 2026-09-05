@@ -4,7 +4,7 @@
 <dict>
   <key>com.apple.security.application-groups</key>
   <array>
-    <string>group.com.mesutcydev.ioslocalllm.shared</string>
+    <string>group.com.mesutcydev.ondevicecore.shared</string>
   </array>
   <key>com.apple.developer.kernel.increased-memory-limit</key>
   <true/>
@@ -12,7 +12,7 @@
   <true/>
   <key>com.apple.developer.icloud-container-identifiers</key>
   <array>
-    <string>iCloud.com.mesutcydev.ioslocalllm</string>
+    <string>iCloud.com.mesutcydev.ondevicecore</string>
   </array>
   <key>com.apple.developer.icloud-services</key>
   <array>

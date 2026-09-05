@@ -23,7 +23,7 @@ final class CloudSyncService: ObservableObject {
     @Published private(set) var isSyncing = false
     @Published private(set) var lastError: String?
 
-    private let container = CKContainer(identifier: "iCloud.com.mesutcydev.ioslocalllm")
+    private let container = CKContainer(identifier: "iCloud.com.mesutcydev.ondevicecore")
     private var privateDB: CKDatabase { container.privateCloudDatabase }
 
     private init() {}

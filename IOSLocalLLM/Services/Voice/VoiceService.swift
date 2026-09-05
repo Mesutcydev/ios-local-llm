@@ -13,7 +13,8 @@ import Foundation
 //
 // Engine selection:
 //   • If the preferred engine (from AppSettings) is ready → use it.
-//   • Otherwise fall back to Apple System Voice (always available).
+//   • Speak/stream refuse when a neural engine is selected but not ready.
+//     Catalog listing may still show Apple voices as a fallback list.
 //
 // Chunking: long texts are split via TextChunker and spoken sequentially.
 
@@ -135,7 +136,12 @@ final class VoiceService: ObservableObject {
         }
 
         refreshStates()
-        currentEngineKind = resolvedEngine(for: preferred).kind
+        currentEngineKind = preferred
+    }
+
+    var isPreferredEngineReady: Bool {
+        let preferred = VoiceEngineKind(rawValue: settings.voiceEngine) ?? .appleSystem
+        return preferredEngineIfReady(for: preferred) != nil
     }
 
     /// Disk discovery is synchronous and authoritative. Engine loading is a
@@ -238,7 +244,17 @@ final class VoiceService: ObservableObject {
         currentTask = Task {
             let preferredKind = VoiceEngineKind(rawValue: self.settings.voiceEngine) ?? .appleSystem
             await self.ensureEngineReadyIfNeeded(for: preferredKind)
-            let engine = self.resolvedEngine(for: preferredKind)
+            guard let engine = self.preferredEngineIfReady(for: preferredKind) else {
+                await MainActor.run {
+                    self.isPlaying = false
+                    SpeechPlaybackCoordinator.shared.reset()
+                    ToastCenter.shared.error(
+                        "Voice engine isn’t ready",
+                        detail: "Download \(preferredKind.shortName) in Voice settings, or switch to Apple Voice."
+                    )
+                }
+                return
+            }
             self.currentEngineKind = engine.kind
 
             let voiceID = self.settings.voiceID
@@ -444,7 +460,17 @@ final class VoiceService: ObservableObject {
             guard let self else { return }
             let preferredEngineKind = VoiceEngineKind(rawValue: self.settings.voiceEngine) ?? .appleSystem
             await self.ensureEngineReadyIfNeeded(for: preferredEngineKind)
-            let preferredEngine = self.resolvedEngine(for: preferredEngineKind)
+            guard let preferredEngine = self.preferredEngineIfReady(for: preferredEngineKind) else {
+                await MainActor.run {
+                    self.isPlaying = false
+                    self.activeStreamSession = nil
+                    ToastCenter.shared.error(
+                        "Voice engine isn’t ready",
+                        detail: "Download \(preferredEngineKind.shortName) in Voice settings, or switch to Apple Voice."
+                    )
+                }
+                return
+            }
             self.currentEngineKind = preferredEngine.kind
 
             let voiceID = self.settings.voiceID
@@ -645,22 +671,25 @@ final class VoiceService: ObservableObject {
 
     // MARK: - Engine resolution
 
-    /// Returns the preferred engine if ready, otherwise falls back to
-    /// system. The readiness gate covers both "engine hasn't been
-    /// loaded yet" and "engine load failed its self-check" — in the
-    /// latter case the engine's `modelState` is `.failed(...)` and the
-    /// VoiceModelPickerView surfaces the message so the user can either
-    /// retry or pick a different engine. Until they do, every speak()
-    /// transparently routes through System Voice.
-    private func resolvedEngine(for kind: VoiceEngineKind) -> any LocalVoiceEngine {
+    /// Returns the preferred engine if it can speak. Apple Voice is always ready.
+    /// Neural engines do not silently fall back to Apple.
+    private func preferredEngineIfReady(for kind: VoiceEngineKind) -> (any LocalVoiceEngine)? {
         switch kind {
         case .kittenTTS:
-            return kittenEngine.isReady ? kittenEngine : systemEngine
+            return kittenEngine.isReady ? kittenEngine : nil
         case .kokoro:
-            return kokoroEngine.isReady ? kokoroEngine : systemEngine
+            return kokoroEngine.isReady ? kokoroEngine : nil
         case .appleSystem:
             return systemEngine
         }
+    }
+
+    /// Returns the preferred engine if ready, otherwise falls back to
+    /// system for catalog/listing only. Speak paths must use
+    /// `preferredEngineIfReady` so a missing Kitten/Kokoro pack is not
+    /// silently narrated by Apple TTS.
+    private func resolvedEngine(for kind: VoiceEngineKind) -> any LocalVoiceEngine {
+        preferredEngineIfReady(for: kind) ?? systemEngine
     }
 
     // MARK: - Per-chunk language routing

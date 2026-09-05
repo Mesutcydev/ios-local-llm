@@ -6,7 +6,7 @@ import QuartzCore
 // Points of Interest for Instruments. Cheap when disabled by OS.
 
 enum VoicePerformanceSignposts {
-    static let log = OSLog(subsystem: "com.mesutcydev.ioslocalllm.IOSLocalLLM", category: "VoicePerformance")
+    static let log = OSLog(subsystem: "com.mesutcydev.ondevicecore.IOSLocalLLM", category: "VoicePerformance")
 
     static func begin(_ name: StaticString, id: OSSignpostID = .exclusive) {
         os_signpost(.begin, log: log, name: name, signpostID: id)

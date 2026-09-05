@@ -1,3 +1,7 @@
+> This release branch contains **OnDevice Core 1.0.0 (10)**, the iOS 27 edition.
+> OnDevice LLM remains a separate app on `main`; its download remains available.
+> Generate this branch with XcodeGen, then open `OnDeviceCoreAIStudio.xcworkspace`.
+
 # OnDevice LLM
 
 **Run open-source LLMs on iPhone offline** — chat, vision, voice, RAG, and an
@@ -5,12 +9,11 @@ authenticated local API. Built in SwiftUI with MLX, llama.cpp, whisper.cpp, and
 Core ML. No account. No telemetry. No cloud inference by default.
 
 [![Validate](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/validate.yml/badge.svg)](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/validate.yml)
-[![CodeQL](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/codeql.yml/badge.svg)](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/codeql.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Mesutcydev/ios-local-llm/badge)](https://scorecard.dev/viewer/?uri=github.com/Mesutcydev/ios-local-llm)
 [![License: MIT](https://img.shields.io/badge/original%20code-MIT-2ea44f.svg)](LICENSE)
 [![Swift](https://img.shields.io/badge/Swift-5.10-F05138.svg)](https://www.swift.org/)
 [![Platform](https://img.shields.io/badge/platform-iOS%2018%2B%20%7C%20Mac%20Catalyst-blue.svg)](SETUP_INSTRUCTIONS.md)
-[![Website](https://img.shields.io/badge/website-mesut.uk-0A66C2.svg)](https://mesut.uk/apps/codelens)
+[![Website](https://img.shields.io/badge/website-GitHub%20Pages-0A66C2.svg)](https://mesutcydev.github.io/ios-local-llm/)
 
 > Part of the **OnDevice** product line. Independent open-source project — not
 > affiliated with or endorsed by Apple Inc.
@@ -29,12 +32,6 @@ agent channel.
 
 Repository slug remains `ios-local-llm` for stable links. Product name is
 **OnDevice LLM**. Site: [mesutcydev.github.io/ios-local-llm](https://mesutcydev.github.io/ios-local-llm/).
-
-The generated `OnDeviceLAS` target is the current server-only distribution of
-this source tree. It keeps local model loading, safety policy, and the
-authenticated API surface while omitting the assistant, lens, voice, and
-paired-Mac UI from the shipped app. The broader source catalog remains
-available for reuse and reference.
 
 The app was previously distributed through the App Store. This repository is
 now the canonical source distribution. Sideload builds may appear under
@@ -166,10 +163,10 @@ Generate the Xcode project and install CocoaPods:
 ```bash
 xcodegen generate
 pod install
-open OnDeviceLAS.xcworkspace
+open IOSLocalLLM.xcworkspace
 ```
 
-Select the `OnDeviceLAS` scheme and an iOS Simulator. For a physical device,
+Select the `IOSLocalLLM` scheme and an iOS Simulator. For a physical device,
 change the bundle identifiers and select your own development team in Xcode.
 See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md) and
 [fork configuration](Docs/FORK_CONFIGURATION.md) for every identifier,

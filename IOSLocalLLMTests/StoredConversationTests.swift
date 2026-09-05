@@ -58,6 +58,25 @@ final class StoredConversationTests: XCTestCase {
         XCTAssertTrue(md.contains("Hello"))
     }
 
+    func test_storedMessage_preservesDocumentSourceSnapshots() throws {
+        var original = ChatMessage(role: .assistant, content: "Grounded answer")
+        original.documentSources = [.init(id: UUID(), documentID: UUID(), name: "Notes", excerpt: "Saved source excerpt")]
+        let data = try JSONEncoder().encode(StoredMessage(original))
+        let restored = try JSONDecoder().decode(StoredMessage.self, from: data).chatMessage
+        XCTAssertEqual(restored.documentSources, original.documentSources)
+    }
+
+    func test_storedMessage_withoutSourcesRemainsDecodable() throws {
+        let original = StoredMessage(ChatMessage(role: .assistant, content: "Older answer"))
+        let encoded = try JSONEncoder().encode(original)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        object.removeValue(forKey: "documentSources")
+        let data = try JSONSerialization.data(withJSONObject: object)
+        let restored = try JSONDecoder().decode(StoredMessage.self, from: data).chatMessage
+        XCTAssertEqual(restored.content, "Older answer")
+        XCTAssertNil(restored.documentSources)
+    }
+
     func test_storedMessage_preservesGenerationMetrics() {
         let original = ChatMessage(
             role: .assistant,
@@ -70,6 +89,16 @@ final class StoredConversationTests: XCTestCase {
 
         XCTAssertEqual(restored.generationTokensPerSecond, 18.75)
         XCTAssertEqual(restored.generationDuration, 4.2)
+    }
+
+    func test_storedMessage_preservesHitTokenLimit() {
+        let original = ChatMessage(
+            role: .assistant,
+            content: "Partial answer",
+            hitTokenLimit: true
+        )
+        let restored = StoredMessage(original).chatMessage
+        XCTAssertEqual(restored.hitTokenLimit, true)
     }
 
     func test_storedMessage_preservesHiddenModelContext() {

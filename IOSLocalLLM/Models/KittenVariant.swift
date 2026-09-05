@@ -41,8 +41,7 @@ struct KittenVariantConfiguration: Codable, Equatable, Identifiable, Sendable {
     let artifacts: [KittenArtifact]
 
     var installedDirectory: URL {
-        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        return documents.appendingPathComponent("VoiceModels", isDirectory: true)
+        VoiceModelBundleValidator.voiceModelsRoot()
             .appendingPathComponent("KittenTTS", isDirectory: true)
             .appendingPathComponent(id.directoryName, isDirectory: true)
     }

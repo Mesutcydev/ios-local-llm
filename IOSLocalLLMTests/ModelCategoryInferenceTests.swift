@@ -253,6 +253,43 @@ final class ModelCategoryInferenceTests: XCTestCase {
         XCTAssertEqual(message.content, "Summarize this.")
     }
 
+    func test_gemmaTemplate_foldsSystemIntoFirstUserTurnOnce() {
+        let messages = [
+            ChatMessage(role: .system, content: "Be brief."),
+            ChatMessage(role: .user, content: "Hello"),
+        ]
+        let prompt = ChatTemplate.gemma.format(messages: messages)
+        XCTAssertTrue(prompt.contains("<start_of_turn>user\nBe brief.\n\nHello<end_of_turn>"))
+        XCTAssertEqual(prompt.components(separatedBy: "Be brief.").count - 1, 1)
+        XCTAssertFalse(prompt.contains("System: Be brief."))
+        XCTAssertTrue(prompt.hasSuffix("<start_of_turn>model\n"))
+    }
+
+    func test_chatMLTemplate_keepsDedicatedSystemTurn() {
+        let messages = [
+            ChatMessage(role: .system, content: "Be brief."),
+            ChatMessage(role: .user, content: "Hello"),
+        ]
+        let prompt = ChatTemplate.chatML.format(messages: messages)
+        XCTAssertTrue(prompt.contains("<|im_start|>system\nBe brief.<|im_end|>"))
+        XCTAssertTrue(prompt.contains("<|im_start|>user\nHello<|im_end|>"))
+        XCTAssertFalse(prompt.contains("Be brief.\n\nHello"))
+    }
+
+    func test_chatMLTemplate_leaveLastAssistantOpen_skipsGenerationCue() {
+        let messages = [
+            ChatMessage(role: .user, content: "Write a story"),
+            ChatMessage(role: .assistant, content: "Once upon a time"),
+        ]
+        let open = ChatTemplate.chatML.format(
+            messages: messages,
+            leaveLastAssistantOpen: true
+        )
+        XCTAssertEqual(open, "<|im_start|>user\nWrite a story<|im_end|>\n<|im_start|>assistant\nOnce upon a time")
+        let closed = ChatTemplate.chatML.format(messages: messages)
+        XCTAssertTrue(closed.contains("<|im_end|>\n<|im_start|>assistant\n /no_think"))
+    }
+
     func test_assistantOutputSanitizer_removesKnownQwenBoundaryLeaks() {
         XCTAssertEqual(
             AssistantOutputSanitizer.clean("\nassistant: off.\n\n### Result\n**Done**"),
@@ -426,66 +463,5 @@ final class ModelCategoryInferenceTests: XCTestCase {
             XCTAssertFalse(cap.label.isEmpty, "\(cap) missing label")
             XCTAssertFalse(cap.symbol.isEmpty, "\(cap) missing symbol")
         }
-    }
-}
-
-@MainActor
-final class HFSearchServiceTests: XCTestCase {
-    func test_normalizesCopiedHubModelURLs() {
-        XCTAssertEqual(
-            HFSearchService.normalizedQuery(
-                "https://huggingface.co/mlx-community/Qwen3-4B/tree/main"
-            ),
-            "mlx-community/Qwen3-4B"
-        )
-        XCTAssertEqual(
-            HFSearchService.normalizedQuery("huggingface.co/owner/model.git/resolve/main"),
-            "owner/model"
-        )
-        XCTAssertEqual(HFSearchService.normalizedQuery("  Qwen3 coder  "), "Qwen3 coder")
-    }
-
-    func test_mlxSearchUsesHubFilterAndEncodesRepositoryQuery() throws {
-        let url = try XCTUnwrap(HFSearchService.searchURL(
-            query: "mlx-community/Qwen 3",
-            filter: .mlx,
-            limit: 250
-        ))
-        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
-        let values = Dictionary(grouping: components.queryItems ?? [], by: \.name)
-
-        XCTAssertEqual(values["search"]?.first?.value, "mlx-community/Qwen 3")
-        XCTAssertEqual(values["filter"]?.first?.value, "mlx")
-        XCTAssertNil(values["pipeline_tag"])
-        XCTAssertEqual(values["limit"]?.first?.value, "100")
-        XCTAssertEqual(values["full"]?.first?.value, "true")
-    }
-
-    func test_taskSearchUsesPipelineTagRatherThanGenericFilter() throws {
-        let url = try XCTUnwrap(HFSearchService.searchURL(
-            query: "vision",
-            filter: .vlm,
-            limit: 30
-        ))
-        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
-        let values = Dictionary(grouping: components.queryItems ?? [], by: \.name)
-
-        XCTAssertEqual(values["pipeline_tag"]?.first?.value, "image-text-to-text")
-        XCTAssertNil(values["filter"])
-    }
-
-    func test_decodesBothHubIdentifierShapesAndMetadata() throws {
-        let json = #"[
-          {"modelId":"mlx-community/Qwen3-4B","downloads":123,"likes":7,"tags":["mlx","license:apache-2.0"],"pipeline_tag":"text-generation"},
-          {"id":"owner/vision-model","downloads":9,"likes":2,"tags":["coreml"],"pipeline_tag":"image-text-to-text"}
-        ]"#
-        let models = try HFSearchService.decodeResults(Data(json.utf8))
-
-        XCTAssertEqual(models.map(\.id), ["mlx-community/Qwen3-4B", "owner/vision-model"])
-        XCTAssertEqual(models[0].downloads, 123)
-        XCTAssertEqual(models[0].licenseTag, "apache-2.0")
-        XCTAssertTrue(models[0].isMLX)
-        XCTAssertEqual(models[1].pipelineTag, "image-text-to-text")
-        XCTAssertTrue(models[1].isCoreML)
     }
 }

@@ -44,7 +44,7 @@ struct UnsupportedDeviceView: View {
                         Text("Device Not Supported")
                             .font(T.display(22, .semibold))
                             .foregroundColor(T.ink)
-                        Text("iOS Local LLM runs large AI models entirely on-device. Inference needs at least 8 GB of physical RAM to load without thermal throttling or Jetsam kills.")
+                        Text("OnDevice runs large AI models entirely on-device. Inference needs at least 8 GB of physical RAM to load without thermal throttling or Jetsam kills.")
                             .font(T.sans(13))
                             .foregroundColor(T.ink2)
                             .multilineTextAlignment(.center)

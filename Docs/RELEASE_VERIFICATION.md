@@ -36,3 +36,38 @@ The attestation proves the workflow identity and artifact digest. It does not
 change the licenses of the source, dependencies, or separately downloaded
 models. Review `LICENSE`, `THIRD_PARTY_NOTICES.md`, and `PROVENANCE.md` before
 redistribution.
+
+## Local sideload IPA release scheme
+
+This is separate from the public source-only GitHub release above. Use it only
+when a user explicitly requests a local IPA artifact.
+
+The reproducible profile-less release command is:
+
+```bash
+./scripts/build_sideload_ipa.sh build/releases
+```
+
+The script must run with Xcode 27 and performs the complete release contract:
+
+1. Regenerate the Xcode project from `project.yml` and install CocoaPods.
+2. Verify catalog invariants and every direct Core AI model URL.
+3. Archive the `OnDeviceCoreAIStudio` scheme in `Release` for generic iOS with
+   signing disabled.
+4. Reject unsafe Foundation Models imports and confirm Core AI linkage.
+5. Verify the bundle ID, display name, version/build, iOS 27 minimum, privacy
+   manifest, share extension, llama framework, and whisper framework.
+6. Ad-hoc sign nested frameworks, the share extension, and the app using
+   `IOSLocalLLM-PCC.entitlements` and the share-extension entitlements.
+7. Verify that the IPA root contains only `Payload/`, signatures are valid,
+   required entitlements match exactly, and no provisioning profile is present.
+8. Emit versioned and `latest` IPA files plus size and SHA-256 output.
+
+This artifact is re-signer-ready, not directly installable. AltStore,
+SideStore, a CI signer, or another installer must apply a valid certificate and
+profiles for both the app and share extension. Do not add IPA files, archives,
+profiles, certificates, or signing credentials to Git.
+
+If valid Apple profiles already exist for both bundle IDs, preserve the signed
+archive and package it with `scripts/package_sideloadable_ipa.sh` instead; that
+path verifies and retains the embedded profile and signed entitlements.

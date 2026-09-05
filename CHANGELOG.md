@@ -1,3 +1,10 @@
+## [1.0.0] — OnDevice Core build 10 — 2026-09-05
+
+Separate iOS 27 Core edition release: silver eye identity and shorter matching splash,
+asynchronous document context with inspectable source snapshots, streaming and voice
+presentation improvements, and safer document import cancellation. Native packaging
+preserves app and share-extension entitlements and bundles dependency notices.
+
 # Changelog
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)

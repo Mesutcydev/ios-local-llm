@@ -36,7 +36,6 @@ required_files=(
   llms.txt
   .github/CODEOWNERS
   .github/copilot-instructions.md
-  .github/workflows/codeql.yml
   .github/workflows/scorecard.yml
   .github/workflows/source-release.yml
   Packages/VoiceAgentOrb/LICENSE
@@ -155,17 +154,12 @@ if [[ -n "$unpinned_actions" ]]; then
   exit 1
 fi
 
-retired_brand_pattern='CodeLens|code lens|CODELENS|LOCAL AI STUDIO|Local AI Studio|LOCAL_AI_STUDIO'
-retired_brand_matches="$(
-  git grep -In -E "$retired_brand_pattern" -- \
-    . \
-    ':!ThirdParty/**' \
-    ':!Pods/**' \
-    ':!scripts/validate_open_source.sh' \
-    ':!*.pbxproj' || true
-)"
+# Reject retired UI titles without rejecting the Core edition's studio tagline
+# or historical CodeLens references in implementation documentation.
+retired_brand_pattern='Text\("(CodeLens|code lens|CODELENS)"\)'
+retired_brand_matches="$(git grep -In -E "$retired_brand_pattern" -- '*.swift' || true)"
 if [[ -n "$retired_brand_matches" ]]; then
-  echo "error: retired project branding remains in tracked source:" >&2
+  echo "error: retired app title remains in UI source:" >&2
   echo "$retired_brand_matches" >&2
   exit 1
 fi

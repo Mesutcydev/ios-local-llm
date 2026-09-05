@@ -23,7 +23,7 @@ import Foundation
 //
 // User overrides (rate / pitch / engine / chunking strategy) are
 // applied ON TOP of the base profile, keyed under
-// `com.mesutcydev.ioslocalllm.voice.profile.<modelId>.<field>` in UserDefaults.
+// `com.mesutcydev.ondevicecore.voice.profile.<modelId>.<field>` in UserDefaults.
 // They beat built-in defaults but never replace the structural
 // fields (`usesReasoningTokens`, `reasoningTokenPattern`,
 // `dominantLanguages`) — those are model-architecture facts, not
@@ -195,7 +195,7 @@ enum VoiceProfileRegistry {
     // it." UserDefaults.standard.double(forKey:) returns 0.0 for
     // missing keys, which would silently zero out the rate.
 
-    private static let overridePrefix = "com.mesutcydev.ioslocalllm.voice.profile."
+    private static let overridePrefix = "com.mesutcydev.ondevicecore.voice.profile."
 
     /// Set or clear the user's rate override for `modelId`. `nil`
     /// removes the override (reverting to the profile default).
@@ -269,7 +269,7 @@ enum VoiceProfileRegistry {
             }
         }
 
-        print("[VoiceProfile] No match for \(modelId), using _fallback")
+        Diagnostics.shared.info("No profile match for \(modelId); using fallback", category: "voice")
         // _fallback exists by construction — force-unwrap is safe.
         return rebound(builtinProfiles["_fallback"]!, modelId: modelId)
     }

@@ -22,6 +22,59 @@ import UIKit
 
 enum ToolRunner {
 
+    // MARK: - Capability policy
+
+    /// Core AI packs use model-native chat templates and tool dialects. Only
+    /// advertise tools for curated packs whose complete dialect is supported.
+    /// MLX/GGUF keep the app's existing tolerant text protocol so adding Core
+    /// AI cannot regress imported or previously working models.
+    static func toolsEnabled(
+        settingEnabled: Bool,
+        runtime: ModelRuntime,
+        modelSupportsTools: Bool
+    ) -> Bool {
+        guard settingEnabled else { return false }
+        return runtime != .coreAI || modelSupportsTools
+    }
+
+    /// Short guardrail for Core AI models whose native tool dialect is not
+    /// wired into the app. This costs far less context than the full tool
+    /// catalog and prevents raw protocol tokens from replacing a normal reply.
+    static let unavailablePromptAddendum = """
+
+    No external tools are available for this model. Answer ordinary and
+    general-knowledge questions directly from your existing knowledge. Never
+    emit tool-call markup or request a knowledge-base lookup.
+    """
+
+    /// Core AI's currently verified runtime window is intentionally compact.
+    /// Keep tool guidance small enough that the persona and the immediately
+    /// preceding turn still fit beside it. MLX/GGUF continue to receive the
+    /// detailed catalog below.
+    static let coreAISystemPromptAddendum = """
+
+    On-device tools are available when needed: calculator(expression),
+    datetime(timezone), unit_convert(value, from, to), web_search(query),
+    file_read(prompt), describe_image(), knowledge_base(query),
+    index_document(text, name), and generate_image(prompt).
+
+    To call one, output only a fenced `tool` JSON object, then stop:
+    ```tool
+    {"name":"tool_name","args":{}}
+    ```
+    Never invent tool results. Otherwise answer the user directly.
+    """
+
+    /// Removes a previously persisted tool catalog when a conversation is
+    /// reopened with a Core AI model that cannot use it. Model switching must
+    /// not leak the previous model's capabilities into the new prompt.
+    static func removingSystemPromptAddendum(from prompt: String) -> String {
+        prompt
+            .replacingOccurrences(of: systemPromptAddendum, with: "")
+            .replacingOccurrences(of: coreAISystemPromptAddendum, with: "")
+            .replacingOccurrences(of: unavailablePromptAddendum, with: "")
+    }
+
     // MARK: - System prompt injection
 
     /// Snippet to append to a system prompt so the model knows what tools
@@ -38,6 +91,12 @@ enum ToolRunner {
     Then STOP. The runtime will execute the tool and reply with a
     `tool_result` block; you should produce your final natural-language
     answer using that result. Only invoke a tool when it directly helps.
+
+    Do not invent a tool result. Never write a `tool_result` block yourself.
+    Do not claim you searched the web, read a file, looked at an image, or
+    generated an image unless a `tool_result` for that call is already in
+    the conversation. If you need current or external data and cannot call
+    a tool, say you do not have it.
 
     Available tools:
       • calculator(expression: string)  — evaluates an arithmetic expression
@@ -687,11 +746,7 @@ enum ToolRunner {
     @MainActor
     private static func runFileRead(args: [String: Any]) async -> String {
         let prompt = (args["prompt"] as? String) ?? "Pick a file to share with the assistant."
-        ToolBridge.shared.pendingFileReadPrompt = prompt
-        // The actual file pick happens via UI binding in CodingAssistantView.
-        // We return a placeholder; the view fulfils the request and appends
-        // a follow-up user message with the file contents.
-        return "Requested a file from the user. The contents will follow in the next message."
+        return "Error: file pick must be confirmed in the chat. The assistant asked: \(prompt)"
     }
 
     // MARK: - Image description

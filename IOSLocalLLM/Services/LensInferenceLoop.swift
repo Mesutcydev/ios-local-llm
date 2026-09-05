@@ -364,7 +364,7 @@ final class LensInferenceLoop: ObservableObject {
         // residence cannot fit under the process ceiling even when the weight
         // gate alone looks green.
         if executionProfile.requiresSingleResidency && !preserveAssistant {
-            print("[LensInferenceLoop] heavy vision model — unloading LLM before load")
+            Diagnostics.shared.breadcrumb("heavy vision model — unloading LLM before load", category: "lens")
             await CodingAssistantService.shared.unloadAndWaitForCleanup()
             await MLXGenerationGate.shared.clearCacheWhenIdle()
         }
@@ -394,7 +394,10 @@ final class LensInferenceLoop: ObservableObject {
             category: "lens"
         )
         if available < required && !preserveAssistant {
-            print("[LensInferenceLoop] memory tight (need \(required/1_048_576) MB including reserve, have \(available/1_048_576) MB) — unloading LLM to free RAM")
+            Diagnostics.shared.breadcrumb(
+                "memory tight (need \(required/1_048_576) MB including reserve, have \(available/1_048_576) MB) — unloading LLM to free RAM",
+                category: "lens"
+            )
             await CodingAssistantService.shared.unloadAndWaitForCleanup()
             // Flush the reclaimable MLX/Metal buffer pool now that the LLM
             // teardown has been awaited (Metal is idle — safe to clear). This
@@ -833,7 +836,10 @@ final class LensInferenceLoop: ObservableObject {
         )
         self.lastModelInput = debugThumb
         self.lastModelInputInfo = info
-        print("[LensInferenceLoop] describe req=\(requestID) size=\(cg.width)×\(cg.height) prompt=\"\(prompt)\"")
+            Diagnostics.shared.breadcrumb(
+                "describe req=\(requestID) size=\(cg.width)×\(cg.height)",
+                category: "lens"
+            )
 
         let caps = capabilities
         inferenceTask?.cancel()
@@ -917,8 +923,9 @@ final class LensInferenceLoop: ObservableObject {
                 }
                 await MainActor.run {
                     self.state = .ready
-                    // Re-arm prefetch now that the VLM is idle again.
-                    ModelResidency.shared.schedulePrefetch(currentTab: .lens)
+                    // Prefetch is intentionally not re-armed after inference.
+                    // The optimization is load-triggered and charging-only;
+                    // repeated idle disk reads made long sessions warmer.
                 }
             } catch is CancellationError {
                 await MainActor.run { self.state = .ready; onComplete(0) }
@@ -948,10 +955,13 @@ final class LensInferenceLoop: ObservableObject {
         let url = docs.appendingPathComponent("lens-model-input-\(stamp).png")
         do {
             try png.write(to: url)
-            print("[LensInferenceLoop] saved model input → \(url.path)")
+            Diagnostics.shared.breadcrumb("saved model input", category: "lens")
             return url
         } catch {
-            print("[LensInferenceLoop] save failed: \(error)")
+            Diagnostics.shared.error(
+                "save failed: \(error.localizedDescription)",
+                category: "lens"
+            )
             return nil
         }
     }

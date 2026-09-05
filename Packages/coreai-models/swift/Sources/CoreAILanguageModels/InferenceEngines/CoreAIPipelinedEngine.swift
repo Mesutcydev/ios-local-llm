@@ -27,6 +27,24 @@ private func milliseconds(since start: ContinuousClock.Instant) -> Double {
 private let pipelineDepth = 3
 private let averageExpectedPromptSize = 256
 private let temperatureTolerance: Double = 0.001
+/// iOS 27 currently produces corrupt output for affected S=1 pipelined
+/// decoders when their dynamically bound KV state grows to 2048 or more.
+/// 1024 is the largest token-exact state size verified on device.
+private let stableIOSSingleTokenContextLength = 1024
+
+/// Returns the model's fixed sequence length when the descriptor pins that
+/// dimension, or `nil` when the sequence length is dynamic.
+func fixedSequenceLength(in shape: [Int]) -> Int? {
+    guard shape.count >= 2, shape[1] > 0 else { return nil }
+    return shape[1]
+}
+
+/// Decode-only graphs with a fixed S=1 token input must prefill one token per
+/// encode. Sending a normal multi-token prefill makes CoreAIRuntime assert
+/// instead of returning a recoverable shape error.
+func requiresSingleTokenSteps(inputShape: [Int]) -> Bool {
+    fixedSequenceLength(in: inputShape) == 1
+}
 
 /// MPSNDArray enforces 64-byte row-stride alignment on backing buffers.
 private let minimumMPSNDArrayBufferSize = 64
@@ -132,6 +150,11 @@ final class CoreAIPipelinedEngine: InferenceEngine, Sendable {
 
         let token = GenerationToken()
         _activeToken.withLock { $0 = token }
+        outputContinuation.onTermination = { _ in
+            // Propagate abandonment by any direct consumer, not only the
+            // FoundationModels adapter, into the push-based producer.
+            token.cancel()
+        }
 
         let task = Task {
             self.acquireEngine()
@@ -146,6 +169,10 @@ final class CoreAIPipelinedEngine: InferenceEngine, Sendable {
             do {
                 let (tokenStream, tokenContinuation) =
                     AsyncThrowingStream<InferenceEngine.TokenId, any Error>.makeStream()
+                outputContinuation.onTermination = { @Sendable _ in
+                    token.cancel()
+                    tokenContinuation.finish()
+                }
 
                 // Implicit prefix caching: resolve input against history
                 var (commonPrefix, resolvedNewTokens) = self.history.resolve(input: input)
@@ -168,6 +195,15 @@ final class CoreAIPipelinedEngine: InferenceEngine, Sendable {
                     self.history.clear()
                     resolvedNewTokens = input[...]
                     commonPrefix = 0
+                } else if self.engine.hasNonTruncatableStates {
+                    // Recurrent state cannot be rewound to a token cursor.
+                    if commonPrefix < self.engine.processedTokenCount {
+                        await self.engine.computeStream.currentWorkCompleted()
+                        self.engine.reset()
+                        self.history.clear()
+                        resolvedNewTokens = input[...]
+                        commonPrefix = 0
+                    }
                 } else if commonPrefix < self.engine.processedTokenCount {
                     // Pure extension — partial rewind (buffer phase preserved)
                     await self.engine.computeStream.currentWorkCompleted()
@@ -183,7 +219,13 @@ final class CoreAIPipelinedEngine: InferenceEngine, Sendable {
                         for try await token in tokenStream {
                             // Track generated tokens in history
                             self.history.append(token)
-                            outputContinuation.yield(InferenceOutput(tokenId: token))
+                            let result = outputContinuation.yield(
+                                InferenceOutput(tokenId: token)
+                            )
+                            if case .terminated = result {
+                                tokenContinuation.finish()
+                                break
+                            }
                         }
                     } catch {
                         outputContinuation.finish(throwing: error)
@@ -200,18 +242,25 @@ final class CoreAIPipelinedEngine: InferenceEngine, Sendable {
                     prompt: newTokens,
                     sampler: samplingConfiguration,
                     maxTokens: maxTokens,
+                    generationToken: token,
                     yieldingTo: tokenContinuation
                 )
 
                 tokenContinuation.finish()
                 await forwarding
-                stopReasonStore.setIfUnset(.maxTokens)
+                stopReasonStore.setIfUnset(token.isCancelled ? .cancelled : .maxTokens)
                 outputContinuation.finish()
             } catch is CancellationError {
-                stopReasonStore.set(.cancelled)
+                // A cancelled Task can leave up to `pipelineDepth` command
+                // buffers already committed. Do not return the engine slot
+                // until those buffers finish, otherwise the next request can
+                // reuse mutable buffers that the GPU is still reading.
+                await self.engine.computeStream.currentWorkCompleted()
+                stopReasonStore.setIfUnset(.cancelled)
                 outputContinuation.finish()
             } catch {
-                stopReasonStore.set(.error)
+                await self.engine.computeStream.currentWorkCompleted()
+                stopReasonStore.setIfUnset(.error)
                 outputContinuation.finish(throwing: error)
             }
         }
@@ -268,6 +317,12 @@ final class CoreAIPipelinedEngine: InferenceEngine, Sendable {
             // Partial reset: wait for generation to finish naturally, then rewind counter.
             // Do NOT cancel — cancelling corrupts the pipeline's double-buffer state.
             // The KV cache is valid up to processedTokenCount after natural completion.
+            if engine.hasNonTruncatableStates {
+                throw InferenceRuntimeError.invalidState(
+                    "Partial reset is not supported for hybrid models with recurrent state. "
+                        + "Use reset(to: 0) and replay the prefix."
+                )
+            }
             drain()
             await engine.computeStream.currentWorkCompleted()
             guard tryAcquireEngine() else { return }
@@ -418,6 +473,10 @@ private struct EngineImpl: ~Copyable {
     // KV cache — reuses CoreAIKVCache protocol from KVCache+CoreAI.swift
     var kvCache: any CoreAIKVCache
 
+    // Optional fixed convolution/recurrent state for hybrid models.
+    var additionalStates: FixedMTLBufferState?
+    var hasNonTruncatableStates: Bool
+
     // Logits — reuses GrowingLogitsBuffer from TensorStorage+CoreAI.swift
     var logits: GrowingLogitsBuffer
 
@@ -452,7 +511,7 @@ private struct EngineImpl: ~Copyable {
                 "Cannot find function '\(config.function)' in model")
         }
 
-        // Validate: 2 inputs, 1+ output, 2 states
+        // Validate: 2 inputs, 1+ output, KV cache plus optional hybrid state.
         guard descriptor.inputNames.count == 2 else {
             throw InferenceRuntimeError.invalidInputType(
                 "Expected 2 inputs, got \(descriptor.inputNames.count): \(descriptor.inputNames)")
@@ -461,16 +520,34 @@ private struct EngineImpl: ~Copyable {
             throw InferenceRuntimeError.invalidOutputType(
                 "Expected at least 1 output, got \(descriptor.outputNames.count)")
         }
-        guard descriptor.stateNames.count == 2 else {
+        guard descriptor.stateNames.count >= 2 && descriptor.stateNames.count <= 4 else {
             throw InferenceRuntimeError.invalidOutputType(
-                "Expected 2 states (KV cache), got \(descriptor.stateNames.count): \(descriptor.stateNames)")
+                "Expected 2–4 states, got \(descriptor.stateNames.count): \(descriptor.stateNames)"
+            )
         }
+
+        let classifiedStates = StateHandlerFactory.classifyStates(
+            descriptor: descriptor,
+            verbose: descriptor.stateNames.count > 2
+        )
+        let growingStateNames = classifiedStates
+            .filter { $0.kind == .kvCache }
+            .map(\.name)
+        guard growingStateNames.count >= 2 else {
+            throw InferenceRuntimeError.invalidOutputType(
+                "Expected at least 2 growing KV cache states, found \(growingStateNames.count)"
+            )
+        }
+        let keyCacheName = growingStateNames[0]
+        let valueCacheName = growingStateNames[1]
+        let fixedStateNames = classifiedStates
+            .filter { $0.kind == .slidingCache || $0.kind == .fixed }
+            .map(\.name)
+        let extraGrowingStateNames = Array(growingStateNames.dropFirst(2))
 
         // Extract names
         let inputIdsName = descriptor.inputNames[0]
         let positionIdsName = descriptor.inputNames[1]
-        let keyCacheName = descriptor.stateNames[0]
-        let valueCacheName = descriptor.stateNames[1]
         let logitsOutputName = descriptor.outputNames[0]
 
         // Extract state descriptors for KV cache shape/type
@@ -555,14 +632,48 @@ private struct EngineImpl: ~Copyable {
         let resolvedSize = options.resolvedKVCacheSize(maxContextLength: config.maxContextLength)
         CLILogger.log("Created \(options.kvCacheStrategy) KV cache with size \(resolvedSize, default: "nil")")
 
-        // Create growing logits buffer (reuses TensorStorage+CoreAI.swift)
+        var additionalStatesLocal: FixedMTLBufferState?
+        let additionalStateNames = fixedStateNames + extraGrowingStateNames
+        if additionalStateNames.isEmpty {
+            additionalStatesLocal = nil
+        } else {
+            var stateDescriptors: [(name: String, descriptor: NDArrayDescriptor)] = []
+            for name in additionalStateNames {
+                guard case .ndArray(let stateDescriptor) = descriptor.stateDescriptor(of: name) else {
+                    throw InferenceRuntimeError.invalidOutputType(
+                        "Cannot get descriptor for persistent state '\(name)'"
+                    )
+                }
+                let resolved = stateDescriptor.shape.contains(where: { $0 < 0 })
+                    ? stateDescriptor.resolvingDynamicDimensions(
+                        stateDescriptor.shape.map { $0 < 0 ? config.maxContextLength : $0 }
+                    )
+                    : stateDescriptor
+                stateDescriptors.append((name, resolved))
+            }
+            additionalStatesLocal = try FixedMTLBufferState(
+                states: stateDescriptors,
+                device: device
+            )
+            CLILogger.log(
+                "Pipelined additional states: \(additionalStateNames.joined(separator: ", "))"
+            )
+        }
+
+        // Create growing logits buffer (reuses TensorStorage+CoreAI.swift).
+        // Decode-only graphs commonly pin logits to [1, 1, vocab]. Asking
+        // CoreAIRuntime to resolve that static descriptor at the normal
+        // prompt-sized capacity is an uncatchable assertion, so keep its
+        // declared sequence capacity. Dynamic-output models retain the
+        // existing growing-buffer behavior.
+        let fixedLogitsSequenceLength = fixedSequenceLength(in: logitsDesc.shape)
         let logitsRef = try GrowingLogitsBuffer(
             device: device,
             descriptor: descriptor,
             name: logitsOutputName,
             vocabSize: config.vocabSize,
-            maxCapacity: config.maxContextLength,
-            initialCapacity: averageExpectedPromptSize
+            maxCapacity: fixedLogitsSequenceLength ?? config.maxContextLength,
+            initialCapacity: fixedLogitsSequenceLength ?? averageExpectedPromptSize
         )
 
         // Load inference function
@@ -600,6 +711,8 @@ private struct EngineImpl: ~Copyable {
         self.decodeOutputBuffers = decodeOutBuffers
         self.decodeLogitsBuffers = decodeLogBufs
         self.kvCache = kvCacheLocal
+        self.additionalStates = additionalStatesLocal
+        self.hasNonTruncatableStates = classifiedStates.contains { $0.kind == .fixed }
         self.logits = logitsRef
         self.cachedSampler = nil
         self.cachedSamplerTemperature = nil
@@ -751,6 +864,7 @@ private struct EngineImpl: ~Copyable {
         var asyncStates = InferenceFunction.AsyncMutableViews()
         asyncStates.insert(&keyState, for: keyCacheName)
         asyncStates.insert(&valState, for: valueCacheName)
+        additionalStates?.bind(into: &asyncStates)
 
         // Build Output as AsyncMutableValue (logits)
         // Decode uses per-step rotating buffer; prefill uses the shared growing buffer.
@@ -841,10 +955,13 @@ private struct EngineImpl: ~Copyable {
         count: Int,
         gpuSampler: any MPSGraphSampler,
         yieldingTo continuation: AsyncThrowingStream<InferenceEngine.TokenId, Error>.Continuation,
-        isCancelled: borrowing Atomic<Bool>
+        isCancelled: borrowing Atomic<Bool>,
+        generationToken: GenerationToken
     ) async throws {
         for _ in 0..<count {
-            guard !isCancelled.load(ordering: .relaxed) else { return }
+            try Task.checkCancellation()
+            guard !generationToken.isCancelled,
+                  !isCancelled.load(ordering: .relaxed) else { return }
             try await _encodeNextStepGPU(
                 tokens: [],
                 gpuSampler: gpuSampler,
@@ -889,8 +1006,11 @@ private struct EngineImpl: ~Copyable {
         prompt: [InferenceEngine.TokenId],
         sampler: SamplingConfiguration,
         maxTokens: Int?,
+        generationToken: GenerationToken,
         yieldingTo continuation: AsyncThrowingStream<InferenceEngine.TokenId, Error>.Continuation
     ) async throws {
+        try Task.checkCancellation()
+        guard !generationToken.isCancelled else { throw CancellationError() }
         let gpuSampler = try getOrCreateSampler(for: sampler)
 
         let isCancelled = Atomic<Bool>(false)
@@ -898,16 +1018,26 @@ private struct EngineImpl: ~Copyable {
             isCancelled.store(true, ordering: .relaxed)
         }
 
-        let contextLeftAfterPrompt = config.maxContextLength - processedTokenCount - prompt.count
+        let useSingleTokenSteps = requiresSingleTokenSteps(
+            inputShape: inputIdsBaseDesc.shape
+        )
+        #if os(iOS)
+        let effectiveContextLength = useSingleTokenSteps
+            ? min(config.maxContextLength, stableIOSSingleTokenContextLength)
+            : config.maxContextLength
+        #else
+        let effectiveContextLength = config.maxContextLength
+        #endif
+        let contextLeftAfterPrompt = effectiveContextLength - processedTokenCount - prompt.count
         guard contextLeftAfterPrompt >= 1 else {
             throw InferenceRuntimeError.contextLengthExceeded(
-                processedTokenCount, config.maxContextLength)
+                processedTokenCount, effectiveContextLength)
         }
         let totalMaxTokens = min(maxTokens ?? Int.max, contextLeftAfterPrompt)
 
         // Pre-grow KV cache for prompt
         let promptCapacityNeeded = min(
-            processedTokenCount + prompt.count + totalMaxTokens, config.maxContextLength)
+            processedTokenCount + prompt.count + totalMaxTokens, effectiveContextLength)
         if promptCapacityNeeded > kvCache.currentCapacity {
             do {
                 let queue = pipelineQueue
@@ -925,8 +1055,12 @@ private struct EngineImpl: ~Copyable {
         // Skip prefill entirely if prompt is empty (prefix-cached continuation).
         if !prompt.isEmpty {
             let prefillTokens: ArraySlice<Int32>
-            if prompt.count > config.chunkThreshold {
-                prefillTokens = try await processChunkedInput(tokens: prompt)
+            if useSingleTokenSteps || prompt.count > config.chunkThreshold {
+                prefillTokens = try await processChunkedInput(
+                    tokens: prompt,
+                    chunkSize: useSingleTokenSteps ? 1 : config.prefillChunkSize,
+                    generationToken: generationToken
+                )
             } else {
                 let prefillCapacity = max(1, prompt.count)
                 if try logits.ensureCapacity(forContextLength: prefillCapacity) {
@@ -940,6 +1074,8 @@ private struct EngineImpl: ~Copyable {
             }
 
             // Process prompt with sampling
+            try Task.checkCancellation()
+            guard !generationToken.isCancelled else { throw CancellationError() }
             try await _encodeNextStepGPU(
                 tokens: prefillTokens,
                 gpuSampler: gpuSampler,
@@ -951,7 +1087,9 @@ private struct EngineImpl: ~Copyable {
         var remainingTokens = totalMaxTokens - 1
 
         while remainingTokens > 0 {
-            guard !isCancelled.load(ordering: .relaxed) else { break }
+            try Task.checkCancellation()
+            guard !generationToken.isCancelled,
+                  !isCancelled.load(ordering: .relaxed) else { break }
 
             let availableSlots = kvCache.currentCapacity - processedTokenCount
             let tokensThisRound = min(remainingTokens, availableSlots)
@@ -961,7 +1099,8 @@ private struct EngineImpl: ~Copyable {
                     count: tokensThisRound,
                     gpuSampler: gpuSampler,
                     yieldingTo: continuation,
-                    isCancelled: isCancelled
+                    isCancelled: isCancelled,
+                    generationToken: generationToken
                 )
                 remainingTokens -= tokensThisRound
             }
@@ -993,13 +1132,18 @@ private struct EngineImpl: ~Copyable {
 
     // MARK: - Chunked Prefill
 
-    mutating func processChunkedInput(tokens: [Int32]) async throws -> ArraySlice<Int32> {
-        let chunkSize = config.prefillChunkSize
+    mutating func processChunkedInput(
+        tokens: [Int32],
+        chunkSize: Int,
+        generationToken: GenerationToken
+    ) async throws -> ArraySlice<Int32> {
         var remainingTokens = tokens[...]
 
         try logits.ensureCapacity(forContextLength: chunkSize)
 
         while remainingTokens.count > chunkSize {
+            try Task.checkCancellation()
+            guard !generationToken.isCancelled else { throw CancellationError() }
             let chunk = Array(remainingTokens.prefix(chunkSize))
             try await _encodeChunk(tokens: chunk)
             remainingTokens = remainingTokens.dropFirst(chunkSize)
@@ -1062,6 +1206,7 @@ private struct EngineImpl: ~Copyable {
         var asyncStates = InferenceFunction.AsyncMutableViews()
         asyncStates.insert(&keyState, for: keyCacheName)
         asyncStates.insert(&valState, for: valueCacheName)
+        additionalStates?.bind(into: &asyncStates)
 
         let logitsShape = [1, queryLength, vocabSize]
         let logitsStrides = try resolvedStrides(descriptor: logitsBaseDesc, shape: logitsShape)
@@ -1089,6 +1234,7 @@ private struct EngineImpl: ~Copyable {
         step = 0
         cachedSampler = nil
         cachedSamplerTemperature = nil
+        additionalStates?.reset()
         span.end()
     }
 
@@ -1104,7 +1250,9 @@ private struct EngineImpl: ~Copyable {
         let defaultWarmupLength = 256
 
         let shapesToWarm: [Int]
-        if queryLength > 0 {
+        if requiresSingleTokenSteps(inputShape: inputIdsBaseDesc.shape) {
+            shapesToWarm = [1]
+        } else if queryLength > 0 {
             shapesToWarm = [queryLength]
         } else {
             shapesToWarm = [1, defaultWarmupLength]
@@ -1166,6 +1314,7 @@ private struct EngineImpl: ~Copyable {
             var asyncStates = InferenceFunction.AsyncMutableViews()
             asyncStates.insert(&keyState, for: keyCacheName)
             asyncStates.insert(&valState, for: valueCacheName)
+            additionalStates?.bind(into: &asyncStates)
 
             let lShape = [1, shape, vocabSize]
             let lStrides = try resolvedStrides(descriptor: logitsBaseDesc, shape: lShape)

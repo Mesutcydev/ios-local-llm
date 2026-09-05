@@ -31,6 +31,7 @@ import Foundation
 
 public enum ModelExecutionLocation: String, Codable, Hashable, Sendable {
     case localDownloaded   // user-downloaded MLX/GGUF weights
+    case localCoreAI       // user-downloaded Core AI .aimodel resource pack
     case localSystem       // Apple on-device system model (FoundationModels)
     case applePrivateCloud // Apple Private Cloud Compute (this file)
     case externalCloud     // reserved — third-party API providers (none today)
@@ -40,7 +41,9 @@ public enum ModelExecutionLocation: String, Codable, Hashable, Sendable {
     /// Pure function over the id, so it needs no new persisted field on
     /// `AssistantModel` (which is embedded in Codable records elsewhere).
     public static func of(assistantModelID id: String) -> ModelExecutionLocation {
-        id == ApplePrivateCloud.modelID ? .applePrivateCloud : .localDownloaded
+        if id == ApplePrivateCloud.modelID { return .applePrivateCloud }
+        if id.hasPrefix("coreai:") { return .localCoreAI }
+        return .localDownloaded
     }
 
     /// True when the model runs off-device and therefore needs network +

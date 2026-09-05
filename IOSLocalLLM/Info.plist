@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>On Device: LAS</string>
+	<string>OnDevice Core</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -17,15 +17,36 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>3.2.6</string>
+	<string>1.0.0</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.mesutcydev.ondevicecore.scheme</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>ondevice-core</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>OnDevice uses the back camera to capture live video of your terminal or code editor for real-time analysis.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>On Device: LAS exposes your selected on-device language model to trusted computers on your local network.</string>
+	<string>OnDevice can expose your on-device language model to computers on your local network when you enable the Local API Server.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>OnDevice uses the microphone for hold-to-talk dictation in the chat composer. Audio is transcribed on-device and never leaves your phone.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>OnDevice can analyze code from photos in your library.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>OnDevice uses on-device speech recognition to convert your voice into text for the chat composer.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -36,7 +57,7 @@
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
-		<string></string>
+		<string>LaunchBackground</string>
 	</dict>
 	<key>UIRequiresFullScreen</key>
 	<true/>

@@ -60,6 +60,8 @@ final class VoiceSettingsStore: ObservableObject {
     func setRenderingMode(_ mode: VoiceRenderingMode) {
         renderingMode = mode
         defaults.set(mode.rawValue, forKey: Self.renderingModeKey)
+        SpeechPlaybackCoordinator.shared.orb.renderingMode = mode
+        VoicePerformanceMonitor.shared.setRenderingMode(mode)
     }
 
     func selectEngine(_ engine: VoiceEngineKind) {

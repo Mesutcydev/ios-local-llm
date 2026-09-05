@@ -98,7 +98,7 @@ struct AnalysisPanelView: View {
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Button("Close") { showModelPickerSheet = false }
-                            .font(T.sans(15))
+                            .font(T.conversationBody)
                             .foregroundColor(T.ink2)
                     }
                 }
@@ -183,7 +183,11 @@ struct AnalysisPanelView: View {
                         HapticManager.impact(.medium)
                         let source = result.ocrFallback ? "Camera OCR"
                             : result.mode == .visual ? "FastVLM Vision" : "FastVLM"
-                        bridge.sendToAssistant(code: result.extractedCode, source: source)
+                        bridge.sendToAssistant(
+                            code: result.extractedCode,
+                            source: source,
+                            image: result.ciImage.map { UIImage(ciImage: $0) } ?? result.thumbnail
+                        )
                         withAnimation { isPresented = false }
                     } label: {
                         HStack(spacing: 6) {
@@ -297,7 +301,7 @@ struct AnalysisPanelView: View {
                                 // overflowing on long, rapidly-updating output.
                                 // See StreamSafeTextSelection in ContentView.swift.
                                 Text(result.extractedCode)
-                                    .font(T.sans(15))
+                                    .font(T.conversationBody)
                                     .foregroundColor(T.ink)
                                     .lineSpacing(4)
                                     .fixedSize(horizontal: false, vertical: true)
@@ -369,7 +373,7 @@ struct AnalysisPanelView: View {
             }
             HStack(alignment: .bottom, spacing: 4) {
                 Text(qa.answer.isEmpty && qa.isStreaming ? "thinking…" : qa.answer)
-                    .font(T.sans(13))
+                    .font(T.conversationBody)
                     .foregroundColor(T.ink)
                     .fixedSize(horizontal: false, vertical: true)
                     .modifier(StreamSafeTextSelection(streaming: qa.isStreaming))
@@ -618,19 +622,20 @@ struct AnalysisPanelView: View {
 // Blinking caret shown while FastVLM is generating.
 
 struct StreamingCaret: View {
-    @State private var on = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.koduTheme) private var T
+    @ScaledMetric(relativeTo: .body) private var caretHeight: CGFloat = 16
 
     var body: some View {
-        Rectangle()
-            .fill(T.ink)
-            .frame(width: 7, height: 14)
-            .opacity(on ? 1 : 0)
-            .onAppear {
-                withAnimation(.linear(duration: 0.6).repeatForever(autoreverses: true)) {
-                    on.toggle()
-                }
-            }
+        TimelineView(.animation(minimumInterval: 1.0 / 15, paused: reduceMotion || scenePhase != .active)) { context in
+            let phase = context.date.timeIntervalSinceReferenceDate * .pi * 2 / 1.2
+            RoundedRectangle(cornerRadius: 1)
+                .fill(T.ink)
+                .frame(width: 2, height: caretHeight)
+                .opacity(reduceMotion ? 0.65 : 0.35 + 0.65 * (sin(phase) + 1) / 2)
+        }
+        .accessibilityHidden(true)
     }
 }
 
@@ -676,32 +681,18 @@ struct MarkdownTextView: View {
     }
 
     private var blocks: [AnyView] {
-        let lines = markdown.components(separatedBy: "\n")
-        var views: [AnyView] = []
-        var codeLines: [String] = []
-        var inCodeBlock = false
-
-        for line in lines {
-            if line.hasPrefix("```") {
-                if inCodeBlock {
-                    let code = codeLines.joined(separator: "\n")
-                    views.append(AnyView(
-                        Text(code)
-                            .font(T.mono(11))
-                            .foregroundColor(T.ink)
-                            .padding(10).frame(maxWidth: .infinity, alignment: .leading)
-                            .background(RoundedRectangle(cornerRadius: 6).fill(T.surface))
-                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.rule, lineWidth: 1))
-                    ))
-                    codeLines = []; inCodeBlock = false
-                } else { inCodeBlock = true }
-            } else if inCodeBlock {
-                codeLines.append(line)
-            } else {
-                views.append(AnyView(renderLine(line)))
+        StudioTextBlocks.parse(markdown).flatMap { block -> [AnyView] in
+            switch block {
+            case .code(let language, let code):
+                return [AnyView(CodeBlock(language: language, code: code))]
+            case .thinking(let text, let open):
+                return [AnyView(ThinkingBlock(content: text, isOpen: open))]
+            case .math(let source):
+                return [AnyView(MathBlock(latex: source))]
+            case .text(let text):
+                return text.components(separatedBy: "\n").map { AnyView(renderLine($0)) }
             }
         }
-        return views
     }
 
     @ViewBuilder

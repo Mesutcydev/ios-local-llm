@@ -595,7 +595,7 @@ struct VoiceConversationView: View {
                     .padding(.top, 4)
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: conv.liveTranscript)
+        .animation(nil, value: conv.liveTranscript)
     }
 
     /// Prefer coordinator speakable text for karaoke ranges; fall back to stripped live reply.
@@ -701,7 +701,7 @@ struct VoiceConversationView: View {
                 ) {
                     interruptNow()
                 }
-                .transition(.scale.combined(with: .opacity))
+                .transition(reduceMotion ? .opacity : .scale(scale: 0.96).combined(with: .opacity))
             } else {
                 dockButton(
                     systemImage: "mic.fill",
@@ -725,7 +725,7 @@ struct VoiceConversationView: View {
                         .stroke(T.rule.opacity(0.6), lineWidth: 0.5)
                 )
         )
-        .animation(.spring(duration: 0.3), value: conv.phase)
+        .animation(reduceMotion ? .easeOut(duration: 0.15) : .spring(duration: 0.25, bounce: 0), value: conv.phase)
     }
 
     private func dockButton(

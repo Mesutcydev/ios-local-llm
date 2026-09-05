@@ -83,7 +83,7 @@ public final class LocalAIController {
                         continuation.yield(.started)
                         if options.toolMode != .disabled {
                             continuation.yield(.warning(
-                                "Tool mode is a host-app feature; this facade streams model text and leaves tool execution to iOS Local LLM."
+                                "Tool mode is a host-app feature; this facade streams model text and leaves tool execution to OnDevice."
                             ))
                         }
 
@@ -199,6 +199,10 @@ public final class LocalAIController {
                             Task { @MainActor in
                                 do {
                                     switch target.runtime {
+                                    case .coreAI:
+                                        throw RuntimeError.unsupportedOperation(
+                                            "Core AI vision packs are managed by the app's Core AI catalog and are not exposed through LocalAIController yet."
+                                        )
                                     case .llamaCpp:
                                         if LlamaCppVLMService.shared.activeRepoID != target.repoID {
                                             throw RuntimeError.modelNotLoaded(target.repoID)
@@ -280,6 +284,11 @@ public final class LocalAIController {
             )
             let repoID = LocalModelRegistry.persistedVisionRepoID(for: modelID)
             switch runtime {
+            case .coreAI:
+                preheatStatus = .failed(
+                    "Core AI vision preheating is managed by the Core AI runtime."
+                )
+                return
             case .llamaCpp:
                 await LlamaCppVLMService.shared.switchTo(repoID: repoID)
             case .mlx:

@@ -20,7 +20,8 @@ enum VoiceEngineKind: String, CaseIterable, Identifiable, Codable {
     static var userSelectableCases: [VoiceEngineKind] {
         allCases.filter { kind in
             switch kind {
-            case .appleSystem, .kittenTTS, .kokoro: return true
+            case .appleSystem, .kittenTTS: return true
+            case .kokoro:                   return VoiceModelBundleValidator.isKokoroAvailable()
             }
         }
     }

@@ -254,10 +254,18 @@ final class SpeechDictationService: ObservableObject {
             try startWhisperSingleShot(onTranscript)
             return
         }
+        if wantsWhisper, continuous {
+            lastError = "Whisper is hold-to-talk only. Conversation uses on-device Apple Speech."
+        }
 
         guard let recognizer, recognizer.isAvailable else {
             throw NSError(domain: "SpeechDictation", code: -1, userInfo: [
                 NSLocalizedDescriptionKey: "Speech recognition isn't available right now."
+            ])
+        }
+        guard recognizer.supportsOnDeviceRecognition else {
+            throw NSError(domain: "SpeechDictation", code: -2, userInfo: [
+                NSLocalizedDescriptionKey: "On-device speech recognition isn't available on this device. Conversation will not send audio off-device."
             ])
         }
 
@@ -386,9 +394,7 @@ final class SpeechDictationService: ObservableObject {
         }
         let req = SFSpeechAudioBufferRecognitionRequest()
         req.shouldReportPartialResults = true
-        if recognizer.supportsOnDeviceRecognition {
-            req.requiresOnDeviceRecognition = true   // privacy-first
-        }
+        req.requiresOnDeviceRecognition = true
         request = req
 
         task = recognizer.recognitionTask(with: req) { [weak self] result, error in

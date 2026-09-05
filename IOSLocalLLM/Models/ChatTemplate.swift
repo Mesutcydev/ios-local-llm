@@ -277,12 +277,12 @@ struct ChatTemplate: Codable, Hashable {
     static func detect(for repoID: String) -> ChatTemplate {
         let lower = repoID.lowercased()
         if lower.contains("qwen3.5") || lower.contains("qwen3_5")
+            || lower.contains("ornith")
             || (lower.contains("bonsai") && lower.contains("27b")) {
             return .qwen35
         }
         if lower.contains("bonsai") { return .chatML }
         if lower.contains("qwen")   { return .chatML }
-        if lower.contains("hermes") { return .chatML }
         if lower.contains("llama")  { return .llama3 }
         if lower.contains("gemma")  { return .gemma }
         if lower.contains("phi")    { return .phi }
@@ -293,30 +293,64 @@ struct ChatTemplate: Codable, Hashable {
     // MARK: - Formatting
 
     /// Format an array of ChatMessage into the model's prompt format.
-    func format(messages: [ChatMessage], enableThinking: Bool = false) -> String {
+    func format(
+        messages: [ChatMessage],
+        enableThinking: Bool = false,
+        leaveLastAssistantOpen: Bool = false
+    ) -> String {
         var parts: [String] = []
+        var pendingSystem: [String] = []
 
-        for msg in messages {
+        func flushPendingSystem(into userContent: String) -> String {
+            guard !pendingSystem.isEmpty else { return userContent }
+            let system = pendingSystem.joined(separator: "\n\n")
+            pendingSystem.removeAll()
+            let trimmedUser = userContent.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmedUser.isEmpty ? system : system + "\n\n" + userContent
+        }
+
+        func emitUserTurn(_ content: String) {
+            parts.append("\(userPrefix)\(content)\(userSuffix)")
+        }
+
+        let lastIndex = messages.indices.last
+        let openLastAssistant = leaveLastAssistantOpen && messages.last?.role == .assistant
+
+        for (index, msg) in messages.enumerated() {
             switch msg.role {
             case .system:
                 if !systemPrefix.isEmpty {
                     parts.append("\(systemPrefix)\(msg.contentForModel)\(systemSuffix)")
                 } else {
-                    // Some templates (Gemma) don't have system messages
-                    // — inject system content into the first user turn.
-                    // This is handled by the caller; here we just append.
-                    parts.append("\(userPrefix)System: \(msg.contentForModel)\n\n\(msg.contentForModel)\(userSuffix)")
+                    // Gemma (and other templates without a system role) fold
+                    // instructions into the next user turn once. The previous
+                    // path emitted `System: X\n\nX` as its own user turn,
+                    // which duplicated a long prompt and made small models
+                    // imitate or invent the instructions.
+                    pendingSystem.append(msg.contentForModel)
                 }
             case .user:
-                parts.append("\(userPrefix)\(msg.contentForModel)\(userSuffix)")
+                emitUserTurn(flushPendingSystem(into: msg.contentForModel))
             case .assistant:
-                // Do not feed a converted model's prompt-boundary leak back
-                // into the next turn, where it tends to be imitated.
+                if !pendingSystem.isEmpty {
+                    emitUserTurn(flushPendingSystem(into: ""))
+                }
                 let content = AssistantOutputSanitizer.clean(msg.contentForModel)
-                parts.append("\(assistantPrefix)\(content)\(assistantSuffix)")
+                if openLastAssistant && index == lastIndex {
+                    parts.append("\(assistantPrefix)\(content)")
+                } else {
+                    parts.append("\(assistantPrefix)\(content)\(assistantSuffix)")
+                }
             case .tool:
-                parts.append("\(userPrefix)Tool result:\n\(msg.contentForModel)\(userSuffix)")
+                emitUserTurn(flushPendingSystem(into: "Tool result:\n\(msg.contentForModel)"))
             }
+        }
+        if !pendingSystem.isEmpty {
+            emitUserTurn(flushPendingSystem(into: ""))
+        }
+
+        if openLastAssistant {
+            return parts.joined()
         }
 
         // Build the generation prompt — the model responds after this.
@@ -336,7 +370,15 @@ struct ChatTemplate: Codable, Hashable {
 
 extension [ChatMessage] {
     /// Format messages using a specific chat template.
-    func formattedWithTemplate(_ template: ChatTemplate, enableThinking: Bool = false) -> String {
-        template.format(messages: self, enableThinking: enableThinking)
+    func formattedWithTemplate(
+        _ template: ChatTemplate,
+        enableThinking: Bool = false,
+        leaveLastAssistantOpen: Bool = false
+    ) -> String {
+        template.format(
+            messages: self,
+            enableThinking: enableThinking,
+            leaveLastAssistantOpen: leaveLastAssistantOpen
+        )
     }
 }

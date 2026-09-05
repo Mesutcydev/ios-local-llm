@@ -26,7 +26,11 @@ struct KnowledgeBaseView: View {
                         if !kb.isAvailable { unavailableCard }
                         toggleCard
                         addStrip
-                        if kb.isIndexing { indexingRow }
+                        if kb.isIndexing {
+                            indexingRow
+                            Button("Cancel import") { kb.cancelImports() }
+                                .frame(minHeight: 44)
+                        }
                         documentsList
                     }
                     .padding(16)

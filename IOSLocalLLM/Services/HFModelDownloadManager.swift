@@ -5,7 +5,6 @@ import CryptoKit
 extension Notification.Name {
     static let hfModelDownloadCompleted = Notification.Name("hfModelDownloadCompleted")
     static let hfModelDownloadStarted = Notification.Name("hfModelDownloadStarted")
-    static let hfModelDownloadPaused = Notification.Name("hfModelDownloadPaused")
 }
 
 // MARK: - HFModelDownloadManager
@@ -68,7 +67,6 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         case idle
         case enumerating            // fetching file list from HF API
         case downloading
-        case paused                 // user paused or the connection stalled
         case ready                  // all files present
         case failed(String)
 
@@ -76,15 +74,10 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             self == .enumerating || self == .downloading
         }
 
-        var isPaused: Bool {
-            self == .paused
-        }
-
         static func == (lhs: DownloadState, rhs: DownloadState) -> Bool {
             switch (lhs, rhs) {
             case (.idle, .idle), (.enumerating, .enumerating),
-                 (.downloading, .downloading), (.paused, .paused),
-                 (.ready, .ready): return true
+                 (.downloading, .downloading), (.ready, .ready): return true
             case (.failed(let a), .failed(let b)): return a == b
             default: return false
             }
@@ -94,14 +87,6 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
     // MARK: - Private
 
     private var downloadTask: Task<Void, Never>?
-    /// A cancelled run can still deliver one final URLSession callback. State
-    /// changes from an old run must not overwrite a newer resume attempt.
-    private var activeRunID: UUID?
-    private var pauseRequested = false
-    private var lastProgressLogAt: Date?
-    private var lastProgressLogBytes: Int64 = 0
-    private var completedDownloadBytes: Int64 = 0
-    private var activeFileBytes: [String: Int64] = [:]
 
     // MARK: - Init
 
@@ -122,22 +107,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
 
     func start() {
         guard !state.isActive else { return }
-        if state == .ready {
-            checkIfReady()
-            guard state != .ready else { return }
-        }
-        let wasPaused = state == .paused
-        let runID = UUID()
-        activeRunID = runID
-        pauseRequested = false
-        downloadTask = Task { [weak self] in
-            guard let self else { return }
-            await self.run(runID: runID)
-        }
-        RuntimeLogCenter.emit(
-            wasPaused ? "Resuming \(repoID) from saved progress" : "Starting download for \(repoID)",
-            subsystem: "download"
-        )
+        downloadTask = Task { await run() }
         NotificationCenter.default.post(
             name: .hfModelDownloadStarted,
             object: self,
@@ -145,54 +115,34 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         )
     }
 
-    /// Pauses the in-flight download without deleting completed files. The
-    /// background coordinator asks URLSession for resume data, so a later
-    /// `start()` continues the current file instead of starting over.
-    func pause() {
-        guard state.isActive else { return }
-        pauseRequested = true
-        RuntimeLogCenter.emit("Pausing \(repoID) — keeping downloaded files", subsystem: "download")
-        downloadTask?.cancel()
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            await BackgroundDownloadCoordinator.shared.cancelTasks(
-                matching: self.destination.path,
-                producingResumeData: true
-            )
-            guard self.activeRunID != nil else { return }
-            if self.state.isActive {
-                self.state = .paused
-            }
-        }
-    }
-
-    /// Compatibility spelling for older download-center surfaces. A cancel
-    /// button now behaves like pause so a user can continue safely later.
-    func cancel() { pause() }
-
-    /// Permanently abandons the transfer and removes the files owned by this
-    /// downloader. Deletion paths call this indirectly through `delete()`.
-    func abandon() {
-        cancelDownloadTasks()
-        removeTrackedFiles()
-        reset()
-    }
-
     /// Cancels the in-flight download task(s) WITHOUT touching files on disk.
     /// Used by delete()/redownload(), which do their own file handling.
     private func cancelDownloadTasks() {
-        activeRunID = nil
-        pauseRequested = false
         downloadTask?.cancel()
         downloadTask = nil
         // Also cancel any in-flight URLSession download tasks
         Task { @MainActor in
-            await BackgroundDownloadCoordinator.shared.cancelTasks(
-                matching: destination.path,
-                producingResumeData: false
-            )
+            await BackgroundDownloadCoordinator.shared.cancelTasks(matching: destination.path)
         }
-        if state.isActive || state == .paused { state = .idle }
+        if state.isActive { state = .idle }
+    }
+
+    func cancel() {
+        downloadTask?.cancel()
+        downloadTask = nil
+        // Cancelling is a user-initiated ABANDON (the UI cancel buttons call
+        // this). A multi-file fetch leaves its already-completed files in
+        // `destination`; left behind, they sit forever as an .idle,
+        // never-ready model whose bytes the orphan sweep won't reclaim
+        // (required models are protected). Reclaim them once the tasks are
+        // truly cancelled — AFTER the await so we don't race a final move,
+        // and only this variant's tracked files (allowlist-safe), never a
+        // shared sibling's. Not followed by start(), so no redownload race.
+        Task { @MainActor in
+            await BackgroundDownloadCoordinator.shared.cancelTasks(matching: destination.path)
+            self.removeTrackedFiles()
+        }
+        if state.isActive { state = .idle }
     }
 
     func delete() throws {
@@ -228,7 +178,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         // refreshAllStates() fires on every foreground transition, and without
         // this guard a partially-completed download would flip to .ready as
         // soon as the user backgrounds and returns to the app.
-        if state.isActive || state == .paused { return }
+        if state.isActive { return }
 
         let fm = FileManager.default
         if let allowlist = fileAllowlist {
@@ -254,6 +204,9 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
                 guard fm.fileExists(atPath: url.path),
                       let attrs = try? fm.attributesOfItem(atPath: url.path),
                       let size = attrs[.size] as? Int64 else { return false }
+                if let expected = expectedSizesOnDisk()[rule], expected > 0 {
+                    return size == expected
+                }
                 return size > 0
             }
             state = allPresent ? .ready : .idle
@@ -285,7 +238,6 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
     /// partially-downloaded repo from flipping to a false "ready".
     static func looksReady(in dir: URL) -> Bool {
         let fm = FileManager.default
-        guard let names = try? fm.contentsOfDirectory(atPath: dir.path) else { return false }
         // Sharded safetensors: when the index file is present, require EVERY
         // shard it references. config.json lands long before the multi-GB
         // shards finish, so the bare config.json check below marked partial
@@ -301,12 +253,12 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             }
         }
         // Text GGUF files embed their tokenizer and metadata, so a single
-        // valid non-mmproj file is a complete model. Keep this in sync with
-        // the reference loader's recursive validator so exported/nested
-        // model packages are not misclassified.
+        // valid non-mmproj file is a complete model. The old pair-only check
+        // incorrectly rejected every normal chat GGUF imported from Files.
         if hasGGUFPair(in: dir) || LocalModelFileValidator.hasValidGGUFTextModel(in: dir) {
             return true
         }
+        guard let names = try? fm.contentsOfDirectory(atPath: dir.path) else { return false }
         let hasWeights = names.contains { name in
             let lower = name.lowercased()
             guard lower.hasSuffix(".safetensors") || lower.hasSuffix(".gguf")
@@ -341,8 +293,9 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
 
     // MARK: - Core download loop
 
-    private func run(runID: UUID) async {
+    private func run() async {
         state = .enumerating
+        reset(keepState: true)
         lastFailureKind = .none
 
         do {
@@ -367,20 +320,18 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
                 state = .failed("No matching files found in repo \(repoID). Check the repo path or allowlist.")
                 return
             }
+            persistExpectedSizes(files)
 
-            guard isCurrent(runID), !Task.isCancelled else { throw CancellationError() }
+            guard !Task.isCancelled else { return }
 
             // 2. Filter out already-complete files
             let pending = files.filter { !isComplete($0) }
 
             if pending.isEmpty {
-                guard isCurrent(runID) else { return }
                 state = .ready
                 filesDone = files.count
                 filesTotal = files.count
                 progress = 1.0
-                RuntimeLogCenter.emit("Already complete: \(repoID)", subsystem: "download")
-                finishRun(runID)
                 return
             }
 
@@ -390,9 +341,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             totalBytes  = files.map { max(0, $0.size) }.reduce(0, +)
             filesTotal  = files.count
             filesDone   = files.count - pending.count
-            completedDownloadBytes = alreadyDownloadedBytes(files)
-            downloadedBytes = completedDownloadBytes
-            activeFileBytes.removeAll(keepingCapacity: true)
+            downloadedBytes = alreadyDownloadedBytes(files)
 
             // Disk space pre-check: refuse if not enough room. Headroom
             // scales with the download — max(200 MB, 5% of pending bytes) —
@@ -430,12 +379,6 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             }
 
             state = .downloading
-            lastProgressLogAt = nil
-            lastProgressLogBytes = downloadedBytes
-            RuntimeLogCenter.emit(
-                "\(repoID): \(files.count) files, \(totalBytes.formattedBytes) total; \(filesDone) already present",
-                subsystem: "download"
-            )
 
             // Start a Dynamic Island / Lock Screen Live Activity for this download
             _ = DownloadLiveActivityManager.shared.start(repoID: repoID)
@@ -457,43 +400,35 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             try? repoID.data(using: .utf8)?
                 .write(to: sidecar, options: [.atomic])
 
-            // 5. Download files one at a time. URLSession writes each transfer
-            // to a temporary file before moving it into the model directory.
-            // Keeping one transfer in flight matches the stable reference
-            // path and avoids a second large temporary allocation exactly when
-            // the last weight shard is being finalized.
+            // 5. Download each pending file
             for meta in pending {
-                guard isCurrent(runID), !Task.isCancelled else { throw CancellationError() }
+                guard !Task.isCancelled else { return }
+                currentFile = meta.path     // show full path, not just filename
                 let dest = destination.appendingPathComponent(meta.path)
+
                 let parent = dest.deletingLastPathComponent()
                 try FileManager.default.createDirectory(
                     at: parent, withIntermediateDirectories: true)
-                activeFileBytes[meta.path] = 0
-                RuntimeLogCenter.emit(
-                    "\(repoID): downloading \(meta.path)",
-                    subsystem: "download"
-                )
-                updateAggregateProgress()
 
-                _ = try await downloadFile(meta: meta, to: dest, runID: runID)
-                guard isCurrent(runID), !Task.isCancelled else { throw CancellationError() }
+                // Snapshot the byte counter so the per-file progress callback
+                // can update from a stable baseline.
+                alreadyDownloadedBytesSnapshot = downloadedBytes
 
-                // Resync from disk after URLSession finalizes the file. This
-                // keeps progress correct when a task resumes from a saved
-                // checkpoint or a server reports an unknown content length.
-                let fileBytes: Int64 = {
-                    guard let attributes = try? FileManager.default
-                            .attributesOfItem(atPath: dest.path),
-                          let size = attributes[.size] as? NSNumber else {
-                        return max(0, meta.size)
-                    }
-                    return size.int64Value
-                }()
-                completedDownloadBytes += max(0, fileBytes)
-                activeFileBytes.removeValue(forKey: meta.path)
+                _ = try await downloadFile(meta: meta, to: dest)
+
+                // Resync byte counter from disk so it survives reconnects.
+                if let attrs = try? FileManager.default.attributesOfItem(atPath: dest.path),
+                   let sz = attrs[.size] as? Int64 {
+                    downloadedBytes = alreadyDownloadedBytesSnapshot + sz
+                }
                 filesDone += 1
-                updateAggregateProgress()
+                if totalBytes > 0 {
+                    progress = min(1.0, Double(downloadedBytes) / Double(totalBytes))
+                } else {
+                    progress = Double(filesDone) / Double(max(filesTotal, 1))
+                }
 
+                // Push update to the Live Activity
                 DownloadLiveActivityManager.shared.update(
                     repoID: repoID,
                     progress: progress,
@@ -503,26 +438,19 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
                     filesDone: filesDone,
                     filesTotal: filesTotal
                 )
-                RuntimeLogCenter.emit(
-                    "\(repoID): finished \(meta.name) (\(filesDone)/\(filesTotal))",
-                    subsystem: "download"
-                )
             }
 
-            guard isCurrent(runID) else { return }
-            RuntimeLogCenter.emit(
-                "\(repoID): finalizing downloaded files",
-                subsystem: "download"
-            )
-            guard fileAllowlist != nil || Self.looksReady(in: destination) else {
-                throw NSError(
-                    domain: "HFDownload",
-                    code: -8,
-                    userInfo: [NSLocalizedDescriptionKey:
-                        "The download finished, but the model files did not pass the completeness check. Resume or retry to repair the missing shard."
-                    ]
+            let incomplete = pending.filter { !isComplete($0) }
+            guard incomplete.isEmpty else {
+                let names = incomplete.prefix(3).map(\.name).joined(separator: ", ")
+                state = .failed("Download is incomplete (\(names)). Retry the download.")
+                DownloadLiveActivityManager.shared.fail(
+                    repoID: repoID,
+                    reason: "Incomplete files"
                 )
+                return
             }
+
             state = .ready
             progress = 1.0
             currentFile = ""
@@ -533,42 +461,13 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
                 object: self,
                 userInfo: ["repoID": repoID]
             )
-            RuntimeLogCenter.emit("Download complete: \(repoID)", subsystem: "download")
-            finishRun(runID)
 
         } catch is CancellationError {
-            guard isCurrent(runID) else { return }
-            activeFileBytes.removeAll(keepingCapacity: true)
-            updateAggregateProgress()
-            if pauseRequested {
-                state = .paused
-                RuntimeLogCenter.emit(
-                    "Paused \(repoID) at \(downloadedBytes.formattedBytes)",
-                    subsystem: "download"
-                )
-                NotificationCenter.default.post(
-                    name: .hfModelDownloadPaused,
-                    object: self,
-                    userInfo: ["repoID": repoID]
-                )
-            } else {
-                state = .idle
-            }
-            finishRun(runID)
+            // leave state as-is so resume is possible
         } catch let error where Self.isUserCancellation(error) {
-            guard isCurrent(runID) else { return }
-            activeFileBytes.removeAll(keepingCapacity: true)
-            updateAggregateProgress()
-            if pauseRequested {
-                state = .paused
-                RuntimeLogCenter.emit(
-                    "Paused \(repoID) at \(downloadedBytes.formattedBytes)",
-                    subsystem: "download"
-                )
-            } else {
-                state = .idle
-            }
-            finishRun(runID)
+            // URLSession surfaces a user cancel as NSURLErrorCancelled, not
+            // CancellationError — treat it the same so a Cancel tap doesn't
+            // show a "Download failed" toast.
         } catch let authErr as HFAuthError {
             // Auth-specific failure: tag the kind so the catalog UI
             // can offer "Set Token" inline instead of a generic Retry.
@@ -584,51 +483,19 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
                 repoID: repoID,
                 reason: authErr.errorDescription ?? "Authentication required"
             )
-            RuntimeLogCenter.emit(
-                "\(repoID): authentication required",
-                level: .warning,
-                subsystem: "download"
-            )
-            finishRun(runID)
         } catch {
-            guard isCurrent(runID) else { return }
             lastFailureKind = .generic
-            if Self.isRetryable(error) {
-                state = .paused
-                DownloadLiveActivityManager.shared.fail(
-                    repoID: repoID,
-                    reason: "Connection interrupted; resume to continue"
-                )
-                ToastCenter.shared.info(
-                    "Download paused",
-                    detail: "\(repoID) can resume from the saved checkpoint."
-                )
-                RuntimeLogCenter.emit(
-                    "\(repoID): paused after connection interruption — \(error.localizedDescription)",
-                    level: .warning,
-                    subsystem: "download"
-                )
-            } else {
-                state = .failed(error.localizedDescription)
-                DownloadLiveActivityManager.shared.fail(
-                    repoID: repoID,
-                    reason: error.localizedDescription
-                )
-                ToastCenter.shared.error("Download failed: \(repoID)",
-                                          detail: error.localizedDescription)
-                RuntimeLogCenter.emit(
-                    "\(repoID): failed — \(error.localizedDescription)",
-                    level: .error,
-                    subsystem: "download"
-                )
-            }
-            finishRun(runID)
+            state = .failed(error.localizedDescription)
+            DownloadLiveActivityManager.shared.fail(repoID: repoID,
+                                                     reason: error.localizedDescription)
+            ToastCenter.shared.error("Download failed: \(repoID)",
+                                      detail: error.localizedDescription)
         }
     }
 
     // MARK: - HF file-tree API
 
-    private struct HFFileMeta: Sendable {
+    private struct HFFileMeta {
         let path: String    // e.g. "model.safetensors" or "subfolder/file.bin"
         let name: String    // last path component
         let size: Int64
@@ -646,81 +513,87 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
     }
 
     private func fetchFileList() async throws -> [HFFileMeta] {
-        // HF tree API with recursive=true to enumerate subdirectories
-        // (mlpackage repos have files nested under <model>.mlpackage/...).
-        // Also append &expand=true for richer metadata where supported.
-        let urlString = "https://huggingface.co/api/models/\(repoID)/tree/\(branch)?recursive=true&expand=true"
-        guard let url = URL(string: urlString) else { throw URLError(.badURL) }
+        var pages: [[String: Any]] = []
+        var cursor: String?
+        repeat {
+            var urlString = "https://huggingface.co/api/models/\(repoID)/tree/\(branch)?recursive=true&expand=true"
+            if let cursor, !cursor.isEmpty,
+               let encoded = cursor.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
+                urlString += "&cursor=\(encoded)"
+            }
+            guard let url = URL(string: urlString) else { throw URLError(.badURL) }
 
-        var request = URLRequest(url: url)
-        request.setValue("ios-local-llm/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.timeoutInterval = 30
-        HFTokenStore.authorize(&request)
+            var request = URLRequest(url: url)
+            request.setValue("ios-local-llm/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            request.timeoutInterval = 30
+            HFTokenStore.authorize(&request)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse else {
-            throw NSError(domain: "HFDownload", code: -1, userInfo: [
-                NSLocalizedDescriptionKey: "No HTTP response from huggingface.co"
-            ])
-        }
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse else {
+                throw NSError(domain: "HFDownload", code: -1, userInfo: [
+                    NSLocalizedDescriptionKey: "No HTTP response from huggingface.co"
+                ])
+            }
 
-        // Diagnostic — log the URL + first 200 chars of body on error
-        if http.statusCode != 200 {
-            let body = String(data: data.prefix(400), encoding: .utf8) ?? "<binary>"
-            print("[HFDownload] \(http.statusCode) for \(urlString)\n  body: \(body)")
-        }
+            if http.statusCode != 200 {
+                Diagnostics.shared.warning(
+                    "huggingface.co returned \(http.statusCode) for \(repoID) tree request",
+                    category: "hf-download"
+                )
+            }
 
-        guard http.statusCode == 200 else {
-            // Auth-specific paths surface as a structured `HFAuthError`
-            // so the catalog UI can offer a "Set Token" CTA instead of
-            // a generic failure toast. The distinction:
-            //   • token absent + 401  → .tokenRequired (asks for token)
-            //   • token present + 401 → .tokenRejected (token invalid/no access)
-            //   • 403                 → .tokenRejected (terms-acceptance gated)
-            if http.statusCode == 401 || http.statusCode == 403 {
-                let tokenPresent = HFTokenStore.authorizationHeaderValue() != nil
-                if tokenPresent {
-                    throw HFAuthError.tokenRejected(repoID: repoID)
-                } else {
-                    throw HFAuthError.tokenRequired(repoID: repoID)
+            guard http.statusCode == 200 else {
+                if http.statusCode == 401 || http.statusCode == 403 {
+                    let tokenPresent = HFTokenStore.authorizationHeaderValue() != nil
+                    if tokenPresent {
+                        throw HFAuthError.tokenRejected(repoID: repoID)
+                    } else {
+                        throw HFAuthError.tokenRequired(repoID: repoID)
+                    }
                 }
+                let reason: String
+                switch http.statusCode {
+                case 404: reason = "Repo \(repoID) not found (404). Verify it exists at huggingface.co/\(repoID)"
+                case 429: reason = "Rate limited by huggingface.co (429). Wait a minute and retry."
+                case 500...599: reason = "huggingface.co server error (\(http.statusCode)). Retry shortly."
+                default:  reason = "huggingface.co returned HTTP \(http.statusCode) for \(repoID)"
+                }
+                throw NSError(domain: "HFDownload", code: http.statusCode,
+                              userInfo: [NSLocalizedDescriptionKey: reason])
             }
-            let reason: String
-            switch http.statusCode {
-            case 404: reason = "Repo \(repoID) not found (404). Verify it exists at huggingface.co/\(repoID)"
-            case 429: reason = "Rate limited by huggingface.co (429). Wait a minute and retry."
-            case 500...599: reason = "huggingface.co server error (\(http.statusCode)). Retry shortly."
-            default:  reason = "huggingface.co returned HTTP \(http.statusCode) for \(repoID)"
+
+            guard let raw = try? JSONSerialization.jsonObject(with: data) else {
+                Diagnostics.shared.error(
+                    "Could not parse Hugging Face tree JSON for \(repoID)",
+                    category: "hf-download"
+                )
+                throw NSError(domain: "HFDownload", code: -2, userInfo: [
+                    NSLocalizedDescriptionKey: "Could not parse file tree from huggingface.co"
+                ])
             }
-            throw NSError(domain: "HFDownload", code: http.statusCode,
-                          userInfo: [NSLocalizedDescriptionKey: reason])
-        }
 
-        guard let raw = try? JSONSerialization.jsonObject(with: data) else {
-            let body = String(data: data.prefix(400), encoding: .utf8) ?? "<binary>"
-            print("[HFDownload] JSON parse failed for \(urlString)\n  body: \(body)")
-            throw NSError(domain: "HFDownload", code: -2, userInfo: [
-                NSLocalizedDescriptionKey: "Could not parse file tree from huggingface.co"
-            ])
-        }
+            let json: [[String: Any]]
+            if let arr = raw as? [[String: Any]] {
+                json = arr
+            } else if let dict = raw as? [String: Any], let tree = dict["tree"] as? [[String: Any]] {
+                json = tree
+            } else if let dict = raw as? [String: Any], let siblings = dict["siblings"] as? [[String: Any]] {
+                json = siblings
+            } else {
+                Diagnostics.shared.error(
+                    "Unexpected Hugging Face tree JSON shape for \(repoID)",
+                    category: "hf-download"
+                )
+                throw NSError(domain: "HFDownload", code: -3, userInfo: [
+                    NSLocalizedDescriptionKey: "Unexpected response shape from huggingface.co"
+                ])
+            }
+            pages.append(contentsOf: json)
+            cursor = HFHubMetadata.nextCursor(fromLinkHeader: http.value(forHTTPHeaderField: "Link"))
+        } while cursor != nil && !(cursor?.isEmpty ?? true)
 
-        // Tree API can return either a top-level array OR a {tree: [...]} dict
-        // depending on endpoint version. Handle both.
-        let json: [[String: Any]]
-        if let arr = raw as? [[String: Any]] {
-            json = arr
-        } else if let dict = raw as? [String: Any], let tree = dict["tree"] as? [[String: Any]] {
-            json = tree
-        } else if let dict = raw as? [String: Any], let siblings = dict["siblings"] as? [[String: Any]] {
-            json = siblings    // /api/models/{repo} returns "siblings" with {rfilename}
-        } else {
-            let preview = String(data: data.prefix(200), encoding: .utf8) ?? ""
-            print("[HFDownload] Unexpected JSON shape from \(urlString)\n  preview: \(preview)")
-            throw NSError(domain: "HFDownload", code: -3, userInfo: [
-                NSLocalizedDescriptionKey: "Unexpected response shape from huggingface.co"
-            ])
-        }
+        let json = pages
 
         var blobs = json.compactMap { item -> HFFileMeta? in
             // HF returns:
@@ -747,11 +620,19 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             // download can be integrity-checked after it completes.
             let oid = (item["lfs"] as? [String: Any])?["oid"] as? String
             let name = URL(fileURLWithPath: path).lastPathComponent
-            return HFFileMeta(path: path, name: name, size: size, sha256: oid)
+            return HFFileMeta(
+                path: path,
+                name: name,
+                size: size,
+                sha256: oid.flatMap(HFHubMetadata.normalizedSHA256)
+            )
         }
 
         // Diagnostic — log what we found
-        print("[HFDownload] \(repoID): tree returned \(json.count) entries, \(blobs.count) files")
+        Diagnostics.shared.breadcrumb(
+            "\(repoID): tree returned \(json.count) entries, \(blobs.count) files",
+            category: "hf-download"
+        )
 
         // For any blob still reporting size 0, resolve real size via HEAD so
         // progress + isComplete checks work correctly. Probed concurrently
@@ -782,7 +663,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
 
         // Fallback A: try /api/models/{repo} siblings endpoint
         if blobs.isEmpty {
-            print("[HFDownload] Tree returned 0 files, trying siblings endpoint")
+            Diagnostics.shared.breadcrumb("Tree returned 0 files, trying siblings endpoint", category: "hf-download")
             if let sib = try? await fetchFileListViaSiblings(), !sib.isEmpty {
                 return sib
             }
@@ -793,7 +674,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         // we expect a known set of files. We HEAD each, keep the ones that
         // exist. This works even when both tree + siblings endpoints fail.
         if blobs.isEmpty {
-            print("[HFDownload] Siblings empty, probing standard MLX file list")
+            Diagnostics.shared.breadcrumb("Siblings empty, probing standard MLX file list", category: "hf-download")
             let probed = await probeStandardMLXFiles()
             if !probed.isEmpty { return probed }
         }
@@ -852,7 +733,10 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
                 if let r = result { results.append(r) }
             }
         }
-        print("[HFDownload] Standard-file probe found \(results.count) files in \(repoID)")
+        Diagnostics.shared.breadcrumb(
+            "Standard-file probe found \(results.count) files in \(repoID)",
+            category: "hf-download"
+        )
         return results
     }
 
@@ -878,7 +762,10 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
                 size: size
             ))
         }
-        print("[HFDownload] \(repoID): siblings returned \(blobs.count) files")
+        Diagnostics.shared.breadcrumb(
+            "\(repoID): siblings returned \(blobs.count) files",
+            category: "hf-download"
+        )
         return blobs
     }
 
@@ -915,11 +802,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
     // not support partial-file Range resume directly, but it handles its own
     // resume data internally across app launches.
 
-    private func downloadFile(
-        meta: HFFileMeta,
-        to destination: URL,
-        runID: UUID
-    ) async throws -> Int64 {
+    private func downloadFile(meta: HFFileMeta, to destination: URL) async throws -> Int64 {
         // Percent-encode each path component so files with spaces, '+', etc work
         let encoded = meta.path
             .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? meta.path
@@ -933,6 +816,8 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
            let sz = attrs[.size] as? Int64, sz == meta.size {
             return sz
         }
+
+        let snapshot = alreadyDownloadedBytesSnapshot
 
         // Retry transient failures (dropped connection, timeout, 5xx, 429)
         // with exponential backoff + jitter (Retry-After honored when the
@@ -950,11 +835,11 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
                     expectedSize: meta.size
                 ) { [weak self] received, _ in
                     Task { @MainActor [weak self] in
-                        guard let self,
-                              self.isCurrent(runID),
-                              self.activeFileBytes[meta.path] != nil else { return }
-                        self.activeFileBytes[meta.path] = max(0, received)
-                        self.updateAggregateProgress()
+                        guard let self else { return }
+                        self.downloadedBytes = snapshot + received
+                        if self.totalBytes > 0 {
+                            self.progress = Double(self.downloadedBytes) / Double(self.totalBytes)
+                        }
                     }
                 }
                 // Integrity check: LFS blobs carry their sha256 in the tree
@@ -988,18 +873,14 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
                     }
                 }
                 guard attempt < maxAttempts, Self.isRetryable(error) else { throw error }
-                print("[HFDownload] \(meta.name): attempt \(attempt) failed (\(error.localizedDescription)) — retrying")
-                RuntimeLogCenter.emit(
-                    "\(repoID): \(meta.name) attempt \(attempt) failed; retrying — \(error.localizedDescription)",
-                    level: .warning,
-                    subsystem: "download"
+                Diagnostics.shared.warning(
+                    "\(meta.name): attempt \(attempt) failed (\(error.localizedDescription)) — retrying",
+                    category: "hf-download"
                 )
-                // Reset this file's live counter so a retry does not double-
-                // count bytes from the failed attempt alongside its new task.
-                if isCurrent(runID) {
-                    activeFileBytes[meta.path] = 0
-                    updateAggregateProgress()
-                }
+                // Reset the live byte counter to the pre-file baseline so the
+                // retry's progress callbacks don't double-count the partial
+                // bytes from the failed attempt.
+                downloadedBytes = snapshot
                 try? await Task.sleep(nanoseconds: Self.retryDelayNs(attempt: attempt, error: error))
             }
         }
@@ -1030,7 +911,6 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         if ns.domain == "HFDownload" {
             return ns.code == 429 || (500...599).contains(ns.code)
                 || ns.code == checksumMismatchCode
-                || ns.code == -6
         }
         return false
     }
@@ -1077,7 +957,10 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
                 attempt += 1
                 if Task.isCancelled || Self.isUserCancellation(error) { throw CancellationError() }
                 guard attempt < maxAttempts, Self.isRetryable(error) else { throw error }
-                print("[HFDownload] \(repoID): attempt \(attempt) failed (\(error.localizedDescription)) — retrying")
+                Diagnostics.shared.warning(
+                    "\(repoID): attempt \(attempt) failed (\(error.localizedDescription)) — retrying",
+                    category: "hf-download"
+                )
                 try? await Task.sleep(nanoseconds: Self.retryDelayNs(attempt: attempt, error: error))
             }
         }
@@ -1099,52 +982,34 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
 
     // MARK: - Helpers
 
-    private func isCurrent(_ runID: UUID) -> Bool {
-        activeRunID == runID
-    }
-
-    private func updateAggregateProgress() {
-        let inFlight = activeFileBytes.values.reduce(Int64(0), +)
-        let aggregate = completedDownloadBytes + inFlight
-        downloadedBytes = totalBytes > 0 ? min(totalBytes, aggregate) : aggregate
-        if totalBytes > 0 {
-            progress = min(1.0, Double(downloadedBytes) / Double(totalBytes))
-        } else {
-            progress = Double(filesDone) / Double(max(filesTotal, 1))
-        }
-
-        let activePaths = activeFileBytes.keys.sorted()
-        if activePaths.count <= 1 {
-            currentFile = activePaths.first ?? ""
-        } else {
-            currentFile = "\(activePaths[0]) + \(activePaths.count - 1) more"
-        }
-        logProgressIfNeeded()
-    }
-
-    private func finishRun(_ runID: UUID) {
-        guard isCurrent(runID) else { return }
-        activeRunID = nil
-        downloadTask = nil
-        pauseRequested = false
-    }
-
-    private func logProgressIfNeeded() {
-        let now = Date()
-        let elapsed = now.timeIntervalSince(lastProgressLogAt ?? .distantPast)
-        let bytesDelta = downloadedBytes - lastProgressLogBytes
-        guard elapsed >= 5 || bytesDelta >= 64 * 1_024 * 1_024 else { return }
-        lastProgressLogAt = now
-        lastProgressLogBytes = downloadedBytes
-        let percent = String(format: "%.1f%%", progress * 100)
-        RuntimeLogCenter.emit(
-            "\(repoID): \(percent) · \(downloadedBytes.formattedBytes) downloaded",
-            subsystem: "download"
+    private func persistExpectedSizes(_ files: [HFFileMeta]) {
+        let map = Dictionary(uniqueKeysWithValues: files.compactMap { file -> (String, Int64)? in
+            guard file.size > 0 else { return nil }
+            return (file.path, file.size)
+        })
+        guard !map.isEmpty,
+              let data = try? JSONEncoder().encode(map) else { return }
+        try? FileManager.default.createDirectory(
+            at: destination, withIntermediateDirectories: true)
+        try? data.write(
+            to: destination.appendingPathComponent(".hf-expected.json"),
+            options: .atomic
         )
     }
 
+    private func expectedSizesOnDisk() -> [String: Int64] {
+        let url = destination.appendingPathComponent(".hf-expected.json")
+        guard let data = try? Data(contentsOf: url),
+              let map = try? JSONDecoder().decode([String: Int64].self, from: data) else {
+            return [:]
+        }
+        return map
+    }
+
+    private var alreadyDownloadedBytesSnapshot: Int64 = 0
+
     /// Returns the device's free disk space in bytes, or nil on failure.
-    nonisolated static func freeDiskBytes() -> Int64? {
+    static func freeDiskBytes() -> Int64? {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         guard let values = try? docs.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
               let capacity = values.volumeAvailableCapacityForImportantUsage else { return nil }
@@ -1216,7 +1081,6 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         currentFile = ""
         filesDone = 0
         filesTotal = 0
-        completedDownloadBytes = 0
-        activeFileBytes.removeAll(keepingCapacity: true)
+        alreadyDownloadedBytesSnapshot = 0
     }
 }

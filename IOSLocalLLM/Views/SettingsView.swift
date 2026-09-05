@@ -15,7 +15,7 @@ struct SettingsView: View {
 
     @State private var showingHFTokenSheet: Bool = false
     #if !targetEnvironment(macCatalyst)
-    /// nil = default monochrome LAS icon; "AppIconClassic" = previous pink mark.
+    /// nil = default "Silver" icon; "AppIconClassic" = previous pink mark.
     @State private var activeIconName: String? = UIApplication.shared.alternateIconName
     #endif
     /// Presents the onboarding model picker as a sheet so existing
@@ -168,7 +168,7 @@ struct SettingsView: View {
 
         var subtitle: String {
             switch self {
-            case .userGuide:    return "learn how to use ioslocalllm & local models"
+            case .userGuide:    return "learn how to use OnDevice & local models"
             case .capture:      return "analysis mode, camera, detection"
             case .modelsAI:     return "assistant, api keys, fastvlm pipeline"
             case .voice:        return "engine, voice, audio, behavior"
@@ -1156,14 +1156,14 @@ struct SettingsView: View {
     // MARK: - App Icon Picker
 
     #if !targetEnvironment(macCatalyst)
-    /// Default "Neon" icon + the previous "Classic" mark as an alternate.
+    /// Default "Silver" icon + the previous "Classic" mark as an alternate.
     /// Declared via CFBundleAlternateIcons in Info.plist; the classic asset
     /// compiles because of INCLUDE_ALL_APPICON_ASSETS.
     private var appIconPickerRow: some View {
         VStack(alignment: .leading, spacing: 8) {
             KMono(text: "app icon", size: 11.5, color: T.ink, mono: false)
             HStack(spacing: 14) {
-                appIconOption(name: nil, title: "Monochrome", preview: "AppIconPreview")
+                appIconOption(name: nil, title: "Silver", preview: "AppIconPreview")
                 appIconOption(name: "AppIconClassic", title: "Classic", preview: "AppIconClassicPreview")
                 Spacer()
             }

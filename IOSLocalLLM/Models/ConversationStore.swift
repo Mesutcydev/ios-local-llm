@@ -321,6 +321,8 @@ struct StoredMessage: Codable {
     var generationDuration: TimeInterval?
     var generationModelID: String?
     var generationExecutionLocation: ModelExecutionLocation?
+    var hitTokenLimit: Bool?
+    var documentSources: [ChatMessage.DocumentSource]?
 
     init(_ msg: ChatMessage) {
         self.id = msg.id
@@ -332,10 +334,12 @@ struct StoredMessage: Codable {
         self.generationDuration = msg.generationDuration
         self.generationModelID = msg.generationModelID
         self.generationExecutionLocation = msg.generationExecutionLocation
+        self.hitTokenLimit = msg.hitTokenLimit
+        self.documentSources = msg.documentSources
     }
 
     var chatMessage: ChatMessage {
-        ChatMessage(
+        var message = ChatMessage(
             id: id,
             role: ChatMessage.Role(rawValue: role) ?? .user,
             content: content,
@@ -344,8 +348,11 @@ struct StoredMessage: Codable {
             generationTokensPerSecond: generationTokensPerSecond,
             generationDuration: generationDuration,
             generationModelID: generationModelID,
-            generationExecutionLocation: generationExecutionLocation
+            generationExecutionLocation: generationExecutionLocation,
+            hitTokenLimit: hitTokenLimit
         )
+        message.documentSources = documentSources
+        return message
     }
 }
 
@@ -389,19 +396,6 @@ struct ConversationContextMemory: Codable, Equatable {
     var summary: String
     var compactedThroughMessageID: UUID
     var updatedAt: Date
-    var schemaVersion: Int? = 2
-    var originalTokenCount: Int? = nil
-    var compactedTokenCount: Int? = nil
-    var state: ConversationRecoveryState? = nil
-}
-
-struct ConversationRecoveryState: Codable, Equatable {
-    var goal: String?
-    var constraints: [String]
-    var decisions: [String]
-    var openItems: [String]
-    var toolState: [String]
-    var artifacts: [String]
 }
 
 struct ConversationContextPreparation {
@@ -476,7 +470,8 @@ enum ConversationContextCompactor {
         }
         let completedCut = stride(from: provisionalCut, through: 1, by: -1)
             .first { cut in
-                isSafeBoundary(activeDialog[cut - 1])
+                let role = activeDialog[cut - 1].role
+                return role == .assistant || role == .tool
             }
         guard let cut = completedCut, activeDialog.count - cut >= 2 else {
             return .init(messages: current, memory: validMemory, didCompact: false)
@@ -488,28 +483,16 @@ enum ConversationContextCompactor {
             return .init(messages: current, memory: validMemory, didCompact: false)
         }
 
-        let state = mergedState(previous: validMemory?.state, expired: expired)
         let summary = mergedSummary(
             previous: validMemory?.summary,
             expired: expired,
-            state: state,
             maxCharacters: max(600, Int(Double(maxTokens * 4) * memoryFraction))
         )
-        var memory = ConversationContextMemory(
+        let memory = ConversationContextMemory(
             summary: summary,
             compactedThroughMessageID: boundaryID,
-            updatedAt: .now,
-            schemaVersion: 2,
-            originalTokenCount: estimateTokens(current),
-            compactedTokenCount: nil,
-            state: state
+            updatedAt: .now
         )
-        let compactedMessages = assemble(
-            systemMessages: systemMessages,
-            memory: memory,
-            dialog: recent
-        )
-        memory.compactedTokenCount = estimateTokens(compactedMessages)
         return .init(
             messages: assemble(
                 systemMessages: systemMessages,
@@ -553,7 +536,6 @@ enum ConversationContextCompactor {
     private static func mergedSummary(
         previous: String?,
         expired: [ChatMessage],
-        state: ConversationRecoveryState,
         maxCharacters: Int
     ) -> String {
         var sections: [String] = []
@@ -561,7 +543,6 @@ enum ConversationContextCompactor {
             sections.append("Earlier memory:\n\(previous)")
         }
         sections.append("Newly compacted turns:\n" + expired.map(summaryLine).joined(separator: "\n"))
-        sections.append(recoveryStateText(state))
         return bounded(sections.joined(separator: "\n\n"), maxCharacters: maxCharacters)
     }
 
@@ -577,97 +558,13 @@ enum ConversationContextCompactor {
             .replacingOccurrences(of: "\\s+", with: " ",
                                   options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        let lineLimit = message.role == .tool ? 240 : 700
-        if content.count > lineLimit {
-            content = bounded(content, maxCharacters: lineLimit)
+        if content.count > 700 {
+            content = bounded(content, maxCharacters: 700)
         }
         if !message.imageThumbnails.isEmpty || message.imageThumbnailData != nil {
             content += " [image attached]"
         }
         return "- \(label): \(content)"
-    }
-
-    private static func isSafeBoundary(_ message: ChatMessage) -> Bool {
-        if message.role == .tool { return true }
-        guard message.role == .assistant else { return false }
-        let value = message.contentForModel.lowercased()
-        return !value.contains("tool_call")
-            && !value.contains("[previous tool calls]")
-    }
-
-    private static func mergedState(
-        previous: ConversationRecoveryState?,
-        expired: [ChatMessage]
-    ) -> ConversationRecoveryState {
-        var state = previous ?? .init(
-            goal: nil,
-            constraints: [],
-            decisions: [],
-            openItems: [],
-            toolState: [],
-            artifacts: []
-        )
-        for message in expired {
-            let content = message.contentForModel
-                .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !content.isEmpty else { continue }
-            if state.goal == nil, message.role == .user {
-                state.goal = bounded(content, maxCharacters: 360)
-            }
-            let lower = content.lowercased()
-            if lower.contains("must ") || lower.contains("should ")
-                || lower.contains("don't ") || lower.contains("do not ") {
-                appendUnique(bounded(content, maxCharacters: 320), to: &state.constraints, limit: 8)
-            }
-            if lower.contains("decided") || lower.contains("selected") || lower.contains("will use") {
-                appendUnique(bounded(content, maxCharacters: 320), to: &state.decisions, limit: 8)
-            }
-            if lower.contains("todo") || lower.contains("remaining")
-                || lower.contains("failed") || lower.contains("error") || content.hasSuffix("?") {
-                appendUnique(bounded(content, maxCharacters: 320), to: &state.openItems, limit: 8)
-            }
-            if message.role == .tool || lower.contains("tool_call") || lower.contains("call_id=") {
-                appendUnique(bounded(content, maxCharacters: 240), to: &state.toolState, limit: 6)
-            }
-            for artifact in artifactReferences(in: content) {
-                appendUnique(artifact, to: &state.artifacts, limit: 12)
-            }
-        }
-        return state
-    }
-
-    private static func recoveryStateText(_ state: ConversationRecoveryState) -> String {
-        var lines = ["[RECOVERY STATE v2]"]
-        if let goal = state.goal { lines.append("Goal: \(goal)") }
-        func add(_ title: String, _ values: [String]) {
-            guard !values.isEmpty else { return }
-            lines.append("\(title):")
-            lines.append(contentsOf: values.map { "- \($0)" })
-        }
-        add("Constraints", state.constraints)
-        add("Decisions", state.decisions)
-        add("Open items", state.openItems)
-        add("Tool state", state.toolState)
-        add("Artifacts", state.artifacts)
-        return lines.joined(separator: "\n")
-    }
-
-    private static func artifactReferences(in text: String) -> [String] {
-        let pattern = #"(?:https?://[^\s<>]+|/(?:[^\s/:]+/)+[^\s<>]+)"#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
-        let range = NSRange(text.startIndex..<text.endIndex, in: text)
-        return regex.matches(in: text, range: range).compactMap {
-            Range($0.range, in: text).map {
-                String(text[$0]).trimmingCharacters(in: .punctuationCharacters)
-            }
-        }
-    }
-
-    private static func appendUnique(_ value: String, to values: inout [String], limit: Int) {
-        guard !value.isEmpty, !values.contains(value) else { return }
-        values.append(value)
-        if values.count > limit { values.removeFirst(values.count - limit) }
     }
 
     /// Preserve both the original goal at the beginning and the most recent

@@ -57,3 +57,20 @@ The following are deliberately excluded from Git:
 
 Anyone redistributing a build is responsible for reviewing and satisfying the
 licenses of every model and binary they add.
+
+## User-supplied app identity
+
+The silver eye artwork used by `AppIcon`, `AppIconPreview`, `AppLogo`, and
+`app_logo_small` was supplied by the project owner on 2026-09-05 for use as
+this app's logo (attachment `codex-clipboard-7b8490cb-ee90-4ba0-97ef-adbed371f831.png`).
+The app assets are resized copies of that artwork. This provenance note does
+not assign a third-party license or extend the source-code MIT license to it.
+
+## Bundled voice activity detector (sideload binary only)
+
+The IPA includes the MIT-licensed FluidInference Core ML conversion of Silero VAD:
+<https://huggingface.co/FluidInference/silero-vad-coreml/tree/b419383c55c110e2c9271fa6ee0ea83d03c70d96/silero_vad.mlmodelc>.
+The bundled weight SHA-256 is `45846d0738d3bf5e4b6e9e7d2fddda7b1ad07da33d473f0405e51d3b6c4c11a9`, verified against that revision.
+See `LICENSES/Silero-VAD-MIT.txt` for the upstream Silero Team notice.
+This compiled model stays outside Git. Large chat, vision, and speech models
+are downloaded separately by the app.

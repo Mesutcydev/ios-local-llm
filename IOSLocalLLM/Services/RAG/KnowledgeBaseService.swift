@@ -10,10 +10,9 @@ import Combine
 // context — "chat with your documents/codebase, fully offline."
 //
 // Everything stays on device: vectors live in a local JSON index, never
-// uploaded. This is the flagship differentiator — no competitor offers private
-// on-device RAG.
+// uploaded. Documents remain available for local retrieval without a remote index.
 
-struct KBDocument: Codable, Identifiable, Hashable {
+struct KBDocument: Codable, Identifiable, Hashable, Sendable {
     let id: UUID
     var name: String
     var addedAt: Date
@@ -21,7 +20,7 @@ struct KBDocument: Codable, Identifiable, Hashable {
     var byteCount: Int
 }
 
-struct KBChunk: Codable {
+struct KBChunk: Codable, Sendable {
     let id: UUID
     let docID: UUID
     let text: String
@@ -29,8 +28,9 @@ struct KBChunk: Codable {
 }
 
 /// A retrieved chunk with its similarity score and originating document name.
-struct KBRetrieval: Identifiable {
+struct KBRetrieval: Identifiable, Sendable {
     let id: UUID
+    let docID: UUID
     let docName: String
     let text: String
     let score: Float
@@ -49,6 +49,16 @@ final class KnowledgeBaseService: ObservableObject {
     }
 
     private var chunks: [KBChunk] = []
+    private var importGate = StudioImportGate()
+    private var importJobs: [UUID: Task<[KBChunk], Never>] = [:]
+    private let diskQueue = DispatchQueue(label: "studio.knowledge-base.persistence", qos: .utility)
+
+    func cancelImports() {
+        importGate.reset()
+        importJobs.values.forEach { $0.cancel() }
+        importJobs.removeAll()
+        isIndexing = false
+    }
     private let embedder = OnDeviceEmbedder()
 
     private static let enabledKey = "knowledgeBase.enabled"
@@ -88,32 +98,50 @@ final class KnowledgeBaseService: ObservableObject {
             return
         }
         let clipped = String(trimmed.prefix(maxCharsPerDoc))
+        let ticket = importGate.generation
+        let jobID = UUID()
         isIndexing = true
-        defer { isIndexing = false }
+        defer {
+            importJobs.removeValue(forKey: jobID)
+            isIndexing = !importJobs.isEmpty
+        }
 
         let docID = UUID()
-        let embedder = self.embedder
+
         let chunkChars = self.chunkChars
         let overlapChars = self.overlapChars
         let maxChunks = self.maxChunksPerDoc
 
-        let newChunks: [KBChunk] = await Task.detached(priority: .userInitiated) {
+        let job = Task.detached(priority: .userInitiated) {
+            let embedder = OnDeviceEmbedder()
             let windows = Self.chunk(clipped, chunkChars: chunkChars,
                                      overlapChars: overlapChars, maxChunks: maxChunks)
             var out: [KBChunk] = []
             out.reserveCapacity(windows.count)
             for w in windows {
+                guard !Task.isCancelled else { return [KBChunk]() }
                 guard let v = embedder.embed(w) else { continue }
                 out.append(KBChunk(id: UUID(), docID: docID, text: w, vector: v))
             }
             return out
-        }.value
+        }
+        importJobs[jobID] = job
+        let newChunks = await withTaskCancellationHandler {
+            await job.value
+        } onCancel: {
+            job.cancel()
+        }
+        guard ticket == importGate.generation, !Task.isCancelled, !job.isCancelled else { return }
 
         guard !newChunks.isEmpty else {
             ToastCenter.shared.error("Couldn't index \(name)", detail: "No embeddable text found.")
             return
         }
 
+        guard importGate.accepts(ticket, existing: chunks.count, incoming: newChunks.count, limit: maxTotalChunks) else {
+            ToastCenter.shared.error("Knowledge Base full", detail: "This document exceeds the remaining capacity. Remove a document and try again.")
+            return
+        }
         chunks.append(contentsOf: newChunks)
         documents.append(KBDocument(id: docID, name: name, addedAt: Date(),
                                     chunkCount: newChunks.count, byteCount: clipped.utf8.count))
@@ -130,9 +158,22 @@ final class KnowledgeBaseService: ObservableObject {
     }
 
     func clear() {
+        cancelImports()
         documents.removeAll()
         chunks.removeAll()
         persist()
+    }
+
+    /// Privacy wipe: drop the in-memory index and delete the on-disk folder.
+    func wipeFromDisk() {
+        cancelImports()
+        documents.removeAll()
+        chunks.removeAll()
+        isEnabled = false
+        UserDefaults.standard.removeObject(forKey: Self.enabledKey)
+        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("KnowledgeBase", isDirectory: true)
+        diskQueue.sync { try? FileManager.default.removeItem(at: dir) }
     }
 
     // MARK: - Retrieval
@@ -146,15 +187,34 @@ final class KnowledgeBaseService: ObservableObject {
             .filter { $0.1 >= minScore }
             .sorted { $0.1 > $1.1 }
             .prefix(topK)
-            .map { KBRetrieval(id: $0.0.id, docName: docNames[$0.0.docID] ?? "document", text: $0.0.text, score: $0.1) }
+            .map { KBRetrieval(id: $0.0.id, docID: $0.0.docID, docName: docNames[$0.0.docID] ?? "document", text: $0.0.text, score: $0.1) }
     }
 
     /// Rendered grounding block for the assistant prompt, or nil when the KB
     /// is empty/disabled or nothing relevant is found. Honors an approximate
     /// token budget (chars/4).
-    func contextBlock(for query: String, tokenBudget: Int = 1_200) -> (block: String, sources: [String])? {
+    func contextBlock(for query: String, tokenBudget: Int = 1_200) async -> (block: String, sources: [ChatMessage.DocumentSource])? {
         guard isEnabled, !chunks.isEmpty else { return nil }
-        let hits = retrieve(query: query, topK: 6)
+        let snapshot = chunks
+        let names = Dictionary(uniqueKeysWithValues: documents.map { ($0.id, $0.name) })
+        let generation = importGate.generation
+        let job = Task.detached(priority: .userInitiated) { () -> [KBRetrieval] in
+            let worker = OnDeviceEmbedder()
+            guard !Task.isCancelled, let queryVector = worker.embed(query) else { return [] }
+            var ranked: [(KBChunk, Float)] = []
+            for chunk in snapshot {
+                guard !Task.isCancelled else { return [] }
+                let score = OnDeviceEmbedder.cosine(queryVector, chunk.vector)
+                if score >= 0.15 { ranked.append((chunk, score)) }
+            }
+            return ranked.sorted { $0.1 > $1.1 }.prefix(6).map {
+                KBRetrieval(id: $0.0.id, docID: $0.0.docID, docName: names[$0.0.docID] ?? "document", text: $0.0.text, score: $0.1)
+            }
+        }
+        let retrieved = await withTaskCancellationHandler { await job.value } onCancel: { job.cancel() }
+        guard !Task.isCancelled, isEnabled, generation == importGate.generation else { return nil }
+        let currentIDs = Set(documents.map(\.id))
+        let hits = retrieved.filter { currentIDs.contains($0.docID) }
         guard !hits.isEmpty else { return nil }
 
         var lines: [String] = [
@@ -163,13 +223,13 @@ final class KnowledgeBaseService: ObservableObject {
         ]
         var usedChars = lines.joined().count
         let budgetChars = tokenBudget * 4
-        var sources: [String] = []
+        var sources: [ChatMessage.DocumentSource] = []
         for h in hits {
             let entry = "[\(h.docName)]\n\(h.text)\n"
             if usedChars + entry.count > budgetChars { break }
             lines.append(entry)
             usedChars += entry.count
-            if !sources.contains(h.docName) { sources.append(h.docName) }
+            sources.append(.init(id: h.id, documentID: h.docID, name: h.docName, excerpt: h.text))
         }
         lines.append("KNOWLEDGE BASE END")
         guard sources.count > 0 else { return nil }
@@ -208,9 +268,9 @@ final class KnowledgeBaseService: ObservableObject {
 
     // MARK: - Persistence
 
-    private struct Index: Codable { var documents: [KBDocument]; var chunks: [KBChunk] }
+    private struct Index: Codable, Sendable { var documents: [KBDocument]; var chunks: [KBChunk] }
 
-    private static var indexURL: URL {
+    nonisolated private static var indexURL: URL {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("KnowledgeBase", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -219,12 +279,15 @@ final class KnowledgeBaseService: ObservableObject {
 
     private func persist() {
         let index = Index(documents: documents, chunks: chunks)
-        do {
-            let data = try JSONEncoder().encode(index)
-            try data.write(to: Self.indexURL, options: [.atomic, .completeFileProtectionUnlessOpen])
-        } catch {
-            // Non-fatal: the in-memory index still works this session.
-            print("[KnowledgeBase] persist failed: \(error)")
+        diskQueue.async {
+            do {
+                let data = try JSONEncoder().encode(index)
+                try data.write(to: Self.indexURL, options: [.atomic, .completeFileProtectionUnlessOpen])
+            } catch {
+                Task { @MainActor in
+                    ToastCenter.shared.error("Couldn't save documents", detail: "Your index is available this session. Try importing again before closing the app.")
+                }
+            }
         }
     }
 

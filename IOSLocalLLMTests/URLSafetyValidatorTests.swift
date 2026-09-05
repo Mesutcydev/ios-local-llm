@@ -1,9 +1,5 @@
 import XCTest
-#if canImport(OnDeviceLAS)
-@testable import OnDeviceLAS
-#else
 @testable import IOSLocalLLM
-#endif
 
 final class URLSafetyValidatorTests: XCTestCase {
 

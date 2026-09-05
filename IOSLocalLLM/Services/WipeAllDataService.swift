@@ -29,8 +29,8 @@ enum WipeAllDataService {
         let docs = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let caches = fm.urls(for: .cachesDirectory, in: .userDomainMask)[0]
 
-        // 1. Models (HF + FastVLM + Voice)
-        for sub in ["HFModels", "FastVLMModels", "LLMModels", "VoiceModels"] {
+        // 1. Models (HF + FastVLM + Voice + GGUF)
+        for sub in ["HFModels", "FastVLMModels", "LLMModels", "VoiceModels", "GGUFModels"] {
             let url = docs.appendingPathComponent(sub, isDirectory: true)
             r.bytesFreed += dirSize(at: url)
             if fm.fileExists(atPath: url.path) {
@@ -56,6 +56,29 @@ enum WipeAllDataService {
             r.bytesFreed += dirSize(at: root)
             try? fm.removeItem(at: root)
         }
+
+        // 2b. Apple Core AI resource packs live in Application Support, not
+        // Documents/Hub. Without this, "Wipe all" left the largest and most
+        // privacy-sensitive new model tree behind.
+        let coreAIRoot = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("CoreAIModels", isDirectory: true)
+        if fm.fileExists(atPath: coreAIRoot.path) {
+            r.bytesFreed += dirSize(at: coreAIRoot)
+            r.modelsDeleted += (try? fm.contentsOfDirectory(atPath: coreAIRoot.path).count) ?? 0
+            try? fm.removeItem(at: coreAIRoot)
+        }
+
+        let support = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        for sub in ["KnowledgeBase", "Registry"] {
+            let url = support.appendingPathComponent(sub, isDirectory: true)
+            if fm.fileExists(atPath: url.path) {
+                r.bytesFreed += dirSize(at: url)
+                try? fm.removeItem(at: url)
+            }
+        }
+        KnowledgeBaseService.shared.wipeFromDisk()
+        InstalledModelRegistry.shared.wipe()
+        PersonaStore.shared.resetForWipe()
 
         // 3. Conversations (ConversationStore writes JSON to Documents)
         let conv = docs.appendingPathComponent("conversations.json")
@@ -100,6 +123,13 @@ enum WipeAllDataService {
             "hasPickedAssistantModel",
             "voiceConversationModelID",
             "assistantModelID",
+            "CoreAI.installedVersion",
+            "cameraVisualModelID",
+            "sttProvider",
+            "iCloudSyncEnabled",
+            "userPersonas.v1",
+            "activePersonaID",
+            "knowledgeBase.enabled",
         ]
         for k in settingsKeys { defaults.removeObject(forKey: k) }
         r.settingsCleared = true
@@ -134,6 +164,7 @@ enum WipeAllDataService {
 
         // Refresh in-memory caches that mirror disk state
         ModelDownloadCenter.shared.refreshAllStates()
+        CoreAIModelStore.shared.refresh()
 
         return r
     }

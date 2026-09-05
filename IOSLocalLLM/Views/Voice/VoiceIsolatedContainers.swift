@@ -47,6 +47,8 @@ struct VoiceOrbContainer: View {
 }
 
 struct KaraokeTranscriptContainer: View {
+    @Environment(\.scenePhase) private var scenePhase
+    @ObservedObject private var controls = SpeechPlaybackCoordinator.shared.controls
     @ObservedObject var karaoke: KaraokePresentationModel
     let fallbackText: String
     let isExpanded: Bool
@@ -60,7 +62,7 @@ struct KaraokeTranscriptContainer: View {
             // Phrase / text changes still arrive via @ObservedObject.
             // Spoken-end is polled at ~12 Hz so highlight advances smoothly
             // without publishing into the parent Voice screen.
-            TimelineView(.animation(minimumInterval: 1.0 / 12.0)) { _ in
+            TimelineView(.animation(minimumInterval: 1.0 / 12.0, paused: scenePhase != .active || controls.phase != .speaking)) { _ in
                 KaraokeTranscriptView(
                     text: text,
                     activePhraseID: karaoke.activePhraseID,

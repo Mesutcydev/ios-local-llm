@@ -277,11 +277,7 @@ struct KoduTheme {
         default:     base = .light
         }
         let dark = base.isDark
-        // NOTE: every palette (including `.rose`) resolves through its own
-        // anchors. The base light/dark/oled themes in this product are neutral
-        // (blue/graphite), so the old `if accent == .rose { return base }`
-        // shortcut made the Rose swatch paint blue. Rose now uses its pink
-        // anchors to match the swatch shown in the picker.
+        if accent == .rose { return base }
         let a = accent.anchors(dark: dark)
         return KoduTheme(
             bg: base.bg, surface: base.surface, surface2: base.surface2, surface3: base.surface3,
@@ -364,19 +360,25 @@ struct KoduTheme {
     /// that don't have the file.
     func display(_ size: CGFloat, _ weight: Font.Weight = .semibold) -> Font {
         Self.named("Geist", size: size, weight: weight)
-            ?? .system(size: size, weight: weight, design: .default)
+            ?? Font.custom(UIFont.systemFont(ofSize: size).fontName, size: size, relativeTo: .body).weight(weight)
+    }
+
+    /// Shared reading size for prompts, live responses, and completed transcripts.
+    /// Both the bundled font and system fallback follow Dynamic Type.
+    var conversationBody: Font {
+        Self.named("Geist", size: 17, weight: .regular) ?? .body
     }
 
     func sans(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         Self.named("Geist", size: size, weight: weight)
-            ?? .system(size: size, weight: weight, design: .default)
+            ?? Font.custom(UIFont.systemFont(ofSize: size).fontName, size: size, relativeTo: .body).weight(weight)
     }
 
     /// Monospaced — pervasive in this design language. Prefers Geist Mono,
     /// falls back to the system monospaced face.
     func mono(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         Self.named("Geist Mono", size: size, weight: weight)
-            ?? .system(size: size, weight: weight, design: .monospaced)
+            ?? Font.custom(UIFont.monospacedSystemFont(ofSize: size, weight: .regular).fontName, size: size, relativeTo: .body).weight(weight)
     }
 
     /// Returns nil when the family isn't registered with UIFont — the caller

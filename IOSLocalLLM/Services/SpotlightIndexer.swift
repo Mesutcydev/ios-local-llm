@@ -11,7 +11,7 @@ import UniformTypeIdentifiers
 
 enum SpotlightIndexer {
 
-    static let domain = "com.mesutcydev.ioslocalllm.conversation"
+    static let domain = "com.mesutcydev.ondevicecore.conversation"
 
     /// Rebuild the whole index from the current conversation list. Cheap —
     /// runs on a background queue inside CoreSpotlight.
@@ -39,7 +39,7 @@ enum SpotlightIndexer {
         attr.title = c.title
         let firstUser = c.messages.first(where: { $0.role == "user" })?.content ?? ""
         attr.contentDescription = String(firstUser.prefix(200))
-        attr.keywords = ["chat", "ioslocalllm", "ai", "conversation", "assistant"]
+        attr.keywords = ["chat", "OnDevice", "ai", "conversation", "assistant"]
         attr.contentModificationDate = c.updatedAt
         return CSSearchableItem(
             uniqueIdentifier: c.id.uuidString,

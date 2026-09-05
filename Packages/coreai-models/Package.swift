@@ -57,6 +57,7 @@ let package = Package(
             swiftSettings: [
                 .define("CXGRAMMAR_IMPORT"),
                 .enableUpcomingFeature("MemberImportVisibility"),
+                .enableExperimentalFeature("Lifetimes"),
             ],
             linkerSettings: [
                 .linkedLibrary("c++")

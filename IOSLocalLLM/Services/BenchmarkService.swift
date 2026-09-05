@@ -30,6 +30,7 @@ final class BenchmarkService: ObservableObject {
         /// Throughput samples over time — one entry per second of generation.
         /// Records (elapsedSecond, tokensPerSec) pairs for plotting.
         var throughputSamples: [ThroughputSample] = []
+        var outputCountKind: String? = nil
 
         struct ThroughputSample: Codable, Hashable {
             let elapsedSec: Double
@@ -148,95 +149,74 @@ final class BenchmarkService: ObservableObject {
     private func runSingle(prompt: BenchmarkPrompt) async throws -> PromptRun {
         let assistant = CodingAssistantService.shared
 
-        // We need a few values pulled from the streaming callbacks. They run
-        // off the main actor, so wrap them in a Sendable box.
-        actor RunMetrics {
-            var ttftMs: Double? = nil
-            var lastTokenCount = 0
-            var outputBuffer = ""
-            var peakRSS: Int64 = 0
-            var throughputSamples: [PromptRun.ThroughputSample] = []
-            var lastSampleTime: Date = Date()
-            func setTTFT(_ v: Double) { if ttftMs == nil { ttftMs = v } }
-            func bumpTokens() { lastTokenCount += 1 }
-            func appendOutput(_ s: String) { outputBuffer += s }
-            func updatePeakRSS(_ s: Int64) { if s > peakRSS { peakRSS = s } }
-            func recordThroughput(tokensPerSec: Double, elapsedSec: Double) {
-                throughputSamples.append(PromptRun.ThroughputSample(elapsedSec: elapsedSec, tokensPerSec: tokensPerSec))
-            }
-            func snapshot() -> (Double?, Int, String, Int64, [PromptRun.ThroughputSample]) {
-                (ttftMs, lastTokenCount, outputBuffer, peakRSS, throughputSamples)
-            }
+        enum Event: Sendable {
+            case chunk(String, Date)
+            case completed(Double, Date)
+            case failed(String)
         }
-        let metrics = RunMetrics()
-
-        // Override the user's max_tokens for this run so different settings
-        // don't skew comparisons across runs.
-        let originalMax = AppSettings.shared.assistantMaxTokens
-        AppSettings.shared.assistantMaxTokens = prompt.maxTokens
-        defer { AppSettings.shared.assistantMaxTokens = originalMax }
-
-        // Memory sampler — polls RSS every 200ms during the run.
-        let samplerTask = Task { @MainActor in
-            while !Task.isCancelled {
-                let rss = MemoryAdvisor.deviceTotalRAM - MemoryAdvisor.nonResidentRAMEstimate
-                await metrics.updatePeakRSS(rss)
-                try? await Task.sleep(nanoseconds: 200_000_000)
-            }
-        }
-        defer { samplerTask.cancel() }
-
+        let (events, producer) = AsyncStream<Event>.makeStream()
         let wallStart = Date()
-        // Box rate in a reference type so concurrent capture is safe.
-        final class RateBox: @unchecked Sendable { var value: Double = 0 }
-        let decodeRateBox = RateBox()
-
-        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<PromptRun, Error>) in
-            let messages: [ChatMessage] = [
-                ChatMessage(role: .system, content: "You are a benchmark target. Reply only with the requested content. No preamble."),
-                ChatMessage(role: .user, content: prompt.prompt)
-            ]
-            assistant.generate(
-                messages: messages,
-                onToken: { token in
-                    let now = Date()
-                    Task {
-                        await metrics.setTTFT(now.timeIntervalSince(wallStart) * 1000)
-                        await metrics.bumpTokens()
-                        await metrics.appendOutput(token)
-                        // Main-actor work (UI update + reading the @MainActor
-                        // tokenRate) stays in a *synchronous* MainActor.run;
-                        // the actor call that records the sample happens after,
-                        // since MainActor.run can't host an `await`.
-                        let (tps, elapsed): (Double, Double) = await MainActor.run {
-                            BenchmarkService.shared.liveOutput += token
-                            let elapsed = Date().timeIntervalSince(wallStart)
-                            let tps = CodingAssistantService.shared.tokenRate
-                            return (tps, elapsed)
-                        }
-                        await metrics.recordThroughput(tokensPerSec: tps, elapsedSec: elapsed)
-                    }
-                },
-                onComplete: { rate in
-                    decodeRateBox.value = rate
-                    let wallMs = Date().timeIntervalSince(wallStart) * 1000
-                    Task {
-                        let snap = await metrics.snapshot()
-                        let run = PromptRun(
-                            label: prompt.label,
-                            prompt: prompt.prompt,
-                            outputTokens: snap.1,
-                            ttftMs: snap.0 ?? wallMs,
-                            decodeTokensPerSec: decodeRateBox.value,
-                            totalWallMs: wallMs,
-                            peakRSSBytes: snap.3,
-                            throughputSamples: snap.4
-                        )
-                        continuation.resume(returning: run)
-                    }
-                }
-            )
+        var firstTokenMs: Double?
+        var chunks = 0
+        var peakRSS: Int64 = 0
+        var samples: [PromptRun.ThroughputSample] = []
+        var lastSample = -1.0
+        let sampler = Task { @MainActor in
+            while !Task.isCancelled {
+                peakRSS = max(peakRSS, MemoryAdvisor.deviceTotalRAM - MemoryAdvisor.nonResidentRAMEstimate)
+                do { try await Task.sleep(for: .milliseconds(200)) } catch { break }
+            }
         }
+        defer { sampler.cancel() }
+        let messages: [ChatMessage] = [
+            ChatMessage(role: .system, content: "You are a benchmark target. Reply only with the requested content. No preamble."),
+            ChatMessage(role: .user, content: prompt.prompt)
+        ]
+        // A per-request override preserves the user's saved settings.
+        assistant.generate(
+            messages: messages,
+            maxTokensOverride: prompt.maxTokens,
+            onToken: { producer.yield(.chunk($0, Date())) },
+            onComplete: {
+                producer.yield(.completed($0, Date()))
+                producer.finish()
+            },
+            onError: {
+                producer.yield(.failed($0))
+                producer.finish()
+            }
+        )
+        // One consumer applies callbacks in order before finalizing the run.
+        for await event in events {
+            peakRSS = max(peakRSS, MemoryAdvisor.deviceTotalRAM - MemoryAdvisor.nonResidentRAMEstimate)
+            switch event {
+            case let .chunk(text, time):
+                let elapsed = time.timeIntervalSince(wallStart)
+                if firstTokenMs == nil { firstTokenMs = elapsed * 1000 }
+                chunks += 1
+                liveOutput += text
+                if elapsed - lastSample >= 1 {
+                    samples.append(.init(elapsedSec: elapsed, tokensPerSec: assistant.tokenRate))
+                    lastSample = elapsed
+                }
+            case let .completed(rate, time):
+                let wallMs = time.timeIntervalSince(wallStart) * 1000
+                return PromptRun(
+                    label: prompt.label,
+                    prompt: prompt.prompt,
+                    outputTokens: assistant.lastOutputTokens > 0 ? assistant.lastOutputTokens : chunks,
+                    ttftMs: firstTokenMs ?? wallMs,
+                    decodeTokensPerSec: rate,
+                    totalWallMs: wallMs,
+                    peakRSSBytes: peakRSS,
+                    throughputSamples: samples,
+                    outputCountKind: assistant.lastOutputTokens > 0 ? "runtime" : "streamChunks"
+                )
+            case let .failed(message):
+                throw NSError(domain: "Benchmark", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
+            }
+        }
+        throw CancellationError()
     }
 
     // MARK: - Persistence

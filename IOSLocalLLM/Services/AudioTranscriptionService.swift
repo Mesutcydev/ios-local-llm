@@ -43,9 +43,12 @@ final class AudioTranscriptionService {
 
         let request = SFSpeechURLRecognitionRequest(url: fileURL)
         request.shouldReportPartialResults = false
-        if #available(iOS 13.0, *), recognizer.supportsOnDeviceRecognition {
-            request.requiresOnDeviceRecognition = true
+        guard recognizer.supportsOnDeviceRecognition else {
+            throw NSError(domain: "AudioTranscription", code: -2, userInfo: [
+                NSLocalizedDescriptionKey: "On-device speech recognition isn't available on this device."
+            ])
         }
+        request.requiresOnDeviceRecognition = true
 
         return try await withCheckedThrowingContinuation { continuation in
             recognizer.recognitionTask(with: request) { result, error in

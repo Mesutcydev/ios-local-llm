@@ -200,18 +200,17 @@ enum AssistantModelCatalog {
         // This used to be reachable only as an installed community model. That
         // made it disappear whenever registry discovery had not finished yet
         // (and removed it entirely from the downloadable catalog). Keep it as
-        // a first-class preset on the high-memory tier. Its published long
-        // context is recorded here; the capability profile configures a real
-        // 64K rotating 4-bit KV cache for the on-device runtime.
+        // a first-class preset on the high-memory tier; its bounded 4K/4-bit
+        // KV profile is defined in MLXAssistantExecutionProfile.
         AssistantModel(
             id: "ornith-1.0-9b-4bit",
             repoID: "mlx-community/Ornith-1.0-9B-4bit",
             displayName: "Ornith 1.0 9B",
-            subtitle: "4-bit · ~6.0 GB · agentic coding · high-memory",
+            subtitle: "4-bit · ~5.6 GB · agentic coding · high-memory",
             approxRAMBytes: 7_250_000_000,
             tags: ["code", "agent", "quality"],
-            contextWindowTokens: 262_144,
-            downloadSizeBytes: 5_980_000_000,
+            contextWindowTokens: 4_096,
+            downloadSizeBytes: 5_600_000_000,
             platformCompatibility: .highMemoryMobileAndMac,
             capabilities: [.best, .newRelease],
             supportsTools: true
@@ -454,22 +453,8 @@ enum AssistantModelCatalog {
     /// where selecting DeepSeek activated Qwen2.5.
     @MainActor
     static func currentSelection() -> AssistantModel {
-#if CORE_AI_SERVER_APP
-        return AssistantModel(
-            id: CoreAIModelStore.defaultModelID,
-            repoID: "coreai/qwen3-0.6b",
-            displayName: "Core AI Qwen 0.6B",
-            subtitle: "Core AI · downloadable .aimodel",
-            approxRAMBytes: 1_000_000_000,
-            tags: ["chat", "vision", "core-ai"],
-            contextWindowTokens: 32_768,
-            capabilities: [.recommended, .vision, .multilingual],
-            supportsTools: true
-        )
-#else
         let stored = AppSettings.shared.assistantModelID
         return selection(forStoredID: stored) ?? presets[0]
-#endif
     }
 
     /// Resolves a persisted preset/download/import/custom selection without
@@ -478,11 +463,20 @@ enum AssistantModelCatalog {
     @MainActor
     static func selection(forStoredID stored: String) -> AssistantModel? {
         if let preset = presets.first(where: { $0.id == stored }) { return preset }
+        if let coreAI = CoreAIZooCatalog.assistantModel(forSelectionID: stored) {
+            return coreAI
+        }
+        if stored.hasPrefix("coreai:"),
+           let installed = CoreAIModelStore.shared.installedModel(id: stored),
+           let coreAI = installed.assistantModel {
+            return coreAI
+        }
         return resolveNonPreset(id: stored)
     }
 
     static func model(forID id: String) -> AssistantModel? {
         presets.first { $0.id == id }
+            ?? CoreAIZooCatalog.assistantModel(forSelectionID: id)
     }
 
     // MARK: - Non-preset resolution

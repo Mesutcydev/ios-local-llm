@@ -38,6 +38,9 @@ public struct CoreAILanguageModel: LanguageModel {
     private let supportsToolCalling: Bool
     private let supportsReasoning: Bool
     private let additionalEosTokenIds: [Int32]
+    /// Optional per-session chat-template control. Models whose templates
+    /// support hybrid reasoning conventionally read `enable_thinking`.
+    private let thinkingEnabled: Bool?
 
     // MARK: - Protocol Requirements
 
@@ -48,7 +51,14 @@ public struct CoreAILanguageModel: LanguageModel {
         if supportsToolCalling { caps.append(.toolCalling) }
         if supportsReasoning { caps.append(.reasoning) }
         if engine.supportsLogits { caps.append(.guidedGeneration) }
-        return LanguageModelCapabilities(capabilities: caps)
+        // Use the unlabeled `init(_:)`. The labeled `init(capabilities:)` is
+        // `@available(*, deprecated, renamed: "init(_:)")` in the Xcode 27 SDK,
+        // and iPhone OS 27.0 builds no longer export it from the shipping
+        // FoundationModels binary. Linking the deprecated spelling makes dyld
+        // abort the process at load — before `main`, so there is no crash log
+        // and the in-app CrashReporter never installs. Verified by
+        // scripts/verify_foundationmodels_symbols.sh.
+        return LanguageModelCapabilities(caps)
     }
 
     public var executorConfiguration: CoreAIExecutor.Configuration {
@@ -58,7 +68,8 @@ public struct CoreAILanguageModel: LanguageModel {
             modelIdentifier: modelIdentifier,
             samplingConfig: samplingConfig,
             vocabSize: vocabSize,
-            additionalEosTokenIds: additionalEosTokenIds
+            additionalEosTokenIds: additionalEosTokenIds,
+            thinkingEnabled: thinkingEnabled
         )
     }
 
@@ -100,7 +111,8 @@ public struct CoreAILanguageModel: LanguageModel {
         modelIdentifier: String = "coreai-model",
         samplingConfig: SamplingConfiguration = .greedy,
         vocabSize: Int? = nil,
-        additionalEosTokenIds: [Int32] = []
+        additionalEosTokenIds: [Int32] = [],
+        thinkingEnabled: Bool? = nil
     ) {
         self.engine = engine
         self.tokenizer = tokenizer
@@ -108,10 +120,29 @@ public struct CoreAILanguageModel: LanguageModel {
         self.samplingConfig = samplingConfig
         self.vocabSize = vocabSize
         self.additionalEosTokenIds = additionalEosTokenIds
+        self.thinkingEnabled = thinkingEnabled
         self.supportsToolCalling = CoreAIExecutor.detectToolCallMarkers(using: tokenizer) != nil
         self.supportsReasoning =
             tokenizer.convertTokenToId("<think>") != nil
             || tokenizer.convertTokenToId("<|reasoning_start|>") != nil
+    }
+
+    /// Returns a lightweight model view that shares the already-loaded
+    /// engine and tokenizer while changing only the chat-template reasoning
+    /// mode for the next `LanguageModelSession`.
+    ///
+    /// Hybrid templates such as Qwen and MiniCPM read `enable_thinking` from
+    /// their template context. A `nil` value preserves the model's default.
+    public func withThinkingEnabled(_ enabled: Bool?) -> CoreAILanguageModel {
+        CoreAILanguageModel(
+            engine: engine,
+            tokenizer: tokenizer,
+            modelIdentifier: modelIdentifier,
+            samplingConfig: samplingConfig,
+            vocabSize: vocabSize,
+            additionalEosTokenIds: additionalEosTokenIds,
+            thinkingEnabled: enabled
+        )
     }
 
     // MARK: - Executor
@@ -126,15 +157,18 @@ public struct CoreAILanguageModel: LanguageModel {
             fileprivate let samplingConfig: SamplingConfiguration
             fileprivate let vocabSize: Int?
             fileprivate let additionalEosTokenIds: [Int32]
+            fileprivate let thinkingEnabled: Bool?
 
             public static func == (lhs: Configuration, rhs: Configuration) -> Bool {
                 lhs.modelIdentifier == rhs.modelIdentifier
                     && lhs.samplingConfig == rhs.samplingConfig
+                    && lhs.thinkingEnabled == rhs.thinkingEnabled
             }
 
             public func hash(into hasher: inout Hasher) {
                 hasher.combine(modelIdentifier)
                 hasher.combine(samplingConfig)
+                hasher.combine(thinkingEnabled)
             }
         }
 
@@ -145,6 +179,7 @@ public struct CoreAILanguageModel: LanguageModel {
         private let modelIdentifier: String
         private let samplingConfig: SamplingConfiguration
         private let vocabSize: Int?
+        private let thinkingEnabled: Bool?
         /// All EOS-like token IDs: the main `eosTokenId` plus any additional
         /// stop tokens from tokenizer_config.json (e.g. Gemma's `<end_of_turn>`).
         private let eosTokenIds: Set<Int32>
@@ -168,6 +203,7 @@ public struct CoreAILanguageModel: LanguageModel {
             self.modelIdentifier = configuration.modelIdentifier
             self.samplingConfig = configuration.samplingConfig
             self.vocabSize = configuration.vocabSize
+            self.thinkingEnabled = configuration.thinkingEnabled
             self.thinkingMarkers = Self.detectThinkingMarkers(using: configuration.tokenizer)
             self.toolCallMarkers = Self.detectToolCallMarkers(using: configuration.tokenizer)
 
@@ -287,6 +323,7 @@ public struct CoreAILanguageModel: LanguageModel {
                 from: Array(request.transcript),
                 using: tokenizer,
                 tools: request.enabledToolDefinitions,
+                thinkingEnabled: thinkingEnabled,
                 component: "CoreAIExecutor"
             )
             guard !promptTokens.isEmpty else {
@@ -371,63 +408,76 @@ public struct CoreAILanguageModel: LanguageModel {
             var generatedTokenCount: Int = 0
             var reasoningTokenCount: Int = 0
 
-            for try await output in tokenStream {
-                let token = output.tokenId
-                if eosTokens.contains(token) {
-                    tokenStream.setStopReason(.eos)
-                    break
+            do {
+                for try await output in tokenStream {
+                    try Task.checkCancellation()
+                    let token = output.tokenId
+                    if eosTokens.contains(token) {
+                        tokenStream.setStopReason(.eos)
+                        // Ending iteration alone does not stop a push-based
+                        // pipelined engine. Explicitly cancel and drain it so
+                        // it cannot keep the GPU busy until maxTokens.
+                        try await engine.cancel()
+                        break
+                    }
+
+                    pendingTokens.append(token)
+                    tokenStep += 1
+                    generatedTokenCount += 1
+
+                    let decodeSpan = InstrumentsProfiler.beginDecode(step: tokenStep)
+                    let decodedText = tokenizer.decode(tokens: pendingTokens.map { Int($0) })
+                    decodeSpan.end()
+
+                    let common = decodedText.commonPrefix(with: previousDecodedText)
+                    let delta = String(decodedText.dropFirst(common.count))
+                    // Check for replacement char on the full `decodedText`, not on
+                    // `delta`. Some tokenizers emit one U+FFFD per attempted decode
+                    // of an incomplete multi-byte sequence (rather than one per
+                    // bad byte), so two consecutive partial tokens can produce
+                    // identical "\u{FFFD}" strings — making `delta` empty and
+                    // hiding the still-incomplete state. Checking `decodedText`
+                    // catches that case.
+                    let hasReplacementChar = decodedText.unicodeScalars.contains { $0 == "\u{FFFD}" }
+
+                    if hasReplacementChar {
+                        // UTF-8 bytes don't form a clean character yet. Hold the
+                        // token and wait for the next iteration to extend the
+                        // buffer; don't drop or advance.
+                        await channel.send(
+                            .response(action: .appendText("", tokenCount: 1))
+                        )
+                        previousDecodedText = decodedText
+                        continue
+                    }
+
+                    for event in thinkParser.consume(delta) {
+                        if case .reasoning = event { reasoningTokenCount += 1 }
+                        await dispatch(event: event, toolCallParser: &toolCallParser, channel: channel)
+                    }
+
+                    // Retain the last token as O(1) context for the next decode.
+                    // SentencePiece needs at least one prior token to infer the leading
+                    // ▁ (space) on the following token; clearing to empty decodes each
+                    // new token in isolation and drops inter-word spaces.
+                    // Keeping one token bounds re-decode cost to 2 tokens per step.
+                    // Safe for all supported tokenizers: decode([last]) is a prefix of
+                    // decode([last, next]) when addPrefixSpace=true (Mistral, Llama, Qwen)
+                    // and for ByteLevel tokenizers (GPT-2 style) where spaces are direct bytes.
+                    if let last = pendingTokens.last {
+                        pendingTokens = [last]
+                        previousDecodedText = tokenizer.decode(tokens: [Int(last)])
+                    } else {
+                        pendingTokens.removeAll(keepingCapacity: true)
+                        previousDecodedText = ""
+                    }
                 }
-
-                pendingTokens.append(token)
-                tokenStep += 1
-                generatedTokenCount += 1
-
-                let decodeSpan = InstrumentsProfiler.beginDecode(step: tokenStep)
-                let decodedText = tokenizer.decode(tokens: pendingTokens.map { Int($0) })
-                decodeSpan.end()
-
-                let common = decodedText.commonPrefix(with: previousDecodedText)
-                let delta = String(decodedText.dropFirst(common.count))
-                // Check for replacement char on the full `decodedText`, not on
-                // `delta`. Some tokenizers emit one U+FFFD per attempted decode
-                // of an incomplete multi-byte sequence (rather than one per
-                // bad byte), so two consecutive partial tokens can produce
-                // identical "\u{FFFD}" strings — making `delta` empty and
-                // hiding the still-incomplete state. Checking `decodedText`
-                // catches that case.
-                let hasReplacementChar = decodedText.unicodeScalars.contains { $0 == "\u{FFFD}" }
-
-                if hasReplacementChar {
-                    // UTF-8 bytes don't form a clean character yet. Hold the
-                    // token and wait for the next iteration to extend the
-                    // buffer; don't drop or advance.
-                    await channel.send(
-                        .response(action: .appendText("", tokenCount: 1))
-                    )
-                    previousDecodedText = decodedText
-                    continue
-                }
-
-                for event in thinkParser.consume(delta) {
-                    if case .reasoning = event { reasoningTokenCount += 1 }
-                    await dispatch(event: event, toolCallParser: &toolCallParser, channel: channel)
-                }
-
-                // Retain the last token as O(1) context for the next decode.
-                // SentencePiece needs at least one prior token to infer the leading
-                // ▁ (space) on the following token; clearing to empty decodes each
-                // new token in isolation and drops inter-word spaces.
-                // Keeping one token bounds re-decode cost to 2 tokens per step.
-                // Safe for all supported tokenizers: decode([last]) is a prefix of
-                // decode([last, next]) when addPrefixSpace=true (Mistral, Llama, Qwen)
-                // and for ByteLevel tokenizers (GPT-2 style) where spaces are direct bytes.
-                if let last = pendingTokens.last {
-                    pendingTokens = [last]
-                    previousDecodedText = tokenizer.decode(tokens: [Int(last)])
-                } else {
-                    pendingTokens.removeAll(keepingCapacity: true)
-                    previousDecodedText = ""
-                }
+            } catch {
+                // FoundationModels cancels this task when the user taps Stop.
+                // Propagate that cancellation into the engine rather than
+                // leaving its producer detached and consuming GPU time.
+                try? await engine.cancel()
+                throw error
             }
 
             // Flush parsers — drains any content held back waiting for a marker.
@@ -605,6 +655,7 @@ public struct CoreAILanguageModel: LanguageModel {
             from entries: [Transcript.Entry],
             using tokenizer: any Tokenizer,
             tools: [Transcript.ToolDefinition] = [],
+            thinkingEnabled: Bool? = nil,
             component: String = "CoreAIExecutor"
         ) -> [Int] {
             var messages: [Message] = []
@@ -658,7 +709,14 @@ public struct CoreAILanguageModel: LanguageModel {
 
             do {
                 CLILogger.log("Applying chat template via tokenizer", component: component)
-                return try tokenizer.applyChatTemplate(messages: messages, tools: toolSpecs)
+                let additionalContext: [String: any Sendable]? = thinkingEnabled.map {
+                    ["enable_thinking": $0]
+                }
+                return try tokenizer.applyChatTemplate(
+                    messages: messages,
+                    tools: toolSpecs,
+                    additionalContext: additionalContext
+                )
             } catch {
                 CLILogger.log(
                     "Failed to apply chat template: \(error), falling back to simple encoding",

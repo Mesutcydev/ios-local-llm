@@ -36,7 +36,7 @@ struct MicDictationButton: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Enable microphone and speech recognition for iOS Local LLM in Settings → Privacy.")
+            Text("Enable microphone and speech recognition for OnDevice in Settings → Privacy.")
         }
     }
 
