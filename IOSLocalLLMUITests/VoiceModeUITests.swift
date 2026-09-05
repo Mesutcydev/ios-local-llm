@@ -40,6 +40,23 @@ final class VoiceModeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["muteButton"].exists)
     }
 
+    func testTranscriptCanResumeFollowingAfterManualScroll() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-voiceUITestMode", "-UITesting", "-mockDuration", "60"]
+        app.launchEnvironment["MOCK_TRANSCRIPT"] = String(
+            repeating: "A longer local response keeps the transcript scrollable. ", count: 30
+        )
+        app.launch()
+        let transcript = app.descendants(matching: .any)["karaokeTranscript"].firstMatch
+        XCTAssertTrue(transcript.waitForExistence(timeout: 8))
+        app.scrollViews["karaokeTranscript"].swipeUp()
+        let follow = app.buttons["Follow speech"]
+        XCTAssertTrue(follow.waitForExistence(timeout: 3))
+        follow.tap()
+        XCTAssertTrue(follow.waitForNonExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["endButton"].exists)
+    }
+
     func testControlsRemainVisible() {
         let app = launchApp()
         XCTAssertTrue(app.buttons["endButton"].waitForExistence(timeout: 8))

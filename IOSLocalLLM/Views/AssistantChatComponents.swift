@@ -20,7 +20,7 @@ struct AssistantComposer: View {
     var body: some View {
         VStack(spacing: AssistantSpacing.xxxSmall) {
             TextField("Message your on-device assistant", text: $text, axis: .vertical)
-                .font(.system(size: 17))
+                .font(theme.sans(17))
                 .foregroundStyle(.primary)
                 .tint(theme.accent)
                 .focused($isFocused)
@@ -154,7 +154,7 @@ private struct AssistantSendButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.88 : 1)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
             .animation(reduceMotion ? nil : .interactiveSpring(response: 0.24, dampingFraction: 0.82),
                        value: configuration.isPressed)
     }

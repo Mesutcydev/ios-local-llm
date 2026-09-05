@@ -19,7 +19,7 @@ integration around these components.
 
 | Component | Upstream | License |
 | --- | --- | --- |
-| llama.cpp | <https://github.com/ggml-org/llama.cpp> | MIT |
+| llama.cpp v0.4.0 (`5266f24da75dc449bd56cbed7addb9c8e4a6a73e`) | <https://github.com/ggml-org/llama.cpp> | MIT |
 | whisper.cpp | <https://github.com/ggerganov/whisper.cpp> | MIT |
 
 Each submodule retains its upstream notices and license.
@@ -39,6 +39,13 @@ CocoaPods. Their source and license files are not copied into this repository.
 Transitive packages are recorded in `Package.resolved` and retain their own
 licenses in their source distributions. The source-distribution inventory is
 also recorded in [SBOM.spdx.json](SBOM.spdx.json).
+
+## App artwork
+
+The silver eye app icon and matching in-app logo were supplied by the project
+maintainer on 5 September 2026 for use as the app's branding. The checked-in
+images are resized copies of that supplied artwork, not assets obtained from
+a third-party catalog.
 
 ## Models and generated artifacts not included
 

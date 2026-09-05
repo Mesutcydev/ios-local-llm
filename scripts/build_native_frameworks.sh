@@ -18,19 +18,6 @@ fi
 git -C "$repository_root" submodule update --init --recursive
 
 llama_root="${repository_root}/ThirdParty/llama.cpp"
-llama_patch="${repository_root}/Patches/llama.cpp-ios-only-xcframework.patch"
-
-if grep -q 'IOS_ONLY:-0' "${llama_root}/build-xcframework.sh"; then
-  echo "==> llama.cpp iOS-only build support is already present"
-elif git -C "$llama_root" apply --check "$llama_patch" >/dev/null 2>&1; then
-  echo "==> Applying the tracked llama.cpp iOS-only build patch"
-  git -C "$llama_root" apply "$llama_patch"
-else
-  echo "error: the llama.cpp build patch does not match the pinned submodule" >&2
-  echo "       restore or inspect ThirdParty/llama.cpp/build-xcframework.sh" >&2
-  exit 1
-fi
-
 if [[ -e "${llama_root}/build-apple/llama.xcframework" ]]; then
   echo "error: generated llama.xcframework already exists; remove it before rebuilding" >&2
   exit 1
@@ -41,7 +28,7 @@ if [[ -e "${repository_root}/ThirdParty/whisper.cpp/build-apple/whisper.xcframew
 fi
 
 echo "==> Building llama.cpp iOS XCFramework"
-(cd "$llama_root" && IOS_ONLY=1 ./build-xcframework.sh)
+(cd "$llama_root" && ./build-xcframework.sh ios-sim ios-device)
 
 echo "==> Building whisper.cpp iOS XCFramework"
 "${repository_root}/scripts/native/build_whisper_ios.sh"

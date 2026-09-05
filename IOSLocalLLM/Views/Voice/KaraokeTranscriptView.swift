@@ -41,7 +41,7 @@ struct KaraokeTranscriptView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     Text(displayAttributed)
-                        .font(T.sans(15))
+                        .font(T.sans(17))
                         .lineSpacing(4)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -63,6 +63,11 @@ struct KaraokeTranscriptView: View {
                         }
                     }
                 )
+                .onChange(of: followSpeech) { _, following in
+                    guard following else { return }
+                    // Resume immediately, even when speech is paused or finished.
+                    proxy.scrollTo("karaoke-bottom", anchor: .bottom)
+                }
                 .onChange(of: highlightToken) { _, _ in
                     // Phrase + spoken end land together — one highlight pass.
                     refreshHighlight()
@@ -126,7 +131,8 @@ struct KaraokeTranscriptView: View {
                     showFollowButton = false
                 } label: {
                     Label("Follow speech", systemImage: "text.alignleft")
-                        .font(T.mono(9, .semibold))
+                        .font(.caption.weight(.semibold))
+                        .frame(minHeight: 44)
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(T.accent)
@@ -136,6 +142,7 @@ struct KaraokeTranscriptView: View {
                 Text(isExpanded ? "Collapse" : "Expand")
                     .font(T.mono(9, .semibold))
                     .foregroundStyle(T.ink2)
+                    .frame(minHeight: 44)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(isExpanded ? "Collapse transcript" : "Expand transcript")
@@ -222,7 +229,7 @@ struct KaraokePreparedTranscript {
            let spoken = Range(NSRange(location: 0, length: spokenLen), in: result) {
             // Color only — NEVER font. The old code set `.body` (17pt system)
             // on spoken text and semibold on the active phrase while the base
-            // renders T.sans(15): every phrase boundary re-laid out the whole
+            // renders the shared body style: every phrase boundary re-laid out the whole
             // transcript and the karaoke line visibly jumped.
             result[spoken].foregroundColor = ink
         }
@@ -250,7 +257,7 @@ struct VoiceUserTranscriptBubble: View {
                 .tracking(0.6)
                 .foregroundStyle(T.ink2)
             Text(text)
-                .font(T.sans(14.5))
+                .font(T.sans(17))
                 .foregroundStyle(T.ink)
                 .multilineTextAlignment(.trailing)
                 .fixedSize(horizontal: false, vertical: true)

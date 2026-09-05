@@ -5,6 +5,16 @@ and intends to use semantic version tags for source releases.
 
 ## [Unreleased]
 
+## [3.2.7] - 2026-09-05
+
+### Changed
+
+- Sideload build 112 updates llama.cpp to v0.4.0 with compatible sampler calls,
+  preserving existing generation and memory policies.
+- Silver eye icon and matching splash, consistent chat typography, smoother
+  voice feedback, and reduced-motion Lens transitions.
+- App and share-extension entitlement dictionaries remain unchanged.
+
 ### Fixed
 
 - Sideload build 110 restores the OnDevice LLM display name and preserves the

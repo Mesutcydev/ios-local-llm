@@ -91,6 +91,7 @@ struct LensTaskPanel: View {
 }
 
 private struct LensPanelContent: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var state: LensPanelState
     let mode: LensMode
     @Binding var prompt: String
@@ -115,7 +116,7 @@ private struct LensPanelContent: View {
                 state = .composing
                 promptFocused = true
             }
-            .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .bottom)))
+            .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.98, anchor: .bottom)))
         case .composing:
             LensPromptEditor(
                 mode: mode,
@@ -125,10 +126,10 @@ private struct LensPanelContent: View {
                 onCollapse: { state = .collapsed },
                 onAnalyze: onAnalyze
             )
-            .transition(.opacity.combined(with: .move(edge: .bottom)))
+            .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .bottom)))
         case .captured, .analyzing:
             LensProcessingView(thumbnail: thumbnail, captured: state == .captured, onCancel: onCancel)
-                .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.97)))
         case .result:
             LensResultView(
                 mode: mode,
@@ -141,7 +142,7 @@ private struct LensPanelContent: View {
                 onRetake: onRetake,
                 onExpand: onExpand
             )
-            .transition(.opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.97)))
+            .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.97)))
         case .error:
             LensErrorView(errorText: errorText, onRetry: onAnalyze, onRetake: onRetake)
                 .transition(.opacity)
@@ -300,7 +301,7 @@ private struct LensResultView: View {
                         .foregroundStyle(.green)
                 }
                 .opacity(reveal ? 1 : 0)
-                .offset(y: reveal ? 0 : 6)
+                .offset(y: reveal || reduceMotion ? 0 : 6)
                 Spacer()
             }
 
@@ -328,7 +329,7 @@ private struct LensResultView: View {
                 .padding(.vertical, 2)
             }
             .opacity(reveal ? 1 : 0)
-            .offset(y: reveal ? 0 : 8)
+            .offset(y: reveal || reduceMotion ? 0 : 8)
         }
         .onAppear {
             if reduceMotion { reveal = true }
@@ -398,6 +399,7 @@ private struct LensFrameThumbnail: View {
 }
 
 struct LensModeSelector: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var selection: LensMode
     let onSelection: (LensMode) -> Void
     @Namespace private var selectionAnimation
@@ -433,7 +435,7 @@ struct LensModeSelector: View {
         }
         .padding(3)
         .background(.primary.opacity(0.065), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .animation(.spring(response: 0.34, dampingFraction: 0.88), value: selection)
+        .animation(reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.88), value: selection)
     }
 }
 

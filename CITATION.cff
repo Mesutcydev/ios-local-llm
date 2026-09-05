@@ -9,7 +9,7 @@ authors:
 repository-code: "https://github.com/Mesutcydev/ios-local-llm"
 url: "https://mesutcydev.github.io/ios-local-llm/"
 license: MIT
-version: 3.2.6
+version: 3.2.7
 date-released: 2026-07-29
 keywords:
   - OnDevice

@@ -4886,7 +4886,7 @@ struct MessageBubble: View, Equatable {
                 }
                 if !message.content.isEmpty {
                     Text(message.content)
-                        .font(.system(size: 17))
+                        .font(T.sans(17))
                         .foregroundColor(T.ink)
                         .lineSpacing(2)
                         .textSelection(.enabled)
@@ -5456,10 +5456,8 @@ struct AssistantMarkdownView: View, Equatable {
                     switch block {
                     case .text(let t):
                         Text(renderedMarkdown(t))
-                            // Match the lighter live-stream typography after
-                            // Markdown parsing completes so the reply does not
-                            // jump to a larger, less refined body style.
-                            .font(T.sans(14))
+                            // Use the same Dynamic Type style as the composer and user messages.
+                            .font(T.sans(17))
                             .foregroundColor(T.ink)
                             .lineSpacing(3)
                             .fixedSize(horizontal: false, vertical: true)
@@ -5519,7 +5517,7 @@ struct AssistantMarkdownView: View, Equatable {
                     ThinkingBlock(content: thinkContent, isOpen: false)
                     if !afterThink.isEmpty {
                         Text(afterThink)
-                            .font(T.sans(14))
+                            .font(T.sans(17))
                             .foregroundColor(T.ink)
                             .lineSpacing(3)
                             .fixedSize(horizontal: false, vertical: true)
@@ -5535,7 +5533,7 @@ struct AssistantMarkdownView: View, Equatable {
             // No think block — plain streaming text.
             HStack(alignment: .lastTextBaseline, spacing: 2) {
                 Text(c)
-                    .font(T.sans(14))
+                    .font(T.sans(17))
                     .foregroundColor(T.ink)
                     .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)

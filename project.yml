@@ -179,7 +179,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: IOSLocalLLM/IOSLocalLLM.entitlements
         CODE_SIGN_STYLE: Automatic
         VERSIONING_SYSTEM: apple-generic
-        CURRENT_PROJECT_VERSION: "111"
+        CURRENT_PROJECT_VERSION: "112"
         # PCC symbols exist only in the iOS 27 SDK. Enable the implementation
         # and its capability automatically for iOS 27 device/simulator builds;
         # Xcode 26 and iOS 18–26 builds keep the existing local-only binary.
@@ -209,7 +209,7 @@ targets:
         # mic/network) on the macOS SDK; the iOS entitlements are untouched.
         "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": IOSLocalLLM/IOSLocalLLM-Catalyst.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        # Default icon is the neon pink "eye" mark (AppIcon); the previous
+        # Default icon is the silver "eye" mark (AppIcon); the previous
         # pink mark ships as AppIconClassic so users can switch back in
         # Settings → Appearance. INCLUDE_ALL_APPICON_ASSETS is required for
         # alternate icons to be compiled into the bundle.
@@ -405,7 +405,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: IOSLocalLLMShareExtension/IOSLocalLLMShareExtension.entitlements
         CODE_SIGN_STYLE: Automatic
         VERSIONING_SYSTEM: apple-generic
-        CURRENT_PROJECT_VERSION: "111"
+        CURRENT_PROJECT_VERSION: "112"
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_EMIT_LOC_STRINGS: YES
 

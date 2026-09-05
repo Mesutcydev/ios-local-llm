@@ -40,8 +40,8 @@ redistribution.
 
 ## Sideload IPA verification
 
-The current OnDevice LLM build is **3.2.7 (111)**, published separately under
-`sideload-3.2.7-111`. Download the IPA, its `.sha256` file, and verification JSON
+The current OnDevice LLM build is **3.2.7 (112)**, published separately under
+`sideload-3.2.7-112`. Download the IPA, its `.sha256` file, and verification JSON
 from that release. Run `shasum -a 256 --check` on the checksum file in the same
 directory as the IPA.
 

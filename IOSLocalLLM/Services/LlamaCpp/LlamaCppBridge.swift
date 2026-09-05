@@ -304,6 +304,7 @@ final class LlamaCppVLM: @unchecked Sendable {
         defer { llama_sampler_free(samp) }
         if spec.repetitionPenalty != 1.0 {
             llama_sampler_chain_add(samp, llama_sampler_init_penalties(
+                llama_vocab_n_tokens(llama_model_get_vocab(m)),
                 -1, spec.repetitionPenalty, 0.0, 0.0
             ))
         }
@@ -572,6 +573,7 @@ final class LlamaCppVLM: @unchecked Sendable {
         defer { llama_sampler_free(samp) }
         if spec.repetitionPenalty != 1.0 {
             llama_sampler_chain_add(samp, llama_sampler_init_penalties(
+                llama_vocab_n_tokens(llama_model_get_vocab(m)),
                 -1, spec.repetitionPenalty, 0.0, 0.0
             ))
         }

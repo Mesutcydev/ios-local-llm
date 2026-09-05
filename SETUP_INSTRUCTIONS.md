@@ -42,8 +42,7 @@ The tracked root script builds the required slices from pinned submodules:
 ```
 
 Add `--with-catalyst` when you also need the Apple-Silicon Mac Catalyst target.
-The script may apply the tracked iOS-only patch inside the generated
-llama.cpp build checkout; do not commit that submodule worktree change.
+llama.cpp v0.4.0 supports selecting iOS slices directly; no source patch is required.
 
 Expected outputs:
 
