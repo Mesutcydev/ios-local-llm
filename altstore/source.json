@@ -139,8 +139,8 @@
       "developerName": "Mesutcydev",
       "subtitle": "A local-first AI workbench for iPhone.",
       "localizedDescription": "OnDevice LLM runs supported language, vision, voice, and image-generation workloads on your iPhone. It includes local model management, camera and voice features, retrieval tools, and an authenticated local API without silently falling back to a cloud service.",
-      "iconURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/53727c22b5f77c6931491c42758de2d6b7aa9217/IOSLocalLLM/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
-      "tintColor": "#5EEAD4",
+      "iconURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/12140376efffef131e3adc9015ec501afa11959c/IOSLocalLLM/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
+      "tintColor": "#B8B8BB",
       "category": "developer",
       "screenshots": [
         "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/53727c22b5f77c6931491c42758de2d6b7aa9217/Docs/Images/Screenshots/home.png",
@@ -149,6 +149,16 @@
         "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/b751e7444ce198d323d25c44e7cf2a85b90a4f29/Docs/Images/Screenshots/local-vision.png"
       ],
       "versions": [
+        {
+          "version": "3.2.7",
+          "buildVersion": "112",
+          "date": "2026-09-05T13:53:05Z",
+          "localizedDescription": "Silver eye icon and matching splash, chat typography and voice/Lens polish, and llama.cpp v0.4.0. Existing generation and memory policies retained. App and share-extension entitlements verified; installer re-signing required. Physical-device model regression testing remains open.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.7-112/IOSLocalLLM-3.2.7-112-sideload-entitled-full.ipa",
+          "size": 53710107,
+          "sha256": "de432ca3c9cc7b715d1879066aabfbc4d4439b59ac3028e2ba4b78527f62a19d",
+          "minOSVersion": "18.0"
+        },
         {
           "version": "3.2.7",
           "buildVersion": "111",
