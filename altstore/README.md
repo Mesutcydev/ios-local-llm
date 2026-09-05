@@ -19,6 +19,7 @@ The source currently lists:
 - **ForgeSign** — iOS/iPadOS 16 or newer, version 2.1 (build 13).
 - **MacPair for iOS** — iOS 18 or newer, version 1.0.5 (build 6).
 - **OnDevice LLM** — iOS 18 or newer, version 3.2.7 (build 111).
+- **OnDevice Core** — iOS 27 or newer, version 1.0.0 (build 10), a separate app from Core AI: LAS.
 - **SiteAgent** — iOS 17 or newer, version 1.16 (build 2026080901).
 - **Core AI: LAS** — iOS 27 or newer, version 3.2.6 (build 140).
 - **Hubr** — iOS 17 or newer, version 2.1 (build 6).

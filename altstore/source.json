@@ -199,6 +199,45 @@
       }
     },
     {
+      "name": "OnDevice Core",
+      "bundleIdentifier": "com.mesutcydev.ondevicecore",
+      "developerName": "Mesutcydev",
+      "subtitle": "Local AI studio for iOS 27.",
+      "localizedDescription": "The iOS 27 Core edition: local chat, Lens, voice, image generation, and model management. Includes the silver eye identity, improved streaming presentation, cancellable document search, and inspectable source excerpts. Installer re-signing is required; profiles must authorize the requested entitlements.",
+      "iconURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/ondevice-core-1.0.0-10/OnDeviceCore-AppIcon-1024.png",
+      "tintColor": "#A8A8AC",
+      "category": "developer",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "buildVersion": "10",
+          "date": "2026-09-05T13:59:22.137954+00:00",
+          "localizedDescription": "Silver eye logo and matching splash, chat and voice refinements, safer document imports, and source excerpts. Verified Payload layout and exact app/share-extension entitlements; re-signing required.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/ondevice-core-1.0.0-10/OnDeviceCoreAIStudio-sideload-entitled-1.0.0-10.ipa",
+          "size": 51962265,
+          "sha256": "55099346d1893534c1418079851e1bdeacfc38db43ec01a61743965c60af2b44",
+          "minOSVersion": "27.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [
+          "com.apple.developer.icloud-container-identifiers",
+          "com.apple.developer.icloud-services",
+          "com.apple.developer.kernel.extended-virtual-addressing",
+          "com.apple.developer.kernel.increased-memory-limit",
+          "com.apple.developer.private-cloud-compute",
+          "com.apple.security.application-groups"
+        ],
+        "privacy": {
+          "NSCameraUsageDescription": "OnDevice uses the back camera to capture live video of your terminal or code editor for real-time analysis.",
+          "NSLocalNetworkUsageDescription": "OnDevice can expose your on-device language model to computers on your local network when you enable the Local API Server.",
+          "NSMicrophoneUsageDescription": "OnDevice uses the microphone for hold-to-talk dictation in the chat composer. Audio is transcribed on-device and never leaves your phone.",
+          "NSPhotoLibraryUsageDescription": "OnDevice can analyze code from photos in your library.",
+          "NSSpeechRecognitionUsageDescription": "OnDevice uses on-device speech recognition to convert your voice into text for the chat composer."
+        }
+      }
+    },
+    {
       "name": "SiteAgent",
       "bundleIdentifier": "uk.mesut.SiteAgent",
       "developerName": "Mesutcydev",
