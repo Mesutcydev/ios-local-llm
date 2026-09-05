@@ -2,9 +2,9 @@
   "app": "OnDevice LLM",
   "project": "IOSLocalLLM",
   "version": "3.2.7",
-  "build": "111",
+  "build": "112",
   "bundleId": "com.mesutcydev.ioslocalllm.IOSLocalLLM",
-  "verifiedOn": "Device Release build, extracted IPA signatures/entitlements, and Simulator unit/UI tests",
+  "verifiedOn": "Device Release build, extracted IPA signatures/entitlements, Simulator compilation and 30 focused tests",
   "runtime": "Xcode 27 beta \u00b7 iOS 27 SDK \u00b7 iOS 18+",
   "appearance": "Home: light; historical supporting previews: dark",
   "supportedModelTypes": [
@@ -22,16 +22,16 @@
     "models-dark.png"
   ],
   "testedModels": [],
-  "source": "https://github.com/Mesutcydev/ios-local-llm/tree/53727c22b5f77c6931491c42758de2d6b7aa9217",
+  "source": "https://github.com/Mesutcydev/ios-local-llm/tree/12140376efffef131e3adc9015ec501afa11959c",
   "productPage": "https://mesut.uk/apps",
   "ipa": {
     "product": "OnDevice LLM",
     "version": "3.2.7",
-    "build": "111",
-    "filename": "IOSLocalLLM-3.2.7-111-sideload-entitled-full.ipa",
-    "download": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.7-111/IOSLocalLLM-3.2.7-111-sideload-entitled-full.ipa",
-    "sizeBytes": 52067738,
-    "sha256": "efd32375e4a1c4a0bb80fd8de6906f8cd2be79b767df3b3193983a9002527056",
+    "build": "112",
+    "filename": "IOSLocalLLM-3.2.7-112-sideload-entitled-full.ipa",
+    "download": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.7-112/IOSLocalLLM-3.2.7-112-sideload-entitled-full.ipa",
+    "sizeBytes": 53710107,
+    "sha256": "de432ca3c9cc7b715d1879066aabfbc4d4439b59ac3028e2ba4b78527f62a19d",
     "signing": "ad-hoc / installer re-sign required",
     "provisioningProfile": false,
     "entitlements": [
@@ -44,5 +44,6 @@
     ],
     "policy": "Installer re-signing is required. Entitlements are preserved in this IPA; the installer provisioning profile must authorize the requested capabilities."
   },
-  "runtimeValidation": "Physical-device inference, thermals, battery, live CloudKit, and audio comparisons are not certified."
+  "runtimeValidation": "Physical-device inference, thermals, battery, live CloudKit, and audio comparisons are not certified.",
+  "llamaCpp": "v0.4.0"
 }
