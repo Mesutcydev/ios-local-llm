@@ -1194,8 +1194,21 @@ final class InstalledModelRegistry: ObservableObject {
         let fm = FileManager.default
         let configPath = dir.appendingPathComponent("config.json")
 
-        guard fm.fileExists(atPath: configPath.path) else {
-            return nil  // Not a valid MLX model directory
+        // GGUF models embed their tokenizer and metadata, so a standalone
+        // text `.gguf` or a complete GGUF VLM pair has NO config.json and NO
+        // separate tokenizer.json. The old "must have config.json" guard below
+        // rejected every GGUF the user copied/imported into HFModels — the
+        // model showed as ready in the catalog (center.models) but never
+        // registered in the installed registry, so the conversation picker
+        // (which reads the registry as its source of truth) treated it as not
+        // installed and told the user to "download model first". Detect the
+        // GGUF shape up front so these self-describing bundles are admitted.
+        let isGGUF = LocalModelFileValidator.hasValidGGUFTextModel(in: dir)
+            || LocalModelFileValidator.hasCompleteGGUFVLMPair(in: dir)
+        let engine: ModelRuntime = isGGUF ? .llamaCpp : .mlx
+
+        guard isGGUF || fm.fileExists(atPath: configPath.path) else {
+            return nil  // Not a valid MLX (config.json) or GGUF model directory
         }
 
         // Read config for architecture info
@@ -1207,10 +1220,9 @@ final class InstalledModelRegistry: ObservableObject {
             quant = json["quantization"] as? String
                 ?? json["quant_method"] as? String
                 ?? inferQuantization(fromRepoID: repoID)
+        } else if isGGUF {
+            quant = inferQuantization(fromRepoID: repoID)
         }
-
-        // Detect engine
-        let engine: ModelRuntime = LocalModelFileValidator.hasValidGGUFTextModel(in: dir) ? .llamaCpp : .mlx
 
         // Detect capabilities
         var capabilities = Set<ModelCapability>()
@@ -1225,10 +1237,17 @@ final class InstalledModelRegistry: ObservableObject {
             || fm.fileExists(atPath: dir.appendingPathComponent("tokenizer_config.json").path)
         let hasWeights = Self.hasModelWeights(in: dir, engine: engine)
 
-        switch (hasTokenizer, hasWeights) {
-        case (false, _):     validation = .missingTokenizer
-        case (_, false):     validation = .missingWeights
-        case (true, true):   validation = .valid
+        if isGGUF {
+            // GGUF embeds its tokenizer, so only the weights need to be
+            // present. `isGGUF` already validated the magic bytes / pair
+            // completeness, so a bundle that reaches here is complete.
+            validation = hasWeights ? .valid : .missingWeights
+        } else {
+            switch (hasTokenizer, hasWeights) {
+            case (false, _):     validation = .missingTokenizer
+            case (_, false):     validation = .missingWeights
+            case (true, true):   validation = .valid
+            }
         }
 
         let displayName = repoID.split(separator: "/").last
@@ -1259,7 +1278,16 @@ final class InstalledModelRegistry: ObservableObject {
             let hasWeightIndex = names.contains("model.safetensors.index.json")
             return hasSafetensors || hasWeightIndex
         case .llamaCpp:
-            return names.contains { $0.hasSuffix(".gguf") }
+            // Require the GGUF magic bytes, not just the suffix — a stray
+            // `.gguf`-named file (a cancelled download placeholder, a text
+            // file renamed by mistake) shouldn't count as a usable model.
+            let hasValidGGUF = names.contains { name in
+                LocalModelFileValidator.isValidGGUFFile(
+                    dir.appendingPathComponent(name)
+                )
+            }
+            let hasVLMProjector = LocalModelFileValidator.hasCompleteGGUFVLMPair(in: dir)
+            return hasValidGGUF || hasVLMProjector
         }
     }
 

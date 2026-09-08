@@ -5,6 +5,17 @@ and intends to use semantic version tags for source releases.
 
 ## [Unreleased]
 
+### Fixed
+
+- Sideload build 113 registers imported and manually-copied GGUF models in the
+  installed-model registry. A standalone text `.gguf` or a complete GGUF VLM
+  pair carries no `config.json` (its tokenizer and metadata are embedded), so
+  the registry's hard `config.json` requirement silently rejected it: the model
+  showed as ready in the Models tab but the conversation picker (which reads the
+  registry as its source of truth) reported "download model first". Imported and
+  HF-searched models are now registered immediately, and GGUF bundles are
+  validated by magic bytes rather than filename suffix.
+
 ## [3.2.7] - 2026-09-05
 
 ### Changed

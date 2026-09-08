@@ -103,6 +103,34 @@ final class ModelCategoryInferenceTests: XCTestCase {
         XCTAssertEqual(installed?.category, .assistant)
     }
 
+    @MainActor
+    func test_installedRegistryAcceptsStandaloneGGUFWithoutConfigJSON() throws {
+        // A GGUF text model embeds its tokenizer and metadata, so it ships
+        // WITHOUT config.json / tokenizer.json. The installed registry must
+        // admit it as a llamaCpp activatable model; otherwise the model shows
+        // as ready in the catalog but the conversation picker (registry-backed)
+        // reports "download model first".
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: directory,
+            withIntermediateDirectories: true
+        )
+        defer {
+            try? FileManager.default.removeItem(at: directory)
+        }
+        // Minimal GGUF: the 4 magic bytes are all LocalModelFileValidator
+        // checks to confirm a file is a real GGUF.
+        try Data([0x47, 0x47, 0x55, 0x46])
+            .write(to: directory.appendingPathComponent("model.Q4_K_M.gguf"))
+
+        let record = try XCTUnwrap(
+            InstalledModelRegistry.validateDirectory(directory, repoID: "local/Qwen3-4B-Q4")
+        )
+        XCTAssertEqual(record.engine, .llamaCpp)
+        XCTAssertTrue(record.validationState.isActivatable)
+    }
+
 
     private func cat(_ repo: String, pipeline: String? = nil, tags: [String] = []) -> DownloadableModel.Category {
         LocalModelRegistry.category(repoID: repo, pipelineTag: pipeline, tags: tags)

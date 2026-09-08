@@ -402,6 +402,18 @@ final class ModelDownloadCenter: ObservableObject {
         )
         models.append(model)
         model.checkIfReady()
+        // Register in the installed-model registry so a freshly-imported or
+        // HF-searched model shows in every picker immediately instead of only
+        // after the next cold start (when scanCustomDownloads re-scans).
+        // InstalledModelRegistry.validateDirectory now accepts GGUF bundles,
+        // so imported/copied GGUFs land here too instead of being dropped for
+        // lacking config.json.
+        if let record = InstalledModelRegistry.validateDirectory(
+            downloader.destination,
+            repoID: repoID
+        ) {
+            InstalledModelRegistry.shared.register(record)
+        }
     }
 
     /// Drops a custom model from the catalog (called after delete).
