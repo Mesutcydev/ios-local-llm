@@ -1219,7 +1219,18 @@ final class InstalledModelRegistry: ObservableObject {
         let fm = FileManager.default
         let configPath = dir.appendingPathComponent("config.json")
 
-        guard fm.fileExists(atPath: configPath.path) else {
+        // Detect engine BEFORE the config.json guard. A standalone text GGUF
+        // or a GGUF VLM pair embeds its tokenizer and ships NO config.json, so
+        // it is a complete model without one. The old hard `config.json`
+        // requirement rejected every GGUF-only directory (local imports, HF
+        // Search downloads, and manually-copied folders), so those models never
+        // got an authoritative installed record and the pickers fell back to
+        // treating them as not-downloaded / MLX.
+        let isGGUFText = LocalModelFileValidator.hasValidGGUFTextModel(in: dir)
+        let isGGUFPair = LocalModelFileValidator.hasCompleteGGUFVLMPair(in: dir)
+        let engine: ModelRuntime = (isGGUFText || isGGUFPair) ? .llamaCpp : .mlx
+
+        guard fm.fileExists(atPath: configPath.path) || engine == .llamaCpp else {
             return nil  // Not a valid MLX model directory
         }
 
@@ -1234,9 +1245,6 @@ final class InstalledModelRegistry: ObservableObject {
                 ?? inferQuantization(fromRepoID: repoID)
         }
 
-        // Detect engine
-        let engine: ModelRuntime = LocalModelFileValidator.hasValidGGUFTextModel(in: dir) ? .llamaCpp : .mlx
-
         // Detect capabilities
         var capabilities = Set<ModelCapability>()
         capabilities.insert(.recommended) // Mark as user-selected since they downloaded it
@@ -1246,8 +1254,14 @@ final class InstalledModelRegistry: ObservableObject {
 
         // Validate required files
         let validation: InstalledModelRecord.ValidationState
-        let hasTokenizer = fm.fileExists(atPath: dir.appendingPathComponent("tokenizer.json").path)
-            || fm.fileExists(atPath: dir.appendingPathComponent("tokenizer_config.json").path)
+        let hasTokenizer: Bool
+        if engine == .llamaCpp {
+            // GGUF embeds its tokenizer; no tokenizer.json on disk is expected.
+            hasTokenizer = true
+        } else {
+            hasTokenizer = fm.fileExists(atPath: dir.appendingPathComponent("tokenizer.json").path)
+                || fm.fileExists(atPath: dir.appendingPathComponent("tokenizer_config.json").path)
+        }
         let hasWeights = Self.hasModelWeights(in: dir, engine: engine)
 
         switch (hasTokenizer, hasWeights) {
@@ -1284,7 +1298,10 @@ final class InstalledModelRegistry: ObservableObject {
             let hasWeightIndex = names.contains("model.safetensors.index.json")
             return hasSafetensors || hasWeightIndex
         case .llamaCpp:
-            return names.contains { $0.hasSuffix(".gguf") }
+            // Recurse so a GGUF whose weights sit in a subfolder (a manually
+            // copied directory that was never normalized) still validates.
+            return LocalModelFileValidator.hasValidGGUFTextModel(in: dir)
+                || LocalModelFileValidator.hasCompleteGGUFVLMPair(in: dir)
         case .coreAI:
             return names.contains { $0.hasSuffix(".aimodel") || $0.hasSuffix(".aimodelc") }
         }
