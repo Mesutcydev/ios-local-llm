@@ -2,7 +2,7 @@
   "name": "Mesutcydev Apps",
   "subtitle": "Local-first apps for iPhone and iPad",
   "description": "A source for Mesutcydev's sideloadable iOS and iPadOS apps, including local AI, remote-control, media, and developer tools.",
-  "iconURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/b751e7444ce198d323d25c44e7cf2a85b90a4f29/IOSLocalLLM/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
+  "iconURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-144/AppIcon-1024.png",
   "headerURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/59060017c4f8931950041f7e32382c5ca74bf60e/Docs/Images/ios-local-llm-spec-chart.png",
   "website": "https://mesutcydev.github.io/ios-local-llm/",
   "tintColor": "#5EEAD4",
@@ -20,7 +20,7 @@
       "developerName": "Mesutcydev",
       "subtitle": "A local AI server for iPhone.",
       "localizedDescription": "On Device: LAS runs supported language models locally on your iPhone and exposes authenticated OpenAI-, Anthropic-, and Ollama-compatible APIs over your trusted local network. It does not silently fall back to a cloud service.",
-      "iconURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/b751e7444ce198d323d25c44e7cf2a85b90a4f29/IOSLocalLLM/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
+      "iconURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-144/AppIcon-1024.png",
       "tintColor": "#5EEAD4",
       "category": "developer",
       "screenshots": [
@@ -30,6 +30,16 @@
         "https://mesutcydev.github.io/ios-local-llm/shots/las-terminal.png"
       ],
       "versions": [
+        {
+          "version": "3.2.6",
+          "buildVersion": "144",
+          "date": "2026-09-23T19:35:31Z",
+          "localizedDescription": "Rebuilt from the public source with the new On Device: LAS app icon. Local API behavior and memory entitlements are preserved.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-144/OnDeviceLAS-sideload-entitled-3.2.6-144.ipa",
+          "size": 25526640,
+          "sha256": "4539773edd34ddd2ee7902e8248e524c1270d9940154360794e373a3122ab386",
+          "minOSVersion": "18.0"
+        },
         {
           "version": "3.2.6",
           "buildVersion": "143",

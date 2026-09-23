@@ -38,6 +38,7 @@
 		204BC7509F18E2F9A86921A5 /* LocalModelImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42708199E5E3BD63DA1A7885 /* LocalModelImportService.swift */; };
 		2114135C82DB755192B15E22 /* CodingAssistantService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70E2BE0658DA7A43ECC41011 /* CodingAssistantService.swift */; };
 		219FB24FABFE7E4D4EB135A8 /* CoreAILanguageModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FC10D98ACE244DC65ECF30 /* CoreAILanguageModelService.swift */; };
+		21C29F5E18EBB69C89DF6C3B /* libPods-OnDeviceLAS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 92931756D3BC751A21B9F960 /* libPods-OnDeviceLAS.a */; };
 		235C3F0A01B9E40BD9DD7BA4 /* LASOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B558B8FCAA79B43AD0B5D8 /* LASOnboardingView.swift */; };
 		23A27550408CF707A8E5CB49 /* ToastCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 620371AB6A6D7C7CB45C2D00 /* ToastCenter.swift */; };
 		277785462EC73834F2B4AA6D /* HFSearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2EAA9F9D810FE3B686D45C3 /* HFSearchService.swift */; };
@@ -127,7 +128,6 @@
 		8F3F24A89BC17F2EBC407752 /* LiveParserBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 446860452FEB5ACBD6C028C7 /* LiveParserBar.swift */; };
 		8F4653C9CC3CA3514A8B20EA /* AssistantModelCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9530CFF3362F6020759F8192 /* AssistantModelCatalog.swift */; };
 		8F4CFEB815DB9850C6E33870 /* WebContentExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6D93C553B5D172F77DDFA0A /* WebContentExtractor.swift */; };
-		8FD64A966D129B7D16ABCB1B /* libPods-OnDeviceLAS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F73324B989B374D69119E9AA /* libPods-OnDeviceLAS.a */; };
 		90B6B92181B4EE0E95EB306B /* Detection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07061AEE96554854F1EB664F /* Detection.swift */; };
 		90BF91CA8ECB021C080140E1 /* DeviceTierAdvisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4E2ED7C614E3574DA232546 /* DeviceTierAdvisor.swift */; };
 		92DA83D1A0F264C6D182959A /* LocalAPIServerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5EF362C7A03704B621450C1 /* LocalAPIServerTests.swift */; };
@@ -135,6 +135,7 @@
 		94B890BEC26B5A6E16DC2B43 /* WebActivityLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1AC4430AB21A9456DD5D030 /* WebActivityLogger.swift */; };
 		94E22CF93556CD85A362D976 /* ToastCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 620371AB6A6D7C7CB45C2D00 /* ToastCenter.swift */; };
 		96346F977C683361FB3BEA23 /* CoreAIZooCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759A09C2D5C6B49981CB1407 /* CoreAIZooCatalog.swift */; };
+		96B22B0C87EC735313BFE33C /* libPods-OnDeviceLASTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3963229D826D0C06BEF40787 /* libPods-OnDeviceLASTests.a */; };
 		96B9B3971DC7B16886DB19D5 /* HFTokenSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD94FB9DF8F97B7335992A45 /* HFTokenSettingsView.swift */; };
 		97B85146EBB5436E14308759 /* LocalAPIServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BD10D47B6152A68E972ACB9 /* LocalAPIServer.swift */; };
 		980411CDAFECB5C184A9ADED /* LASTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9751BED526800EE4777A76A /* LASTheme.swift */; };
@@ -191,7 +192,6 @@
 		CEC0893FCF13DE4B379B84DD /* NetworkActivityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D43A497217EEEC5C29563724 /* NetworkActivityMonitor.swift */; };
 		D4017F982DE6366BBCB8576A /* HFModelDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261C93B11D9AFBF501AF65D2 /* HFModelDownloadManager.swift */; };
 		D66C68B8E6168C9DCA850846 /* CloudSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D442B69254D499E8A10D609 /* CloudSyncService.swift */; };
-		D7544D83720C7E62B0108650 /* libPods-OnDeviceLASTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9F865CD9763D5AC7A06C7D0B /* libPods-OnDeviceLASTests.a */; };
 		D7A6AD37C39D5C059E395372 /* LocalAIController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3519C8959B021FF80280C7BB /* LocalAIController.swift */; };
 		D7AFE4B82D84B86DF01DE896 /* ModelCapabilityProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3EFC380453CB32DA484E549 /* ModelCapabilityProfile.swift */; };
 		D944F21AF881123BD03A3986 /* TokenLogprob.swift in Sources */ = {isa = PBXBuildFile; fileRef = E93E995DF71BFFF453DBB375 /* TokenLogprob.swift */; };
@@ -298,8 +298,10 @@
 		347EAF243C346B1A37A93494 /* Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configuration.swift; sourceTree = "<group>"; };
 		3519C8959B021FF80280C7BB /* LocalAIController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAIController.swift; sourceTree = "<group>"; };
 		353A89F491B0441F0988C0A3 /* SpeechAlignment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechAlignment.swift; sourceTree = "<group>"; };
+		35409430F8AEF5A5E1060795 /* Pods-OnDeviceLASTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OnDeviceLASTests.release.xcconfig"; path = "Target Support Files/Pods-OnDeviceLASTests/Pods-OnDeviceLASTests.release.xcconfig"; sourceTree = "<group>"; };
 		354267D5CEA10D5F38CB061A /* LocalAPIHistorySelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAPIHistorySelector.swift; sourceTree = "<group>"; };
 		35781FED24083A9321E031B3 /* ToolRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolRunner.swift; sourceTree = "<group>"; };
+		3963229D826D0C06BEF40787 /* libPods-OnDeviceLASTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OnDeviceLASTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		397A3413B5867BBBEBA3D909 /* FastVLMPromptBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastVLMPromptBuilder.swift; sourceTree = "<group>"; };
 		39E76467B3C7D3CA46649012 /* CoreAIOnDeviceLAS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CoreAIOnDeviceLAS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3A399B5911DFC65D3E88DEC5 /* CoreAIDebuggerServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreAIDebuggerServices.swift; sourceTree = "<group>"; };
@@ -340,7 +342,6 @@
 		67C6D0DFB0CFEB0B2A216D65 /* SamplerPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SamplerPreset.swift; sourceTree = "<group>"; };
 		67DB5BCFD7D935AC38FF61E5 /* WebToolService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebToolService.swift; sourceTree = "<group>"; };
 		680C12FAA19BF0EC9B7F0B23 /* FastVLMConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastVLMConfig.swift; sourceTree = "<group>"; };
-		68A998E20F35F2477E29CF98 /* Pods-OnDeviceLAS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OnDeviceLAS.debug.xcconfig"; path = "Target Support Files/Pods-OnDeviceLAS/Pods-OnDeviceLAS.debug.xcconfig"; sourceTree = "<group>"; };
 		68B7367C4FF74FA9E3A5D3CC /* LASDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LASDesignSystem.swift; sourceTree = "<group>"; };
 		69595F0380BC676CB5BE4633 /* LocalizationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationService.swift; sourceTree = "<group>"; };
 		698B1C48F5B38DFED8284C04 /* WebPassageReranker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebPassageReranker.swift; sourceTree = "<group>"; };
@@ -380,6 +381,7 @@
 		912E5256DC41A2F20EC2CDA6 /* LoRAAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoRAAdapter.swift; sourceTree = "<group>"; };
 		913FCE700C12B4F5C4B20C41 /* MacroChain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroChain.swift; sourceTree = "<group>"; };
 		92499900AB0555287B577241 /* RemoteInferenceGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteInferenceGate.swift; sourceTree = "<group>"; };
+		92931756D3BC751A21B9F960 /* libPods-OnDeviceLAS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OnDeviceLAS.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9530CFF3362F6020759F8192 /* AssistantModelCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantModelCatalog.swift; sourceTree = "<group>"; };
 		97FB048B803BC4C401EA57FF /* LocalModelDocumentPickerSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalModelDocumentPickerSession.swift; sourceTree = "<group>"; };
 		99403E350AFE9DE55159F738 /* DeviceCompatibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceCompatibility.swift; sourceTree = "<group>"; };
@@ -387,9 +389,10 @@
 		9B4DE8D8653EECFE3ED1C074 /* EmbeddingPassageScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddingPassageScorer.swift; sourceTree = "<group>"; };
 		9BD2793B0C7A85ECA7063732 /* URLSafetyValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLSafetyValidatorTests.swift; sourceTree = "<group>"; };
 		9BF55D95F4834F5FE26630A0 /* VoiceSessionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSessionState.swift; sourceTree = "<group>"; };
+		9E4A5CB8F59E9C2DF84FFE71 /* Pods-OnDeviceLAS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OnDeviceLAS.debug.xcconfig"; path = "Target Support Files/Pods-OnDeviceLAS/Pods-OnDeviceLAS.debug.xcconfig"; sourceTree = "<group>"; };
 		9F08A048386D2A9DA31F89FD /* DeviceSafetyMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSafetyMonitor.swift; sourceTree = "<group>"; };
-		9F865CD9763D5AC7A06C7D0B /* libPods-OnDeviceLASTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OnDeviceLASTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A04D75DDE912DDFCDB105DC8 /* IOSLocalLLMApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSLocalLLMApp.swift; sourceTree = "<group>"; };
+		A09F5979E6AE66E7FD8ACDF5 /* Pods-OnDeviceLAS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OnDeviceLAS.release.xcconfig"; path = "Target Support Files/Pods-OnDeviceLAS/Pods-OnDeviceLAS.release.xcconfig"; sourceTree = "<group>"; };
 		A0E37ABD1B8FBEF01F39D1E1 /* SpotlightIndexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightIndexer.swift; sourceTree = "<group>"; };
 		A5EF362C7A03704B621450C1 /* LocalAPIServerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAPIServerTests.swift; sourceTree = "<group>"; };
 		A726F7DBD71C677B303936CF /* NanbeigeMLXModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NanbeigeMLXModel.swift; sourceTree = "<group>"; };
@@ -417,18 +420,17 @@
 		CB2BE2897F3BA85F5B9D4560 /* LlamaCppVLMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LlamaCppVLMService.swift; sourceTree = "<group>"; };
 		CB3A71A4A695140028AA5552 /* LiquidPinkBackdrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidPinkBackdrop.swift; sourceTree = "<group>"; };
 		CCDCBD7D074F709E7040CCC8 /* KnowledgeBaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeBaseService.swift; sourceTree = "<group>"; };
-		CDDB9D45B9E026FAF9755078 /* Pods-OnDeviceLASTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OnDeviceLASTests.debug.xcconfig"; path = "Target Support Files/Pods-OnDeviceLASTests/Pods-OnDeviceLASTests.debug.xcconfig"; sourceTree = "<group>"; };
 		D08670AC2AD2F2C3CBAF78C3 /* LlamaCppBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LlamaCppBridge.swift; sourceTree = "<group>"; };
 		D0E570D6A4AF0E7A16D36B5C /* LocalModelFileValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalModelFileValidator.swift; sourceTree = "<group>"; };
 		D0F143CAC68863AE9A3E228C /* WebSearchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSearchService.swift; sourceTree = "<group>"; };
 		D13473366329F9BFCEC7DCAB /* SystemSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSnapshot.swift; sourceTree = "<group>"; };
 		D3EFC380453CB32DA484E549 /* ModelCapabilityProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelCapabilityProfile.swift; sourceTree = "<group>"; };
 		D43A497217EEEC5C29563724 /* NetworkActivityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkActivityMonitor.swift; sourceTree = "<group>"; };
+		D53CABD97F91442BE3496E33 /* Pods-OnDeviceLASTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OnDeviceLASTests.debug.xcconfig"; path = "Target Support Files/Pods-OnDeviceLASTests/Pods-OnDeviceLASTests.debug.xcconfig"; sourceTree = "<group>"; };
 		D6A9792E930D441DDE866ADE /* VoiceModelState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceModelState.swift; sourceTree = "<group>"; };
 		D6D93C553B5D172F77DDFA0A /* WebContentExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebContentExtractor.swift; sourceTree = "<group>"; };
 		D9E739EAAFFE58802F2551B6 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
 		D9F2EC85BBBC5B3371A1A15E /* ModelQualityEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelQualityEval.swift; sourceTree = "<group>"; };
-		DAFAC8E695F6DF96A733858D /* Pods-OnDeviceLAS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OnDeviceLAS.release.xcconfig"; path = "Target Support Files/Pods-OnDeviceLAS/Pods-OnDeviceLAS.release.xcconfig"; sourceTree = "<group>"; };
 		E08933135442CB9DDB901C58 /* ModelPrefetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelPrefetcher.swift; sourceTree = "<group>"; };
 		E1EE9C7A1E8CE9273553A1C0 /* FastVLMRepoAutoDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastVLMRepoAutoDiscovery.swift; sourceTree = "<group>"; };
 		E24CE4F58B1EDD2A9BFD3EAC /* SystemStatusService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemStatusService.swift; sourceTree = "<group>"; };
@@ -443,10 +445,8 @@
 		F196A3816AE0E0C50BCD3D0F /* VoicePerformanceSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicePerformanceSnapshot.swift; sourceTree = "<group>"; };
 		F2DBADE72DE98F247025F7C8 /* ModelArenaStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelArenaStore.swift; sourceTree = "<group>"; };
 		F2EAA9F9D810FE3B686D45C3 /* HFSearchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HFSearchService.swift; sourceTree = "<group>"; };
-		F35E622FF0CB8696BA0DEE27 /* Pods-OnDeviceLASTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OnDeviceLASTests.release.xcconfig"; path = "Target Support Files/Pods-OnDeviceLASTests/Pods-OnDeviceLASTests.release.xcconfig"; sourceTree = "<group>"; };
 		F42A5B37DB730BA14BC854BC /* LocalAITypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAITypes.swift; sourceTree = "<group>"; };
 		F5A6B096DFA63A07882C5E0A /* LASAppIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LASAppIdentity.swift; sourceTree = "<group>"; };
-		F73324B989B374D69119E9AA /* libPods-OnDeviceLAS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OnDeviceLAS.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FA49AE55AE035633613282B4 /* CoreAIOnDeviceLASApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreAIOnDeviceLASApp.swift; sourceTree = "<group>"; };
 		FAE7DCBD2748C661D419D6F6 /* ReasoningCompletionGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReasoningCompletionGuard.swift; sourceTree = "<group>"; };
 		FDFD1FC08312F90E660830A9 /* RecoveryState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryState.swift; sourceTree = "<group>"; };
@@ -469,15 +469,7 @@
 				BEA494FA48B13807B3BD99A9 /* MLXRandom in Frameworks */,
 				3348038B55F4BB13BE0E7143 /* MLXFast in Frameworks */,
 				36F5E7220352AF8B928579A7 /* llama.xcframework in Frameworks */,
-				8FD64A966D129B7D16ABCB1B /* libPods-OnDeviceLAS.a in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		5B92C2900D3D9542A5C08384 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D7544D83720C7E62B0108650 /* libPods-OnDeviceLASTests.a in Frameworks */,
+				21C29F5E18EBB69C89DF6C3B /* libPods-OnDeviceLAS.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -487,6 +479,14 @@
 			files = (
 				C714CB7620AD7158C3B9DBAF /* CoreAILM in Frameworks */,
 				8053EC17EC1510B0FB22A10C /* CoreAISegmentation in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B44557523A868AE858648DD3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				96B22B0C87EC735313BFE33C /* libPods-OnDeviceLASTests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -502,7 +502,7 @@
 				773028A9159D05FA5A7F740E /* Packages */,
 				6F3BD353BF1762D29138DD51 /* Frameworks */,
 				FAEC727C91FFE7771473D537 /* Products */,
-				6004DAACA40725AFF2D2BB38 /* Pods */,
+				6E4CFBF429EDE64DA468B391 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -669,18 +669,6 @@
 			path = IOSLocalLLMTests;
 			sourceTree = "<group>";
 		};
-		6004DAACA40725AFF2D2BB38 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				68A998E20F35F2477E29CF98 /* Pods-OnDeviceLAS.debug.xcconfig */,
-				DAFAC8E695F6DF96A733858D /* Pods-OnDeviceLAS.release.xcconfig */,
-				CDDB9D45B9E026FAF9755078 /* Pods-OnDeviceLASTests.debug.xcconfig */,
-				F35E622FF0CB8696BA0DEE27 /* Pods-OnDeviceLASTests.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
-			sourceTree = "<group>";
-		};
 		60E9F181EABE1004C3A08386 /* Runtime */ = {
 			isa = PBXGroup;
 			children = (
@@ -699,12 +687,24 @@
 			path = Diagnostics;
 			sourceTree = "<group>";
 		};
+		6E4CFBF429EDE64DA468B391 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				9E4A5CB8F59E9C2DF84FFE71 /* Pods-OnDeviceLAS.debug.xcconfig */,
+				A09F5979E6AE66E7FD8ACDF5 /* Pods-OnDeviceLAS.release.xcconfig */,
+				D53CABD97F91442BE3496E33 /* Pods-OnDeviceLASTests.debug.xcconfig */,
+				35409430F8AEF5A5E1060795 /* Pods-OnDeviceLASTests.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		6F3BD353BF1762D29138DD51 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				2B805C8A7599D5BF0FD0D57B /* llama.xcframework */,
-				F73324B989B374D69119E9AA /* libPods-OnDeviceLAS.a */,
-				9F865CD9763D5AC7A06C7D0B /* libPods-OnDeviceLASTests.a */,
+				92931756D3BC751A21B9F960 /* libPods-OnDeviceLAS.a */,
+				3963229D826D0C06BEF40787 /* libPods-OnDeviceLASTests.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -908,7 +908,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8B5F0ABF1000FE59DE7B03B7 /* Build configuration list for PBXNativeTarget "OnDeviceLAS" */;
 			buildPhases = (
-				830EE4B80FE368E2DF2AC081 /* [CP] Check Pods Manifest.lock */,
+				53A2F2589FBA143A625182FA /* [CP] Check Pods Manifest.lock */,
 				2C6B332F1673502957E252D7 /* Sources */,
 				C316E89EF9F79ACD78162F46 /* Resources */,
 				040EF2715C2BD26E1CB25CD1 /* Frameworks */,
@@ -974,9 +974,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8AA1988F903C3FC79EF647FD /* Build configuration list for PBXNativeTarget "OnDeviceLASTests" */;
 			buildPhases = (
-				18DFC4407D9FCE9E26B56959 /* [CP] Check Pods Manifest.lock */,
+				E71845623B02294690BFA4CD /* [CP] Check Pods Manifest.lock */,
 				C2875F3821C1CF0975A020A1 /* Sources */,
-				5B92C2900D3D9542A5C08384 /* Frameworks */,
+				B44557523A868AE858648DD3 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -1060,29 +1060,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		18DFC4407D9FCE9E26B56959 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-OnDeviceLASTests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		830EE4B80FE368E2DF2AC081 /* [CP] Check Pods Manifest.lock */ = {
+		53A2F2589FBA143A625182FA /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1098,6 +1076,28 @@
 			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/Pods-OnDeviceLAS-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		E71845623B02294690BFA4CD /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-OnDeviceLASTests-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -1553,14 +1553,14 @@
 		};
 		AB170CC9059F39900EFD518E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = DAFAC8E695F6DF96A733858D /* Pods-OnDeviceLAS.release.xcconfig */;
+			baseConfigurationReference = A09F5979E6AE66E7FD8ACDF5 /* Pods-OnDeviceLAS.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = IOSLocalLLM/IOSLocalLLM.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 143;
+				CURRENT_PROJECT_VERSION = 144;
 				ENABLE_TESTABILITY = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1616,7 +1616,7 @@
 		};
 		BB96FA4C9329A486544C0ACA /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = CDDB9D45B9E026FAF9755078 /* Pods-OnDeviceLASTests.debug.xcconfig */;
+			baseConfigurationReference = D53CABD97F91442BE3496E33 /* Pods-OnDeviceLASTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -1647,14 +1647,14 @@
 		};
 		BBB0559A8AADCDBFA7B98A05 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 68A998E20F35F2477E29CF98 /* Pods-OnDeviceLAS.debug.xcconfig */;
+			baseConfigurationReference = 9E4A5CB8F59E9C2DF84FFE71 /* Pods-OnDeviceLAS.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = IOSLocalLLM/IOSLocalLLM.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 143;
+				CURRENT_PROJECT_VERSION = 144;
 				ENABLE_TESTABILITY = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1684,7 +1684,7 @@
 		};
 		DF63E3D701473916BED02682 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = F35E622FF0CB8696BA0DEE27 /* Pods-OnDeviceLASTests.release.xcconfig */;
+			baseConfigurationReference = 35409430F8AEF5A5E1060795 /* Pods-OnDeviceLASTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;

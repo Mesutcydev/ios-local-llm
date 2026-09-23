@@ -185,7 +185,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: IOSLocalLLM/IOSLocalLLM.entitlements
         CODE_SIGN_STYLE: Automatic
         VERSIONING_SYSTEM: apple-generic
-        CURRENT_PROJECT_VERSION: "143"
+        CURRENT_PROJECT_VERSION: "144"
         # iPhone-only server surface.
         TARGETED_DEVICE_FAMILY: "1"
         SUPPORTS_MACCATALYST: NO
