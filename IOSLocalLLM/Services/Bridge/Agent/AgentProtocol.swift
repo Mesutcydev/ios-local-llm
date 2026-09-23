@@ -50,6 +50,27 @@ struct AgentEnvelope<Payload: Codable>: Codable {
         self.sender    = sender
         self.payload   = payload
     }
+
+    /// Rejects unknown protocol versions at the boundary instead of
+    /// silently decoding a future/unsupported schema.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let version = try container.decode(String.self, forKey: .version)
+        guard version == AgentEnvelopeVersion.current else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .version,
+                in: container,
+                debugDescription: "Unsupported agent protocol version '\(version)'"
+            )
+        }
+        self.version   = version
+        self.messageId = try container.decode(UUID.self, forKey: .messageId)
+        self.sessionId = try container.decode(UUID.self, forKey: .sessionId)
+        self.timestamp = try container.decode(Date.self, forKey: .timestamp)
+        self.type      = try container.decode(AgentMessageType.self, forKey: .type)
+        self.sender    = try container.decode(AgentSender.self, forKey: .sender)
+        self.payload   = try container.decode(Payload.self, forKey: .payload)
+    }
 }
 
 enum AgentEnvelopeVersion {

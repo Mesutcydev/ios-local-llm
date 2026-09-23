@@ -10,25 +10,29 @@ import Combine
 /// safe context without special-casing the C++ bridge itself.
 struct LlamaCppVLMExecutionProfile: Equatable, Sendable {
     let contextSize: UInt32
-    let maxOutputTokens: Int
+    /// Family-level output ceiling. Nil means "adaptive": the caller's
+    /// requested budget and the thermal advisor decide. Memory is bounded by
+    /// the preallocated `contextSize` below, not by answer length, so a fixed
+    /// output cap added truncation without adding safety.
+    let maxOutputTokens: Int?
     let requiresSingleResidency: Bool
 
     static func resolve(repoID: String) -> Self {
         let id = repoID.lowercased()
         if id.contains("gemma-3") || id.contains("gemma3") {
             // Gemma 3 expands one image to 256 soft tokens. A 1K context still
-            // leaves ample room for the Lens prompt + 192-token answer while
+            // leaves ample room for the Lens prompt + answer while
             // avoiding the multi-GB KV allocation a desktop-style 4K context
             // can create for a 4B model.
             return .init(
                 contextSize: 1_024,
-                maxOutputTokens: 192,
+                maxOutputTokens: nil,
                 requiresSingleResidency: true
             )
         }
         return .init(
             contextSize: 4_096,
-            maxOutputTokens: 256,
+            maxOutputTokens: nil,
             requiresSingleResidency: false
         )
     }
@@ -443,7 +447,7 @@ final class LlamaCppVLMService: ObservableObject {
         let profile = LlamaCppVLMExecutionProfile.resolve(repoID: activeRepoID ?? "")
         let tokenCap = min(
             maxTokens,
-            profile.maxOutputTokens,
+            profile.maxOutputTokens ?? .max,
             DeviceSafetyMonitor.shared.recommendedMaxTokens
         )
 

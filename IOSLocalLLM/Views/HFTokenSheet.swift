@@ -34,6 +34,7 @@ struct HFTokenSheet: View {
     @State private var revealed: Bool = false
     @State private var testing: Bool = false
     @State private var testResult: TestResult? = nil
+    @State private var showRemoveConfirm = false
 
     enum TestResult {
         case ok(username: String)
@@ -77,6 +78,20 @@ struct HFTokenSheet: View {
                                          ? T.ink4 : T.accent)
                         .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
+            }
+            .confirmationDialog(
+                "Remove the stored token?",
+                isPresented: $showRemoveConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Remove", role: .destructive) {
+                    store.clear()
+                    input = ""
+                    testResult = nil
+                    HapticManager.impact(.medium)
+                }
+            } message: {
+                Text("Gated model downloads will stop working until you add it again.")
             }
         }
     }
@@ -200,10 +215,7 @@ struct HFTokenSheet: View {
 
                     if store.hasToken {
                         Button(role: .destructive) {
-                            store.clear()
-                            input = ""
-                            testResult = nil
-                            HapticManager.impact(.medium)
+                            showRemoveConfirm = true
                         } label: {
                             Text("Remove")
                                 .font(T.mono(10, .semibold))

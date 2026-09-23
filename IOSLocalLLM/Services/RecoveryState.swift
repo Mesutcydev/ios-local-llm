@@ -89,14 +89,20 @@ final class RecoveryManager: Sendable {
         flush()
     }
 
-    /// True when the previous session ended uncleanly with a heavy model
-    /// (≥ 8 GB estimated weights) active. Used to decide whether to enter
-    /// safe recovery mode.
+    /// Clears the persisted recovery breadcrumbs and in-memory state.
+    /// Called by the full-data wipe so operation history does not survive.
+    func reset() {
+        state = RecoveryState()
+        try? FileManager.default.removeItem(at: fileURL)
+    }
+
+    /// True when the previous session ended uncleanly with a model recorded
+    /// as active. Intentionally conservative: any model loaded at an unclean
+    /// exit is treated as potentially dangerous to auto-reload. Used to
+    /// decide whether to enter safe recovery mode.
     var shouldEnterRecoveryMode: Bool {
         guard state.uncleanExit else { return false }
         guard state.lastModelID != nil else { return false }
-        // Conservative: any model that was loaded during an unclean exit
-        // is treated as potentially dangerous to auto-reload.
         return true
     }
 }

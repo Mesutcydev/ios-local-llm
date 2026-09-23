@@ -197,7 +197,10 @@ final class DeviceTierAdvisorTests: XCTestCase {
             architecture: "gemma3"
         )
         XCTAssertEqual(profile.cacheLimitBytes, 0)
-        XCTAssertEqual(profile.maxOutputTokens, 192)
+        XCTAssertNil(
+            profile.maxOutputTokens,
+            "The rotating 512-token KV cache bounds memory; answer length follows the caller and thermal advisor"
+        )
         XCTAssertEqual(profile.maxKVSize, 512)
         XCTAssertEqual(profile.kvBits, 4)
         XCTAssertTrue(profile.requiresSingleResidency)
@@ -210,11 +213,23 @@ final class DeviceTierAdvisorTests: XCTestCase {
         let profile = MLXAssistantExecutionProfile.resolve(repoID: model.repoID)
 
         XCTAssertEqual(profile.maxContextTokens, 2_048)
-        XCTAssertEqual(profile.maxOutputTokens, 128)
+        XCTAssertNil(
+            profile.maxOutputTokens,
+            "The rotating 2K KV cache bounds memory on its own; a fixed output cap truncated every Bonsai 27B reply mid-sentence"
+        )
         XCTAssertEqual(profile.maxKVSize, 2_048)
         XCTAssertEqual(profile.kvBits, 4)
         XCTAssertEqual(profile.prefillStepSize, 128)
         XCTAssertEqual(profile.cacheLimitBytes, 0)
+        XCTAssertEqual(
+            profile.inputBudget(
+                modelContextWindowTokens: 32_768,
+                deviceContextCap: 8_192,
+                requestedOutputTokens: 2_048
+            ),
+            1_536,
+            "Uncapped output must not shrink the prompt budget below the rotating-cache reserve"
+        )
         XCTAssertLessThanOrEqual(
             model.approxRAMBytes + MemoryAdvisor.loadHeadroomReserve,
             MemoryAdvisor.maximumIPhoneProcessCeiling,
@@ -228,7 +243,10 @@ final class DeviceTierAdvisorTests: XCTestCase {
         )
 
         XCTAssertEqual(profile.maxContextTokens, 4_096)
-        XCTAssertEqual(profile.maxOutputTokens, 256)
+        XCTAssertNil(
+            profile.maxOutputTokens,
+            "The rotating 4K KV cache bounds memory; answer length follows the user's response-length setting"
+        )
         XCTAssertEqual(profile.maxKVSize, 4_096)
         XCTAssertEqual(profile.kvBits, 4)
         XCTAssertEqual(profile.prefillStepSize, 128)
@@ -568,7 +586,10 @@ final class DeviceTierAdvisorTests: XCTestCase {
             repoID: "ggml-org/gemma-3-4b-it-GGUF"
         )
         XCTAssertEqual(profile.contextSize, 1_024)
-        XCTAssertEqual(profile.maxOutputTokens, 192)
+        XCTAssertNil(
+            profile.maxOutputTokens,
+            "The preallocated 1K context bounds memory; answer length follows the caller and thermal advisor"
+        )
         XCTAssertTrue(profile.requiresSingleResidency)
     }
 

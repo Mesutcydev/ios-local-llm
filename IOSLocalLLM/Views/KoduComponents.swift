@@ -100,10 +100,21 @@ struct KIconButton<Icon: View>: View {
     var action: () -> Void = {}
     var size: CGFloat = 32
     var radius: CGFloat = 6
+    /// VoiceOver label for the icon; pass one whenever the icon carries
+    /// meaning (close, delete, copy, …).
+    var accessibilityLabel: String? = nil
 
     @Environment(\.koduTheme) private var T
 
     var body: some View {
+        if let accessibilityLabel {
+            button.accessibilityLabel(accessibilityLabel)
+        } else {
+            button
+        }
+    }
+
+    private var button: some View {
         Button(action: action) {
             icon()
                 .frame(width: size, height: size)

@@ -125,8 +125,11 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         downloadTask = Task {
             await pendingCleanup?.value
             guard !Task.isCancelled, generation == runID else { return }
-            if let cleanupError {
-                state = .failed(cleanupError.localizedDescription)
+            if let pendingError = cleanupError {
+                // Surface once, then clear — a transient cleanup failure must
+                // not permanently block every future start.
+                cleanupError = nil
+                state = .failed(pendingError.localizedDescription)
                 return
             }
             await run()
@@ -147,6 +150,9 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         let previousCleanup = cleanupTask
         previous?.cancel()
         downloadTask = nil
+        // A cancelled download must not leave its Live Activity pinned on the
+        // Lock Screen until the system cap. Safe when none is running.
+        DownloadLiveActivityManager.shared.finish(repoID: repoID)
         cleanupTask = Task {
             await previousCleanup?.value
             // URLSession cancellation is scoped to the exact file task. Wait
@@ -168,6 +174,11 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
     func waitForCleanup() async {
         await cleanupTask?.value
     }
+
+    /// True while a cancellation's file cleanup is still running. The orphan
+    /// sweep must treat this destination as active so it can't delete files
+    /// out from under the manager's own removal.
+    var isCleaningUp: Bool { cleanupID != nil }
 
     func delete() async throws {
         guard !isDeleting else {
@@ -298,6 +309,25 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         return size.int64Value > 0
     }
 
+    /// Resolves a repo-supplied relative path inside `root`, rejecting
+    /// absolute paths, `..` traversal, and backslash separators so a
+    /// malicious/compromised repository cannot write outside its folder.
+    static func containedDestination(for relativePath: String, in root: URL) -> URL? {
+        guard !relativePath.isEmpty,
+              !relativePath.hasPrefix("/"),
+              !relativePath.contains("\\") else { return nil }
+        let components = relativePath.split(separator: "/", omittingEmptySubsequences: true)
+        guard !components.isEmpty,
+              !components.contains(".."),
+              !components.contains(".") else { return nil }
+        let candidate = root.appendingPathComponent(relativePath).standardizedFileURL
+        let rootPath = root.standardizedFileURL.path
+        let candidatePath = candidate.path
+        guard candidatePath == rootPath
+                || candidatePath.hasPrefix(rootPath + "/") else { return nil }
+        return candidate
+    }
+
     /// True when `dir` contains a complete GGUF VLM pair: at least one
     /// `<model>.gguf` (LLM weights) AND at least one `mmproj-*.gguf`
     /// (vision projector). Mirrors LlamaCppVLMService.hasGGUFPair so
@@ -419,7 +449,14 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             for meta in pending {
                 guard !Task.isCancelled else { return }
                 currentFile = meta.path     // show full path, not just filename
-                let dest = destination.appendingPathComponent(meta.path)
+                guard let dest = Self.containedDestination(
+                    for: meta.path, in: destination
+                ) else {
+                    throw NSError(domain: "HFDownload", code: -4, userInfo: [
+                        NSLocalizedDescriptionKey:
+                            "The repository listed a file path outside the model folder."
+                    ])
+                }
 
                 let parent = dest.deletingLastPathComponent()
                 try FileManager.default.createDirectory(
@@ -468,11 +505,14 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             )
 
         } catch is CancellationError {
-            // leave state as-is so resume is possible
+            // Leave state as-is so resume is possible, but end the Live
+            // Activity — cancellation is deliberate.
+            DownloadLiveActivityManager.shared.finish(repoID: repoID)
         } catch let error where Self.isUserCancellation(error) {
             // URLSession surfaces a user cancel as NSURLErrorCancelled, not
             // CancellationError — treat it the same so a Cancel tap doesn't
             // show a "Download failed" toast.
+            DownloadLiveActivityManager.shared.finish(repoID: repoID)
         } catch let authErr as HFAuthError {
             guard !Task.isCancelled else { return }
             // Auth-specific failure: tag the kind so the catalog UI
@@ -824,7 +864,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
                         guard let self, self.generation == runID else { return }
                         self.downloadedBytes = snapshot + received
                         if self.totalBytes > 0 {
-                            self.progress = Double(self.downloadedBytes) / Double(self.totalBytes)
+                            self.progress = min(1.0, Double(self.downloadedBytes) / Double(self.totalBytes))
                         }
                     }
                 }

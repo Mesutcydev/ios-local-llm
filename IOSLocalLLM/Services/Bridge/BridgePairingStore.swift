@@ -28,7 +28,17 @@ final class BridgePairingStore {
         /// outbound /v1/agent calls go over HTTPS pinned to this value;
         /// nil means a legacy plaintext Mac (http fallback).
         var macCertFingerprint: String? = nil
+        /// Last successful inbound bearer use. Persisted at most hourly.
+        var lastUsedAt: Date? = nil
+        /// Optional expiry. Nil means non-expiring (rows paired before the
+        /// field existed and current minting still leaves it unset); when
+        /// present, expired rows are rejected and removed.
+        var expiresAt: Date? = nil
     }
+
+    private let touchLock = NSLock()
+    private var lastTouchWrite: [String: Date] = [:]
+    private static let touchInterval: TimeInterval = 3600
 
     // MARK: - Write
 
@@ -57,11 +67,28 @@ final class BridgePairingStore {
             macAgentPort:   macAgentPort,
             macCertFingerprint: macCertFingerprint
         )
+        try persist(client)
+    }
+
+    /// Removes the row for a single token. Used by per-client revoke and
+    /// by `isValid` when a row has expired.
+    func remove(token: String) {
+        SecItemDelete([
+            kSecClass:       kSecClassGenericPassword,
+            kSecAttrService: BridgePairingStore.service,
+            kSecAttrAccount: token
+        ] as CFDictionary)
+        touchLock.lock()
+        lastTouchWrite[token] = nil
+        touchLock.unlock()
+    }
+
+    private func persist(_ client: Client) throws {
         let data = try JSONEncoder().encode(client)
         let attrs: [CFString: Any] = [
             kSecClass:          kSecClassGenericPassword,
             kSecAttrService:    BridgePairingStore.service,
-            kSecAttrAccount:    token,
+            kSecAttrAccount:    client.token,
             kSecValueData:      data,
             kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         ]
@@ -108,10 +135,40 @@ final class BridgePairingStore {
             kSecClass:       kSecClassGenericPassword,
             kSecAttrService: BridgePairingStore.service,
             kSecAttrAccount: token,
-            kSecReturnData:  false,
+            kSecReturnData:  true,
             kSecMatchLimit:  kSecMatchLimitOne
         ]
-        return SecItemCopyMatching(query as CFDictionary, nil) == errSecSuccess
+        var result: AnyObject?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess else {
+            return false
+        }
+        guard let data = result as? Data,
+              let client = try? JSONDecoder().decode(Client.self, from: data) else {
+            // Undecodable legacy row — preserve the prior "exists == valid"
+            // behavior rather than locking a paired Mac out.
+            return true
+        }
+        if let expiresAt = client.expiresAt, expiresAt <= Date() {
+            remove(token: token)
+            return false
+        }
+        touch(token: token, client: client)
+        return true
+    }
+
+    /// Records last use, persisted at most once per hour per token so a
+    /// busy API client doesn't hammer the Keychain.
+    private func touch(token: String, client: Client) {
+        let now = Date()
+        touchLock.lock()
+        let last = lastTouchWrite[token] ?? .distantPast
+        let shouldWrite = last.addingTimeInterval(Self.touchInterval) <= now
+        if shouldWrite { lastTouchWrite[token] = now }
+        touchLock.unlock()
+        guard shouldWrite else { return }
+        var updated = client
+        updated.lastUsedAt = now
+        try? persist(updated)
     }
 
     func clients() -> [Client] {

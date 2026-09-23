@@ -107,6 +107,10 @@ final class LifecycleController: Sendable {
 
         await LocalAPIManager.shared.stop()
 
+        // The foreground can return while the stop() await suspends; if it
+        // did, do not keep tearing down the now-foreground session.
+        guard epoch == lifecycleEpoch else { return }
+
         // Cancel any previous background transition.
         backgroundTransitionTask?.cancel()
 

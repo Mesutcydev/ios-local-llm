@@ -16,6 +16,7 @@ struct ImageGenerationView: View {
     @State private var negativePrompt: String = ""
     @State private var steps: Double = 0          // 0 = use model default
     @State private var showAdvanced = false
+    @State private var pendingDelete: ImageGenerationService.Model?
 
     private var model: ImageGenerationService.Model { svc.selectedModel }
 
@@ -52,6 +53,21 @@ struct ImageGenerationView: View {
                     }
                 }
             }
+        }
+        .confirmationDialog(
+            "Delete \(pendingDelete?.displayName ?? "model")?",
+            isPresented: Binding(
+                get: { pendingDelete != nil },
+                set: { if !$0 { pendingDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                if let m = pendingDelete { svc.deleteModel(m) }
+                pendingDelete = nil
+            }
+        } message: {
+            Text("Its downloaded weights are removed from this device.")
         }
     }
 
@@ -112,14 +128,15 @@ struct ImageGenerationView: View {
                         .foregroundColor(T.ink2)
                     if installed {
                         Button {
-                            svc.deleteModel(m)
-                            HapticManager.impact(.medium)
+                            pendingDelete = m
+                            HapticManager.impact(.light)
                         } label: {
                             Text("delete")
                                 .font(T.mono(9, .semibold))
                                 .foregroundColor(T.bad)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Delete \(m.displayName)")
                     }
                 }
             }

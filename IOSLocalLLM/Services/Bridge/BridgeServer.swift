@@ -15,9 +15,11 @@ actor BridgeServer {
 
     private var listener: NWListener?
 
-    /// Brute-force guard on `/v1/pair` — counts failed nonce attempts.
-    private var failedPairAttempts: [Date] = []
-    private var pairLockedUntil: Date?
+    /// Brute-force guard on `/v1/pair` — counts failed nonce attempts per
+    /// remote endpoint, so an unauthenticated prober cannot lock pairing out
+    /// for everyone. The nonce itself is 122-bit random and single-use.
+    private var failedPairAttempts: [String: [Date]] = [:]
+    private var pairLockedUntil: [String: Date] = [:]
 
     private static let maxFailedPairAttempts = 5
     private static let pairAttemptWindow: TimeInterval = 60
@@ -140,7 +142,8 @@ actor BridgeServer {
     // MARK: - /v1/pair
 
     private func handlePair(_ req: HTTPRequest, conn: NWConnection) async {
-        if let locked = pairLockedUntil, locked > Date() {
+        let sourceKey = Self.sourceKey(for: conn)
+        if let locked = pairLockedUntil[sourceKey], locked > Date() {
             await respond(conn, status: 429, body: "Too many pairing attempts")
             return
         }
@@ -151,17 +154,24 @@ actor BridgeServer {
         }
         let ok = await MainActor.run { BridgeManager.shared.verifyAndConsumeNonce(pr.nonce) }
         guard ok else {
-            recordFailedPairAttempt()
+            recordFailedPairAttempt(for: sourceKey)
             await respond(conn, status: 401, body: "Invalid nonce")
             return
         }
-        failedPairAttempts.removeAll()
-        pairLockedUntil = nil
+        failedPairAttempts[sourceKey] = nil
+        pairLockedUntil[sourceKey] = nil
         let token    = UUID().uuidString + UUID().uuidString
         let deviceId = await MainActor.run {
             UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
         }
-        try? BridgePairingStore.shared.save(token: token, clientName: pr.clientName)
+        // A token the Keychain rejected must not be handed out as if it
+        // paired — the Mac would get 401s with no explanation.
+        do {
+            try BridgePairingStore.shared.save(token: token, clientName: pr.clientName)
+        } catch {
+            await respond(conn, status: 500, body: "Could not persist pairing")
+            return
+        }
         await MainActor.run { BridgeManager.shared.onPaired(clientName: pr.clientName) }
 
         guard let data = try? JSONEncoder().encode(PairResponseDTO(bearerToken: token, deviceId: deviceId)) else {
@@ -205,28 +215,54 @@ actor BridgeServer {
         catch { conn.cancel(); return }
 
         let messages = ir.toChatMessages()
-        for await token in inferStream(messages: messages) {
-            let esc = token
-                .replacingOccurrences(of: "\\", with: "\\\\")
-                .replacingOccurrences(of: "\"", with: "\\\"")
-                .replacingOccurrences(of: "\n", with: "\\n")
-                .replacingOccurrences(of: "\r", with: "\\r")
-            let line = "data: {\"type\":\"token\",\"text\":\"\(esc)\"}\n\n"
-            do { try await sendRaw(conn, Data(line.utf8)) }
+        let errorBox = BridgeStringBox()
+        for await token in inferStream(messages: messages, errorBox: errorBox) {
+            // JSONSerialization escapes every control character; the old
+            // hand-rolled escaping emitted raw tabs/backspaces and produced
+            // invalid JSON frames.
+            let frame = BridgeSSE.frame(
+                event: nil,
+                object: ["type": "token", "text": token]
+            )
+            do { try await sendRaw(conn, frame) }
             catch { break }
         }
-        try? await sendRaw(conn, Data("event: done\n\n".utf8))
+        if let message = errorBox.value {
+            try? await sendRaw(conn, BridgeSSE.frame(
+                event: "error",
+                object: ["type": "error", "message": message]
+            ))
+            // Still terminate the stream so legacy Mac clients that only
+            // wait for `done` don't hang until their timeout.
+            try? await sendRaw(conn, Data("event: done\n\n".utf8))
+        } else {
+            try? await sendRaw(conn, Data("event: done\n\n".utf8))
+        }
         conn.cancel()
     }
 
-    // Wraps CodingAssistantService.generate() in an AsyncStream.
-    private func inferStream(messages: [ChatMessage]) -> AsyncStream<String> {
+    // Wraps CodingAssistantService.generate() in an AsyncStream. Failures are
+    // surfaced through `errorBox` so handleInfer can emit an `event: error`
+    // frame instead of ending the turn as a silent success.
+    private func inferStream(
+        messages: [ChatMessage],
+        errorBox: BridgeStringBox
+    ) -> AsyncStream<String> {
         AsyncStream { continuation in
+            let finished = BridgeFlag()
             Task { @MainActor in
                 CodingAssistantService.shared.generate(
                     messages: messages,
                     onToken:    { continuation.yield($0) },
-                    onComplete: { _ in continuation.finish() }
+                    onComplete: { _ in
+                        finished.set()
+                        continuation.finish()
+                    },
+                    onError: { message in
+                        errorBox.set(message)
+                        finished.set()
+                        continuation.finish()
+                    }
                 )
             }
             // When the SSE peer disconnects mid-stream, handleInfer's send
@@ -235,8 +271,11 @@ actor BridgeServer {
             // single-flight slot until it finishes on its own. Terminating
             // the stream (consumer stops iterating, or finish() on natural
             // completion) now cancels the underlying generation so the model
-            // stops immediately and isGenerating is released promptly.
+            // stops immediately and isGenerating is released promptly. The
+            // `finished` flag keeps a natural completion from cancelling a
+            // generation that started after this stream ended.
             continuation.onTermination = { _ in
+                guard !finished.value else { return }
                 Task { @MainActor in
                     CodingAssistantService.shared.stopGeneration()
                 }
@@ -273,14 +312,27 @@ actor BridgeServer {
 
     // MARK: - Auth
 
-    private func recordFailedPairAttempt() {
-        let cutoff = Date().addingTimeInterval(-Self.pairAttemptWindow)
-        failedPairAttempts.removeAll { $0 < cutoff }
-        failedPairAttempts.append(Date())
-        if failedPairAttempts.count >= Self.maxFailedPairAttempts {
-            pairLockedUntil = Date().addingTimeInterval(Self.pairLockoutDuration)
-            failedPairAttempts.removeAll()
+    private func recordFailedPairAttempt(for source: String) {
+        let now = Date()
+        let cutoff = now.addingTimeInterval(-Self.pairAttemptWindow)
+        var attempts = (failedPairAttempts[source] ?? []).filter { $0 > cutoff }
+        attempts.append(now)
+        if attempts.count >= Self.maxFailedPairAttempts {
+            pairLockedUntil[source] = now.addingTimeInterval(Self.pairLockoutDuration)
+            attempts.removeAll()
         }
+        failedPairAttempts[source] = attempts
+        failedPairAttempts = failedPairAttempts.filter { !$0.value.isEmpty }
+        pairLockedUntil = pairLockedUntil.filter { $0.value > now }
+    }
+
+    private static func sourceKey(for conn: NWConnection) -> String {
+        // Host only: connections are short-lived (Connection: close), so a
+        // host:port key would reset the attempt counter on every reconnect.
+        if case .hostPort(let host, _) = conn.endpoint {
+            return String(describing: host)
+        }
+        return String(describing: conn.endpoint)
     }
 
     private func bearerValid(_ req: HTTPRequest) -> Bool {
@@ -319,7 +371,6 @@ actor BridgeServer {
 }
 
 // MARK: - Throwing continuation resume-once guard
-
 /// Resumes a throwing `CheckedContinuation<Data, Error>` exactly once, no
 /// matter how many callers race (the receive callback vs. the read timeout).
 /// `resume` returns `true` only for the call that actually performed it.
@@ -339,6 +390,44 @@ private final class ThrowingResumeOnce: @unchecked Sendable {
     func resume(throwing error: Error) -> Bool {
         lock.lock(); let c = cont; cont = nil; lock.unlock()
         c?.resume(throwing: error); return c != nil
+    }
+}
+
+/// Builds SSE frames from a dictionary so JSON string escaping is always
+/// valid (tabs, backspaces, and other control characters included).
+enum BridgeSSE {
+    static func frame(event: String?, object: [String: Any]) -> Data {
+        let json = (try? JSONSerialization.data(withJSONObject: object)) ?? Data("{}".utf8)
+        var out = Data()
+        if let event { out.append(Data("event: \(event)\n".utf8)) }
+        out.append(Data("data: ".utf8))
+        out.append(json)
+        out.append(Data("\n\n".utf8))
+        return out
+    }
+}
+
+/// Thread-safe single-value boxes used to share generation outcome between
+/// the @Sendable generate callbacks and the connection handler.
+final class BridgeStringBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var stored: String?
+    func set(_ value: String) {
+        lock.lock(); stored = value; lock.unlock()
+    }
+    var value: String? {
+        lock.lock(); defer { lock.unlock() }; return stored
+    }
+}
+
+final class BridgeFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var raised = false
+    func set() {
+        lock.lock(); raised = true; lock.unlock()
+    }
+    var value: Bool {
+        lock.lock(); defer { lock.unlock() }; return raised
     }
 }
 
@@ -377,7 +466,8 @@ struct HTTPRequest {
         let contentLength = Int(hdrs["content-length"] ?? "0") ?? 0
         let headerByteCount = headerSection.utf8.count + 4   // 4 = "\r\n\r\n"
         if contentLength > 0 {
-            guard data.count >= headerByteCount + contentLength else { return nil }
+            guard headerByteCount <= data.count,
+                  contentLength <= data.count - headerByteCount else { return nil }
             body = data[headerByteCount..<(headerByteCount + contentLength)]
         } else {
             body = nil

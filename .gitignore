@@ -100,3 +100,6 @@ tmp/
 /script*.js
 /styles*.css
 /site-assets/
+
+# Local splash animation preview; the app uses source views and asset colors.
+/splash_preview.mp4

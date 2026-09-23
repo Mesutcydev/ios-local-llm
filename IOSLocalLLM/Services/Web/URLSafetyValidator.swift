@@ -131,7 +131,7 @@ public actor URLSafetyValidator {
     private static func isPrivateIPv4(_ ip: String) -> Bool {
         let parts = ip.split(separator: ".").compactMap { UInt8($0) }
         guard parts.count == 4 else { return true }   // malformed → treat as unsafe
-        let a = parts[0], b = parts[1]
+        let a = parts[0], b = parts[1], c = parts[2]
         switch a {
         case 0:                                 return true   // 0.0.0.0/8
         case 10:                                return true   // 10/8
@@ -140,8 +140,10 @@ public actor URLSafetyValidator {
         case 172 where (16...31).contains(b):   return true   // 172.16/12
         case 192 where b == 168:                return true   // 192.168/16
         case 192 where b == 0:                  return true   // 192.0.0/24, 192.0.2/24 docs
+        case 192 where b == 88 && c == 99:      return true   // 192.88.99/24 6to4 relay anycast
         case 100 where (64...127).contains(b):  return true   // 100.64/10 CGNAT
         case 198 where (b == 18 || b == 19):    return true   // 198.18/15 benchmarking
+        case 198 where b == 51 && c == 100:     return true   // 198.51.100/24 TEST-NET-2
         case 203 where b == 0:                  return true   // 203.0.113/24 docs
         case 224...239:                         return true   // multicast
         case 240...255:                         return true   // reserved / broadcast
@@ -152,9 +154,32 @@ public actor URLSafetyValidator {
     private static func isPrivateIPv6(_ ip: String) -> Bool {
         let lower = ip.lowercased()
         if lower == "::1" || lower == "::" { return true }              // loopback / unspecified
-        if lower.hasPrefix("fe80:") || lower.hasPrefix("fe80::") { return true }  // link-local
+        if lower.hasPrefix("fe") { return true }   // fe80::/10 link-local + fec0::/10 site-local
         if lower.hasPrefix("fc") || lower.hasPrefix("fd") { return true }         // fc00::/7 ULA
         if lower.hasPrefix("ff") { return true }                                  // multicast
+        // 6to4 (2002:AABB:CCDD::/48) embeds an arbitrary IPv4 address.
+        if lower.hasPrefix("2002:") {
+            let groups = lower.split(separator: ":")
+            if groups.count >= 3,
+               let hi = UInt16(groups[1], radix: 16),
+               let lo = UInt16(groups[2], radix: 16) {
+                return isPrivateIPv4("\(hi >> 8).\(hi & 0xFF).\(lo >> 8).\(lo & 0xFF)")
+            }
+            return true   // malformed 6to4 → unsafe
+        }
+        // NAT64 (64:ff9b::/96) embeds an IPv4 address in the last 32 bits.
+        if lower.hasPrefix("64:ff9b:") {
+            let groups = lower.split(separator: ":").map(String.init)
+            if let last = groups.last, last.contains(".") {
+                return isPrivateIPv4(last)
+            }
+            if groups.count >= 2,
+               let hi = UInt16(groups[groups.count - 2], radix: 16),
+               let lo = UInt16(groups[groups.count - 1], radix: 16) {
+                return isPrivateIPv4("\(hi >> 8).\(hi & 0xFF).\(lo >> 8).\(lo & 0xFF)")
+            }
+            return true   // malformed NAT64 → unsafe
+        }
         // IPv4-mapped (::ffff:10.0.0.1) — re-check the IPv4 portion
         if let v4 = lower.split(separator: ":").last, v4.contains(".") {
             return isPrivateIPv4(String(v4))

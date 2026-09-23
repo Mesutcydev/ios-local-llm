@@ -11,6 +11,10 @@ public actor WebSearchService {
     private let session: URLSession
     private let validator: URLSafetyValidator
 
+    /// Response bodies from search providers are small; cap them so a
+    /// malicious/compromised endpoint cannot balloon memory.
+    private static let maxResponseBytes = 2 * 1024 * 1024
+
     public init(validator: URLSafetyValidator) {
         self.validator = validator
         let cfg = URLSessionConfiguration.ephemeral
@@ -20,6 +24,23 @@ public actor WebSearchService {
             "User-Agent": "ios-local-llm/1.0 (Web Tool; +on-device)"
         ]
         self.session = URLSession(configuration: cfg)
+    }
+
+    /// Streams the body with a hard byte cap instead of buffering first.
+    private func boundedData(
+        for request: URLRequest,
+        maxBytes: Int = WebSearchService.maxResponseBytes
+    ) async throws -> (Data, URLResponse) {
+        let (bytes, response) = try await session.bytes(for: request)
+        var data = Data()
+        data.reserveCapacity(64 * 1024)
+        for try await byte in bytes {
+            data.append(byte)
+            if data.count > maxBytes {
+                throw WebToolError.tooLarge(bytes: data.count)
+            }
+        }
+        return (data, response)
     }
 
     public func search(query: String, settings: WebToolSettings) async throws -> [WebSearchResult] {
@@ -58,7 +79,7 @@ public actor WebSearchService {
         guard let url = comps.url else {
             throw WebToolError.providerEndpointMissing
         }
-        let (data, response) = try await session.data(from: url)
+        let (data, response) = try await boundedData(for: URLRequest(url: url))
         guard let http = response as? HTTPURLResponse, http.statusCode == 200,
               let html = String(data: data, encoding: .utf8) else {
             throw WebToolError.searchParsingFailed
@@ -74,14 +95,23 @@ public actor WebSearchService {
         guard let key = KeychainStore.get(account: "brave.apiKey") else {
             throw WebToolError.providerAuthFailed
         }
-        let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
-        guard let url = URL(string: "https://api.search.brave.com/res/v1/web/search?q=\(encoded)&count=\(max)") else {
+        // URLComponents escapes `&`/`=` in the value; string interpolation
+        // with .urlQueryAllowed does not and allows query-parameter injection.
+        var comps = URLComponents()
+        comps.scheme = "https"
+        comps.host = "api.search.brave.com"
+        comps.path = "/res/v1/web/search"
+        comps.queryItems = [
+            URLQueryItem(name: "q", value: query),
+            URLQueryItem(name: "count", value: String(max))
+        ]
+        guard let url = comps.url else {
             throw WebToolError.providerEndpointMissing
         }
         var req = URLRequest(url: url)
         req.setValue(key, forHTTPHeaderField: "X-Subscription-Token")
         req.setValue("application/json", forHTTPHeaderField: "Accept")
-        let (data, response) = try await session.data(for: req)
+        let (data, response) = try await boundedData(for: req)
         guard let http = response as? HTTPURLResponse else { throw WebToolError.searchParsingFailed }
         if http.statusCode == 401 || http.statusCode == 403 { throw WebToolError.providerAuthFailed }
         guard http.statusCode == 200 else { throw WebToolError.searchParsingFailed }
@@ -128,7 +158,7 @@ public actor WebSearchService {
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try? JSONSerialization.data(withJSONObject: body)
-        let (data, response) = try await session.data(for: req)
+        let (data, response) = try await boundedData(for: req)
         guard let http = response as? HTTPURLResponse else { throw WebToolError.searchParsingFailed }
         if http.statusCode == 401 || http.statusCode == 403 { throw WebToolError.providerAuthFailed }
         guard http.statusCode == 200 else { throw WebToolError.searchParsingFailed }
@@ -175,7 +205,7 @@ public actor WebSearchService {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.setValue(key, forHTTPHeaderField: "x-api-key")
         req.httpBody = try? JSONSerialization.data(withJSONObject: body)
-        let (data, response) = try await session.data(for: req)
+        let (data, response) = try await boundedData(for: req)
         guard let http = response as? HTTPURLResponse else { throw WebToolError.searchParsingFailed }
         if http.statusCode == 401 || http.statusCode == 403 { throw WebToolError.providerAuthFailed }
         guard http.statusCode == 200 else { throw WebToolError.searchParsingFailed }
@@ -216,7 +246,7 @@ public actor WebSearchService {
         comps.queryItems = [URLQueryItem(name: "q", value: query),
                             URLQueryItem(name: "format", value: "json")]
         guard let url = comps.url else { throw WebToolError.providerEndpointMissing }
-        let (data, response) = try await session.data(from: url)
+        let (data, response) = try await boundedData(for: URLRequest(url: url))
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             throw WebToolError.searchParsingFailed
         }
@@ -244,7 +274,7 @@ public actor WebSearchService {
         items.append(URLQueryItem(name: "q", value: query))
         comps?.queryItems = items
         guard let url = comps?.url else { throw WebToolError.providerEndpointMissing }
-        let (data, response) = try await session.data(from: url)
+        let (data, response) = try await boundedData(for: URLRequest(url: url))
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             throw WebToolError.searchParsingFailed
         }

@@ -18,6 +18,7 @@ final class ConversationStore: ObservableObject {
     private let decoder = JSONDecoder()
     private var saveTask: Task<Void, Never>?
     private var persistRetryCount = 0
+    private let retryLock = NSLock()
 
     init() {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -109,6 +110,12 @@ final class ConversationStore: ObservableObject {
                 "conversation load failed: \(error.localizedDescription)",
                 category: "conversations"
             )
+            // Quarantine the unreadable file so the next debounced save can't
+            // silently overwrite the only copy of the user's history.
+            let quarantine = fileURL.deletingLastPathComponent()
+                .appendingPathComponent(
+                    "conversations-corrupt-\(Int(Date().timeIntervalSince1970)).json")
+            try? FileManager.default.moveItem(at: fileURL, to: quarantine)
             return
         }
         // One-time cleanup: older builds let a thinking model's raw "<think>…"
@@ -163,22 +170,24 @@ final class ConversationStore: ObservableObject {
             // device is unlocked. Best compromise between background access
             // (we need to read at launch even from sleep) and protection.
             try data.write(to: fileURL, options: [.atomic, .completeFileProtectionUnlessOpen])
-            persistRetryCount = 0
+            retryLock.lock(); persistRetryCount = 0; retryLock.unlock()
             SpotlightIndexer.reindexAll(snapshot)
         } catch {
             Diagnostics.shared.error(
                 "conversation persist failed: \(error.localizedDescription)",
                 category: "conversations"
             )
-            if persistRetryCount < 2 {
-                persistRetryCount += 1
+            retryLock.lock()
+            let canRetry = persistRetryCount < 2
+            if canRetry { persistRetryCount += 1 } else { persistRetryCount = 0 }
+            retryLock.unlock()
+            if canRetry {
                 saveTask = Task { [weak self] in
                     try? await Task.sleep(for: .milliseconds(750))
                     guard !Task.isCancelled else { return }
                     self?.persist(snapshot)
                 }
             } else {
-                persistRetryCount = 0
                 DispatchQueue.main.async {
                     ToastCenter.shared.error(
                         "Couldn't save conversations",

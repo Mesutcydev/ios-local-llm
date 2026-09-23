@@ -59,6 +59,14 @@ final class CrashReporter: @unchecked Sendable {
         try? FileManager.default.removeItem(at: markerURL)
     }
 
+    /// Drops the last reported crash and its on-disk artifacts. Called by the
+    /// full-data wipe so crash details and trails do not survive it.
+    func clearCrashArtifacts() {
+        lastCrash = nil
+        try? FileManager.default.removeItem(at: signalURL)
+        try? FileManager.default.removeItem(at: exceptionURL)
+    }
+
     /// (Re)create the running marker when the app becomes active. If the
     /// process is then killed while active (e.g. jetsam during generation),
     /// the marker survives and we flag it next launch.

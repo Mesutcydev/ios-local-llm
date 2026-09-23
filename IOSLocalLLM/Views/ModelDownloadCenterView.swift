@@ -20,6 +20,8 @@ struct ModelDownloadCenterView: View {
     /// Richer preset that also seeds an initial query (used by the
     /// device-tier "recommended" row).
     @State private var presetSearch: PresetSearch? = nil
+    /// Model awaiting delete confirmation from the context menu.
+    @State private var pendingDelete: DownloadableModel?
 
     struct PresetSearch: Identifiable {
         let id = UUID()
@@ -80,6 +82,23 @@ struct ModelDownloadCenterView: View {
             .onReceive(NotificationCenter.default.publisher(
                 for: .hfModelDownloadCompleted)) { _ in
                 center.refreshAllStates()
+            }
+            .confirmationDialog(
+                "Delete \(pendingDelete?.displayName ?? "model")?",
+                isPresented: Binding(
+                    get: { pendingDelete != nil },
+                    set: { if !$0 { pendingDelete = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) {
+                    if let model = pendingDelete {
+                        center.handleDeletion(of: model)
+                    }
+                    pendingDelete = nil
+                }
+            } message: {
+                Text("Its downloaded weights are removed from this device.")
             }
         }
     }
@@ -225,7 +244,7 @@ struct ModelDownloadCenterView: View {
                 }
                 if model.isReady {
                     Button(role: .destructive) {
-                        ModelDownloadCenter.shared.handleDeletion(of: model)
+                        pendingDelete = model
                     } label: {
                         Label("Delete model", systemImage: "trash")
                     }

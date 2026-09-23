@@ -7,6 +7,17 @@ and intends to use semantic version tags for source releases.
 
 ### Fixed
 
+- The "First Light" splash variant is centred again. Its decorative aurora layers
+  are wider than the screen on purpose (1.25 × width); because a `ZStack` sizes
+  itself to the union of its children, those layers sized the stack inside the
+  splash's `GeometryReader`, and a `GeometryReader` places its content at the
+  top-leading corner — so the over-wide stack hung off the right edge and pushed
+  the lens, the wordmark and the dwell beam ~55 pt right of centre. The layers
+  are now pinned to the screen frame (bleed unchanged, layout centred).
+- The system launch screen uses the `LaunchBackground` asset color instead of an
+  empty `UIColorName`, so launching transitions into the active silver splash
+  without a white flash.
+
 - Sideload build 113 registers imported and manually-copied GGUF models in the
   installed-model registry. A standalone text `.gguf` or a complete GGUF VLM
   pair carries no `config.json` (its tokenizer and metadata are embedded), so

@@ -17,7 +17,12 @@ import os
 /// load for imported/custom models whose names do not identify the family.
 struct MLXVLMExecutionProfile: Equatable, Sendable {
     let cacheLimitBytes: Int
-    let maxOutputTokens: Int
+    /// Family-level output ceiling. Nil means "adaptive": the caller's
+    /// requested budget and the thermal advisor decide, while the bounded
+    /// (rotating) KV cache below keeps memory flat regardless of answer
+    /// length. Fixed caps used to truncate Lens answers mid-sentence even
+    /// though they added no memory safety on top of maxKVSize.
+    let maxOutputTokens: Int?
     let maxKVSize: Int?
     let kvBits: Int?
     let prefillStepSize: Int
@@ -31,7 +36,7 @@ struct MLXVLMExecutionProfile: Equatable, Sendable {
             // share its one container, but no second model should coexist.
             return .init(
                 cacheLimitBytes: 0,
-                maxOutputTokens: 128,
+                maxOutputTokens: nil,
                 maxKVSize: 512,
                 kvBits: 4,
                 prefillStepSize: 128,
@@ -42,7 +47,7 @@ struct MLXVLMExecutionProfile: Equatable, Sendable {
             || identity.contains("gemma-4") || identity.contains("gemma4") {
             return .init(
                 cacheLimitBytes: 0,
-                maxOutputTokens: 192,
+                maxOutputTokens: nil,
                 maxKVSize: 512,
                 kvBits: 4,
                 prefillStepSize: 128,
@@ -51,7 +56,7 @@ struct MLXVLMExecutionProfile: Equatable, Sendable {
         }
         return .init(
             cacheLimitBytes: 64 * 1_024 * 1_024,
-            maxOutputTokens: 256,
+            maxOutputTokens: nil,
             maxKVSize: nil,
             kvBits: nil,
             prefillStepSize: 512,
@@ -204,6 +209,10 @@ final class LensInferenceLoop: ObservableObject {
 
     private var container: ModelContainer?
     private var inferenceTask: Task<Void, Never>?
+    /// Identifies the current describe() request. Late cancellation/error
+    /// callbacks from a superseded request must not touch state or call its
+    /// completion handler.
+    private var activeInferenceID: UUID?
 
     /// Latched while a switchTo() is in flight. Two concurrent
     /// switchTo() calls without this guard race in loadContainer(),
@@ -599,6 +608,7 @@ final class LensInferenceLoop: ObservableObject {
     func cancelCurrentInference() {
         inferenceTask?.cancel()
         inferenceTask = nil
+        activeInferenceID = nil
         if case .generating = state { state = .ready }
     }
 
@@ -608,6 +618,7 @@ final class LensInferenceLoop: ObservableObject {
     func unload(clearGPUCache: Bool = true) {
         let inflight = inferenceTask
         inferenceTask = nil
+        activeInferenceID = nil
         inflight?.cancel()
         // Supersede an in-progress switchTo so its eventual load result is
         // discarded by the guard immediately after MLXGenerationGate.run.
@@ -636,6 +647,7 @@ final class LensInferenceLoop: ObservableObject {
         let previousRepo = activeRepoID
         let footprintBefore = MemoryAdvisor.physFootprint
         inferenceTask = nil
+        activeInferenceID = nil
         inflight?.cancel()
         container = nil
         activeRepoID = nil
@@ -784,7 +796,7 @@ final class LensInferenceLoop: ObservableObject {
         let cap = Swift.min(
             maxTokens,
             DeviceSafetyMonitor.shared.recommendedMaxTokens,
-            executionProfile.maxOutputTokens
+            executionProfile.maxOutputTokens ?? .max
         )
 
         // A catalog estimate can be wrong even when load preflight succeeded.
@@ -833,10 +845,14 @@ final class LensInferenceLoop: ObservableObject {
         )
         self.lastModelInput = debugThumb
         self.lastModelInputInfo = info
-        print("[LensInferenceLoop] describe req=\(requestID) size=\(cg.width)×\(cg.height) prompt=\"\(prompt)\"")
+        // Log shape/ID only — the prompt can contain user content
+        // (custom instructions, OCR text) and must not reach the console.
+        print("[LensInferenceLoop] describe req=\(requestID) size=\(cg.width)×\(cg.height) promptChars=\(prompt.count)")
 
         let caps = capabilities
         inferenceTask?.cancel()
+        let inferenceID = UUID()
+        activeInferenceID = inferenceID
         inferenceTask = Task {
             do {
                 MLXRandom.seed(UInt64(Date.timeIntervalSinceReferenceDate * 1000))
@@ -916,17 +932,27 @@ final class LensInferenceLoop: ObservableObject {
                     }
                 }
                 await MainActor.run {
+                    guard self.activeInferenceID == inferenceID else { return }
                     self.state = .ready
                     // Prefetch is intentionally not re-armed after inference.
                     // The optimization is load-triggered and charging-only;
                     // repeated idle disk reads made long sessions warmer.
                 }
             } catch is CancellationError {
-                await MainActor.run { self.state = .ready; onComplete(0) }
+                await MainActor.run {
+                    guard self.activeInferenceID == inferenceID else { return }
+                    self.state = .ready
+                    onComplete(0)
+                }
             } catch is MLXGenerationGate.Cancelled {
-                await MainActor.run { self.state = .ready; onComplete(0) }
+                await MainActor.run {
+                    guard self.activeInferenceID == inferenceID else { return }
+                    self.state = .ready
+                    onComplete(0)
+                }
             } catch {
                 await MainActor.run {
+                    guard self.activeInferenceID == inferenceID else { return }
                     self.state = .failed(error.localizedDescription)
                     onComplete(0)
                 }

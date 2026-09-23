@@ -480,8 +480,8 @@ final class ImageGenerationService: ObservableObject {
         // reaches neither, leaving the marker for recovery).
         let effectiveLatentEdge = min(model.latentEdge,
                                       learnedSafeCap(for: model.id) ?? model.latentEdge)
-        markGenerationInFlight(model: model.id, cap: effectiveLatentEdge)
-        defer { clearGenerationInFlight() }
+        let inFlightMarker = markGenerationInFlight(model: model.id, cap: effectiveLatentEdge)
+        defer { clearGenerationInFlight(inFlightMarker) }
         if effectiveLatentEdge != model.latentEdge {
             Diagnostics.shared.breadcrumb(
                 "imagegen downsized after prior crash · \(model.id) · latent=\(effectiveLatentEdge) (was \(model.latentEdge))",
@@ -854,7 +854,7 @@ final class ImageGenerationService: ObservableObject {
         guard let marker = d.string(forKey: Self.inFlightKey) else { return }
         d.removeObject(forKey: Self.inFlightKey)
         let parts = marker.split(separator: "|")
-        guard parts.count == 2, let crashedCap = Int(parts[1]) else { return }
+        guard parts.count >= 2, let crashedCap = Int(parts[1]) else { return }
         let id = String(parts[0])
         if let next = Self.latentLadder.first(where: { $0 < crashedCap }) {
             let prior = d.integer(forKey: Self.safeLatentKey(id))
@@ -880,12 +880,19 @@ final class ImageGenerationService: ObservableObject {
         UserDefaults.standard.bool(forKey: Self.blockedKey(id))
     }
 
-    private func markGenerationInFlight(model id: String, cap: Int) {
-        UserDefaults.standard.set("\(id)|\(cap)", forKey: Self.inFlightKey)
+    /// Marks a run in flight and returns the exact marker it wrote. Clearing
+    /// compares against that marker so a superseded run's `defer` cannot erase
+    /// the marker of the run that replaced it.
+    @discardableResult
+    private func markGenerationInFlight(model id: String, cap: Int) -> String {
+        let marker = "\(id)|\(cap)|\(UUID().uuidString)"
+        UserDefaults.standard.set(marker, forKey: Self.inFlightKey)
         UserDefaults.standard.synchronize()   // a crash/jetsam kill runs no cleanup
+        return marker
     }
 
-    private func clearGenerationInFlight() {
+    private func clearGenerationInFlight(_ marker: String) {
+        guard UserDefaults.standard.string(forKey: Self.inFlightKey) == marker else { return }
         UserDefaults.standard.removeObject(forKey: Self.inFlightKey)
     }
 

@@ -139,13 +139,17 @@ struct AnalysisPanelView: View {
                     }
                 }
                 Spacer(minLength: 8)
-                KIconButton {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(T.ink)
-                } action: {
-                    withAnimation(.spring(duration: 0.3)) { isPresented = false }
-                }
+                KIconButton(
+                    icon: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(T.ink)
+                    },
+                    action: {
+                        withAnimation(.spring(duration: 0.3)) { isPresented = false }
+                    },
+                    accessibilityLabel: "Close analysis panel"
+                )
             }
 
             // Fallback reason banner — flat warn box. Includes the
@@ -224,14 +228,18 @@ struct AnalysisPanelView: View {
                     VoiceControlsView(text: voiceText)
 
                     // Copy
-                    KIconButton {
-                        Image(systemName: "doc.on.doc")
-                            .font(.system(size: 12))
-                            .foregroundColor(T.ink2)
-                    } action: {
-                        UIPasteboard.general.string = result.extractedCode
-                        HapticManager.impact(.light)
-                    }
+                    KIconButton(
+                        icon: {
+                            Image(systemName: "doc.on.doc")
+                                .font(.system(size: 12))
+                                .foregroundColor(T.ink2)
+                        },
+                        action: {
+                            UIPasteboard.general.string = result.extractedCode
+                            HapticManager.impact(.light)
+                        },
+                        accessibilityLabel: "Copy extracted code"
+                    )
                     }   // HStack
                     .padding(.trailing, 4)
                 }       // ScrollView

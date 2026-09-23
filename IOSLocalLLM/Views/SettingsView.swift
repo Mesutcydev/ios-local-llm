@@ -1723,13 +1723,20 @@ private struct WhisperSTTBlock: View {
     init() {
         let m = ModelDownloadCenter.shared.models.first { $0.id == "whisper-base-en" }
         self.whisperModel = m
-        // ModelDownloadCenter.buildCatalog runs in init and always
-        // appends the whisper-base-en entry, so the optional should
-        // never be nil at runtime. Crash early if catalog wiring
-        // changes — DownloadObserver requires a real model.
-        _observer = StateObject(wrappedValue: DownloadObserver(
-            model: m ?? ModelDownloadCenter.shared.models.first!
-        ))
+        // ModelDownloadCenter.buildCatalog runs in init and normally appends
+        // the whisper entry. If catalog wiring ever changes, fall back to an
+        // inert placeholder instead of force-unwrapping and crashing the
+        // whole Settings screen.
+        let observerModel = m
+            ?? ModelDownloadCenter.shared.models.first
+            ?? DownloadableModel(
+                id: "whisper-base-en",
+                displayName: "Whisper base (English)",
+                subtitle: "ggerganov/whisper.cpp",
+                sizeLabel: "~142 MB",
+                category: .voice
+            )
+        _observer = StateObject(wrappedValue: DownloadObserver(model: observerModel))
     }
 
     /// Reactive install check — disk presence OR observer reporting

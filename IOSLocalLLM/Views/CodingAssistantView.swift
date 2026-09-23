@@ -4643,6 +4643,7 @@ struct ConversationPickerView: View {
     @State private var searchText: String = ""
     @State private var shareItems: [Any] = []
     @State private var showShare = false
+    @State private var pendingDeleteConversation: StoredConversation?
 
     private var filtered: [StoredConversation] {
         store.conversations.filter { $0.matches(searchText) }
@@ -4667,9 +4668,7 @@ struct ConversationPickerView: View {
                             row(for: conv)
                                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                     Button(role: .destructive) {
-                                        if let idx = store.conversations.firstIndex(where: { $0.id == conv.id }) {
-                                            store.deleteConversations(at: IndexSet(integer: idx))
-                                        }
+                                        pendingDeleteConversation = conv
                                     } label: {
                                         Label("Delete", systemImage: "trash")
                                     }
@@ -4701,9 +4700,7 @@ struct ConversationPickerView: View {
                                     }
                                     Divider()
                                     Button(role: .destructive) {
-                                        if let idx = store.conversations.firstIndex(where: { $0.id == conv.id }) {
-                                            store.deleteConversations(at: IndexSet(integer: idx))
-                                        }
+                                        pendingDeleteConversation = conv
                                     } label: {
                                         Label("Delete", systemImage: "trash")
                                     }
@@ -4727,6 +4724,24 @@ struct ConversationPickerView: View {
                 }
             }
             .scrollContentBackground(.hidden)
+            .confirmationDialog(
+                "Delete \(pendingDeleteConversation?.title ?? "conversation")?",
+                isPresented: Binding(
+                    get: { pendingDeleteConversation != nil },
+                    set: { if !$0 { pendingDeleteConversation = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) {
+                    if let conv = pendingDeleteConversation,
+                       let idx = store.conversations.firstIndex(where: { $0.id == conv.id }) {
+                        store.deleteConversations(at: IndexSet(integer: idx))
+                    }
+                    pendingDeleteConversation = nil
+                }
+            } message: {
+                Text("This chat is removed from this device. This can't be undone.")
+            }
             .sheet(isPresented: $showShare) {
                 ShareSheet(items: shareItems)
             }
@@ -4800,20 +4815,32 @@ struct ConversationPickerView: View {
             of: "/", with: "-").prefix(80)
         let tmpURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("\(safeTitle).md")
-        try? md.write(to: tmpURL, atomically: true, encoding: .utf8)
-        shareItems = [tmpURL]
-        showShare = true
+        do {
+            try md.write(to: tmpURL, atomically: true, encoding: .utf8)
+            shareItems = [tmpURL]
+            showShare = true
+        } catch {
+            ToastCenter.shared.error("Export failed", detail: error.localizedDescription)
+        }
     }
 
     private func exportJSON(_ conv: StoredConversation) {
-        guard let data = conv.jsonExport else { return }
+        guard let data = conv.jsonExport else {
+            ToastCenter.shared.error("Export failed",
+                                     detail: "Couldn't encode this conversation.")
+            return
+        }
         let safeTitle = conv.title.replacingOccurrences(
             of: "/", with: "-").prefix(80)
         let tmpURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("\(safeTitle).json")
-        try? data.write(to: tmpURL)
-        shareItems = [tmpURL]
-        showShare = true
+        do {
+            try data.write(to: tmpURL)
+            shareItems = [tmpURL]
+            showShare = true
+        } catch {
+            ToastCenter.shared.error("Export failed", detail: error.localizedDescription)
+        }
     }
 }
 

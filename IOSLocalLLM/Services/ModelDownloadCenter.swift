@@ -973,6 +973,8 @@ final class ModelDownloadCenter: ObservableObject {
             if !model.isRequired {
                 unregisterCustom(repoID: model.id)
             }
+            InstalledModelRegistry.shared.remove(repoID: model.sourceRepoID)
+            InstalledModelRegistry.shared.remove(repoID: model.id)
             HapticManager.impact(.medium)
             ToastCenter.shared.info("Deleted \(model.displayName)")
             refreshStorageStats()
@@ -1111,7 +1113,7 @@ final class ModelDownloadCenter: ObservableObject {
         var protected = Set<String>()
         for m in models {
             guard let d = m.downloader else { continue }
-            let keep = m.isReady || d.state.isActive || m.isRequired
+            let keep = m.isReady || d.state.isActive || m.isRequired || d.isCleaningUp
             if keep {
                 protected.insert(d.destination.standardizedFileURL.path)
             }

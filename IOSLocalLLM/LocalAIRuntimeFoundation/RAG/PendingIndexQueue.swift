@@ -56,6 +56,12 @@ public actor PendingIndexQueue {
     public typealias PolicyProvider = @Sendable () async -> PendingIndexPolicySnapshot
 
     private var jobs: [PendingIndexJob] = []
+    /// Guards against actor reentrancy: `processNextBatch` awaits the
+    /// processor, so a second caller could otherwise process a different
+    /// job concurrently.
+    private var isProcessingBatch = false
+    private static let maxAttempts = 5
+    private static let completedPruneLimit = 200
     private let storeURL: URL
     private let processor: Processor
     private let policyProvider: PolicyProvider
@@ -104,6 +110,10 @@ public actor PendingIndexQueue {
 
     @discardableResult
     public func processNextBatch(limit: Int) async throws -> Int {
+        guard !isProcessingBatch else { return 0 }
+        isProcessingBatch = true
+        defer { isProcessingBatch = false }
+
         let policy = await policyProvider()
         guard policy.canProcessBulkIngestion else { return 0 }
 
@@ -112,7 +122,9 @@ public actor PendingIndexQueue {
 
         var processed = 0
         while processed < clampedLimit,
-              let index = jobs.firstIndex(where: { $0.status == .pending }) {
+              let index = jobs.firstIndex(where: {
+                  $0.status == .pending && $0.attemptCount < Self.maxAttempts
+              }) {
             jobs[index].status = .processing
             jobs[index].attemptCount += 1
             jobs[index].updatedAt = Date()
@@ -130,15 +142,32 @@ public actor PendingIndexQueue {
                 try persist()
             } catch {
                 if let current = jobs.firstIndex(where: { $0.id == job.id }) {
-                    jobs[current].status = .pending
-                    jobs[current].lastError = error.localizedDescription
+                    if jobs[current].attemptCount >= Self.maxAttempts {
+                        // Stop retrying a permanently failing document.
+                        jobs[current].status = .completed
+                        jobs[current].lastError =
+                            "Gave up after \(Self.maxAttempts) attempts: \(error.localizedDescription)"
+                    } else {
+                        jobs[current].status = .pending
+                        jobs[current].lastError = error.localizedDescription
+                    }
                     jobs[current].updatedAt = Date()
                 }
                 try persist()
                 throw error
             }
         }
+        pruneCompletedIfNeeded()
         return processed
+    }
+
+    /// Keeps the persisted queue from growing without bound as completed
+    /// jobs accumulate across launches.
+    private func pruneCompletedIfNeeded() {
+        let completed = jobs.filter { $0.status == .completed }
+        guard completed.count > Self.completedPruneLimit else { return }
+        jobs.removeAll { $0.status == .completed }
+        try? persist()
     }
 
     public func processAllAllowedBatches(limitPerBatch: Int = 5) async {

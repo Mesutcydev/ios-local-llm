@@ -13,7 +13,13 @@ enum LocalAPIValidation {
     }
 
     static func modelMatches(_ requested: String, id: String, repoID: String) -> Bool {
-        requested == id || requested == repoID
+        if requested == id || requested == repoID { return true }
+        // Ollama clients commonly address models as `name:tag`.
+        if let colon = requested.lastIndex(of: ":"), colon > requested.startIndex {
+            let base = String(requested[..<colon])
+            return base == id || base == repoID
+        }
+        return false
     }
 
     static func isReachableLANInterface(_ name: String) -> Bool {
@@ -100,6 +106,8 @@ struct LocalAPIChatRequest {
     let tools: [LocalAPIToolDefinition]
     let toolChoice: LocalAPIToolChoice
     let parallelToolCalls: Bool
+    let stopSequences: [String]
+    let includeUsage: Bool
 
     static func decodeOpenAI(_ data: Data) throws -> Self {
         let raw = try object(data)
@@ -114,6 +122,7 @@ struct LocalAPIChatRequest {
               let rows = raw["messages"] as? [[String: Any]], !rows.isEmpty else {
             throw LocalAPIProtocolError.malformed("model and messages are required")
         }
+        let streamOptions = raw["stream_options"] as? [String: Any]
         return Self(
             model: model,
             messages: try decodeMessages(rows),
@@ -123,7 +132,9 @@ struct LocalAPIChatRequest {
             topP: number(raw["top_p"]),
             tools: tools,
             toolChoice: toolChoice,
-            parallelToolCalls: raw["parallel_tool_calls"] as? Bool ?? true
+            parallelToolCalls: raw["parallel_tool_calls"] as? Bool ?? true,
+            stopSequences: decodeStop(raw["stop"]),
+            includeUsage: streamOptions?["include_usage"] as? Bool ?? false
         )
     }
 
@@ -132,11 +143,7 @@ struct LocalAPIChatRequest {
         try rejectNonEmptyTools(raw)
         try reject(
             raw,
-            keys: [
-                "tool_choice", "parallel_tool_calls", "text", "reasoning",
-                "truncation", "include", "previous_response_id", "store",
-                "metadata", "service_tier"
-            ],
+            keys: ["tool_choice", "parallel_tool_calls", "previous_response_id"],
             message: "This request uses an option that the Responses API compatibility layer does not support."
         )
         guard let model = raw["model"] as? String, !model.isEmpty,
@@ -166,7 +173,9 @@ struct LocalAPIChatRequest {
             topP: number(raw["top_p"]),
             tools: [],
             toolChoice: .none,
-            parallelToolCalls: false
+            parallelToolCalls: false,
+            stopSequences: [],
+            includeUsage: false
         )
     }
 
@@ -192,7 +201,9 @@ struct LocalAPIChatRequest {
             topP: number(options["top_p"]),
             tools: tools,
             toolChoice: tools.isEmpty ? .none : .auto,
-            parallelToolCalls: false
+            parallelToolCalls: false,
+            stopSequences: decodeStop(options["stop"]),
+            includeUsage: false
         )
     }
 
@@ -222,7 +233,9 @@ struct LocalAPIChatRequest {
             topP: number(options["top_p"]),
             tools: [],
             toolChoice: .none,
-            parallelToolCalls: false
+            parallelToolCalls: false,
+            stopSequences: decodeStop(options["stop"]),
+            includeUsage: false
         )
     }
 
@@ -231,8 +244,7 @@ struct LocalAPIChatRequest {
         try reject(
             raw,
             keys: [
-                "metadata", "stop_sequences",
-                "thinking", "mcp_servers", "service_tier"
+                "metadata", "thinking", "mcp_servers", "service_tier"
             ],
             message: "This request uses an Anthropic option that the text-only API does not support."
         )
@@ -271,8 +283,18 @@ struct LocalAPIChatRequest {
             topP: number(raw["top_p"]),
             tools: tools,
             toolChoice: toolChoice,
-            parallelToolCalls: false
+            parallelToolCalls: false,
+            stopSequences: decodeStop(raw["stop_sequences"]),
+            includeUsage: false
         )
+    }
+
+    /// OpenAI `stop`, Anthropic `stop_sequences`, and Ollama `options.stop`
+    /// all accept either a single string or an array of strings.
+    private static func decodeStop(_ value: Any?) -> [String] {
+        if let single = value as? String { return single.isEmpty ? [] : [single] }
+        if let list = value as? [String] { return list.filter { !$0.isEmpty } }
+        return []
     }
 
     private static func object(_ data: Data) throws -> [String: Any] {
@@ -894,6 +916,27 @@ enum LocalAPIResponse {
         ])
     }
 
+    /// Usage-only chunk for `stream_options.include_usage` requests. Sent as
+    /// the penultimate OpenAI SSE frame with an empty `choices` array.
+    static func openAIUsageChunk(
+        id: String,
+        model: String,
+        usage: (input: Int, output: Int)
+    ) -> Data {
+        json([
+            "id": id,
+            "object": "chat.completion.chunk",
+            "created": Int(Date().timeIntervalSince1970),
+            "model": model,
+            "choices": [],
+            "usage": [
+                "prompt_tokens": usage.input,
+                "completion_tokens": usage.output,
+                "total_tokens": usage.input + usage.output
+            ]
+        ])
+    }
+
     static func openAIToolCallChunk(
         id: String,
         model: String,
@@ -937,6 +980,7 @@ enum LocalAPIResponse {
         model: String,
         text: String,
         toolCalls: [LocalAPIToolCall],
+        finishReason: String? = nil,
         usage: (input: Int, output: Int)? = nil
     ) -> Data {
         var message: [String: Any] = ["role": "assistant"]
@@ -963,7 +1007,7 @@ enum LocalAPIResponse {
             "choices": [[
                 "index": 0,
                 "message": message,
-                "finish_reason": toolCalls.isEmpty ? "stop" : "tool_calls"
+                "finish_reason": finishReason ?? (toolCalls.isEmpty ? "stop" : "tool_calls")
             ]]
         ]
         if let usage {
@@ -980,6 +1024,7 @@ enum LocalAPIResponse {
         model: String,
         text: String,
         done: Bool,
+        doneReason: String? = nil,
         usage: (input: Int, output: Int)? = nil
     ) -> Data {
         var object: [String: Any] = [
@@ -987,7 +1032,7 @@ enum LocalAPIResponse {
             "created_at": ISO8601DateFormatter().string(from: Date()),
             "message": ["role": "assistant", "content": text],
             "done": done,
-            "done_reason": done ? "stop" : NSNull()
+            "done_reason": done ? (doneReason ?? "stop") : NSNull()
         ]
         if done, let usage {
             object["prompt_eval_count"] = usage.input
@@ -1035,6 +1080,7 @@ enum LocalAPIResponse {
         model: String,
         text: String,
         done: Bool,
+        doneReason: String? = nil,
         usage: (input: Int, output: Int)? = nil
     ) -> Data {
         var object: [String: Any] = [
@@ -1042,7 +1088,7 @@ enum LocalAPIResponse {
             "created_at": ISO8601DateFormatter().string(from: Date()),
             "response": text,
             "done": done,
-            "done_reason": done ? "stop" : NSNull()
+            "done_reason": done ? (doneReason ?? "stop") : NSNull()
         ]
         if done, let usage {
             object["prompt_eval_count"] = usage.input
@@ -1055,6 +1101,7 @@ enum LocalAPIResponse {
         id: String,
         model: String,
         text: String,
+        stopReason: String = "end_turn",
         usage: (input: Int, output: Int)? = nil
     ) -> Data {
         json([
@@ -1063,7 +1110,7 @@ enum LocalAPIResponse {
             "role": "assistant",
             "model": model,
             "content": [["type": "text", "text": text]],
-            "stop_reason": "end_turn",
+            "stop_reason": stopReason,
             "stop_sequence": NSNull(),
             "usage": [
                 "input_tokens": usage?.input ?? 0,
@@ -1171,10 +1218,11 @@ actor LocalAPIServer {
     private let maxRequestBytes = 4 * 1024 * 1024
     private let requestTimeout: TimeInterval = 15
 
-    /// Brute-force guard on bearer authentication, mirroring the
-    /// `/v1/pair` lockout in BridgeServer.
-    private var failedAuthAttempts: [Date] = []
-    private var authLockedUntil: Date?
+    /// Brute-force guard on bearer authentication. Tracked per remote
+    /// endpoint so an unauthenticated prober cannot lock out every other
+    /// client sharing the API (the key itself already has ~244 bits).
+    private var failedAuthAttempts: [String: [Date]] = [:]
+    private var authLockedUntil: [String: Date] = [:]
     private static let maxFailedAuthAttempts = 5
     private static let authAttemptWindow: TimeInterval = 60
     private static let authLockoutDuration: TimeInterval = 60
@@ -1295,8 +1343,8 @@ actor LocalAPIServer {
             )
             return
         }
-        if let locked = authLockedUntil, locked > Date() {
-            await error(connection, status: 429, message: "Too many failed attempts; retry later", dialect: request.path == "/v1/messages" ? .anthropic : .openAIChat, corsOrigin: corsOrigin)
+        if let locked = authLockedUntil[Self.sourceKey(for: connection)], locked > Date() {
+            await error(connection, status: 429, message: "Too many failed attempts; retry later", dialect: Self.dialect(forPath: request.path), corsOrigin: corsOrigin)
             return
         }
         let key = LocalAPIKeyStore.key()
@@ -1306,12 +1354,12 @@ actor LocalAPIServer {
         let authorized = (presentedBearer.map { Self.tokensMatch($0, key) } ?? false)
             || (request.headers["x-api-key"].map { Self.tokensMatch($0, key) } ?? false)
         guard authorized else {
-            recordFailedAuthAttempt()
-            await error(connection, status: 401, message: "Invalid or missing API key", dialect: request.path == "/v1/messages" ? .anthropic : .openAIChat, corsOrigin: corsOrigin)
+            recordFailedAuthAttempt(for: Self.sourceKey(for: connection))
+            await error(connection, status: 401, message: "Invalid or missing API key", dialect: Self.dialect(forPath: request.path), corsOrigin: corsOrigin)
             return
         }
-        failedAuthAttempts.removeAll()
-        authLockedUntil = nil
+        failedAuthAttempts[Self.sourceKey(for: connection)] = nil
+        authLockedUntil[Self.sourceKey(for: connection)] = nil
         switch (request.method, request.path) {
         case ("GET", "/v1/models"):
             await listOpenAIModels(connection, corsOrigin: corsOrigin)
@@ -1330,8 +1378,24 @@ actor LocalAPIServer {
         case ("POST", "/api/generate"):
             await run(request, connection: connection, dialect: .ollamaGenerate)
         default:
-            await error(connection, status: 404, message: "Endpoint not supported", dialect: request.path == "/v1/messages" ? .anthropic : .openAIChat, corsOrigin: corsOrigin)
+            await error(connection, status: 404, message: "Endpoint not supported", dialect: Self.dialect(forPath: request.path), corsOrigin: corsOrigin)
         }
+    }
+
+    private static func dialect(forPath path: String) -> Dialect {
+        if path == "/v1/messages" { return .anthropic }
+        if path.hasPrefix("/api/") { return .ollamaChat }
+        return .openAIChat
+    }
+
+    private static func sourceKey(for connection: NWConnection) -> String {
+        // Key by host only — HTTP uses Connection: close, so keying by the
+        // full host:port tuple would give every reconnect a fresh counter
+        // and make the lockout meaningless.
+        if case .hostPort(let host, _) = connection.endpoint {
+            return String(describing: host)
+        }
+        return String(describing: connection.endpoint)
     }
 
     private enum Dialect { case openAIChat, openAIResponses, anthropic, ollamaChat, ollamaGenerate }
@@ -1349,14 +1413,20 @@ actor LocalAPIServer {
         return diff == 0
     }
 
-    private func recordFailedAuthAttempt() {
-        let cutoff = Date().addingTimeInterval(-Self.authAttemptWindow)
-        failedAuthAttempts.removeAll { $0 < cutoff }
-        failedAuthAttempts.append(Date())
-        if failedAuthAttempts.count >= Self.maxFailedAuthAttempts {
-            authLockedUntil = Date().addingTimeInterval(Self.authLockoutDuration)
-            failedAuthAttempts.removeAll()
+    private func recordFailedAuthAttempt(for source: String) {
+        let now = Date()
+        let cutoff = now.addingTimeInterval(-Self.authAttemptWindow)
+        var attempts = (failedAuthAttempts[source] ?? []).filter { $0 > cutoff }
+        attempts.append(now)
+        if attempts.count >= Self.maxFailedAuthAttempts {
+            authLockedUntil[source] = now.addingTimeInterval(Self.authLockoutDuration)
+            attempts.removeAll()
         }
+        failedAuthAttempts[source] = attempts
+        // Opportunistic pruning keeps the dictionaries bounded under a
+        // spray of connections from many endpoints.
+        failedAuthAttempts = failedAuthAttempts.filter { !$0.value.isEmpty }
+        authLockedUntil = authLockedUntil.filter { $0.value > now }
     }
 
     private func run(_ request: HTTPRequest, connection: NWConnection, dialect: Dialect) async {
@@ -1425,6 +1495,7 @@ actor LocalAPIServer {
             && decoded.toolChoice != .none
         let inferenceID = UUID()
         let inferenceSignal = LocalAPIInferenceSignal()
+        let streamBudget = LocalAPIStreamBudget(limit: 4096)
         activeInference = ActiveInference(id: inferenceID, signal: inferenceSignal)
         let disconnectTask = Task { [weak self] in
             await self?.monitorDisconnect(connection, inferenceID: inferenceID)
@@ -1473,7 +1544,9 @@ actor LocalAPIServer {
             maxTokens: maxTokens,
             temperature: temperature,
             topP: topP,
-            signal: inferenceSignal
+            signal: inferenceSignal,
+            inferenceID: inferenceID,
+            budget: streamBudget
         )
 
         if decoded.stream {
@@ -1487,6 +1560,7 @@ actor LocalAPIServer {
                 var streamsAsText = false
                 do {
                     for await token in stream {
+                        streamBudget.noteConsume()
                         output += token
                         if streamsAsText {
                             try await sendToolAwareTextDelta(
@@ -1670,37 +1744,81 @@ actor LocalAPIServer {
                         )
                         + Data("\n\n".utf8)
                 )
+            } else if dialect == .openAIResponses {
+                // Named-event streams must open with response.created before
+                // any delta; clients that switch on event names otherwise
+                // never associate deltas with a response object.
+                try? await send(connection, LocalAPIResponse.openAIResponseEvent(
+                    "response.created",
+                    fields: [
+                        "sequence_number": 0,
+                        "response": (try? JSONSerialization.jsonObject(
+                            with: LocalAPIResponse.openAIResponse(
+                                id: requestID,
+                                model: snapshot.0,
+                                text: "",
+                                status: "in_progress",
+                                usage: nil
+                            )
+                        )) ?? [:]
+                    ]
+                ))
             }
             var streamedOutput = ""
-            for await token in stream {
-                streamedOutput += token
-                let payload: Data
+            var sentLength = 0
+            var stopTriggered = false
+            func payload(for text: String) -> Data {
                 switch dialect {
                 case .openAIChat:
-                    payload = Data("data: ".utf8) + LocalAPIResponse.openAIChunk(id: requestID, model: snapshot.0, text: token) + Data("\n\n".utf8)
+                    return Data("data: ".utf8) + LocalAPIResponse.openAIChunk(id: requestID, model: snapshot.0, text: text) + Data("\n\n".utf8)
                 case .openAIResponses:
-                    payload = LocalAPIResponse.openAIResponseEvent("response.output_text.delta", fields: [
+                    return LocalAPIResponse.openAIResponseEvent("response.output_text.delta", fields: [
                         "response_id": requestID,
                         "item_id": "msg_\(requestID)",
                         "output_index": 0,
                         "content_index": 0,
-                        "delta": token
+                        "delta": text
                     ])
                 case .anthropic:
-                    payload = LocalAPIResponse.anthropicEvent("content_block_delta", object: [
+                    return LocalAPIResponse.anthropicEvent("content_block_delta", object: [
                         "type": "content_block_delta",
                         "index": 0,
-                        "delta": ["type": "text_delta", "text": token]
+                        "delta": ["type": "text_delta", "text": text]
                     ])
                 case .ollamaChat:
-                    payload = LocalAPIResponse.ollamaChat(model: snapshot.0, text: token, done: false) + Data("\n".utf8)
+                    return LocalAPIResponse.ollamaChat(model: snapshot.0, text: text, done: false) + Data("\n".utf8)
                 case .ollamaGenerate:
-                    payload = LocalAPIResponse.ollamaGenerate(model: snapshot.0, text: token, done: false) + Data("\n".utf8)
+                    return LocalAPIResponse.ollamaGenerate(model: snapshot.0, text: text, done: false) + Data("\n".utf8)
                 }
-                do { try await send(connection, payload) }
-                catch { await cancelInference(); connection.cancel(); return }
             }
-            if let failure = inferenceSignal.failure, streamedOutput.isEmpty {
+            for await token in stream {
+                streamBudget.noteConsume()
+                streamedOutput += token
+                if let cut = Self.stopCutIndex(in: streamedOutput, sequences: decoded.stopSequences) {
+                    // Emit only the text before the stop sequence, then end
+                    // the turn without the delimiter, mirroring hosted APIs.
+                    streamedOutput = String(streamedOutput[..<cut])
+                    stopTriggered = true
+                    await cancelInference()
+                    if streamedOutput.count > sentLength {
+                        do {
+                            try await send(
+                                connection,
+                                payload(for: String(streamedOutput.dropFirst(sentLength)))
+                            )
+                        } catch {
+                            connection.cancel()
+                            return
+                        }
+                        sentLength = streamedOutput.count
+                    }
+                    break
+                }
+                do { try await send(connection, payload(for: token)) }
+                catch { await cancelInference(); connection.cancel(); return }
+                sentLength += token.count
+            }
+            if let failure = inferenceSignal.failure {
                 try? await sendFinal(
                     connection,
                     streamingErrorPayload(dialect: dialect, message: failure)
@@ -1708,9 +1826,23 @@ actor LocalAPIServer {
                 connection.cancel()
                 return
             }
+            let truncation = inferenceSignal.didHitTokenLimit
             switch dialect {
             case .openAIChat:
-                try? await sendFinal(connection, Data("data: ".utf8) + LocalAPIResponse.openAIChunk(id: requestID, model: snapshot.0, text: "", finishReason: "stop") + Data("\n\ndata: [DONE]\n\n".utf8))
+                try? await sendFinal(connection, Data("data: ".utf8) + LocalAPIResponse.openAIChunk(id: requestID, model: snapshot.0, text: "", finishReason: truncation ? "length" : "stop") + Data("\n\n".utf8))
+                if decoded.includeUsage {
+                    try? await sendFinal(
+                        connection,
+                        Data("data: ".utf8)
+                            + LocalAPIResponse.openAIUsageChunk(
+                                id: requestID,
+                                model: snapshot.0,
+                                usage: inferenceSignal.usage
+                            )
+                            + Data("\n\n".utf8)
+                    )
+                }
+                try? await sendFinal(connection, Data("data: [DONE]\n\n".utf8))
             case .openAIResponses:
                 try? await send(connection, LocalAPIResponse.openAIResponseEvent("response.output_text.done", fields: [
                     "response_id": requestID,
@@ -1724,32 +1856,59 @@ actor LocalAPIServer {
                         id: requestID,
                         model: snapshot.0,
                         text: streamedOutput,
+                        status: truncation ? "incomplete" : "completed",
                         usage: inferenceSignal.usage
                     ))) ?? [:]
                 ]))
             case .anthropic:
+                let stopReason = stopTriggered
+                    ? "stop_sequence"
+                    : (truncation ? "max_tokens" : "end_turn")
                 try? await send(connection, LocalAPIResponse.anthropicEvent("content_block_stop", object: [
                     "type": "content_block_stop", "index": 0
                 ]))
                 try? await send(connection, LocalAPIResponse.anthropicEvent("message_delta", object: [
                     "type": "message_delta",
-                    "delta": ["stop_reason": "end_turn", "stop_sequence": NSNull()],
-                    "usage": ["output_tokens": inferenceSignal.usage.output]
+                    "delta": ["stop_reason": stopReason, "stop_sequence": NSNull()],
+                    "usage": [
+                        "input_tokens": inferenceSignal.usage.input,
+                        "output_tokens": inferenceSignal.usage.output
+                    ]
                 ]))
                 try? await sendFinal(connection, LocalAPIResponse.anthropicEvent("message_stop", object: [
                     "type": "message_stop"
                 ]))
             case .ollamaChat:
-                try? await sendFinal(connection, LocalAPIResponse.ollamaChat(model: snapshot.0, text: "", done: true, usage: inferenceSignal.usage) + Data("\n".utf8))
+                try? await sendFinal(connection, LocalAPIResponse.ollamaChat(
+                    model: snapshot.0,
+                    text: "",
+                    done: true,
+                    doneReason: truncation ? "length" : "stop",
+                    usage: inferenceSignal.usage
+                ) + Data("\n".utf8))
             case .ollamaGenerate:
-                try? await sendFinal(connection, LocalAPIResponse.ollamaGenerate(model: snapshot.0, text: "", done: true, usage: inferenceSignal.usage) + Data("\n".utf8))
+                try? await sendFinal(connection, LocalAPIResponse.ollamaGenerate(
+                    model: snapshot.0,
+                    text: "",
+                    done: true,
+                    doneReason: truncation ? "length" : "stop",
+                    usage: inferenceSignal.usage
+                ) + Data("\n".utf8))
             }
             connection.cancel()
         } else {
             var output = ""
             var detectedCalls: [LocalAPIToolCall] = []
+            var stopTriggered = false
             for await token in stream {
+                streamBudget.noteConsume()
                 output += token
+                if let cut = Self.stopCutIndex(in: output, sequences: decoded.stopSequences) {
+                    output = String(output[..<cut])
+                    stopTriggered = true
+                    await cancelInference()
+                    break
+                }
                 if toolCallingEnabled, token.contains("}") {
                     detectedCalls = LocalAPIToolCalling.parse(
                         output,
@@ -1762,11 +1921,26 @@ actor LocalAPIServer {
                     }
                 }
             }
-            if let failure = inferenceSignal.failure, output.isEmpty, detectedCalls.isEmpty {
+            // A failed generation must never be reported as a 200 with
+            // partial text — API clients would treat the turn as complete.
+            if let failure = inferenceSignal.failure, detectedCalls.isEmpty {
                 await error(connection, status: 500, message: failure, dialect: dialect, corsOrigin: corsOrigin)
                 return
             }
+            if detectedCalls.isEmpty,
+               activeInference?.id == inferenceID,
+               activeInference?.timedOut == true {
+                await error(
+                    connection,
+                    status: 504,
+                    message: "The on-device model did not finish within the deadline. Please retry with a smaller context or model.",
+                    dialect: dialect,
+                    corsOrigin: corsOrigin
+                )
+                return
+            }
             let usage = inferenceSignal.usage
+            let truncation = inferenceSignal.didHitTokenLimit
             let payload: Data
             switch dialect {
             case .openAIChat:
@@ -1782,6 +1956,7 @@ actor LocalAPIServer {
                     model: snapshot.0,
                     text: output,
                     toolCalls: calls,
+                    finishReason: truncation && calls.isEmpty ? "length" : nil,
                     usage: usage
                 )
             case .openAIResponses:
@@ -1789,6 +1964,7 @@ actor LocalAPIServer {
                     id: "resp_\(UUID().uuidString.replacingOccurrences(of: "-", with: ""))",
                     model: snapshot.0,
                     text: output,
+                    status: truncation ? "incomplete" : "completed",
                     usage: usage
                 )
             case .anthropic:
@@ -1799,11 +1975,15 @@ actor LocalAPIServer {
                         parallelToolCalls: false
                     ) : detectedCalls
                     : []
+                let stopReason = stopTriggered
+                    ? "stop_sequence"
+                    : (truncation ? "max_tokens" : "end_turn")
                 payload = calls.isEmpty
                     ? LocalAPIResponse.anthropicMessage(
                         id: "msg_\(UUID().uuidString.replacingOccurrences(of: "-", with: ""))",
                         model: snapshot.0,
                         text: output,
+                        stopReason: stopReason,
                         usage: usage
                     )
                     : LocalAPIResponse.anthropicToolMessage(
@@ -1825,6 +2005,7 @@ actor LocalAPIServer {
                         model: snapshot.0,
                         text: output,
                         done: true,
+                        doneReason: truncation ? "length" : "stop",
                         usage: usage
                     )
                     : LocalAPIResponse.ollamaToolCalls(
@@ -1834,7 +2015,13 @@ actor LocalAPIServer {
                         usage: usage
                     )
             case .ollamaGenerate:
-                payload = LocalAPIResponse.ollamaGenerate(model: snapshot.0, text: output, done: true, usage: usage)
+                payload = LocalAPIResponse.ollamaGenerate(
+                    model: snapshot.0,
+                    text: output,
+                    done: true,
+                    doneReason: truncation ? "length" : "stop",
+                    usage: usage
+                )
             }
             await respond(connection, status: 200, contentType: "application/json", data: payload, corsOrigin: corsOrigin)
         }
@@ -1845,7 +2032,9 @@ actor LocalAPIServer {
         maxTokens: Int?,
         temperature: Double?,
         topP: Double?,
-        signal: LocalAPIInferenceSignal
+        signal: LocalAPIInferenceSignal,
+        inferenceID: UUID,
+        budget: LocalAPIStreamBudget
     ) async -> AsyncStream<String> {
         AsyncStream { continuation in
             signal.attach(continuation)
@@ -1857,6 +2046,14 @@ actor LocalAPIServer {
                     topPOverride: topP,
                     onToken: { token in
                         signal.noteOutputToken()
+                        if budget.isOverflowed { return }
+                        if budget.noteYield() {
+                            // The consumer stopped draining the stream (a
+                            // stalled or malicious client). End the turn
+                            // instead of buffering tokens without bound.
+                            signal.fail("The client stopped reading; streaming was cancelled.")
+                            return
+                        }
                         continuation.yield(token)
                     },
                     onComplete: { _ in
@@ -1873,14 +2070,21 @@ actor LocalAPIServer {
                             } else {
                                 signal.setUsage(input: input, output: signal.usage.output)
                             }
+                            signal.setHitTokenLimit(service.lastGenerationHitTokenLimit)
                             signal.finish()
                         }
                     },
                     onError: { message in signal.fail(message) }
                 )
             }
-            continuation.onTermination = { _ in
-                Task { @MainActor in CodingAssistantService.shared.stopGeneration() }
+            continuation.onTermination = { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    // Only stop the generation this request owns — a late
+                    // termination callback must not cancel a newer request.
+                    guard await self.activeInference?.id == inferenceID else { return }
+                    CodingAssistantService.shared.stopGeneration()
+                }
             }
         }
     }
@@ -1890,10 +2094,15 @@ actor LocalAPIServer {
     /// error status anymore.
     private func streamingErrorPayload(dialect: Dialect, message: String) -> Data {
         switch dialect {
-        case .openAIChat, .openAIResponses:
+        case .openAIChat:
             return Data("data: ".utf8)
                 + LocalAPIResponse.json(["error": ["message": message, "type": "server_error"]])
                 + Data("\n\n".utf8)
+        case .openAIResponses:
+            return LocalAPIResponse.openAIResponseEvent("error", fields: [
+                "code": "server_error",
+                "message": message
+            ])
         case .anthropic:
             return LocalAPIResponse.anthropicEvent("error", object: [
                 "type": "error",
@@ -1902,6 +2111,21 @@ actor LocalAPIServer {
         case .ollamaChat, .ollamaGenerate:
             return LocalAPIResponse.json(["error": message]) + Data("\n".utf8)
         }
+    }
+
+    /// Earliest occurrence of any stop sequence in `text`. Callers truncate
+    /// the response before that index and end the turn, matching hosted APIs.
+    static func stopCutIndex(in text: String, sequences: [String]) -> String.Index? {
+        var best: String.Index?
+        for sequence in sequences where !sequence.isEmpty {
+            guard let range = text.range(of: sequence) else { continue }
+            if let current = best {
+                if range.lowerBound < current { best = range.lowerBound }
+            } else {
+                best = range.lowerBound
+            }
+        }
+        return best
     }
 
     private func cancelInference() async {
@@ -2351,6 +2575,41 @@ private final class LocalAPIResumeOnce: @unchecked Sendable {
     }
 }
 
+/// Bounds how many produced-but-unconsumed tokens may queue when a client
+/// stops reading, so a slow reader cannot grow memory while generation runs.
+private final class LocalAPIStreamBudget: @unchecked Sendable {
+    private let lock = NSLock()
+    private let limit: Int
+    private var outstanding = 0
+    private var overflowed = false
+
+    init(limit: Int) { self.limit = limit }
+
+    /// Returns true when this token pushes the backlog past the limit.
+    func noteYield() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        outstanding += 1
+        if outstanding > limit {
+            overflowed = true
+            return true
+        }
+        return false
+    }
+
+    func noteConsume() {
+        lock.lock()
+        if outstanding > 0 { outstanding -= 1 }
+        lock.unlock()
+    }
+
+    var isOverflowed: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return overflowed
+    }
+}
+
 private final class LocalAPIInferenceSignal: @unchecked Sendable {
     private let lock = NSLock()
     private var continuation: AsyncStream<String>.Continuation?
@@ -2382,6 +2641,22 @@ private final class LocalAPIInferenceSignal: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return failureMessage
+    }
+
+    // MARK: - Truncation
+
+    private var hitTokenLimit = false
+
+    func setHitTokenLimit(_ value: Bool) {
+        lock.lock()
+        hitTokenLimit = value
+        lock.unlock()
+    }
+
+    var didHitTokenLimit: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return hitTokenLimit
     }
 
     // MARK: - Usage accounting

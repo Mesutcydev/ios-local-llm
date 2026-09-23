@@ -199,7 +199,11 @@ final class LocalModelImportService: ObservableObject {
             try fm.removeItem(at: dest)
             try fm.moveItem(at: tmp, to: dest)
         } catch {
-            try? fm.removeItem(at: tmp)
+            // `tmp` may hold the only copy of the imported model once `dest`
+            // was removed — restore it instead of deleting it.
+            if !fm.fileExists(atPath: dest.path), fm.fileExists(atPath: tmp.path) {
+                try? fm.moveItem(at: tmp, to: dest)
+            }
             print("[LocalImport] normalizeModelLayout failed: \(error)")
         }
     }

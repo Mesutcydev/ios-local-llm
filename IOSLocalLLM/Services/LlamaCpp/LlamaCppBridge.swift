@@ -635,7 +635,7 @@ final class LlamaCppVLM: @unchecked Sendable {
             batch.pos[0] = llama_pos(
                 GGUFPrefixCache.continuationDecodePosition(
                     cachedTokenCount: promptTokenCount,
-                    generatedSinceResume: tokensGenerated
+                    generatedSinceResume: tokensGenerated - 1
                 )
             )
             batch.n_seq_id[0] = 1

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - ToastCenter
 // Global non-blocking notification surface for transient messages — errors,
@@ -64,6 +65,12 @@ final class ToastCenter: ObservableObject {
         withAnimation(.spring(response: 0.32, dampingFraction: 0.85)) {
             current = toast
         }
+        // Toasts are the only surface for many failures; without an
+        // announcement VoiceOver users get just the haptic.
+        let announcement = [toast.title, toast.detail]
+            .compactMap { $0 }
+            .joined(separator: ". ")
+        UIAccessibility.post(notification: .announcement, argument: announcement)
         dismissTask = Task { [duration = toast.duration] in
             try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
             if !Task.isCancelled {
@@ -285,6 +292,8 @@ struct ConfettiOverlayView: View {
 private struct ConfettiBurstView: View {
     let seed: UUID
     @Environment(\.koduTheme) private var T
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var origin: TimeInterval = -1
 
     private struct Particle {
         let x0: CGFloat            // horizontal start (unit space 0...1)
@@ -327,17 +336,19 @@ private struct ConfettiBurstView: View {
     }
 
     var body: some View {
-        GeometryReader { geo in
-            TimelineView(.animation) { context in
-                // Seconds since the view appeared, derived from the
-                // timeline's date and an @State origin set on first tick.
-                // Using TimelineView avoids 36 separate spring/keyframe
-                // animations and keeps the simulation closed-form.
-                Canvas { ctx, size in
-                    let now = context.date.timeIntervalSinceReferenceDate
-                    if Self.origin < 0 { Self.origin = now }
-                    let elapsed = now - Self.origin
-                    for p in particles {
+        if reduceMotion {
+            EmptyView()
+        } else {
+            GeometryReader { geo in
+                TimelineView(.animation) { context in
+                    // Seconds since this view appeared, captured into @State
+                    // on appear. A static origin was shared across every burst
+                    // in the process, so only the first confetti animated.
+                    Canvas { ctx, size in
+                        let now = context.date.timeIntervalSinceReferenceDate
+                        guard origin >= 0 else { return }
+                        let elapsed = now - origin
+                        for p in particles {
                         let t = (elapsed - p.delay) / p.duration
                         guard t >= 0 else { continue }
                         // Allow t > 1 to drift offscreen; we just clamp at
@@ -376,13 +387,9 @@ private struct ConfettiBurstView: View {
                 .frame(width: geo.size.width, height: geo.size.height)
             }
         }
+        .onAppear { origin = Date().timeIntervalSinceReferenceDate }
+        }
     }
-
-    /// Frame-zero origin captured the first time the canvas ticks. Static
-    /// because Canvas + TimelineView can't easily hold per-instance @State
-    /// across redraws without re-rendering the whole tree. Reset on each
-    /// new view (each `id:` change rebuilds the struct).
-    private static var origin: TimeInterval = -1
 
     private func color(for hue: Int) -> Color {
         switch hue {

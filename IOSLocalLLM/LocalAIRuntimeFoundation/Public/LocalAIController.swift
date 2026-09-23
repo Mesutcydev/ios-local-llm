@@ -67,6 +67,7 @@ public final class LocalAIController {
         options: GenerationOptions = .default
     ) -> AsyncThrowingStream<TokenEvent, Error> {
         AsyncThrowingStream { continuation in
+            let completionBox = LocalAICompletionBox()
             let task = Task { [weak self] in
                 guard let self else {
                     continuation.finish(throwing: RuntimeError.noActiveModel)
@@ -103,6 +104,7 @@ public final class LocalAIController {
                             let completion = SingleFire {
                                 done.resume()
                             }
+                            completionBox.install { completion.fire() }
                             Task { @MainActor [weak self] in
                                 guard let self else {
                                     completion.fire()
@@ -167,6 +169,10 @@ public final class LocalAIController {
                 Task { @MainActor [weak self] in
                     self?.cancelGeneration()
                 }
+                // Bound the teardown: if the backend never invokes
+                // onComplete after cancellation, resume anyway so the
+                // stream (and the session slot) cannot hang forever.
+                completionBox.fireAfterCancellationDelay()
             }
         }
     }
@@ -282,8 +288,16 @@ public final class LocalAIController {
             switch runtime {
             case .llamaCpp:
                 await LlamaCppVLMService.shared.switchTo(repoID: repoID)
+                if case .failed(let message) = LlamaCppVLMService.shared.state {
+                    preheatStatus = .failed(message)
+                    return
+                }
             case .mlx:
                 await MLXVisionService.shared.switchTo(repoID: repoID)
+                if case .failed(let message) = MLXVisionService.shared.state {
+                    preheatStatus = .failed(message)
+                    return
+                }
             }
             preheatStatus = .ready(target)
         }
@@ -436,6 +450,31 @@ private final class SingleFire: @unchecked Sendable {
         lock.unlock()
         if shouldFire {
             body()
+        }
+    }
+}
+
+/// Holds the single-fire completion created deep inside the generation
+/// continuation so the stream's `onTermination` can resume it after a bounded
+/// grace period even when a backend never reports completion.
+private final class LocalAICompletionBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var fire: (() -> Void)?
+
+    func install(_ body: @escaping () -> Void) {
+        lock.lock()
+        fire = body
+        lock.unlock()
+    }
+
+    func fireAfterCancellationDelay() {
+        Task {
+            try? await Task.sleep(for: .seconds(5))
+            self.lock.lock()
+            let body = self.fire
+            self.fire = nil
+            self.lock.unlock()
+            body?()
         }
     }
 }

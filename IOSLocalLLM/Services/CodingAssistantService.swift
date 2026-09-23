@@ -2320,6 +2320,11 @@ final class CodingAssistantService: ObservableObject {
                                      detail: "Please wait for the current load to finish.")
             return
         }
+        // Claim the latch synchronously, before the first suspension point,
+        // so two concurrent switches can't both pass the guard and then
+        // interleave unload/load across the awaits below.
+        isTransitioning = true
+        defer { isTransitioning = false }
         if activeExecutionLocation == .applePrivateCloud {
             let pccInflight = pccGenerateTask
             stopGeneration()
@@ -2345,9 +2350,6 @@ final class CodingAssistantService: ObservableObject {
                                      detail: compatibility.detail)
             return
         }
-
-        isTransitioning = true
-        defer { isTransitioning = false }
 
         if persistAsDefault {
             // Persist only explicit default choices. A conversation switch

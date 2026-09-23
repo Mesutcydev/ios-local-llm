@@ -1130,6 +1130,13 @@ final class InstalledModelRegistry: ObservableObject {
         saveToDisk()
     }
 
+    /// Drops every record and persists the empty registry. Used by the
+    /// full-data wipe so deleted models cannot be re-listed from memory.
+    func removeAll() {
+        records.removeAll()
+        saveToDisk()
+    }
+
     func record(forRepoID repoID: String) -> InstalledModelRecord? {
         records.first { $0.repoID.caseInsensitiveCompare(repoID) == .orderedSame }
     }
@@ -1150,6 +1157,11 @@ final class InstalledModelRegistry: ObservableObject {
         // 2. Rescan HFModels directory (custom downloads)
         let hfRoot = docs.appendingPathComponent("HFModels")
         reconcileDirectory(hfRoot, existing: existingByRepo, into: &updated, fm: fm)
+
+        // 3. Drop records whose files are gone — a model deleted from disk
+        //    (app delete, Files app, or a failed cleanup) must not survive in
+        //    the registry and get re-listed as installed.
+        updated.removeAll { !fm.fileExists(atPath: $0.localURL.path) }
 
         records = updated
         saveToDisk()
@@ -1293,7 +1305,7 @@ final class InstalledModelRegistry: ObservableObject {
 
     private static func inferQuantization(fromRepoID repoID: String) -> String? {
         let lower = repoID.lowercased()
-        if lower.contains("4bit") || lower.contains("-4b") == false && lower.hasSuffix("4b") { return "4bit" }
+        if lower.contains("4bit") || (lower.contains("-4b") == false && lower.hasSuffix("4b")) { return "4bit" }
         if lower.contains("8bit") { return "8bit" }
         if lower.contains("ternary") { return "ternary" }
         if lower.contains("1bit") { return "1bit" }

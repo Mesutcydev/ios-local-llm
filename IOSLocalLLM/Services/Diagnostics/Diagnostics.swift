@@ -196,7 +196,9 @@ final class Diagnostics: @unchecked Sendable {
             let url = Self.logFileURL
             let fm = FileManager.default
             // Rotate when the file grows past the cap.
-            if let size = (try? fm.attributesOfItem(atPath: url.path)[.size]) as? Int, size > self.maxFileBytes {
+            let attrs = try? fm.attributesOfItem(atPath: url.path)
+            let size = (attrs?[.size] as? NSNumber)?.int64Value ?? 0
+            if size > Int64(self.maxFileBytes) {
                 try? fm.removeItem(at: url.deletingPathExtension().appendingPathExtension("1.log"))
                 try? fm.moveItem(at: url, to: url.deletingPathExtension().appendingPathExtension("1.log"))
             }

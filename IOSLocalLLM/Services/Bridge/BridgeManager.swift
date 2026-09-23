@@ -147,6 +147,13 @@ final class BridgeManager: ObservableObject {
         ToastCenter.shared.info("All Macs forgotten")
     }
 
+    /// Revoke a single paired Mac without touching the others.
+    func forgetClient(token: String) {
+        BridgePairingStore.shared.remove(token: token)
+        refreshPairedClients()
+        ToastCenter.shared.info("Mac forgotten")
+    }
+
     // MARK: - QR JSON
 
     private func rebuildQRJSON() {
@@ -171,7 +178,8 @@ final class BridgeManager: ObservableObject {
     func pairWithMac(qrJSON: String) async {
         guard let data = qrJSON.data(using: .utf8),
               let payload = try? JSONDecoder().decode(MacQRPayload.self, from: data),
-              payload.v == 1 else {
+              payload.v == 1,
+              Self.isValidMacHost(payload.macHost) else {
             pairingPhase = .failed("Unrecognised QR — scan an iOS Local LLM Mac QR.")
             return
         }
@@ -226,6 +234,10 @@ final class BridgeManager: ObservableObject {
         let session: URLSession = pinDelegate.map {
             URLSession(configuration: .ephemeral, delegate: $0, delegateQueue: nil)
         } ?? .shared
+        // Don't leak a pinned session/delegate per pairing attempt.
+        defer {
+            if pinDelegate != nil { session.finishTasksAndInvalidate() }
+        }
 
         do {
             let (data, resp) = try await session.data(for: req)
@@ -292,6 +304,40 @@ private struct MacQRPayload: Decodable {
     /// that serve the pairing/agent channel over TLS; absent on legacy
     /// plaintext Macs (we fall back to http for those).
     let macCertFingerprint: String?
+}
+
+extension BridgeManager {
+    /// A scanned-but-unconfirmed QR. The UI shows the Mac's name and cert
+    /// fingerprint before any nonce/bearer is sent to it.
+    struct PendingPairing: Identifiable {
+        let id = UUID()
+        let qrJSON: String
+        let macName: String
+        let fingerprint: String?
+    }
+
+    /// Decodes and validates a scanned QR without contacting the Mac.
+    func pendingPairing(from qrJSON: String) -> PendingPairing? {
+        guard let data = qrJSON.data(using: .utf8),
+              let payload = try? JSONDecoder().decode(MacQRPayload.self, from: data),
+              payload.v == 1,
+              Self.isValidMacHost(payload.macHost),
+              payload.pairingPort >= 1024 else { return nil }
+        return PendingPairing(
+            qrJSON: qrJSON,
+            macName: payload.macName,
+            fingerprint: payload.macCertFingerprint
+        )
+    }
+
+    /// Hostnames/IPs only — rejects anything that could inject a path,
+    /// port, or credentials into the pairing URL.
+    static func isValidMacHost(_ host: String) -> Bool {
+        guard !host.isEmpty, host.count <= 253 else { return false }
+        let allowed = CharacterSet(charactersIn:
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-")
+        return host.unicodeScalars.allSatisfy { allowed.contains($0) }
+    }
 }
 
 /// Mac's pair-response body. All non-`ok` fields are optional so the

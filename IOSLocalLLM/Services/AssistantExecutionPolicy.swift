@@ -48,9 +48,14 @@ struct MLXAssistantExecutionProfile: Equatable, Sendable {
             // 16K 8-bit KV cache can push it back over the process budget on
             // the first long chat. Keep useful context while bounding both
             // cache growth and transient prefill allocations.
+            //
+            // Output length is uncapped for the same reason as Bonsai 27B and
+            // Qwen 3.5: the rotating 4K KV cache bounds memory independently
+            // of generation length, so the user's response-length setting and
+            // the thermal advisor govern how long replies may run.
             return .init(
                 maxContextTokens: 4_096,
-                maxOutputTokens: 256,
+                maxOutputTokens: nil,
                 maxKVSize: 4_096,
                 kvBits: 4,
                 prefillStepSize: 128,
@@ -62,9 +67,18 @@ struct MLXAssistantExecutionProfile: Equatable, Sendable {
             // iPhones, but its vision activations do not. A rotating 2K cache,
             // 4-bit KV, and small prefill chunks keep chat below the process
             // watermark while Lens independently chooses a smaller VLM.
+            //
+            // Output length is intentionally uncapped: because maxKVSize stays
+            // fixed, longer replies rotate the cache instead of growing it, so
+            // generation length does not change the memory envelope. The old
+            // 128-token output cap truncated every substantive answer
+            // mid-sentence ("cut off at limit") even though the model is a
+            // thinking model that needs room for its reasoning trace plus the
+            // visible reply. The user's response-length setting and the
+            // thermal advisor still bound generation.
             return .init(
                 maxContextTokens: 2_048,
-                maxOutputTokens: 128,
+                maxOutputTokens: nil,
                 maxKVSize: 2_048,
                 kvBits: 4,
                 prefillStepSize: 128,

@@ -56,7 +56,17 @@ public actor WebPageFetchService {
         req.httpMethod = "GET"
 
         let started = Date()
-        let (data, response) = try await session.data(for: req)
+        delegate.reset()
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: req)
+        } catch {
+            if delegate.exceededSizeLimit {
+                throw WebToolError.tooLarge(bytes: delegate.bytesReceived)
+            }
+            throw error
+        }
 
         guard let http = response as? HTTPURLResponse else {
             throw WebToolError.parsingFailed(reason: "non-HTTP response")
@@ -104,12 +114,48 @@ public actor WebPageFetchService {
 // Intercepts EVERY 3xx hop so a malicious server can't 302 us into a private
 // network. Implements `URLSessionTaskDelegate.willPerformHTTPRedirection`.
 
-private final class RedirectGuard: NSObject, URLSessionTaskDelegate {
+private final class RedirectGuard: NSObject, URLSessionDataDelegate {
 
     private let validator: URLSafetyValidator
+    private let lock = NSLock()
+    private var bytes = 0
+    private var exceeded = false
+
+    /// Abort the response once more than this has arrived. The previous
+    /// code buffered the entire body before checking size, so a huge
+    /// (or endless) response could exhaust memory.
+    static let maxBodyBytes = 2 * 1024 * 1024
 
     init(validator: URLSafetyValidator) {
         self.validator = validator
+    }
+
+    func reset() {
+        lock.lock()
+        bytes = 0
+        exceeded = false
+        lock.unlock()
+    }
+
+    var exceededSizeLimit: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return exceeded
+    }
+
+    var bytesReceived: Int {
+        lock.lock(); defer { lock.unlock() }
+        return bytes
+    }
+
+    func urlSession(_ session: URLSession,
+                    dataTask: URLSessionDataTask,
+                    didReceive data: Data) {
+        lock.lock()
+        bytes += data.count
+        let over = bytes > Self.maxBodyBytes
+        if over { exceeded = true }
+        lock.unlock()
+        if over { dataTask.cancel() }
     }
 
     func urlSession(_ session: URLSession,

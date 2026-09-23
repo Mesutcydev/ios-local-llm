@@ -16,6 +16,8 @@ struct KnowledgeBaseView: View {
     @State private var showPaste = false
     @State private var pasteText = ""
     @State private var pasteName = ""
+    @State private var showClearConfirm = false
+    @State private var pendingDelete: KBDocument?
 
     var body: some View {
         NavigationStack {
@@ -41,11 +43,39 @@ struct KnowledgeBaseView: View {
                 }
                 if !kb.documents.isEmpty {
                     ToolbarItem(placement: .primaryAction) {
-                        Button(role: .destructive) { kb.clear() } label: {
+                        Button(role: .destructive) { showClearConfirm = true } label: {
                             Image(systemName: "trash")
                         }
+                        .accessibilityLabel("Remove all documents")
                     }
                 }
+            }
+            .confirmationDialog(
+                "Remove all documents?",
+                isPresented: $showClearConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Remove All", role: .destructive) { kb.clear() }
+            } message: {
+                Text("The whole on-device index is deleted. This can't be undone.")
+            }
+            .confirmationDialog(
+                "Remove \(pendingDelete?.name ?? "document")?",
+                isPresented: Binding(
+                    get: { pendingDelete != nil },
+                    set: { if !$0 { pendingDelete = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Remove", role: .destructive) {
+                    if let doc = pendingDelete {
+                        kb.removeDocument(doc.id)
+                        HapticManager.impact(.light)
+                    }
+                    pendingDelete = nil
+                }
+            } message: {
+                Text("Its indexed chunks are deleted from this device.")
             }
             .fileImporter(isPresented: $showImporter,
                           allowedContentTypes: [.plainText, .text, .sourceCode, .json, .pdf, .data],
@@ -163,11 +193,12 @@ struct KnowledgeBaseView: View {
             }
             Spacer(minLength: 0)
             Button {
-                kb.removeDocument(doc.id); HapticManager.impact(.light)
+                pendingDelete = doc
             } label: {
                 Image(systemName: "trash").font(.system(size: 13)).foregroundColor(T.bad)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Remove \(doc.name)")
         }
         .padding(12)
         .kGlass(cornerRadius: 14, fallbackFill: T.surface)
@@ -215,7 +246,14 @@ struct KnowledgeBaseView: View {
     // MARK: - Import
 
     private func handleImport(_ result: Result<[URL], Error>) {
-        guard case .success(let urls) = result else { return }
+        guard case .success(let urls) = result else {
+            if case .failure(let error) = result,
+               (error as? CocoaError)?.code != .userCancelled {
+                ToastCenter.shared.error("Couldn't open picker",
+                                         detail: error.localizedDescription)
+            }
+            return
+        }
         Task {
             for url in urls {
                 do {

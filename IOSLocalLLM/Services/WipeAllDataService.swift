@@ -100,6 +100,7 @@ enum WipeAllDataService {
             "hasPickedAssistantModel",
             "voiceConversationModelID",
             "assistantModelID",
+            "knowledgeBase.enabled",
         ]
         for k in settingsKeys { defaults.removeObject(forKey: k) }
         r.settingsCleared = true
@@ -121,7 +122,36 @@ enum WipeAllDataService {
             }
         }
 
-        // 8. Keychain credentials — HF token, web search API keys, Mac Bridge
+        // 8. Application Support stores: installed-model registry, recovery
+        //    breadcrumbs, diagnostics + crash artifacts, RAG queue, and the
+        //    Knowledge Base index. Deleting the files alone is not enough —
+        //    the in-memory singletons would rewrite them, and the registry
+        //    used to re-list wiped models on the refresh below.
+        let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        for sub in ["Registry", "Recovery", "LocalAI", "KnowledgeBase"] {
+            r.bytesFreed += dirSize(at: appSupport.appendingPathComponent(sub, isDirectory: true))
+            try? fm.removeItem(at: appSupport.appendingPathComponent(sub, isDirectory: true))
+        }
+        // Diagnostics: remove logs + crash artifacts but NOT `running.marker`,
+        // which CrashReporter uses to detect an unclean exit for the rest of
+        // this session. Deleting the whole directory would silently disable
+        // crash/jetsam detection until the next launch.
+        let diagnosticsDir = appSupport.appendingPathComponent("Diagnostics", isDirectory: true)
+        if let contents = try? fm.contentsOfDirectory(
+            at: diagnosticsDir, includingPropertiesForKeys: nil
+        ) {
+            for item in contents where item.lastPathComponent != "running.marker" {
+                r.bytesFreed += dirSize(at: item)
+                try? fm.removeItem(at: item)
+            }
+        }
+        InstalledModelRegistry.shared.removeAll()
+        RecoveryManager.shared.reset()
+        Diagnostics.shared.clear()
+        CrashReporter.shared.clearCrashArtifacts()
+        KnowledgeBaseService.shared.clear()
+
+        // 9. Keychain credentials — HF token, web search API keys, Mac Bridge
         //    bearer tokens. These survive a file-only wipe unless cleared here.
         if HFTokenStore.shared.clear() { r.keychainItemsCleared += 1 }
         let webKeysBefore = ["brave.apiKey", "tavily.apiKey", "exa.apiKey"]

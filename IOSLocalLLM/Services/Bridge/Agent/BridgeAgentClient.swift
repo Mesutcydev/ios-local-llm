@@ -83,6 +83,9 @@ final class BridgeAgentClient: ObservableObject {
             target:   target,
             timeout:  timeoutForRisk(risk)
         )
+        guard resultEnvelope.payload.toolCallId == envelope.messageId else {
+            throw AgentClientError.decodeFailed("tool result does not match the request")
+        }
         if let value = resultEnvelope.payload.result, resultEnvelope.payload.ok {
             return value
         }
@@ -118,6 +121,9 @@ final class BridgeAgentClient: ObservableObject {
             target:   target,
             timeout:  timeoutForRisk(.safeRead)
         )
+        guard resp.payload.toolCallId == envelope.messageId else {
+            throw AgentClientError.decodeFailed("heartbeat result does not match the request")
+        }
         guard resp.payload.ok, let result = resp.payload.result else {
             if let err = resp.payload.error { throw AgentClientError.toolFailed(err) }
             throw AgentClientError.decodeFailed("heartbeat returned no result")
@@ -227,6 +233,11 @@ final class BridgeAgentClient: ObservableObject {
         let session: URLSession = pinDelegate.map {
             URLSession(configuration: .ephemeral, delegate: $0, delegateQueue: nil)
         } ?? .shared
+        // Per-call pinned sessions would otherwise linger with their
+        // delegate/connection pool for the life of the process.
+        defer {
+            if pinDelegate != nil { session.finishTasksAndInvalidate() }
+        }
 
         let data: Data
         let resp: URLResponse
@@ -248,7 +259,22 @@ final class BridgeAgentClient: ObservableObject {
             throw AgentClientError.httpStatus(http.statusCode, bodyStr)
         }
         do {
-            return try AgentCoding.decoder.decode(AgentEnvelope<Out>.self, from: data)
+            let decoded = try AgentCoding.decoder.decode(AgentEnvelope<Out>.self, from: data)
+            // A response must come from the Mac, belong to this session,
+            // and be a tool result — otherwise a stale, cross-session, or
+            // malformed frame would be accepted as this call's result.
+            guard decoded.sender == .mac else {
+                throw AgentClientError.decodeFailed("unexpected sender '\(decoded.sender.rawValue)'")
+            }
+            guard decoded.sessionId == envelope.sessionId else {
+                throw AgentClientError.decodeFailed("response session does not match the request")
+            }
+            guard decoded.type == .toolResult else {
+                throw AgentClientError.decodeFailed("unexpected message type '\(decoded.type.rawValue)'")
+            }
+            return decoded
+        } catch let error as AgentClientError {
+            throw error
         } catch {
             throw AgentClientError.decodeFailed(error.localizedDescription)
         }

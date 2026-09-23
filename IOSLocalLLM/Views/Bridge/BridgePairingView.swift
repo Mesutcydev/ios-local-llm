@@ -22,6 +22,9 @@ struct BridgePairingView: View {
     @Environment(\.koduTheme) private var T
 
     @State private var showScanner = false
+    @State private var pendingPairing: BridgeManager.PendingPairing?
+    @State private var showForgetAllConfirm = false
+    @State private var pendingRevoke: BridgePairingStore.Client?
 
     /// Copy for the orange banner shown when the assistant isn't
     /// ready to serve Mac-bound inference. Per-state so users get an
@@ -78,7 +81,58 @@ struct BridgePairingView: View {
                 if manager.serverState == .stopped { await manager.start() }
             }
             .sheet(isPresented: $showScanner) {
-                ScannerSheet(showScanner: $showScanner)
+                ScannerSheet(showScanner: $showScanner) { payload in
+                    if let pending = manager.pendingPairing(from: payload) {
+                        pendingPairing = pending
+                    } else {
+                        manager.pairingPhase = .failed(
+                            "Unrecognised QR — scan an iOS Local LLM Mac QR.")
+                    }
+                }
+            }
+            .alert(
+                "Pair with this Mac?",
+                isPresented: Binding(
+                    get: { pendingPairing != nil },
+                    set: { if !$0 { pendingPairing = nil } }
+                )
+            ) {
+                Button("Cancel", role: .cancel) { pendingPairing = nil }
+                Button("Pair") {
+                    guard let pending = pendingPairing else { return }
+                    pendingPairing = nil
+                    Task { await manager.pairWithMac(qrJSON: pending.qrJSON) }
+                }
+            } message: {
+                if let pending = pendingPairing {
+                    Text(pairingConfirmationMessage(pending))
+                }
+            }
+            .confirmationDialog(
+                "Forget all paired Macs?",
+                isPresented: $showForgetAllConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Forget All", role: .destructive) { manager.forgetAllClients() }
+            } message: {
+                Text("Their bearer tokens are deleted from this device. Re-pair each Mac to reconnect.")
+            }
+            .confirmationDialog(
+                "Forget \(pendingRevoke?.clientName ?? "this Mac")?",
+                isPresented: Binding(
+                    get: { pendingRevoke != nil },
+                    set: { if !$0 { pendingRevoke = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Forget", role: .destructive) {
+                    if let client = pendingRevoke {
+                        manager.forgetClient(token: client.token)
+                    }
+                    pendingRevoke = nil
+                }
+            } message: {
+                Text("Its bearer token is deleted from this device. Re-pair to reconnect.")
             }
         }
     }
@@ -89,6 +143,13 @@ struct BridgePairingView: View {
     // http, so the nonce + bearer travel in the clear on the LAN. pairWithMac()
     // refuses such a Mac unless this is on; surfaced here so the opt-in the
     // failure message points to actually exists and is discoverable.
+
+    private func pairingConfirmationMessage(_ pending: BridgeManager.PendingPairing) -> String {
+        if let fp = pending.fingerprint {
+            return "\(pending.macName)\nCertificate \(fp.prefix(16))…\nOnly continue if this is the Mac you are pairing with."
+        }
+        return "\(pending.macName)\nThis Mac has no certificate — pairing is unencrypted and needs “Allow insecure pairing”."
+    }
 
     private var insecurePairingCard: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -460,7 +521,7 @@ struct BridgePairingView: View {
                     .foregroundColor(T.ink4)
                 Spacer()
                 if !manager.pairedClients.isEmpty {
-                    Button("Forget All") { manager.forgetAllClients() }
+                    Button("Forget All") { showForgetAllConfirm = true }
                         .font(T.mono(12, .regular))
                         .foregroundColor(.red)
                 }
@@ -483,6 +544,16 @@ struct BridgePairingView: View {
                                 .font(T.mono(11, .regular))
                                 .foregroundColor(T.ink3)
                         }
+                        Spacer(minLength: 0)
+                        Button {
+                            pendingRevoke = client
+                        } label: {
+                            Image(systemName: "trash")
+                                .font(.system(size: 13))
+                                .foregroundColor(T.bad)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Forget \(client.clientName)")
                     }
                     .padding(.vertical, 4)
                 }
@@ -517,6 +588,12 @@ private struct LocalAPIServerCard: View {
             Toggle("Keep screen awake while server runs", isOn: keepAwakeBinding)
                 .font(theme.sans(13, .medium))
                 .tint(theme.accent)
+            Toggle("Allow nearby devices (peer-to-peer / AWDL)", isOn: peerToPeerBinding)
+                .font(theme.sans(13, .medium))
+                .tint(theme.accent)
+            Text("Off by default: peer-to-peer accepts connections from nearby devices that are not on your network. Leave off unless you need it.")
+                .font(theme.sans(11))
+                .foregroundColor(theme.ink3)
             portEditor
             if case .running(let port) = manager.state {
                 endpointList(port: port)
@@ -543,6 +620,19 @@ private struct LocalAPIServerCard: View {
             set: { enabled in
                 settings.localAPIKeepScreenAwake = enabled
                 manager.refreshIdleTimerPolicy()
+            }
+        )
+    }
+
+    private var peerToPeerBinding: Binding<Bool> {
+        Binding(
+            get: { settings.localAPIIncludePeerToPeer },
+            set: { enabled in
+                settings.localAPIIncludePeerToPeer = enabled
+                // The listener reads this at start, so restart when running.
+                Task {
+                    if settings.localAPIEnabled { await manager.restart() }
+                }
             }
         )
     }
@@ -792,7 +882,11 @@ private struct LocalAPIServerCard: View {
                 Spacer()
                 Button(revealsKey ? "Hide" : "Reveal") { revealsKey.toggle() }
                 Button("Copy") {
-                    UIPasteboard.general.string = manager.apiKey
+                    // localOnly keeps the key off Universal Clipboard.
+                    UIPasteboard.general.setItems(
+                        [[UIPasteboard.typeAutomatic: manager.apiKey]],
+                        options: [.localOnly: true]
+                    )
                     ToastCenter.shared.success("API key copied")
                 }
                 Button("Rotate") {
@@ -825,7 +919,10 @@ private struct LocalAPIServerCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(theme.surface3, in: RoundedRectangle(cornerRadius: 8))
             Button("Copy setup commands") {
-                UIPasteboard.general.string = command
+                UIPasteboard.general.setItems(
+                    [[UIPasteboard.typeAutomatic: command]],
+                    options: [.localOnly: true]
+                )
                 ToastCenter.shared.success("Linux setup copied")
             }
             .font(theme.mono(10, .semibold))
@@ -883,6 +980,7 @@ private struct CopyableAPIEndpoint: View {
 
 private struct ScannerSheet: View {
     @Binding var showScanner: Bool
+    let onScanned: (String) -> Void
     @ObservedObject private var manager = BridgeManager.shared
     @Environment(\.koduTheme) private var T
 
@@ -891,7 +989,7 @@ private struct ScannerSheet: View {
             if BridgeQRScannerView.isAvailable {
                 BridgeQRScannerView { payload in
                     showScanner = false
-                    Task { await manager.pairWithMac(qrJSON: payload) }
+                    onScanned(payload)
                 }
                 .ignoresSafeArea()
                 // Belt-and-suspenders: if dismantleUIViewController doesn't
