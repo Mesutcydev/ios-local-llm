@@ -2,7 +2,7 @@
   "name": "Mesutcydev Apps",
   "subtitle": "Local-first apps for iPhone and iPad",
   "description": "A source for Mesutcydev's sideloadable iOS and iPadOS apps, including local AI, remote-control, media, and developer tools.",
-  "iconURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-144/AppIcon-1024.png",
+  "iconURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-145/AppIcon-1024.png",
   "headerURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/59060017c4f8931950041f7e32382c5ca74bf60e/Docs/Images/ios-local-llm-spec-chart.png",
   "website": "https://mesutcydev.github.io/ios-local-llm/",
   "tintColor": "#5EEAD4",
@@ -20,7 +20,7 @@
       "developerName": "Mesutcydev",
       "subtitle": "A local AI server for iPhone.",
       "localizedDescription": "On Device: LAS runs supported language models locally on your iPhone and exposes authenticated OpenAI-, Anthropic-, and Ollama-compatible APIs over your trusted local network. It does not silently fall back to a cloud service.",
-      "iconURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-144/AppIcon-1024.png",
+      "iconURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-145/AppIcon-1024.png",
       "tintColor": "#5EEAD4",
       "category": "developer",
       "screenshots": [
@@ -30,6 +30,16 @@
         "https://mesutcydev.github.io/ios-local-llm/shots/las-terminal.png"
       ],
       "versions": [
+        {
+          "version": "3.2.6",
+          "buildVersion": "145",
+          "date": "2026-09-24T19:03:16Z",
+          "localizedDescription": "Rebuilt from the public source with the refreshed On Device: LAS app icon. Local API behavior and memory entitlements are preserved.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-145/OnDeviceLAS-sideload-entitled-3.2.6-145.ipa",
+          "size": 24821291,
+          "sha256": "e2ddcc06a9121d8bdbe772bcedd2354c98e5613d23531cdeb30b72fe4c11a745",
+          "minOSVersion": "18.0"
+        },
         {
           "version": "3.2.6",
           "buildVersion": "144",
