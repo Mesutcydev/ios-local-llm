@@ -158,10 +158,22 @@ final class DeviceTierAdvisorTests: XCTestCase {
         )
     }
 
-    func test_processCeilingUsesEntitledBudgetWhenGranted() {
+    func test_entitlementNeverOverridesReportedKernelLimit() {
         XCTAssertEqual(
             MemoryAdvisor.resolvedProcessCeilingCandidate(
-                kernelCeiling: 3_540_000_000,
+                kernelCeiling: 6_979_321_856,
+                entitlementCeiling: 9_200_000_000,
+                hasIncreasedMemoryEntitlement: true,
+                lowPowerMode: false
+            ),
+            6_979_321_856
+        )
+    }
+
+    func test_entitledBudgetOnlyWhenKernelReportsNothing() {
+        XCTAssertEqual(
+            MemoryAdvisor.resolvedProcessCeilingCandidate(
+                kernelCeiling: 0,
                 entitlementCeiling: 9_200_000_000,
                 hasIncreasedMemoryEntitlement: true,
                 lowPowerMode: false

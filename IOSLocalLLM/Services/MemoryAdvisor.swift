@@ -268,34 +268,36 @@ enum MemoryAdvisor {
         return min(max(0, candidate), platformCap)
     }
 
-    /// Selects the ceiling signal that is legal for the running signature.
-    /// The synthetic entitlement estimate must never override the kernel when
-    /// the installed profile did not grant increased memory, or the UI admits
-    /// a load that iOS will terminate as soon as weights are materialized.
+    /// Selects the ceiling signal. A reported kernel limit is authoritative:
+    /// on an entitled iPhone 17 Pro Max (iOS 27.2) iOS killed an app at exactly
+    /// its reported 6.5 GiB, so a physical-RAM estimate must never replace it,
+    /// or the UI admits a load that iOS terminates as weights materialize. The
+    /// entitlement estimate is used only when the kernel reports nothing.
     static nonisolated func resolvedProcessCeilingCandidate(
         kernelCeiling: Int64,
         entitlementCeiling: Int64,
         hasIncreasedMemoryEntitlement: Bool,
         lowPowerMode: Bool
     ) -> Int64 {
-        guard hasIncreasedMemoryEntitlement, !lowPowerMode else {
+        guard kernelCeiling <= 0, hasIncreasedMemoryEntitlement, !lowPowerMode else {
             return kernelCeiling
         }
-        return max(kernelCeiling, entitlementCeiling)
+        return entitlementCeiling
     }
 
     /// Best estimate of this process's hard memory ceiling (the per-process
     /// limit iOS enforces), in bytes — independent of what is loaded right now.
     ///
-    /// Fuses two signals and trusts the larger:
+    /// Uses the kernel signal whenever it exists (see
+    /// `resolvedProcessCeilingCandidate`):
     ///   • Kernel: `os_proc_available_memory()` + current `phys_footprint`.
     ///     Both use the identical footprint accounting, so the sum recovers the
     ///     limit and is STABLE regardless of what is resident. (The previous
     ///     version added `resident_size`, which omits GPU/Metal buffers, so the
     ///     ceiling sagged by a resident VLM's GPU footprint — the "open Lens,
     ///     switch to Assistant, 4B won't load" regression. See `physFootprint`.)
-    ///   • Entitlement: `physicalRAM × tierFraction`. Recovers the headroom the
-    ///     kernel signal hides on entitled devices.
+    ///   • Entitlement: `physicalRAM × tierFraction`, only when the kernel
+    ///     reports nothing.
     /// Clamped to `physicalRAM − 1.5 GB`; iPhone is additionally capped at its
     /// entitlement-aware tier budget.
     static var processMemoryCeiling: Int64 {
