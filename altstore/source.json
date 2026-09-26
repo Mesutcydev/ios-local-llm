@@ -2,7 +2,7 @@
   "name": "Mesutcydev Apps",
   "subtitle": "Local-first apps for iPhone and iPad",
   "description": "A source for Mesutcydev's sideloadable iOS and iPadOS apps, including local AI, remote-control, media, and developer tools.",
-  "iconURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-145/AppIcon-1024.png",
+  "iconURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-146/AppIcon-1024.png",
   "headerURL": "https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/59060017c4f8931950041f7e32382c5ca74bf60e/Docs/Images/ios-local-llm-spec-chart.png",
   "website": "https://mesutcydev.github.io/ios-local-llm/",
   "tintColor": "#5EEAD4",
@@ -20,7 +20,7 @@
       "developerName": "Mesutcydev",
       "subtitle": "A local AI server for iPhone.",
       "localizedDescription": "On Device: LAS runs supported language models locally on your iPhone and exposes authenticated OpenAI-, Anthropic-, and Ollama-compatible APIs over your trusted local network. It does not silently fall back to a cloud service.",
-      "iconURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-145/AppIcon-1024.png",
+      "iconURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-146/AppIcon-1024.png",
       "tintColor": "#5EEAD4",
       "category": "developer",
       "screenshots": [
@@ -30,6 +30,16 @@
         "https://mesutcydev.github.io/ios-local-llm/shots/las-terminal.png"
       ],
       "versions": [
+        {
+          "version": "3.2.6",
+          "buildVersion": "146",
+          "date": "2026-09-26T21:02:29Z",
+          "localizedDescription": "Uses the kernel-reported app memory limit instead of a physical-RAM estimate, so the memory shown and the model-load checks match what iOS enforces. Same icon, bundle contents and entitlements as build 145.",
+          "downloadURL": "https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-146/OnDeviceLAS-sideload-entitled-3.2.6-146.ipa",
+          "size": 24820839,
+          "sha256": "c4340c9e9dfc9700f50170ef1ab458e3d2d6a1263dab276da6f032784633c895",
+          "minOSVersion": "18.0"
+        },
         {
           "version": "3.2.6",
           "buildVersion": "145",
