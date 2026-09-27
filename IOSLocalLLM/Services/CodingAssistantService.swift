@@ -463,6 +463,10 @@ final class CodingAssistantService: ObservableObject {
     private var ggufVisionProjectorPath: String?
     private var generateTask: Task<Void, Never>?
     private var pccGenerateTask: Task<Void, Never>?
+    /// Bumped by `stopGeneration`. A request parked waiting for a busy or
+    /// loading runtime captures it and drops itself if Stop ran meanwhile,
+    /// so a queued send can't start decoding after the user stopped.
+    private var stopEpoch = 0
     private var activePCCRequestID: UUID?
     /// Identity of the MLX load currently allowed to publish a container.
     /// Model loading itself cannot be interrupted safely, so an unload/model
@@ -2346,14 +2350,15 @@ final class CodingAssistantService: ObservableObject {
         // briefly onto the main actor so a just-finished decode can flip
         // back to `.ready`, then retry once.
         if case .generating = state {
+            let epoch = stopEpoch
             Task { @MainActor [weak self] in
                 guard let self else { onComplete(0); return }
                 var waited = 0
-                while case .generating = self.state, waited < 40 {
+                while case .generating = self.state, waited < 40, self.stopEpoch == epoch {
                     try? await Task.sleep(nanoseconds: 50_000_000)
                     waited += 1
                 }
-                guard case .ready = self.state else {
+                guard self.stopEpoch == epoch, case .ready = self.state else {
                     onComplete(0)
                     return
                 }
@@ -2388,6 +2393,7 @@ final class CodingAssistantService: ObservableObject {
             ? ggufModel != nil
             : resolvedMLXContainer != nil
         if state != .ready || !hasRuntimeModel {
+            let epoch = stopEpoch
             Task { [weak self] in
                 guard let self else { onComplete(0); return }
                 if case .loading = state {
@@ -2395,13 +2401,15 @@ final class CodingAssistantService: ObservableObject {
                     // deadline so a wedged load (network stall, HubApi hang)
                     // can't spin this poll forever and freeze the send.
                     let deadline = Date().addingTimeInterval(60)
-                    while case .loading = self.state {
+                    while case .loading = self.state, self.stopEpoch == epoch {
                         if Date() >= deadline { onComplete(0); return }
                         try? await Task.sleep(nanoseconds: 100_000_000)
                     }
                 } else if state != .ready {
                     await self.load()
                 }
+                // Stop while this send waited drops it, like a running decode.
+                guard self.stopEpoch == epoch else { onComplete(0); return }
                 let isLoaded = self.activeModel.runtime == .llamaCpp
                     ? self.ggufModel != nil
                     : self.resolvedMLXContainer != nil
@@ -3532,6 +3540,14 @@ final class CodingAssistantService: ObservableObject {
     // MARK: - Stop
 
     func stopGeneration() {
+        stopEpoch &+= 1
+        cancelBackendGeneration()
+    }
+
+    /// Cancels the running decode on every backend without dropping parked
+    /// requests. Unload cleanup uses it because `load()` unloads a stale
+    /// runtime first, and that must not drop the request waiting on it.
+    private func cancelBackendGeneration() {
 #if CORE_AI_SERVER_APP
         CoreAIInferenceService.shared.cancel()
 #endif
@@ -3646,7 +3662,7 @@ final class CodingAssistantService: ObservableObject {
         policy: AssistantUnloadDrainPolicy
     ) async {
 #if CORE_AI_SERVER_APP
-        stopGeneration()
+        cancelBackendGeneration()
         loadTask?.cancel()
         loadTask = nil
         await CoreAIInferenceService.shared.suspend()

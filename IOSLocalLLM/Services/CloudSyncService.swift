@@ -42,19 +42,22 @@ final class CloudSyncService: ObservableObject {
     func syncNow() async {
         guard !isSyncing else { return }
         guard AppSettings.shared.iCloudSyncEnabled else { return }
+        // Claim the run before the first await; otherwise a second caller
+        // passes the guard while this one checks the account.
+        isSyncing = true
+        defer { isSyncing = false }
         guard await iCloudAvailable() else {
             lastError = "iCloud not available — sign in via Settings."
             return
         }
-
-        isSyncing = true
         lastError = nil
-        defer { isSyncing = false }
 
         do {
             try await pullThenPush()
             lastSyncAt = .now
             ToastCenter.shared.success("iCloud sync complete")
+        } catch is CancellationError {
+            // Sync was turned off mid-run; nothing to report.
         } catch {
             lastError = error.localizedDescription
             ToastCenter.shared.error("iCloud sync failed",
@@ -73,8 +76,17 @@ final class CloudSyncService: ObservableObject {
                             predicate: NSPredicate(value: true))
         query.sortDescriptors = [NSSortDescriptor(key: "updatedAt", ascending: false)]
 
-        // Pull
-        let (matchResults, _) = try await privateDB.records(matching: query, resultsLimit: 500)
+        // Pull every page. Dropping the cursor after the first 500 left older
+        // cloud-only history off new devices.
+        var (matchResults, cursor) = try await privateDB.records(matching: query, resultsLimit: 500)
+        while let next = cursor {
+            let page = try await privateDB.records(continuingMatchFrom: next, resultsLimit: 500)
+            matchResults += page.matchResults
+            cursor = page.queryCursor
+        }
+        // Turning sync off while the pull was suspended must not merge the
+        // stale snapshot back into the local store.
+        try Self.checkStillEnabled()
         var remoteByID: [String: (record: CKRecord, conv: StoredConversation)] = [:]
         for (_, result) in matchResults {
             switch result {
@@ -152,6 +164,7 @@ final class CloudSyncService: ObservableObject {
         var pushFailures = 0
         let pushTotal = localByID.count
         for conv in localByID.values {
+            try Self.checkStillEnabled()
             let recordID = CKRecord.ID(recordName: conv.id.uuidString)
             let existing = remoteByID[conv.id.uuidString]?.record
             if let existing, let rUpdated = existing["updatedAt"] as? Date,
@@ -188,6 +201,12 @@ final class CloudSyncService: ObservableObject {
         if pushFailures > 0 {
             throw CloudSyncError.partialPush(failed: pushFailures, total: pushTotal)
         }
+    }
+
+    /// Consent is rechecked after each suspension: turning sync off in
+    /// Settings can't reach an in-flight run otherwise.
+    private static func checkStillEnabled() throws {
+        guard AppSettings.shared.iCloudSyncEnabled else { throw CancellationError() }
     }
 }
 

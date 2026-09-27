@@ -38,6 +38,37 @@ final class ModelDownloadCenterServiceTests: XCTestCase {
         XCTAssertEqual(model.progress, 0)
         XCTAssertFalse(model.isReady)
     }
+
+    @MainActor
+    func testFailedDeleteKeepsAssistantSelection() throws {
+        let fm = FileManager.default
+        let parent = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let destination = parent.appendingPathComponent("model")
+        try fm.createDirectory(at: destination, withIntermediateDirectories: true)
+        // A read-only parent makes removing the model directory fail.
+        try fm.setAttributes([.posixPermissions: 0o555], ofItemAtPath: parent.path)
+        defer {
+            try? fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: parent.path)
+            try? fm.removeItem(at: parent)
+        }
+        let model = DownloadableModel(
+            id: "delete-fails",
+            displayName: "Delete Fails",
+            subtitle: "example/delete-fails",
+            sizeLabel: "1 GB",
+            category: .assistant,
+            downloader: HFModelDownloadManager(repoID: "example/delete-fails", destination: destination)
+        )
+        let settings = AppSettings.shared
+        let saved = settings.assistantModelID
+        defer { settings.assistantModelID = saved }
+        settings.assistantModelID = model.id
+
+        ModelDownloadCenter.shared.handleDeletion(of: model)
+
+        XCTAssertTrue(fm.fileExists(atPath: destination.path))
+        XCTAssertEqual(settings.assistantModelID, model.id)
+    }
 }
 
 final class CodingAssistantServicePolicyTests: XCTestCase {

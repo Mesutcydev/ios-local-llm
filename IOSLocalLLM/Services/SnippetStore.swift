@@ -13,7 +13,10 @@ final class SnippetStore: ObservableObject {
 
     @Published private(set) var snippets: [PromptSnippet] = []
 
-    private let storageKey = "promptSnippets.v1"
+    /// UserDefaults key for the saved snippets. Exposed so
+    /// `WipeAllDataService` removes the key this store actually writes; it
+    /// used a never-written key, so wipe left every snippet on disk.
+    static let storageKey = "promptSnippets.v1"
 
     private init() { load() }
 
@@ -68,7 +71,7 @@ final class SnippetStore: ObservableObject {
     // MARK: - Persistence
 
     private func load() {
-        if let data = UserDefaults.standard.data(forKey: storageKey),
+        if let data = UserDefaults.standard.data(forKey: Self.storageKey),
            let decoded = try? JSONDecoder().decode([PromptSnippet].self, from: data) {
             snippets = decoded
         } else {
@@ -80,7 +83,7 @@ final class SnippetStore: ObservableObject {
 
     private func persist() {
         if let data = try? JSONEncoder().encode(snippets) {
-            UserDefaults.standard.set(data, forKey: storageKey)
+            UserDefaults.standard.set(data, forKey: Self.storageKey)
         }
     }
 }

@@ -26,4 +26,15 @@ final class WipeKeychainTests: XCTestCase {
         XCTAssertFalse(HFTokenStore.shared.hasToken)
         XCTAssertGreaterThanOrEqual(receipt.keychainItemsCleared, 1)
     }
+
+    func test_wipeAll_clearsLoadedMemoryFacts() {
+        MemoryStore.shared.add("wipe test fact")
+        XCTAssertFalse(MemoryStore.shared.contextBlock.isEmpty)
+
+        _ = WipeAllDataService.wipeAll()
+
+        XCTAssertTrue(MemoryStore.shared.facts.isEmpty)
+        XCTAssertEqual(MemoryStore.shared.contextBlock, "")
+        XCTAssertNil(UserDefaults.standard.data(forKey: MemoryStore.storageKey))
+    }
 }

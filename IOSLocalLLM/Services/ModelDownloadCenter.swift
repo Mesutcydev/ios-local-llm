@@ -959,14 +959,13 @@ final class ModelDownloadCenter: ObservableObject {
 
     // MARK: - Deletion
 
-    /// Single funnel for deleting a model from the UI. Guards against
-    /// dangling "active model" selections: when the model is the active
-    /// assistant / camera / voice pick, the owning service is unloaded and
-    /// the selection reset to its default before files are removed, so no
-    /// stale id survives the delete. Failures surface as a toast instead
-    /// of being swallowed by `try?`.
+    /// Single funnel for deleting a model from the UI. Owning services are
+    /// unloaded before the files go, so deleted weights aren't left mapped;
+    /// selections are reset only once the delete succeeded, so a failed
+    /// delete keeps the user's pick. Failures surface as a toast instead of
+    /// being swallowed by `try?`.
     func handleDeletion(of model: DownloadableModel) {
-        resetActiveSelections(for: model)
+        unloadOwners(of: model)
         do {
             try model.delete()
         } catch {
@@ -974,6 +973,7 @@ final class ModelDownloadCenter: ObservableObject {
                                       detail: error.localizedDescription)
             return
         }
+        resetActiveSelections(for: model)
         // Custom (HF-searched / imported) models also leave the catalog —
         // built-in entries stay so the user can re-download.
         if !model.isRequired {
@@ -984,38 +984,59 @@ final class ModelDownloadCenter: ObservableObject {
         refreshStorageStats()
     }
 
-    /// Clears any active selection pointing at `model` (back to its default)
-    /// and unloads the matching service so deleted weights aren't left
-    /// mapped in memory.
-    private func resetActiveSelections(for model: DownloadableModel) {
+    /// Unloads every service holding `model`. A conversation can run a model
+    /// other than the saved default, so the assistant's live selection is
+    /// checked as well as the setting.
+    private func unloadOwners(of model: DownloadableModel) {
         let settings = AppSettings.shared
-
-        let assistantSelection = LocalModelRegistry.unwrapAssistantSelectionID(settings.assistantModelID)
-        if assistantSelection == model.id || assistantSelection == model.sourceRepoID {
-            CodingAssistantService.shared.unload()
-            settings.assistantModelID = AssistantModelCatalog.presets.first?.id ?? ""
-            settings.hasPickedAssistantModel = false
+        let assistant = CodingAssistantService.shared
+        if Self.selects(model, assistantID: settings.assistantModelID)
+            || Self.selects(model, assistantID: assistant.activeSelectionID) {
+            assistant.unload()
         }
-        let voiceConversationSelection = LocalModelRegistry.unwrapAssistantSelectionID(settings.voiceConversationModelID)
-        if voiceConversationSelection == model.id || voiceConversationSelection == model.sourceRepoID {
-            settings.voiceConversationModelID = ""
-        }
-
-        // Camera / visual persists the canonical source repo, which can differ
-        // from the catalog preset id for one-package, dual-role models.
-        let visualSelection = LocalModelRegistry.storedVisionSelectionID(settings.cameraVisualModelID)
-        if visualSelection == model.id
-            || visualSelection == model.sourceRepoID
-            || visualSelection == model.subtitle {
+        if Self.selects(model, visualID: settings.cameraVisualModelID) {
             if model.id == FastVLMService.modelID {
                 FastVLMService.shared.unload()
             } else {
                 MLXVisionService.shared.unload()
             }
+        }
+    }
+
+    /// Points every selection of the deleted `model` back at its default.
+    private func resetActiveSelections(for model: DownloadableModel) {
+        let settings = AppSettings.shared
+        let assistant = CodingAssistantService.shared
+
+        if Self.selects(model, assistantID: settings.assistantModelID) {
+            settings.assistantModelID = AssistantModelCatalog.presets.first?.id ?? ""
+            settings.hasPickedAssistantModel = false
+        }
+        // The live model may be a conversation's pick rather than the
+        // default. Repoint it at the default without loading, so the next
+        // send doesn't try to load deleted weights.
+        if Self.selects(model, assistantID: assistant.activeSelectionID) {
+            Task { await assistant.adoptSelectionWithoutLoading(AssistantModelCatalog.currentSelection()) }
+        }
+        if Self.selects(model, assistantID: settings.voiceConversationModelID) {
+            settings.voiceConversationModelID = ""
+        }
+        if Self.selects(model, visualID: settings.cameraVisualModelID) {
             settings.cameraVisualModelID = ""        // default = FastVLM
             settings.hasPickedCameraVisualModel = false
         }
+    }
 
+    private static func selects(_ model: DownloadableModel, assistantID stored: String) -> Bool {
+        let id = LocalModelRegistry.unwrapAssistantSelectionID(stored)
+        return id == model.id || id == model.sourceRepoID
+    }
+
+    /// Camera / visual persists the canonical source repo, which can differ
+    /// from the catalog preset id for one-package, dual-role models.
+    private static func selects(_ model: DownloadableModel, visualID stored: String) -> Bool {
+        let id = LocalModelRegistry.storedVisionSelectionID(stored)
+        return id == model.id || id == model.sourceRepoID || id == model.subtitle
     }
 
     // MARK: - Refresh

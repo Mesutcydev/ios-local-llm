@@ -25,7 +25,8 @@ final class MetricKitHandler: NSObject, ObservableObject, MXMetricManagerSubscri
         let json: String          // raw JSON payload for debugging
     }
 
-    private let storageKey = "ioslocalllm.metrickit.entries.v1"
+    /// UserDefaults key for cached MetricKit entries, shared with `WipeAllDataService`.
+    static let storageKey = "ioslocalllm.metrickit.entries.v1"
 
     override private init() {
         super.init()
@@ -87,7 +88,7 @@ final class MetricKitHandler: NSObject, ObservableObject, MXMetricManagerSubscri
     }
 
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey),
+        guard let data = UserDefaults.standard.data(forKey: Self.storageKey),
               let decoded = try? JSONDecoder().decode([Entry].self, from: data)
         else { return }
         entries = decoded
@@ -95,12 +96,12 @@ final class MetricKitHandler: NSObject, ObservableObject, MXMetricManagerSubscri
 
     private func save() {
         guard let data = try? JSONEncoder().encode(entries) else { return }
-        UserDefaults.standard.set(data, forKey: storageKey)
+        UserDefaults.standard.set(data, forKey: Self.storageKey)
     }
 
     func clear() {
         entries = []
-        UserDefaults.standard.removeObject(forKey: storageKey)
+        UserDefaults.standard.removeObject(forKey: Self.storageKey)
     }
 
     // MARK: - Helpers

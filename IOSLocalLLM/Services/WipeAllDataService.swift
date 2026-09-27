@@ -75,22 +75,32 @@ enum WipeAllDataService {
 
         // 4. Snippets, memory, benchmark history, metrickit entries
         let defaults = UserDefaults.standard
+        // These must be the keys the owning stores actually write. Snippets,
+        // memory and recent prompts used never-written `ioslocalllm.*` names,
+        // so wipe reported success while they stayed on disk.
         let keysToWipe = [
-            "ioslocalllm.snippets.v1",
-            "ioslocalllm.memory.v1",
-            "ioslocalllm.benchmark.history.v1",
-            "ioslocalllm.metrickit.entries.v1",
-            "ioslocalllm.recentPrompts",
+            SnippetStore.storageKey,
+            MemoryStore.storageKey,
+            BenchmarkService.storageKey,
+            MetricKitHandler.storageKey,
+            // Composer recents, written by @AppStorage in KeyboardToolbar.
+            "recentPromptsBlob",
         ]
         // Snippet / memory counts (best-effort)
-        if let snipData = defaults.data(forKey: "ioslocalllm.snippets.v1"),
+        if let snipData = defaults.data(forKey: SnippetStore.storageKey),
            let snips = try? JSONSerialization.jsonObject(with: snipData) as? [Any] {
             r.snippetsDeleted = snips.count
         }
-        if let memData = defaults.data(forKey: "ioslocalllm.memory.v1"),
+        if let memData = defaults.data(forKey: MemoryStore.storageKey),
            let mems = try? JSONSerialization.jsonObject(with: memData) as? [Any] {
             r.memoriesDeleted = mems.count
         }
+        // Clear the loaded copies too. Removing only the keys left the facts
+        // in memory: they were still injected into the next prompt, and the
+        // next edit persisted them again.
+        MemoryStore.shared.clearAll()
+        SnippetStore.shared.resetToStarter()
+        BenchmarkService.shared.clearHistory()
         for k in keysToWipe { defaults.removeObject(forKey: k) }
 
         // 5. Reset onboarding + model-pick flags so the next launch feels

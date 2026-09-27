@@ -241,10 +241,11 @@ final class BenchmarkService: ObservableObject {
 
     // MARK: - Persistence
 
-    private let storageKey = "ioslocalllm.benchmark.history.v1"
+    /// UserDefaults key for benchmark history, shared with `WipeAllDataService`.
+    static let storageKey = "ioslocalllm.benchmark.history.v1"
 
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey),
+        guard let data = UserDefaults.standard.data(forKey: Self.storageKey),
               let decoded = try? JSONDecoder().decode([BenchmarkResult].self, from: data)
         else { return }
         history = decoded
@@ -252,12 +253,12 @@ final class BenchmarkService: ObservableObject {
 
     private func save() {
         guard let data = try? JSONEncoder().encode(history) else { return }
-        UserDefaults.standard.set(data, forKey: storageKey)
+        UserDefaults.standard.set(data, forKey: Self.storageKey)
     }
 
     func clearHistory() {
         history = []
-        UserDefaults.standard.removeObject(forKey: storageKey)
+        UserDefaults.standard.removeObject(forKey: Self.storageKey)
     }
 
     func delete(_ result: BenchmarkResult) {
