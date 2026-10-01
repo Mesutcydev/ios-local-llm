@@ -36,9 +36,10 @@ authenticated API surface while omitting the assistant, lens, voice, and
 paired-Mac UI from the shipped app. The broader source catalog remains
 available for reuse and reference.
 
-The app was previously distributed through the App Store. This repository is
-now the canonical source distribution. Sideload builds may appear under
-Releases; there is currently no official App Store binary from this repo.
+App Store releases are coming soon. Public sideload IPA downloads have been
+retired. This repository remains the canonical source distribution; official
+App Store links will be published at [ondevice.fun](https://ondevice.fun/) when
+available.
 
 [![OnDevice LLM specification chart](Docs/Images/ios-local-llm-spec-chart.png)](Docs/Images/ios-local-llm-spec-chart.svg)
 
@@ -183,9 +184,10 @@ provenance attestation. See
 [release verification](Docs/RELEASE_VERIFICATION.md) for the exact download
 and verification commands.
 
-Sideload builds are also listed in the [AltStore Classic source](altstore/source.json).
-See [AltStore publishing instructions](altstore/README.md) for the source URL
-and update workflow.
+Public IPA downloads and the AltStore catalog have been retired as app
+distribution moves to the App Store. The [retired AltStore source](altstore/README.md)
+is kept empty for existing subscribers. Source archives and release history
+remain available.
 
 ## Models and large files
 

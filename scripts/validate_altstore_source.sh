@@ -8,12 +8,12 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 2
 fi
 
+# Empty app arrays are valid for the retired public catalog.
 jq -e '
   def nonempty_string: (type == "string" and length > 0);
   . as $source
   | ($source.name | nonempty_string)
   and (($source.apps | type) == "array")
-  and (($source.apps | length) > 0)
   and (($source.apps | map(.bundleIdentifier) | unique | length) == ($source.apps | length))
   and all($source.apps[];
       (.name | nonempty_string)
