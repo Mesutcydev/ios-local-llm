@@ -295,7 +295,7 @@
     your pocket — no account, no cloud round trip, no telemetry.
   </p>
   <div class="cta">
-    <a class="btn primary" href="https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.6-146/OnDeviceLAS-sideload-entitled-3.2.6-146.ipa">Download the IPA</a>
+    <a class="btn primary" href="https://ondevice.fun/#install">App Store updates</a>
     <a class="btn" href="https://github.com/Mesutcydev/ios-local-llm">View source</a>
     <span class="cta-note">MIT · iOS 18+</span>
   </div>
@@ -590,38 +590,10 @@
 </div></section>
 
 <section id="install"><div class="wrap">
-  <div class="eyebrow">Install</div>
-  <h2>Sideloading with entitlements</h2>
-  <p class="sub">
-    Install the release IPA with <strong>AltStore</strong> / AltServer, <strong>SideStore</strong>,
-    or <a href="https://github.com/Mesutcydev/ForgeSign-iOS">ForgeSign</a> if you would rather
-    re-sign on the device itself. TrollStore is not a general option any more — it only covers
-    a narrow range of older iOS versions.
-  </p>
-  <p class="sub">
-    The IPA is ad-hoc signed and declares two memory entitlements. Any of these tools re-signs it
-    with your own certificate, so <strong>check the entitlements survive that step</strong> —
-    without them iOS caps the process well below what a useful model needs, and larger models are
-    killed on load rather than degrading.
-  </p>
-  <div class="tbl-scroll"><table>
-    <thead><tr><th>Entitlement</th><th>Why it is there</th></tr></thead>
-    <tbody>
-      <tr>
-        <td class="k">com.apple.developer.kernel.increased-memory-limit</td>
-        <td>Raises the per-process memory cap so multi-billion-parameter weights stay resident.</td>
-      </tr>
-      <tr>
-        <td class="k">com.apple.developer.kernel.extended-virtual-addressing</td>
-        <td>Allows the large virtual address reservations the MLX and llama.cpp allocators make.</td>
-      </tr>
-    </tbody>
-  </table></div>
-  <p class="sub" style="margin:26px 0 0">
-    The bundle identifier is <code>com.mesutcydev.ondevicelas</code>, separate from the source
-    app, so both can be installed side by side. The repository contains no model weights —
-    load or import a model on the device, then make it resident from the server homepage.
-  </p>
+  <div class="eyebrow">Availability</div>
+  <h2>Coming soon to the App Store</h2>
+  <p class="sub">Public sideload downloads have been retired. Official App Store links will be published at <a href="https://ondevice.fun/">ondevice.fun</a> when the apps are available.</p>
+  <p class="sub">Source code and historical release notes remain available on GitHub. Models are downloaded separately after installation.</p>
 </div></section>
 
 <section id="security"><div class="wrap">
@@ -646,15 +618,15 @@
   </div>
   <div class="note" style="margin-top:26px">
     <strong>Independent project.</strong> On Device: LAS is community-maintained and is not
-    affiliated with, endorsed by, or supported by Apple Inc. It is distributed as source and
-    as a sideload build; there is no App Store release.
+    affiliated with, endorsed by, or supported by Apple Inc. Source code remains public;
+    App Store releases are coming soon.
   </div>
 </div></section>
 
 <footer><div class="wrap">
   <div class="row">
     <a href="https://github.com/Mesutcydev/ios-local-llm">Repository</a>
-    <a href="https://github.com/Mesutcydev/ios-local-llm/releases/tag/sideload-3.2.6-146">Releases</a>
+    <a href="https://github.com/Mesutcydev/ios-local-llm/releases">Releases</a>
     <a href="https://github.com/Mesutcydev/ios-local-llm/blob/main/Docs/AGENT_INTEGRATION.md">Agent integration</a>
     <a href="https://github.com/Mesutcydev/ios-local-llm/blob/main/SECURITY.md">Security policy</a>
     <a href="https://github.com/Mesutcydev/ios-local-llm/blob/main/LICENSE">MIT License</a>

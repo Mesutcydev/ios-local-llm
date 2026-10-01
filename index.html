@@ -193,46 +193,26 @@
       <span>— CODELENS / PRODUCT NOTE</span>
     </section>
 
-    <section class="build-section build-section--editions shell" id="build" aria-labelledby="build-title">
+    <section class="build-section shell" id="build" aria-labelledby="build-title">
       <div class="build-section__intro">
         <div class="section-index">05 / GET CLOSER</div>
-        <h2 id="build-title">Two studios.<br><span>Your signing.</span></h2>
-        <p>Choose OnDevice LLM for iOS 18+ or the separate OnDevice Core edition for iOS 27+. Both IPAs have verified app and share-extension entitlements. Your installer must re-sign it with a profile that authorizes the requested capabilities. The Home preview is current; other previews illustrate earlier builds. Physical-device runtime validation remains open.</p>
+        <h2 id="build-title">Coming soon.<br><span>On the App Store.</span></h2>
+        <p>Public sideload downloads have been retired as the OnDevice apps move to the App Store. Official download links will appear on ondevice.fun when the apps are available. Source code and app previews remain available.</p>
         <div class="build-actions">
-          <a class="button button--solid" href="https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.7-112/IOSLocalLLM-3.2.7-112-sideload-entitled-full.ipa">Download OnDevice LLM · iOS 18+ <span aria-hidden="true">↓</span></a>
-          <a class="button button--solid" href="https://github.com/Mesutcydev/ios-local-llm/releases/download/ondevice-core-1.0.0-10/OnDeviceCoreAIStudio-sideload-entitled-1.0.0-10.ipa">Download OnDevice Core · iOS 27+ <span aria-hidden="true">↓</span></a>
-          <a class="button button--ghost" href="https://github.com/Mesutcydev/ios-local-llm/tree/12140376efffef131e3adc9015ec501afa11959c" target="_blank" rel="noreferrer">Open source <span aria-hidden="true">↗</span></a>
-          <a class="button button--ghost" href="#preview">View the fresh captures</a>
-          <a class="button button--ghost" href="https://mesut.uk/apps" target="_blank" rel="noreferrer">Open mesut.uk app page <span aria-hidden="true">↗</span></a>
+          <a class="button button--solid" href="https://ondevice.fun/#install">App Store updates <span aria-hidden="true">↗</span></a>
+          <a class="button button--ghost" href="https://github.com/Mesutcydev/ondevice-core" target="_blank" rel="noreferrer">Open source <span aria-hidden="true">↗</span></a>
+          <a class="button button--ghost" href="#preview">View the app previews</a>
         </div>
       </div>
-      <div class="build-downloads" style="display:grid;gap:24px;min-width:0">
       <div class="build-card glass-card">
-        <div class="build-card__top"><span class="status-pill"><span class="status-dot" aria-hidden="true"></span> ONDEVICE LLM / PACKAGE VERIFIED</span><span class="build-card__date">05 SEP 2026</span></div>
-        <div class="build-card__version"><strong><span data-build>3.2.7</span></strong><span>/</span><strong data-build-number>112</strong></div>
-        <p>OnDevice LLM<br><span>iOS 27 SDK · iOS 18+ · ad-hoc re-signer asset</span></p>
+        <div class="build-card__top"><span class="status-pill"><span class="status-dot" aria-hidden="true"></span> APP STORE / COMING SOON</span></div>
+        <p>OnDevice apps<br><span>Local AI for iPhone</span></p>
         <div class="artifact-list">
-          <div class="artifact"><span>DEVICE IPA</span><strong>OnDevice LLM / 3.2.7 (112)</strong><small>51.2 MiB · full app and share-extension entitlements intact · profile-less ad-hoc asset for a re-signer.</small></div>
-          <div class="artifact"><span>ENTITLEMENTS</span><strong>Full entitlements intact</strong><small>App Group + iCloud + RAM entitlements preserved per-component; your installer re-signs it.</small></div>
-          <div class="artifact"><span>PREVIEWS</span><strong>Fresh capture set</strong><small>Home · Assistant · Lens · Voice · Models</small></div>
+          <div class="artifact"><span>AVAILABILITY</span><strong>App Store releases coming soon</strong><small>Official download links will be published when available.</small></div>
+          <div class="artifact"><span>SOURCE</span><strong>Open source</strong><small>Source code and historical release notes remain available on GitHub.</small></div>
+          <div class="artifact"><span>PREVIEWS</span><strong>Explore the apps</strong><small>Home · Assistant · Lens · Voice · Models</small></div>
         </div>
-        <a class="build-card__link build-card__link--download" href="https://github.com/Mesutcydev/ios-local-llm/releases/download/sideload-3.2.7-112/IOSLocalLLM-3.2.7-112-sideload-entitled-full.ipa">Download OnDevice LLM 3.2.7 (112) <span aria-hidden="true">↓</span></a>
-        <a class="build-card__link" href="https://mesut.uk/apps" target="_blank" rel="noreferrer">Browse mesut.uk apps <span aria-hidden="true">↗</span></a>
-      </div>
-      <div class="build-card glass-card" id="ondevice-core-download">
-        <div class="build-card__top"><span class="status-pill">ONDEVICE CORE / PACKAGE VERIFIED</span><span class="build-card__date">05 SEP 2026</span></div>
-        <img src="site-assets/ondevice-core-icon.png" alt="OnDevice Core silver eye icon" width="64" height="64" style="border-radius:14px;margin-top:24px" loading="lazy">
-        <div class="build-card__version"><strong>1.0.0</strong><span>/</span><strong>10</strong></div>
-        <p>OnDevice Core<br><span>iOS 27+ · separate app · installer re-signing required</span></p>
-        <div class="artifact-list">
-          <div class="artifact"><span>DEVICE IPA</span><strong>OnDevice Core / 1.0.0 (10)</strong><small>51.96 MB · app and share-extension entitlements preserved exactly.</small></div>
-          <div class="artifact"><span>ENTITLEMENTS</span><strong>App Groups · CloudKit · Memory · PCC</strong><small>The installer must sign with profiles that authorize these capabilities.</small></div>
-          <div class="artifact"><span>THIS BUILD</span><strong>Silver eye identity and streaming refinements</strong><small>Matching splash, document-source inspection, and cancellable document search. Physical-device runtime validation remains open.</small></div>
-        </div>
-        <a class="build-card__link build-card__link--download" href="https://github.com/Mesutcydev/ios-local-llm/releases/download/ondevice-core-1.0.0-10/OnDeviceCoreAIStudio-sideload-entitled-1.0.0-10.ipa">Download OnDevice Core 1.0.0 (10) <span aria-hidden="true">↓</span></a>
-        <a class="build-card__link" href="https://github.com/Mesutcydev/ios-local-llm/releases/tag/ondevice-core-1.0.0-10">Checksums and release notes <span aria-hidden="true">↗</span></a>
-        <a class="build-card__link" href="https://raw.githubusercontent.com/Mesutcydev/ios-local-llm/main/altstore/source.json">AltStore source for both apps <span aria-hidden="true">↗</span></a>
-      </div>
+        <a class="build-card__link" href="https://ondevice.fun/">Explore OnDevice apps <span aria-hidden="true">↗</span></a>
       </div>
     </section>
 
