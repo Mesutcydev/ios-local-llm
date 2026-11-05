@@ -2,7 +2,8 @@
 
 **Run open-source LLMs on iPhone offline** — chat, vision, voice, RAG, and an
 authenticated local API. Built in SwiftUI with MLX, llama.cpp, whisper.cpp, and
-Core ML. No account. No telemetry. No cloud inference by default.
+Core ML. Local chat works without an OnDevice account. See the
+[privacy policy](PRIVACY_POLICY.md) for optional network features.
 
 [![Validate](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/validate.yml/badge.svg)](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/validate.yml)
 [![CodeQL](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/codeql.yml/badge.svg)](https://github.com/Mesutcydev/ios-local-llm/actions/workflows/codeql.yml)
@@ -10,7 +11,7 @@ Core ML. No account. No telemetry. No cloud inference by default.
 [![License: MIT](https://img.shields.io/badge/original%20code-MIT-2ea44f.svg)](LICENSE)
 [![Swift](https://img.shields.io/badge/Swift-5.10-F05138.svg)](https://www.swift.org/)
 [![Platform](https://img.shields.io/badge/platform-iOS%2018%2B%20%7C%20Mac%20Catalyst-blue.svg)](SETUP_INSTRUCTIONS.md)
-[![Website](https://img.shields.io/badge/website-mesut.uk-0A66C2.svg)](https://mesut.uk/apps/codelens)
+[![Website](https://img.shields.io/badge/website-ondevice.fun-0A66C2.svg)](https://ondevice.fun/local-ai-studio/)
 
 > Part of the **OnDevice** product line. Independent open-source project — not
 > affiliated with or endorsed by Apple Inc.
@@ -23,12 +24,12 @@ agent channel.
 
 | Product | Status | What it is |
 | --- | --- | --- |
-| **OnDevice LLM** | Main · open source | Full iOS/macCatalyst workbench (this repository) |
-| [**OnDevice Local API Server**](https://mesutcydev.github.io/ios-local-llm/ondevice.html) | Beta | Dedicated local API surface for agents and LAN clients — [project page](https://mesutcydev.github.io/ios-local-llm/ondevice.html) |
+| [**OnDevice LLM**](https://ondevice.fun/local-ai-studio/) | App Store · open source | Full iOS/macCatalyst workbench (this repository) |
+| [**OnDevice Local API Server**](https://ondevice.fun/iphone-local-api/) | Sideload build | Dedicated local API surface for agents and LAN clients |
 | **OnDevice CoreAI Local API Server** | Beta | CoreAI-backed local API server variant |
 
 Repository slug remains `ios-local-llm` for stable links. Product name is
-**OnDevice LLM**. Site: [mesutcydev.github.io/ios-local-llm](https://mesutcydev.github.io/ios-local-llm/).
+**OnDevice LLM** in this source tree. See the [app website](https://ondevice.fun/local-ai-studio/) for the current app.
 
 The generated `OnDeviceLAS` target is the current server-only distribution of
 this source tree. It keeps local model loading, safety policy, and the
@@ -36,10 +37,9 @@ authenticated API surface while omitting the assistant, lens, voice, and
 paired-Mac UI from the shipped app. The broader source catalog remains
 available for reuse and reference.
 
-App Store releases are coming soon. Public sideload IPA downloads have been
-retired. This repository remains the canonical source distribution; official
-App Store links will be published at [ondevice.fun](https://ondevice.fun/) when
-available.
+[The App Store edition](https://apps.apple.com/app/id6770114399) is free on
+the App Store and requires iOS 18 or later. For the dedicated LAS build, see the
+[LAS download and setup guide](https://ondevice.fun/iphone-local-api/).
 
 [![OnDevice LLM specification chart](Docs/Images/ios-local-llm-spec-chart.png)](Docs/Images/ios-local-llm-spec-chart.svg)
 
@@ -184,10 +184,10 @@ provenance attestation. See
 [release verification](Docs/RELEASE_VERIFICATION.md) for the exact download
 and verification commands.
 
-Public IPA downloads and the AltStore catalog have been retired as app
-distribution moves to the App Store. The [retired AltStore source](altstore/README.md)
-is kept empty for existing subscribers. Source archives and release history
-remain available.
+Install the Studio app from the App Store or see the
+[LAS download and setup guide](https://ondevice.fun/iphone-local-api/) for the
+separate server IPA. The [retired AltStore source](altstore/README.md) remains
+empty for existing subscribers.
 
 ## Models and large files
 
