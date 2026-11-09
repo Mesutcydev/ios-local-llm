@@ -239,17 +239,29 @@ struct LocalAPIServerView: View {
     }
 
     private func copyKey() {
-        UIPasteboard.general.string = manager.apiKey
+        copySecret(manager.apiKey)
         copyMessage = "API key copied"
+    }
+
+    /// Copies text containing the API key so it stays on this device (no
+    /// Universal Clipboard sync) and leaves the pasteboard after a short time.
+    private func copySecret(_ text: String) {
+        UIPasteboard.general.setItems(
+            [["public.utf8-plain-text": text]],
+            options: [
+                .localOnly: true,
+                .expirationDate: Date().addingTimeInterval(120)
+            ]
+        )
     }
 
     private func copySetupCommands() {
         let base = manager.addresses.first.map { "http://\($0):\(port)" } ?? "http://<DEVICE_IP>:\(port)"
-        UIPasteboard.general.string = """
+        copySecret("""
         export OPENAI_BASE_URL=\(base)/v1
         export OPENAI_API_KEY=\(manager.apiKey)
         curl "$OPENAI_BASE_URL/models" -H "Authorization: Bearer $OPENAI_API_KEY"
-        """
+        """)
         copyMessage = "Setup commands copied with API key"
     }
 

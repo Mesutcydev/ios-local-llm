@@ -34,7 +34,7 @@ enum ConversationTitler {
         // working even when the user is offline / model unloaded.
         guard case .ready = assistant.state else { return }
 
-        let prompt = "Summarize the following user request in 3 to 5 words. Lowercase, no punctuation, no quotes. Just the title.\n\nRequest:\n\(firstUserMessage)"
+        let prompt = "Summarize the following user request in 3 to 5 words. Lowercase, no punctuation, no quotes. Just the title.\n\nRequest:\n\(firstUserMessage.prefix(600))"
         let messages: [ChatMessage] = [
             ChatMessage(role: .system, content: "You produce ultra-short conversation titles. Output only the title."),
             ChatMessage(role: .user, content: prompt)

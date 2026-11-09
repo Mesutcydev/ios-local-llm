@@ -86,6 +86,11 @@ enum ToolRunner {
 
     // MARK: - Detection
 
+    /// Compiled once: `extractCall` runs for every streamed token.
+    private static let toolFenceRegex = try? NSRegularExpression(
+        pattern: #"```tool(?![A-Za-z0-9_])\s*([\s\S]*?)\s*```"#
+    )
+
     /// Returns the first tool call found in a streamed assistant reply.
     /// Small/local models commonly ignore the requested fence and emit plain
     /// JSON, OpenAI-style `tool_calls`, or Hermes `<tool_call>` wrappers, so
@@ -102,8 +107,7 @@ enum ToolRunner {
         // echoes a tool_result block before emitting its next tool call had the
         // tool_result matched first (capturing "_result\n{…}", which fails JSON
         // parse) and the real chained call was silently dropped.
-        let pattern = #"```tool(?![A-Za-z0-9_])\s*([\s\S]*?)\s*```"#
-        if let regex = try? NSRegularExpression(pattern: pattern) {
+        if let regex = toolFenceRegex {
             let range = NSRange(text.startIndex..., in: text)
             if let match = regex.firstMatch(in: text, range: range),
                match.numberOfRanges >= 2,

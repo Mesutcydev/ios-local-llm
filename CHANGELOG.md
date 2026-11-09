@@ -5,6 +5,29 @@ and intends to use semantic version tags for source releases.
 
 ## [Unreleased]
 
+### Security
+
+- Stopping the local API server now closes every open client connection, not
+  only the listener.
+- The local API caps concurrent connections and pre-authentication header
+  size, rejects unparsable `Content-Length` values, and closes the connection
+  after rejecting a chunked upload.
+- Model output and user prompts are no longer written to runtime logs on
+  tool-parse failures or Lens requests.
+- Copied API keys stay on the device and expire from the pasteboard.
+- Web page fetches enforce the size cap while streaming, and the URL safety
+  check covers all of `fe80::/10`.
+
+### Fixed
+
+- An unreadable conversation history file is preserved instead of being
+  overwritten by the next save.
+- The manual thermal reset can no longer override a critical thermal state.
+- Backgrounding cancels GGUF vision inference.
+- `/mac` and `/m` only trigger Mac context when used as whole commands.
+- Bridge token frames are valid JSON for tabs and control characters.
+- Web fetches appear in the network activity indicator.
+
 ## [3.2.6] - 2026-07-29
 
 ### Added
