@@ -10,7 +10,7 @@ Product line: OnDevice
 Repository: https://github.com/Mesutcydev/ios-local-llm
 Website: https://mesutcydev.github.io/ios-local-llm/
 License: MIT for original project code and documentation
-Swift module and Xcode scheme: IOSLocalLLM
+Swift module and Xcode scheme: OnDeviceLAS (sources live under IOSLocalLLM/)
 
 ## OnDevice product line
 

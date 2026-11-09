@@ -85,8 +85,8 @@ App tests, after native dependencies and CocoaPods are available:
 
 ```bash
 xcodebuild test \
-  -workspace IOSLocalLLM.xcworkspace \
-  -scheme IOSLocalLLM \
+  -workspace OnDeviceLAS.xcworkspace \
+  -scheme OnDeviceLAS \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
 

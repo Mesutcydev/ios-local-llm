@@ -1754,6 +1754,26 @@ final class LocalAPIServerTests: XCTestCase {
         XCTAssertFalse(request?.wantsKeepAlive == true)
     }
 
+    func testHTTPRequestFlagsUnparsableContentLength() {
+        func request(contentLength: String) -> HTTPRequest? {
+            HTTPRequest(data: Data(
+                ("POST /v1/chat/completions HTTP/1.1\r\n"
+                    + "Content-Length: \(contentLength)\r\n"
+                    + "\r\n"
+                    + "{}").utf8
+            ))
+        }
+        XCTAssertEqual(request(contentLength: "2")?.hasInvalidContentLength, false)
+        XCTAssertEqual(request(contentLength: "abc")?.hasInvalidContentLength, true)
+        XCTAssertEqual(request(contentLength: "+2")?.hasInvalidContentLength, true)
+        XCTAssertEqual(request(contentLength: "2, 2")?.hasInvalidContentLength, true)
+        XCTAssertEqual(
+            HTTPRequest(data: Data("GET /v1/models HTTP/1.1\r\n\r\n".utf8))?
+                .hasInvalidContentLength,
+            false
+        )
+    }
+
     func testTokenBudgetReservesPromptOutputAndSafetyTokens() throws {
         let prompt = LocalAPITokenCount(tokens: 5_000, mode: .exact)
         let decision = try LocalAPITokenBudget.makeDecision(

@@ -1832,7 +1832,7 @@ enum LocalAPIToolCalling {
                 "Tool call parsing failed · parser=\(parser.rawValue) · "
                     + "dialect=\(detectedDialect) · "
                     + "tools=\(tools.map(\.name).joined(separator: ",")) · "
-                    + "raw=\(output.prefix(600))",
+                    + "rawLength=\(output.count)",
                 level: .error,
                 subsystem: "api"
             )
@@ -2716,6 +2716,12 @@ actor LocalAPIServer {
     }
     private var activeInference: ActiveInference?
     private var connectionKeepAlive: [ObjectIdentifier: Bool] = [:]
+    /// Every accepted socket, so `stop()` can close idle keep-alive
+    /// connections instead of leaving them able to request inference.
+    private var openConnections: [ObjectIdentifier: NWConnection] = [:]
+    private let maxOpenConnections = 32
+    /// Request line plus headers. Bodies are bounded by `maxRequestBytes`.
+    private let maxHeaderBytes = 64 * 1024
     // Streaming bodies use HTTP/1.1 chunked framing. Strict clients, SDKs,
     // and LAN proxies treat a close-delimited body as incomplete until the
     // connection drops; an explicit terminating chunk gives every consumer a
@@ -2758,6 +2764,14 @@ actor LocalAPIServer {
         listener?.cancel()
         listener = nil
         listenerID = nil
+        // Cancelling the listener only stops new accepts. Close every socket
+        // that is already open so a stopped server cannot keep serving
+        // pipelined or keep-alive requests.
+        let connections = Array(openConnections.values)
+        openConnections.removeAll()
+        for connection in connections {
+            connection.cancel()
+        }
         guard let activeInference else { return }
         activeInference.signal.finish()
         activeInference.connection.cancel()
@@ -2785,6 +2799,11 @@ actor LocalAPIServer {
         let connectionMonitor = LocalAPIConnectionMonitor()
         let requestBuffer = HTTPRequestBuffer()
         let connectionID = ObjectIdentifier(connection)
+        guard listener != nil, openConnections.count < maxOpenConnections else {
+            connection.cancel()
+            return
+        }
+        openConnections[connectionID] = connection
         connectionKeepAlive[connectionID] = false
         connection.stateUpdateHandler = { state in
             switch state {
@@ -2796,6 +2815,7 @@ actor LocalAPIServer {
         }
         connection.start(queue: .global(qos: .userInitiated))
         defer {
+            openConnections.removeValue(forKey: connectionID)
             connectionKeepAlive.removeValue(forKey: connectionID)
             chunkedStreamConnections.remove(connectionID)
             streamingHeadersCommitted.remove(connectionID)
@@ -2805,6 +2825,9 @@ actor LocalAPIServer {
         while !Task.isCancelled {
             do {
                 let request = try await readRequest(connection, buffer: requestBuffer)
+                // The server may have been stopped while this read was
+                // suspended; never route a request after that.
+                guard openConnections[connectionID] != nil else { return }
                 connectionKeepAlive[connectionID] = request.wantsKeepAlive
                 await route(
                     request,
@@ -2864,6 +2887,10 @@ actor LocalAPIServer {
                 return parsed.request
             }
             guard buffer.data.count <= maxRequestBytes else {
+                throw RequestReadError.tooLarge
+            }
+            if buffer.data.count > maxHeaderBytes,
+               buffer.data.range(of: Data("\r\n\r\n".utf8)) == nil {
                 throw RequestReadError.tooLarge
             }
             let chunk = try await receive(connection, timeout: remaining)
@@ -2934,7 +2961,22 @@ actor LocalAPIServer {
         // The request parser only understands Content-Length-delimited
         // bodies. Answering chunked uploads with 411 instead of a misleading
         // "JSON body required" 400 tells SDKs and proxies exactly what to fix.
+        if request.hasInvalidContentLength {
+            // The parser could not frame this body, so any bytes that follow
+            // would be misread as a second request. Answer and close.
+            connectionKeepAlive[ObjectIdentifier(connection)] = false
+            await error(
+                connection,
+                status: 400,
+                message: "Content-Length must be a single non-negative integer.",
+                dialect: request.path == "/v1/messages" ? .anthropic : .openAIChat
+            )
+            return
+        }
+
         if request.method == "POST", request.declaresChunkedBody {
+            // The unread chunked body is still on the socket; do not reuse it.
+            connectionKeepAlive[ObjectIdentifier(connection)] = false
             await error(
                 connection,
                 status: 411,
@@ -5255,6 +5297,16 @@ struct HTTPRequest {
             return false
         }
         return true
+    }
+
+    /// True when a Content-Length header is present but is not a plain
+    /// non-negative integer. The parser frames such a request as body-less.
+    var hasInvalidContentLength: Bool {
+        guard let raw = headers["content-length"] else { return false }
+        guard !raw.isEmpty, raw.allSatisfy({ $0.isASCII && $0.isNumber }) else {
+            return true
+        }
+        return Int(raw) == nil
     }
 
     fileprivate static func parse(data: Data) -> (request: Self, consumedBytes: Int)? {

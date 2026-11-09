@@ -32,11 +32,21 @@ final class BridgeAgentMode {
     /// Prefix tokens we recognise as "fetch Mac context first". `/mac`
     /// is the canonical form; `/m` is a power-user short. Whitespace-
     /// or end-of-string-terminated so we don't match `/macros`.
-    private static let commandPrefixes = ["/mac ", "/mac", "/m ", "/m"]
+    private static let commandPrefixes = ["/mac", "/m"]
+
+    /// The command token that starts `trimmed`, if it is followed by
+    /// whitespace or the end of the string.
+    private static func matchedCommand(in trimmed: String) -> String? {
+        commandPrefixes.first { prefix in
+            guard trimmed.hasPrefix(prefix) else { return false }
+            let rest = trimmed.dropFirst(prefix.count)
+            return rest.first.map(\.isWhitespace) ?? true
+        }
+    }
 
     func isMacCommand(_ text: String) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        return Self.commandPrefixes.contains { trimmed == $0 || trimmed.hasPrefix($0 + " ") || trimmed.hasPrefix($0) }
+        return Self.matchedCommand(in: trimmed) != nil
     }
 
     /// Strip the leading `/mac` prefix from a user message, returning
@@ -44,11 +54,8 @@ final class BridgeAgentMode {
     /// whitespace.
     func stripCommand(from text: String) -> String {
         var t = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        for prefix in Self.commandPrefixes {
-            if t.hasPrefix(prefix) {
-                t = String(t.dropFirst(prefix.count))
-                break
-            }
+        if let prefix = Self.matchedCommand(in: t) {
+            t = String(t.dropFirst(prefix.count))
         }
         return t.trimmingCharacters(in: .whitespacesAndNewlines)
     }

@@ -206,13 +206,16 @@ actor BridgeServer {
 
         let messages = ir.toChatMessages()
         for await token in inferStream(messages: messages) {
-            let esc = token
-                .replacingOccurrences(of: "\\", with: "\\\\")
-                .replacingOccurrences(of: "\"", with: "\\\"")
-                .replacingOccurrences(of: "\n", with: "\\n")
-                .replacingOccurrences(of: "\r", with: "\\r")
-            let line = "data: {\"type\":\"token\",\"text\":\"\(esc)\"}\n\n"
-            do { try await sendRaw(conn, Data(line.utf8)) }
+            // JSONSerialization escapes tabs and other control characters
+            // that hand-rolled escaping missed, which produced invalid JSON
+            // for code output.
+            guard let payload = try? JSONSerialization.data(
+                withJSONObject: ["type": "token", "text": token]
+            ) else { continue }
+            var line = Data("data: ".utf8)
+            line.append(payload)
+            line.append(Data("\n\n".utf8))
+            do { try await sendRaw(conn, line) }
             catch { break }
         }
         try? await sendRaw(conn, Data("event: done\n\n".utf8))
