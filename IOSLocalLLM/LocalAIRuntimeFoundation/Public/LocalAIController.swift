@@ -162,7 +162,10 @@ public final class LocalAIController {
                 }
             }
 
-            continuation.onTermination = { @Sendable _ in
+            continuation.onTermination = { @Sendable termination in
+                // A stream that finished on its own must not issue a global
+                // cancel, which could kill the request that follows it.
+                guard case .cancelled = termination else { return }
                 task.cancel()
                 Task { @MainActor [weak self] in
                     self?.cancelGeneration()
@@ -249,7 +252,10 @@ public final class LocalAIController {
                 }
             }
 
-            continuation.onTermination = { @Sendable _ in
+            continuation.onTermination = { @Sendable termination in
+                // A stream that finished on its own must not issue a global
+                // cancel, which could kill the request that follows it.
+                guard case .cancelled = termination else { return }
                 task.cancel()
                 Task { @MainActor [weak self] in
                     self?.cancelGeneration()

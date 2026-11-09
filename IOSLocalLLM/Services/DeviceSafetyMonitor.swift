@@ -229,6 +229,8 @@ final class DeviceSafetyMonitor: ObservableObject {
     /// fine but iOS hasn't dropped the .serious flag yet. Flips the effective
     /// state to .nominal until iOS reports a change.
     func clearThermalWarning() {
+        // A critical thermal state is a safety stop, not a stale warning.
+        guard ProcessInfo.processInfo.thermalState != .critical else { return }
         pendingTransition?.cancel()
         effectiveThermalState = .nominal
         // iOS only posts thermalStateDidChange on TRANSITIONS — if the

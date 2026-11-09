@@ -833,7 +833,7 @@ final class LensInferenceLoop: ObservableObject {
         )
         self.lastModelInput = debugThumb
         self.lastModelInputInfo = info
-        print("[LensInferenceLoop] describe req=\(requestID) size=\(cg.width)×\(cg.height) prompt=\"\(prompt)\"")
+        print("[LensInferenceLoop] describe req=\(requestID) size=\(cg.width)×\(cg.height) promptLength=\(prompt.count)")
 
         let caps = capabilities
         inferenceTask?.cancel()

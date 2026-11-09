@@ -147,6 +147,9 @@ final class LifecycleController: Sendable {
         FastVLMService.shared.stopGeneration()
         ImageGenerationService.shared.cancel()
         MLXVisionService.shared.cancelCurrentInference()
+        // GGUF vision runs on Metal too; GPU work must not continue in the
+        // background.
+        LlamaCppVLMService.shared.cancelCurrentInference()
 
         guard epoch == lifecycleEpoch else { return }
 
