@@ -17,6 +17,8 @@ public actor WebPageFetchService {
     private let extractor: WebContentExtractor
     private let session: URLSession
     private let delegate: RedirectGuard
+    private static let maxBodyBytes = 2 * 1024 * 1024
+    private static let activityLabel = "Web fetch"
 
     public init(validator: URLSafetyValidator, limiter: WebRateLimiter, extractor: WebContentExtractor) {
         self.validator = validator
@@ -56,7 +58,15 @@ public actor WebPageFetchService {
         req.httpMethod = "GET"
 
         let started = Date()
-        let (data, response) = try await session.data(for: req)
+        // Stream the body so the size cap is enforced while bytes arrive
+        // instead of after an arbitrarily large response is already in memory.
+        await NetworkActivityMonitor.shared.begin(label: Self.activityLabel)
+        defer {
+            Task { @MainActor in
+                NetworkActivityMonitor.shared.end(label: Self.activityLabel)
+            }
+        }
+        let (bytes, response) = try await session.bytes(for: req)
 
         guard let http = response as? HTTPURLResponse else {
             throw WebToolError.parsingFailed(reason: "non-HTTP response")
@@ -78,9 +88,17 @@ public actor WebPageFetchService {
             throw WebToolError.unsupportedContentType(ctRaw.isEmpty ? "unknown" : ctRaw)
         }
 
-        // 5. Size cap.
-        if data.count > 2 * 1024 * 1024 {
-            throw WebToolError.tooLarge(bytes: data.count)
+        // 5. Size cap, checked against the declared length first and then
+        // against what actually arrives.
+        if http.expectedContentLength > Int64(Self.maxBodyBytes) {
+            throw WebToolError.tooLarge(bytes: Int(http.expectedContentLength))
+        }
+        var data = Data()
+        for try await byte in bytes {
+            data.append(byte)
+            if data.count > Self.maxBodyBytes {
+                throw WebToolError.tooLarge(bytes: data.count)
+            }
         }
 
         let finalURL = http.url ?? url

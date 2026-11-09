@@ -152,7 +152,8 @@ public actor URLSafetyValidator {
     private static func isPrivateIPv6(_ ip: String) -> Bool {
         let lower = ip.lowercased()
         if lower == "::1" || lower == "::" { return true }              // loopback / unspecified
-        if lower.hasPrefix("fe80:") || lower.hasPrefix("fe80::") { return true }  // link-local
+        // fe80::/10 link-local spans fe80 through febf.
+        if ["fe8", "fe9", "fea", "feb"].contains(where: { lower.hasPrefix($0) }) { return true }
         if lower.hasPrefix("fc") || lower.hasPrefix("fd") { return true }         // fc00::/7 ULA
         if lower.hasPrefix("ff") { return true }                                  // multicast
         // IPv4-mapped (::ffff:10.0.0.1) — re-check the IPv4 portion

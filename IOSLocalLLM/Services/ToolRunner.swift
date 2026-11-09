@@ -405,8 +405,12 @@ enum ToolRunner {
     // Any unexpected token, trailing input, or non-finite result → .failure.
     enum ArithmeticEvaluator {
         enum EvalError: Error { case syntax }
+        static let maxExpressionLength = 256
 
         static func evaluate(_ s: String) -> Result<Double, EvalError> {
+            // The parser is recursive; bound the input so a degenerate
+            // model-produced expression cannot overflow the task stack.
+            guard s.count <= maxExpressionLength else { return .failure(.syntax) }
             do {
                 let tokens = try tokenize(s)
                 guard !tokens.isEmpty else { return .failure(.syntax) }

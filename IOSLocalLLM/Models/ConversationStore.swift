@@ -18,6 +18,9 @@ final class ConversationStore: ObservableObject {
     private let decoder = JSONDecoder()
     private var saveTask: Task<Void, Never>?
     private var persistRetryCount = 0
+    /// Set when the saved history exists but could not be read and could not
+    /// be moved aside. Persisting then would replace it with an empty set.
+    private var historyUnreadable = false
 
     init() {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -109,6 +112,16 @@ final class ConversationStore: ObservableObject {
                 "conversation load failed: \(error.localizedDescription)",
                 category: "conversations"
             )
+            // Keep the unreadable file instead of letting the next save
+            // overwrite the user's whole history with an empty list.
+            let backupURL = fileURL.deletingLastPathComponent().appendingPathComponent(
+                "conversations.unreadable-\(Int(Date().timeIntervalSince1970)).json"
+            )
+            do {
+                try FileManager.default.moveItem(at: fileURL, to: backupURL)
+            } catch {
+                historyUnreadable = true
+            }
             return
         }
         // One-time cleanup: older builds let a thinking model's raw "<think>…"
@@ -156,6 +169,7 @@ final class ConversationStore: ObservableObject {
     }
 
     private func persist(_ snapshot: [StoredConversation]) {
+        guard !historyUnreadable else { return }
         do {
             let data = try encoder.encode(snapshot)
             // At-rest encryption: .completeUnlessOpen means the file is encrypted
@@ -205,6 +219,7 @@ final class ConversationStore: ObservableObject {
         saveTask?.cancel()
         saveTask = nil
         conversations = []
+        historyUnreadable = false
     }
 
     /// Public title update — used by ConversationTitler.
