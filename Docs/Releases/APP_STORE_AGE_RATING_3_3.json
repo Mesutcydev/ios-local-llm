@@ -1,0 +1,29 @@
+{
+  "versionId": "a39f201f-11ad-4771-a1ee-a847ce83eb46",
+  "scope": "replacement build 118; proposal for review, not applied",
+  "attributes": {
+    "ageRatingOverrideV2": "EIGHTEEN_PLUS",
+    "parentalControls": true,
+    "ageAssurance": false,
+    "unrestrictedWebAccess": true,
+    "userGeneratedContent": false,
+    "messagingAndChat": false,
+    "advertising": false,
+    "healthOrWellnessTopics": true,
+    "medicalOrTreatmentInformation": "INFREQUENT_OR_MILD",
+    "profanityOrCrudeHumor": "INFREQUENT_OR_MILD",
+    "matureOrSuggestiveThemes": "INFREQUENT_OR_MILD",
+    "violenceCartoonOrFantasy": "INFREQUENT_OR_MILD",
+    "violenceRealistic": "INFREQUENT_OR_MILD",
+    "horrorOrFearThemes": "INFREQUENT_OR_MILD",
+    "gunsOrOtherWeapons": "INFREQUENT_OR_MILD",
+    "alcoholTobaccoOrDrugUseOrReferences": "INFREQUENT_OR_MILD",
+    "sexualContentOrNudity": "NONE",
+    "sexualContentGraphicAndNudity": "NONE",
+    "violenceRealisticProlongedGraphicOrSadistic": "NONE",
+    "gambling": false,
+    "gamblingSimulated": "NONE",
+    "contests": "NONE",
+    "lootBox": false
+  }
+}

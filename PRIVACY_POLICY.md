@@ -1,67 +1,125 @@
-# iOS Local LLM Privacy Policy
+# OnDevice LLM Privacy Policy
 
-_Last updated: 2026-07-29_
+_Last updated: 2026-11-13_
 
-iOS Local LLM is a privacy-first iOS app. AI inference and app storage are local by
-default. The iOS Local LLM project does not operate an account system, analytics
-service, advertising service, or telemetry backend.
+OnDevice LLM (the iOS Local LLM project) runs downloaded AI models locally by
+default. We do not operate an account system, advertising service, analytics
+service, or telemetry backend. Optional network features send data to the
+recipients described below. Do not include private information in web queries.
 
-## What iOS Local LLM does NOT do
+## Local storage
 
-- We do not collect any personal information.
-- We do not require an account or sign-in.
-- We do not include analytics, advertising SDKs, or third-party trackers.
-- We do not send your conversations, photos, code, or voice to an iOS Local LLM-operated service.
-- We do not have access to your data — even if we wanted to, we have no servers that hold it.
+Conversations are saved in the app sandbox with iOS file protection. A saved
+conversation can include message text, image thumbnails from camera captures
+or imported photos, and model context derived from documents, web pages or the
+Knowledge Base. These attachments are retained with the conversation; they
+are not always discarded after analysis. Camera preview frames that are not
+attached to a conversation are processed in memory.
 
-## What stays on your device
+Memories, snippets, custom personas, macros and settings are saved locally.
+The Knowledge Base stores imported document content and derived indexes.
+Downloaded models, temporary download data, and cached resources stay in the
+app sandbox. Local diagnostics and benchmarks contain operational information
+and are not sent to us. Web activity history can contain search queries and
+URLs and is rotated at 500 entries or approximately 1 MB.
 
-- **Conversations**: stored locally in `~/Documents/conversations.json` with iOS at-rest encryption (file-protection class: "complete unless open").
-- **Memories** ("remember this about me" facts): stored in `UserDefaults`, never uploaded.
-- **Snippets**: same as memories.
-- **Models**: downloaded from huggingface.co to `~/Documents/HFModels/`. A
-  download uses HTTPS and may include a Hugging Face token if you explicitly
-  save one for gated repositories.
-- **MetricKit diagnostics** (crash/perf reports): stored locally for your reference. Apple aggregates these system-wide; that's an OS behavior, not ours.
+## Optional network features
 
-## When iOS Local LLM DOES talk to the network
+- **Model discovery and downloads:** After you request them, Hugging Face or
+  the selected source receives model requests and connection metadata such as
+  your IP address. A saved Hugging Face token is sent only to authorized
+  Hugging Face endpoints when needed. Model terms are separate from the app's
+  source license. FastVLM research weights are not offered in the consumer app.
+- **Web search and web pages:** The query or URL shown in the permission sheet
+  is sent to the selected provider or website. Your complete chat history and
+  attachments are not sent by the web tool. Providers receive connection
+  metadata and an API credential when configured. They may retain queries,
+  associate them with the API account, and use them to improve their services.
+  Brave's API notice specifies query retention for up to 90 days; Tavily and
+  Exa describe query reuse under their applicable terms. Review the provider's
+  policy before allowing a request. Changing an app setting does not delete
+  records already held by a provider. The App Store privacy label lists this
+  search and request data, with an Analytics purpose, because providers may
+  reuse it; the app itself includes no analytics SDK and sends no usage data to
+  the developer.
+- **Mac Bridge and Local API:** When enabled, these features send prompts,
+  outputs and requested tool data between this app and authorized clients on
+  your network. TLS encrypts the connection. Pairing can disclose a device
+  identifier to the paired client. Clients control their own storage.
+- **iCloud sync:** Off by default. When enabled, Apple stores entire saved
+  conversations, including attached thumbnails and model context, in your
+  private CloudKit database. Disabling sync stops future synchronization but
+  does not delete existing cloud copies. Use the separate cloud deletion
+  control to remove them.
+- **Private Cloud Compute:** Available only in builds configured with Apple's
+  approved capability. Choosing this model requires a separate disclosure and
+  explicit consent before prompts are sent to Apple's cloud service. Standard
+  builds do not enable this capability.
+- **External links and exports:** Links open after your action. When you export
+  or share content, the chosen app or destination controls its handling.
 
-The app makes network requests only for these explicit, user-initiated actions:
+Provider policies: [Hugging Face](https://huggingface.co/privacy),
+[Brave API](https://api-dashboard.search.brave.com/app/documentation/general/privacy-policy),
+[Tavily](https://www.tavily.com/privacy), [Exa](https://exa.ai/privacy-policy),
+[Apple](https://www.apple.com/legal/privacy/).
 
-1. **Searching Hugging Face** in the Download Center.
-2. **Downloading a model** after you choose it.
-3. **Web search** when you enable it and submit a query. The configured search
-   provider receives the query under its own privacy terms.
-4. **Mac Bridge and Local API Server** when you enable them. Requests are sent
-   between devices on your local network.
-5. **iCloud sync** when you enable it.
-6. **External documentation and links** when you choose to open them.
+The network indicator covers the app's monitored networking layer, not every
+system or framework connection. There is no silent fallback from local
+inference to a remote model.
 
-The app includes a network-activity indicator for requests made through its
-monitored networking layer. Treat it as a useful diagnostic, not as a
-system-wide packet monitor.
+## Camera, microphone and speech
 
-## iCloud sync (optional, off by default)
+Camera and microphone access require system permission. Selected images may
+be saved as conversation thumbnails as described above. Microphone audio is
+transcribed with a local Whisper model or Apple's on-device Speech framework.
+If on-device recognition is unavailable, the app refuses the operation instead
+of allowing server recognition. Apple frameworks operate under Apple's
+privacy practices. Turning off permission in system Settings stops access.
 
-If you turn on "Sync conversations to iCloud" in Settings, your conversations are saved to your **private CloudKit database** (the same place your Notes/Reminders go). Apple, not us, controls this storage. We never see it. You can turn this off at any time and wipe the cloud copy from Settings.
+## Calendar and Reminders
 
-## Children's privacy
+The assistant can read your upcoming calendar events, add a calendar event, or
+add a reminder only after you approve each request in the chat, and only after
+iOS shows its own permission prompt. Event and reminder text stays on the device
+and is used only as context for the local model. If calendar details are in a
+chat, any later web search asks for your approval again and shows the exact
+query before it is sent. Voice conversations cannot use these tools. Turning
+off Calendar or Reminders access in system Settings stops access.
 
-iOS Local LLM does not knowingly collect any data — from any age group, including children.
+## Deletion and retention
 
-## Your control
+Local content remains until you delete it, wipe it, or a documented cache or
+history limit rotates it. "Wipe all on-device data" clears local conversations,
+snippets, memories, custom prompts, web activity, downloaded models, cached
+resources, app preferences and saved API credentials. It also disables iCloud
+sync and stops local servers. Existing cloud copies and third-party records
+are not deleted. A parental PIN is retained so resetting content cannot bypass
+a parent's restriction; unlock and remove it in Parental Controls when desired.
+Restart after a wipe before using model features again.
 
-- "Wipe all on-device data" in Settings clears every conversation, snippet, memory, downloaded model, and cache.
-- Uninstalling iOS Local LLM removes everything we've stored.
+Uninstalling removes the app sandbox. Keychain credentials can survive
+uninstallation; clear saved credentials before uninstalling if desired. System
+backups and exports you made are controlled separately by you and Apple.
 
-## Models
+## Local content checks
 
-iOS Local LLM can run third-party models through Apple's MLX framework and other
-local runtimes. Models are subject to their own licenses and may be open
-source, source-available, community-licensed, non-commercial, or research-only.
-We do not relicense them.
+Generated image prompts and outputs are checked on the device. The image
+classifier runs locally before an output is shown or shared; it does not send
+images or prompts to us. These checks can make mistakes and are separate from
+the parental feature lock. Language-model safety instructions do not guarantee
+that arbitrary downloaded models will always produce appropriate content.
 
-## Contact
+## Parental controls
 
-If you have questions about this policy, open an issue in the iOS Local LLM GitHub
-repository. Do not put private data in a public issue.
+A parent or guardian can set a separate PIN to restrict image generation. The
+PIN verifier and retry limits are kept in the device-only Keychain; the PIN is
+not sent to us. Access relocks when the app backgrounds. This feature lock does
+not verify age or replace content safeguards. Screen Time can restrict access
+to the entire app. The app is not designed as a children's educational app.
+
+## Contact and changes
+
+For privacy questions, email mesutcydev@gmail.com or use the repository's
+support page: https://github.com/Mesutcydev/ios-local-llm/issues. Do not include
+private content or credentials in an email or issue. We update this policy when handling changes;
+optional network features keep their own consent controls.

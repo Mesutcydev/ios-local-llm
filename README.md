@@ -29,9 +29,10 @@ agent channel.
 Repository slug remains `ios-local-llm` for stable links. Product name is
 **OnDevice LLM**. Site: [mesutcydev.github.io/ios-local-llm](https://mesutcydev.github.io/ios-local-llm/).
 
-The app was previously distributed through the App Store. This repository is
-now the canonical source distribution. Sideload builds may appear under
-Releases; there is currently no official App Store binary from this repo.
+The app is available on the
+[App Store](https://apps.apple.com/app/ondevice-local-ai-studio/id6770114399).
+This repository is its open-source source distribution; sideload builds may
+also appear under Releases.
 
 [![OnDevice LLM specification chart](Docs/Images/ios-local-llm-spec-chart.png)](Docs/Images/ios-local-llm-spec-chart.svg)
 
@@ -55,9 +56,12 @@ performance evidence; see [validation policy](Docs/VALIDATION.md).
 - On-device chat and code assistance with MLX models
 - Live camera and image analysis
 - Local voice activity detection, transcription, and speech synthesis
+- LFM3 Audio/Omni voice input and native speech, with native function calls
 - Local OpenAI-compatible API server and Mac bridge
 - Model discovery and downloads from Hugging Face
 - iPhone and Apple-silicon Mac Catalyst targets
+- Adaptive iPhone Duo navigation, responsive cards, and fold-aware controls;
+  see [Duo support and validation](Docs/IPHONE_DUO.md)
 
 ## AI and agent integration
 
@@ -70,7 +74,7 @@ External development tools and agents can use the opt-in local server through:
 - A versioned, pairing-authenticated iPhone-to-Mac tool protocol with explicit
   risk levels
 
-The local API is bearer-authenticated HTTP intended for a trusted LAN and
+The local API is bearer-authenticated HTTPS intended for a trusted LAN and
 stops when iOS backgrounds the app. Compatibility is intentionally scoped;
 unsupported options fail explicitly. See
 [AI and agent integration](Docs/AGENT_INTEGRATION.md) for routes, examples,
@@ -121,7 +125,7 @@ setup, tests, accessibility, and documentation are especially welcome.
 ## Requirements
 
 - macOS with Apple silicon
-- Xcode 26 or newer
+- Xcode 27.1 or newer (iOS 18 remains the minimum runtime)
 - iOS 18 or newer
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen)
 - [CocoaPods](https://cocoapods.org/)

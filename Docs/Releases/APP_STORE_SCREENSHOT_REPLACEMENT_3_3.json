@@ -1,0 +1,55 @@
+{
+  "appId": "6770114399",
+  "version": "3.3",
+  "build": "118",
+  "localization": "en-US",
+  "versionLocalizationId": "9d1ffb90-f7ef-46f1-82c3-e400f8fd12d3",
+  "status": "prepared_not_applied",
+  "reason": "Remove blanket no-cloud/no-keys/privacy promises, obsolete image-model UI and legacy marketing mockups. Use current app-in-use captures. This compact replacement set has one screenshot for each existing display type.",
+  "sets": [
+    {
+      "setId": "c6ee6539-62c1-4959-b2f9-7e69bd0f95c7",
+      "screenshotDisplayType": "APP_IPHONE_67",
+      "operation": "replace_complete_set",
+      "existingScreenshotIds": [
+        "9776cb4d-5288-41b7-bfe8-ccf0420599fc",
+        "31a4bbdf-13ac-4d8b-8d63-4ce7e448deb2",
+        "7e02d7c2-4bd0-4f34-9a76-eae745141777",
+        "897913ac-05db-4ed4-9dc8-64f27d5d1e61",
+        "2bb52423-ba98-45cb-99c1-7290fd28e93a",
+        "c8bddd71-66ad-421b-b29c-57d97628a235"
+      ],
+      "replacementFiles": [
+        {
+          "path": "build/AppStore/screenshots-118/iPhone/01-studio.png",
+          "sha256": "e1e9ae767e98dbfa3c9edca529ddb8c575b8d4f44fb29933ea559c615204d2ff",
+          "width": 1320,
+          "height": 2868,
+          "capture": "Current build 118 Home UI; iPad shows actual iPhone compatibility presentation."
+        }
+      ]
+    },
+    {
+      "setId": "8e86760c-899d-4491-a87e-c1aeb1c258ba",
+      "screenshotDisplayType": "APP_IPAD_PRO_3GEN_129",
+      "operation": "replace_complete_set",
+      "existingScreenshotIds": [
+        "cddaad57-51dc-4326-90fe-b20ee022c000",
+        "099e0100-176e-4c9c-97b6-b37d482f560c",
+        "2e0d24ff-e46e-4b24-8e42-1645ed42c615",
+        "b6588b0e-9a36-4cb0-9ec5-04c7214a7bc6",
+        "ef78f367-caff-4bd7-b64f-5eebd06126f5",
+        "8685751e-40e0-4ccf-8e3e-e4403999052c"
+      ],
+      "replacementFiles": [
+        {
+          "path": "build/AppStore/screenshots-118/iPad/01-studio.png",
+          "sha256": "a0d0498ca7698c852065cb268f79f0bb41094ed6bc18ec70d8909c0a5902520e",
+          "width": 2064,
+          "height": 2752,
+          "capture": "Current build 118 Home UI; iPad shows actual iPhone compatibility presentation."
+        }
+      ]
+    }
+  ]
+}

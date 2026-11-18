@@ -9,8 +9,22 @@ claim complete compatibility with every option in the upstream APIs.
 
 ## Local API server
 
-Enable the server in the app's Mac/bridge settings. The default port is
-`11434`, and the UI displays the reachable LAN address and generated API key.
+Open **Home → Local API Server** to manage the listener. The workspace follows
+the app's Studio theme and shows listener state separately from model state.
+The default port is `11434`; connection details, certificate pin, and client
+recipes are available before starting. Entering the page does not start the
+local API.
+
+Start the server explicitly, then choose or load an installed local model.
+API model controls never download weights implicitly and do not offer Apple
+Private Cloud. The model shares the chat runtime and retains the same memory,
+thermal, cancellation, and background-cleanup policies.
+
+Choose OpenAI, Anthropic, or Ollama to copy a pinned HTTPS setup recipe. The
+displayed recipe masks the API key until revealed; **Copy setup commands**
+includes the actual key. Credential copies use the device-only clipboard.
+Revealed credentials hide when leaving the page or backgrounding the app.
+Rotating the key requires confirmation and clients must then update their key.
 
 Every request requires either:
 
@@ -25,8 +39,9 @@ x-api-key: YOUR_IOS_LOCAL_LLM_KEY
 ```
 
 The key is generated locally, stored in Keychain, and can be rotated from the
-app. Traffic is plain HTTP, so use the server only on a trusted network. The
-listener stops when iOS backgrounds the app.
+app. Traffic uses HTTPS with a locally generated device certificate; clients
+must trust that certificate or verify its public-key pin. Use the server only
+on a trusted network. The listener stops when iOS backgrounds the app.
 
 ### Implemented routes
 
@@ -36,6 +51,8 @@ listener stops when iOS backgrounds the app.
 | OpenAI | `POST /v1/chat/completions` | Text chat, streaming, and supported tool calls |
 | OpenAI | `POST /v1/responses` | Text input/output compatibility; no tool calling |
 | Anthropic | `POST /v1/messages` | Text messages and supported tool-use blocks |
+| OpenAI | `POST /v1/embeddings` | `input` string or string array, `encoding_format` `float` or `base64`; token-array input is rejected |
+| Ollama | `POST /api/embed`, `POST /api/embeddings` | `input` array / legacy `prompt`; same embedder |
 | Ollama | `GET /api/tags` | Lists available models |
 | Ollama | `POST /api/show` | Returns local model information |
 | Ollama | `POST /api/chat` | Chat and supported tool definitions |
@@ -45,16 +62,23 @@ Unsupported request options are rejected explicitly rather than silently
 ignored. The route implementation and decoding rules live in
 `IOSLocalLLM/Services/Bridge/LocalAPIServer.swift`.
 
+Clients must trust the device certificate or verify its public-key pin. The
+examples replace CA/hostname validation with an explicit SPKI pin, so never omit
+`--pinnedpubkey` when using `--insecure`. A generic SDK must be configured to
+trust the certificate; changing the URL alone is insufficient.
+
 ### OpenAI-compatible example
 
 ```bash
-export OPENAI_BASE_URL="http://IPHONE_IP:11434/v1"
+export OPENAI_BASE_URL="https://IPHONE_IP:11434/v1"
 export OPENAI_API_KEY="YOUR_IOS_LOCAL_LLM_KEY"
+# Copy this pin from the iPhone screen through a trusted channel.
+export IOS_LOCAL_LLM_TLS_PIN="sha256//PIN_SHOWN_ON_IPHONE"
 
-curl "$OPENAI_BASE_URL/models" \
+curl --insecure --pinnedpubkey "$IOS_LOCAL_LLM_TLS_PIN" "$OPENAI_BASE_URL/models" \
   -H "Authorization: Bearer $OPENAI_API_KEY"
 
-curl "$OPENAI_BASE_URL/chat/completions" \
+curl --insecure --pinnedpubkey "$IOS_LOCAL_LLM_TLS_PIN" "$OPENAI_BASE_URL/chat/completions" \
   -H "Authorization: Bearer $OPENAI_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -125,7 +149,7 @@ compatible with the matching LocalCoderBridge implementation.
   written to ordinary logs.
 - Network compatibility does not imply cloud inference. Generation remains
   local unless a separately identified feature explicitly says otherwise.
-- Do not expose the local HTTP listener to an untrusted Wi-Fi network or the
+- Do not expose the local HTTPS listener to an untrusted Wi-Fi network or the
   public internet.
 
 ## Guidance for integrations
@@ -140,3 +164,16 @@ An external agent should:
 4. Prefer streaming for long responses and tolerate an early terminal event.
 5. Avoid retry loops that could worsen memory or thermal pressure.
 6. Keep user approval outside the model for any consequential tool action.
+
+### Native LFM3 functions
+
+LFM3 models receive function schemas in their native `<tools>` prompt section.
+Complete `<tool_call><function=...><parameter=...>` responses are decoded into
+the existing local/API call types. Unknown functions, missing required
+arguments, duplicate parameters, invalid scalar types, incomplete calls, and
+calls inside reasoning are rejected. API calls return to the client for
+execution; local calls keep the existing consent, file-picker, web, parental,
+and tool-depth policies. OpenAI, Anthropic, and Ollama response formats remain
+the same. Audio/Omni checkpoints are non-reasoning; their voice output is
+native 24 kHz PCM. The compatibility HTTP routes remain text-based; realtime
+WebSocket audio and video input are outside this change.

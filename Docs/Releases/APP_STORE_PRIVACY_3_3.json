@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "dataUsages": [
+    {
+      "category": "SEARCH_HISTORY",
+      "purposes": [
+        "APP_FUNCTIONALITY",
+        "ANALYTICS",
+        "OTHER_PURPOSES"
+      ],
+      "dataProtections": [
+        "DATA_LINKED_TO_YOU"
+      ]
+    },
+    {
+      "category": "USER_ID",
+      "purposes": [
+        "APP_FUNCTIONALITY"
+      ],
+      "dataProtections": [
+        "DATA_LINKED_TO_YOU"
+      ]
+    },
+    {
+      "category": "OTHER_DATA_TYPES",
+      "purposes": [
+        "APP_FUNCTIONALITY",
+        "ANALYTICS"
+      ],
+      "dataProtections": [
+        "DATA_LINKED_TO_YOU"
+      ]
+    }
+  ]
+}

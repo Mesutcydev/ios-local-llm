@@ -131,6 +131,8 @@ runtime:
 - OpenAI-style `GET /v1/models` and `POST /v1/chat/completions`
 - OpenAI Responses compatibility at `POST /v1/responses`
 - Anthropic Messages compatibility at `POST /v1/messages`
+- Embeddings at `POST /v1/embeddings`, `/api/embed`, `/api/embeddings`
+  (Apple NaturalLanguage sentence vectors, English space, any `model` accepted)
 - Ollama-compatible model, chat, and generation routes under `/api`
 - OpenAI/Anthropic-style tool-call decoding for supported text-chat routes
 - Authenticated iPhone-to-Mac tool calls under `/v1/agent/*`

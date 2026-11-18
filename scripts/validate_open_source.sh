@@ -160,6 +160,7 @@ retired_brand_matches="$(
     . \
     ':!ThirdParty/**' \
     ':!Pods/**' \
+    ':!Docs/Releases/**' \
     ':!scripts/validate_open_source.sh' \
     ':!*.pbxproj' |
     python3 -c '

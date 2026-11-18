@@ -1,0 +1,33 @@
+{
+  "version": "3.3.4",
+  "build": "125",
+  "status": "asc-verified-valid-build-attached-draft",
+  "localizations": {
+    "en-US": {
+      "whatsNew": "• Optional Core AI text chat on supported iOS 27 devices.\n• Browse and download Core AI text packs in the model library.\n• Improved cancellation and model switching.\n• Stronger checks for downloaded model packs.\n• More reliable document imports, knowledge-base cleanup, and web content handling.\n\nExisting MLX and GGUF models remain supported on iOS 18 and later.",
+      "promotionalText": "Explore local AI chat and document tools, with optional Core AI text models on supported iOS 27 devices. Choose what to download and run on your device."
+    },
+    "ru": {
+      "whatsNew": "• Дополнительный движок Core AI для текстового чата на совместимых устройствах с iOS 27.\n• Просматривайте и скачивайте текстовые пакеты Core AI в библиотеке моделей.\n• Улучшены остановка генерации и переключение моделей.\n• Усилена проверка загруженных пакетов моделей.\n• Повышена надёжность импорта документов, очистки базы знаний и обработки веб-контента.\n\nМодели MLX и GGUF по-прежнему поддерживаются на iOS 18 и новее.",
+      "promotionalText": "Локальный ИИ-чат и работа с документами. На совместимых устройствах с iOS 27 доступен Core AI. Выбирайте, какие модели загружать и запускать на устройстве."
+    },
+    "ar-SA": {
+      "whatsNew": "• محادثة نصية عبر Core AI كخيار إضافي على الأجهزة المتوافقة مع iOS 27.\n• تصفّح حزم Core AI النصية ونزّلها من مكتبة النماذج.\n• تحسين إيقاف التوليد والتبديل بين النماذج.\n• تعزيز التحقق من حزم النماذج التي يتم تنزيلها.\n• تحسين موثوقية استيراد المستندات وتنظيف قاعدة المعرفة ومعالجة محتوى الويب.\n\nيستمر دعم نماذج MLX وGGUF على iOS 18 والإصدارات الأحدث.",
+      "promotionalText": "محادثة ذكاء اصطناعي محلية وأدوات للمستندات، مع Core AI كخيار إضافي على أجهزة iOS 27 المتوافقة. اختر النماذج التي تنزّلها وتشغّلها على جهازك."
+    },
+    "pt-PT": {
+      "whatsNew": "• Chat de texto com Core AI opcional em dispositivos compatíveis com iOS 27.\n• Explore e descarregue pacotes de texto Core AI na biblioteca de modelos.\n• Melhorias na interrupção da geração e na troca de modelos.\n• Verificações reforçadas dos pacotes de modelos descarregados.\n• Maior fiabilidade na importação de documentos, limpeza da base de conhecimento e tratamento de conteúdos da Web.\n\nOs modelos MLX e GGUF continuam a ser suportados no iOS 18 e posterior.",
+      "promotionalText": "Chat com IA local e ferramentas para documentos, com Core AI opcional em dispositivos iOS 27 compatíveis. Escolha os modelos a descarregar e executar."
+    },
+    "ro": {
+      "whatsNew": "• Chat text cu Core AI, disponibil opțional pe dispozitive compatibile cu iOS 27.\n• Explorează și descarcă pachete text Core AI din biblioteca de modele.\n• Îmbunătățiri la oprirea generării și schimbarea modelelor.\n• Verificări mai stricte pentru pachetele de modele descărcate.\n• Import de documente, curățare a bazei de cunoștințe și procesare a conținutului web mai fiabile.\n\nModelele MLX și GGUF rămân compatibile cu iOS 18 și versiunile ulterioare.",
+      "promotionalText": "Chat cu IA locală și instrumente pentru documente, cu Core AI opțional pe dispozitive iOS 27 compatibile. Alege modelele pe care le descarci și le rulezi."
+    },
+    "el": {
+      "whatsNew": "• Προαιρετική συνομιλία κειμένου με Core AI σε συμβατές συσκευές με iOS 27.\n• Βρείτε και κατεβάστε πακέτα κειμένου Core AI στη βιβλιοθήκη μοντέλων.\n• Βελτιωμένη διακοπή παραγωγής και εναλλαγή μοντέλων.\n• Ενισχυμένοι έλεγχοι για τα πακέτα μοντέλων που κατεβάζετε.\n• Πιο αξιόπιστη εισαγωγή εγγράφων, εκκαθάριση βάσης γνώσεων και επεξεργασία περιεχομένου ιστού.\n\nΤα μοντέλα MLX και GGUF εξακολουθούν να υποστηρίζονται στο iOS 18 και νεότερες εκδόσεις.",
+      "promotionalText": "Τοπική συνομιλία AI και εργαλεία εγγράφων, με προαιρετικό Core AI σε συμβατές συσκευές iOS 27. Επιλέξτε ποια μοντέλα θα κατεβάσετε και θα εκτελέσετε."
+    }
+  },
+  "appStoreVersionId": "3142fd13-5dbd-48b7-bafb-d55c209e8749",
+  "appStoreBuildId": "5ea9f11e-b909-420c-b2f9-7f6c0185a2a8"
+}

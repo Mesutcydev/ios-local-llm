@@ -6,7 +6,7 @@ frameworks, CocoaPods, and signing profiles are not stored in Git.
 ## Prerequisites
 
 - Apple-silicon Mac
-- Xcode 26 or newer
+- Xcode 27.1 or newer (required for native iPhone Duo layout and vertical bars)
 - Xcode command-line tools
 - Homebrew
 - At least 15 GB of free space for native framework builds and package caches
@@ -42,7 +42,9 @@ The tracked root script builds the required slices from pinned submodules:
 ```
 
 Add `--with-catalyst` when you also need the Apple-Silicon Mac Catalyst target.
-llama.cpp v0.4.0 supports selecting iOS slices directly; no source patch is required.
+The pinned llama.cpp revision includes LFM3 text, vision, Audio, and Omni support and accepts
+iOS slices directly; no source patch is required. Rebuild llama.xcframework
+after updating the submodule; an older generated binary cannot load LFM3.
 
 Expected outputs:
 
@@ -66,13 +68,19 @@ open IOSLocalLLM.xcworkspace
 Open the workspace, not the `.xcodeproj`, so the ONNX Runtime pods are
 available.
 
-SwiftPM may report a conflicting `mlx-swift` identity because the project pins
-the PrismML fork for one-bit model kernels while another package declares the
-upstream repository transitively. This is a documented forward-compatibility
-risk in [Docs/XCODE_SECURITY_SETTINGS.md](Docs/XCODE_SECURITY_SETTINGS.md), not
-a missing package in the current lockfile.
+Both workspaces include SwiftPM mirrors that route transitive upstream
+`mlx-swift` references to the pinned PrismML fork used for one-bit model kernels.
+Keep these mappings and `Package.resolved` together when upgrading MLX packages;
+see [Docs/XCODE_SECURITY_SETTINGS.md](Docs/XCODE_SECURITY_SETTINGS.md).
 
 ## Run in Simulator
+
+When several Xcode versions are installed, select Xcode 27.1 or newer in
+Xcode Settings → Locations, or prefix build commands with
+`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` when that is the
+27.1 installation. An iOS 27.1 SDK build enables iPhone Duo's full display and
+vertical system bars; changing the deployment target alone does not. See
+[Duo validation](Docs/IPHONE_DUO.md) for the resizing and fold checks.
 
 Select the `IOSLocalLLM` scheme and an iOS 18 or newer Simulator. Simulator builds
 do not require a paid Apple Developer Program membership.
@@ -96,6 +104,12 @@ If you regenerate the project, make permanent identifier changes in
 `project.yml`; XcodeGen overwrites manual project-file changes.
 
 ## Optional models
+
+Before a Release build, prepare the small local image safety classifier using
+[the pinned conversion instructions](Docs/IMAGE_CONTENT_SAFETY.md). Debug builds
+without it refuse image generation; other features remain available. Release
+builds fail when the classifier is missing, so an unchecked image generator
+cannot be distributed accidentally.
 
 Models are deliberately separate from the repository.
 
@@ -151,3 +165,21 @@ default toolchain is Command Line Tools.
 
 Thermal, Jetsam, Metal-residency, and battery claims require physical-device
 validation; see [Docs/VALIDATION.md](Docs/VALIDATION.md).
+
+## LFM3 voice and tool support
+
+Download LFM3 Audio 2B or LFM3 Omni 2B from Models, then select it in
+Assistant or the Voice conversation model menu. Voice mode sends bounded
+16 kHz microphone audio to that model and plays its native 24 kHz speech
+when voice answers are enabled. Omni also accepts images in Assistant/Lens.
+These checkpoints do not use thinking mode. The app keeps its existing
+microphone permissions, local live transcript, thermal and residency policy.
+Video and realtime WebSocket audio are outside this integration.
+
+LFM3 native XML function calls are supported in chat, Voice, and the existing
+OpenAI/Anthropic/Ollama tool routes. The same tool allowlists and approval
+requirements apply. No tools execute merely because they appear in reasoning.
+
+An optional unit integration test accepts a separately reviewed GGUF model
+and projector pair through `LFM3_NATIVE_SMOKE_DIR` (`model.gguf`,
+`mmproj.gguf`). Source-only test runs skip it and never download weights.

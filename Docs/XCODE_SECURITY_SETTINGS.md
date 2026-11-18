@@ -40,9 +40,10 @@ None are explicitly disabled as a project policy.
 
 ## Dependency compatibility risk
 
-SwiftPM currently warns that the direct `PrismML-Eng/mlx-swift` fork and the
-upstream `ml-explore/mlx-swift` dependency requested transitively share one
-package identity. The fork is intentionally pinned for the one-bit kernels
-used by catalog presets. SwiftPM states that this warning may become an error
-in a future release. Resolve it by aligning all MLX-dependent packages on one
-upstream/fork lineage; do not suppress or misrepresent the warning.
+Both the project workspace and the CocoaPods workspace mirror upstream
+`ml-explore/mlx-swift` URLs (with and without `.git`) to `PrismML-Eng/mlx-swift`.
+The direct and transitive dependencies therefore resolve to the same pinned
+fork, preserving the one-bit kernels used by catalog presets. Stable Xcode
+package resolution passes without an identity-conflict warning. The App Store
+preflight checks both mappings. Validate compatible revisions and one-bit
+inference before changing these mirrors or upgrading MLX packages.

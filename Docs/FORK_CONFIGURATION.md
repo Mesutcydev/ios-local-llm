@@ -10,12 +10,12 @@ Choose a reverse-DNS prefix such as `com.example.localllm`, then replace:
 
 | Existing value | Where it must remain consistent |
 | --- | --- |
-| `com.mesutcydev.ioslocalllm.IOSLocalLLM` | app target bundle ID |
-| `com.mesutcydev.ioslocalllm.IOSLocalLLM.share` | share extension bundle ID |
-| `com.mesutcydev.ioslocalllm.IOSLocalLLMTests` | unit-test bundle ID |
-| `com.mesutcydev.ioslocalllm.IOSLocalLLMUITests` | UI-test bundle ID |
-| `group.com.mesutcydev.ioslocalllm.shared` | all app/share/PCC/Catalyst entitlements, `AppBridge.swift`, and `ShareViewController.swift` |
-| `iCloud.com.mesutcydev.ioslocalllm` | app/PCC/Catalyst entitlements and `CloudSyncService.swift` |
+| `com.codelens.CodeLens` | app target bundle ID |
+| `com.codelens.CodeLens.share` | share extension bundle ID |
+| `com.codelens.CodeLensTests` | unit-test bundle ID |
+| `com.codelens.CodeLensUITests` | UI-test bundle ID |
+| `group.com.codelens.shared` | all app/share/PCC/Catalyst entitlements, `AppBridge.swift`, and `ShareViewController.swift` |
+| `iCloud.com.codelens` | app/PCC/Catalyst entitlements and `CloudSyncService.swift` |
 | `com.mesutcydev.ioslocalllm.scheme` | URL type name in `project.yml` |
 
 Make target-level changes in `project.yml`, then update the tracked entitlement
