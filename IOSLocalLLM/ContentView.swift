@@ -330,14 +330,16 @@ struct ContentView: View {
     }
 
     /// Keeps transient notifications below each tab's top chrome. Assistant's
-    /// two-line model picker is taller than a standard navigation row.
+    /// nav bar ends ~40 pt down; 52 lays the toast over the model status row
+    /// rather than the first message (96 did). Lens's floating top bar ends
+    /// ~58 pt down.
     private func updateToastLane(for tab: Tab) {
         switch tab {
-        case .assistant:
-            ToastCenter.shared.setTopPadding(96)
         case .models:
             ToastCenter.shared.setTopPadding(8)
-        case .home, .camera, .voice:
+        case .camera:
+            ToastCenter.shared.setTopPadding(64)
+        case .home, .assistant, .voice:
             ToastCenter.shared.setTopPadding(52)
         }
     }

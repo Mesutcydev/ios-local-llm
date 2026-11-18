@@ -714,8 +714,9 @@ final class ImageGenerationService: ObservableObject {
             state = .ready
             statusMessage = ""
             Diagnostics.shared.breadcrumb("imagegen done · \(model.id)", category: "imagegen")
+            // No toast: the Image screen and the chat both show the image
+            // where it was asked for, and a banner covered the chat's top bubble.
             HapticManager.impact(.medium)
-            ToastCenter.shared.success("Image generated")
 
         } catch is MLXGenerationGate.Cancelled {
             Diagnostics.shared.breadcrumb("imagegen cancelled", category: "imagegen")

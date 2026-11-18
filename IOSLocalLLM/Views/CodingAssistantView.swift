@@ -1350,6 +1350,9 @@ struct CodingAssistantView: View {
         guard assistant.activeExecutionLocation != .applePrivateCloud else {
             return false
         }
+        // Image generation unloaded the assistant to fit its weights and
+        // reloads it when done; a Load tap here would fight the diffusion run.
+        guard !imageGen.isRunning else { return false }
         return switch assistant.state {
         case .unloaded, .failed: true
         default: false
@@ -2750,7 +2753,7 @@ struct CodingAssistantView: View {
             AssistantRunningToolCard(name: name)
         }
         if let status = imageActivityStatus {
-            AssistantImageGenerationCard(status: status, detail: imageGen.statusMessage)
+            AssistantImageGenerationCard(status: status)
         }
         if !lastUsedCitedIndices.isEmpty {
             AssistantCitationCard(
@@ -3590,7 +3593,6 @@ struct CodingAssistantView: View {
         }
 
         runningToolName = call.name
-        ToastCenter.shared.info("Running tool: \(call.name)")
         let result = await ToolRunner.run(call)
         runningToolName = nil
         guard result != ToolRunner.cancelledWebResult else { return }
@@ -3666,7 +3668,6 @@ struct CodingAssistantView: View {
             return
         }
         runningToolName = "web_search"
-        ToastCenter.shared.info("Running tool: web_search")
         let result = await WebToolService.shared.runWebTool(
             for: payload, originalMessage: query
         )
@@ -5305,7 +5306,11 @@ struct MessageBubble: View, Equatable {
                     // bubble's own content / streaming state changes.
                     AssistantMarkdownView(content: message.content, isStreaming: message.isStreaming)
                         .equatable()
-                    if message.isStreaming && message.content.isEmpty {
+                    // Also while the model writes a tool call, whose markup
+                    // the streaming view hides.
+                    if message.isStreaming,
+                       AssistantActivity.hidingToolCallMarkup(message.content)
+                        .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         HStack(spacing: 10) {
                             StreamingDots(color: T.ink3)
                             Capsule()
@@ -5446,10 +5451,12 @@ struct MessageBubble: View, Equatable {
                                 .stroke(T.glassBorder, lineWidth: 0.5)
                         )
                 } else {
+                    // Sized to the image so the Analyze pill sits on it, not
+                    // in the empty space of a full-width frame.
                     Image(uiImage: ui)
                         .resizable()
                         .scaledToFit()
-                        .frame(maxWidth: .infinity, maxHeight: 240, alignment: .leading)
+                        .frame(maxHeight: 240)
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -5471,10 +5478,10 @@ struct MessageBubble: View, Equatable {
                     .foregroundColor(T.ink)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(T.surface2.opacity(0.9))
-                    )
+                    // Material, not the theme's translucent surface: the pill
+                    // sits on a photo and has to stay legible.
+                    .background(.regularMaterial,
+                                in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
                             .stroke(T.glassBorder, lineWidth: 0.5)
@@ -5483,6 +5490,7 @@ struct MessageBubble: View, Equatable {
                 .buttonStyle(KTactileButtonStyle())
                 .padding(8)
             }
+            .frame(maxWidth: isCarousel ? nil : .infinity, alignment: .leading)
         }
     }
 }
@@ -5831,6 +5839,14 @@ struct AssistantMarkdownView: View, Equatable {
     }
 
     var body: some View {
+        renderedBody
+            // The chat column animates `isGenerating`, which flips with
+            // `isStreaming`; that cross-faded the raw stream over the parsed
+            // blocks. Swap them instantly instead.
+            .transaction(value: isStreaming) { $0.animation = nil }
+    }
+
+    @ViewBuilder private var renderedBody: some View {
         // During streaming the body changes on every token — parseBlocks runs
         // 30-50× per second which tanks scroll perf. Render as a lightweight
         // streaming view; re-parse fully only once generation finishes.
@@ -5912,8 +5928,9 @@ struct AssistantMarkdownView: View, Equatable {
                 let reasoning = String(c.dropFirst(7))
                 ThinkingBlock(content: liveReasoningTail(reasoning), isOpen: true)
             }
-        } else {
-            // No think block — plain streaming text.
+        } else if !c.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            // No think block — plain streaming text. Before the first visible
+            // token the bubble's dots show instead of a lone caret.
             HStack(alignment: .lastTextBaseline, spacing: 2) {
                 Text(c)
                     .font(T.conversationBody)

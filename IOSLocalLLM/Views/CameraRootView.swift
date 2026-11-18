@@ -461,10 +461,14 @@ struct CameraRootView: View {
 
             // Scan frame (design 03) — pink corner brackets in the upper-center
             // viewfinder area, kept clear of the mode switcher / answer card
-            // that live in the lower portion of the screen.
-            VStack {
-                scanFrame.padding(.top, 84)
-                Spacer()
+            // that live in the lower portion of the screen. Hidden without a
+            // live feed: the brackets drew through the camera error and
+            // paused panels centred in the same area.
+            if camera.error == nil, camera.interruptionMessage == nil {
+                VStack {
+                    scanFrame.padding(.top, 84)
+                    Spacer()
+                }
             }
 
             // Debug overlay — shows the EXACT image the model received,

@@ -171,10 +171,11 @@ struct ToastBanner: View {
         // Liquid Glass is deliberately translucent, but dense status rows
         // immediately beneath an error banner become readable through it and
         // visually collide with the toast copy. Give the notification its own
-        // nearly-opaque reading surface before applying the glass treatment.
+        // opaque reading surface before applying the glass treatment. The
+        // light theme's `surface` is 26% white, so it can't be used here.
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(T.surface.opacity(0.96))
+                .fill(T.isDark ? T.surface : Color(uiColor: .systemBackground))
         )
         .kGlass(cornerRadius: 10, fallbackFill: T.surface, fallbackStroke: T.rule)
         .shadow(color: .black.opacity(0.10), radius: 14, y: 4)

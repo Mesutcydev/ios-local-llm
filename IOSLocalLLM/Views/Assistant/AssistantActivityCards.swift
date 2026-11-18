@@ -264,7 +264,6 @@ struct AssistantFileApprovalCard: View {
 struct AssistantImageGenerationCard: View {
     @Environment(\.koduTheme) private var T
     let status: AssistantActivity.ImageStatus
-    let detail: String
 
     var body: some View {
         ActivityCardChrome {
@@ -275,20 +274,21 @@ struct AssistantImageGenerationCard: View {
                     subtitle: AssistantActivity.imageGenerationSubtitle(status),
                     pulsing: true
                 )
-                // The Image tab's live progress bar.
+                // The Image tab's live progress bar. Loading and checking have
+                // no fraction; the pulsing header symbol covers them. The
+                // service's statusMessage went stale across phases ("Loading
+                // SD-Turbo…" under "Generating · 100%"), so only a failure
+                // adds a detail line.
                 switch status {
                 case .downloading(let fraction), .generating(let fraction):
                     ProgressView(value: fraction).tint(T.accent)
-                case .loading, .checking:
-                    ProgressView().tint(T.accent)
-                case .failed:
-                    EmptyView()
-                }
-                if !detail.isEmpty {
-                    Text(detail)
+                case .failed(let message) where !message.isEmpty:
+                    Text(message)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
+                default:
+                    EmptyView()
                 }
             }
         }

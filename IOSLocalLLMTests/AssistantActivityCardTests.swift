@@ -112,7 +112,7 @@ final class AssistantActivityCardTests: XCTestCase {
         XCTAssertEqual(AssistantActivity.displayName(forTool: "web_search"), "Web Search")
         XCTAssertEqual(AssistantActivity.symbol(forTool: "web_search"), "globe")
         XCTAssertEqual(AssistantActivity.symbol(forTool: "file_read"), "doc.text")
-        XCTAssertEqual(AssistantActivity.symbol(forTool: "generate_image"), "eye")
+        XCTAssertEqual(AssistantActivity.symbol(forTool: "generate_image"), "photo.on.rectangle.angled")
     }
 
     func test_statusTitle_isHuman() {

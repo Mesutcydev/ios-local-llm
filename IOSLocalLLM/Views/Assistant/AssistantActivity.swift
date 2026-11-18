@@ -45,6 +45,7 @@ enum AssistantActivity {
         let lower = name.lowercased()
         if lower.contains("web") || lower.contains("search") { return "globe" }
         if lower.contains("file") { return "doc.text" }
+        if lower == "generate_image" { return "photo.on.rectangle.angled" }
         if lower.contains("vision") || lower.contains("image") { return "eye" }
         if lower.contains("memory") || lower.contains("knowledge") { return "brain.head.profile" }
         if lower.contains("calc") { return "function" }
