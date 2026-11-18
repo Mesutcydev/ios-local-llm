@@ -23,15 +23,15 @@ struct VoiceControlsView: View {
             HapticManager.impact(.light)
             voiceService.speak(text)
         } label: {
-            HStack(spacing: 5) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: "speaker.wave.2")
-                    .font(.system(size: 12))
+                    .font(.system(.caption))
                 Text("read")
                     .font(T.mono(12))
             }
             .foregroundColor(T.ink2)
-            .padding(.horizontal, 10).padding(.vertical, 8)
-            .kGlass(cornerRadius: 6, fallbackFill: T.surface)
+            .padding(.horizontal, Space.s).padding(.vertical, Space.s)
+            .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
         }
         .buttonStyle(.plain)
     }
@@ -41,15 +41,15 @@ struct VoiceControlsView: View {
             HapticManager.impact(.light)
             voiceService.stop()
         } label: {
-            HStack(spacing: 5) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: "stop.circle")
-                    .font(.system(size: 12))
+                    .font(.system(.caption))
                 Text("stop")
                     .font(T.mono(12, .semibold))
             }
             .foregroundColor(T.warn)
-            .padding(.horizontal, 10).padding(.vertical, 8)
-            .background(RoundedRectangle(cornerRadius: 6).fill(T.warn.opacity(0.12)))
+            .padding(.horizontal, Space.s).padding(.vertical, Space.s)
+            .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.warn.opacity(0.12)))
         }
         .buttonStyle(.plain)
     }
@@ -63,7 +63,7 @@ struct VoicePlaybackStatusBadge: View {
 
     var body: some View {
         if voiceService.isPlaying {
-            HStack(spacing: 5) {
+            HStack(spacing: Space.xs) {
                 SpeakerAnimationView()
                 KMono(text: "speaking via \(voiceService.currentEngineKind.shortName.lowercased())…",
                        size: 10, color: T.ink3)
@@ -83,7 +83,7 @@ struct SpeakerAnimationView: View {
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 15, paused: reduceMotion || scenePhase != .active)) { context in
             let phase = reduceMotion ? 0 : context.date.timeIntervalSinceReferenceDate * 5
-            HStack(spacing: 2) {
+            HStack(spacing: Space.hair) {
                 ForEach(0..<3) { i in
                     Capsule()
                         .fill(T.ink2)

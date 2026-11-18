@@ -17,14 +17,14 @@ struct AnalysisHistoryView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 // Header
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     KCaption(text: "RESULTS")
                     KPageTitle(title: "history", size: 28)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.top, 4)
-                .padding(.bottom, 6)
+                .padding(.horizontal, Space.m)
+                .padding(.top, Space.xxs)
+                .padding(.bottom, Space.xs)
 
                 if analysis.analysisResults.isEmpty {
                     emptyState
@@ -63,24 +63,24 @@ struct AnalysisHistoryView: View {
     // MARK: - States
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Space.s) {
             Image(systemName: "photo.stack")
-                .font(.system(size: 36))
+                .font(.system(size: Space.xl))
                 .foregroundColor(T.ink3)
             KMono(text: "no captures yet", size: 12, color: T.ink2)
             Text("Capture & analyze a screen to start your history. Last 10 results are kept in memory.")
                 .font(T.sans(11))
                 .foregroundColor(T.ink3)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 36)
+                .padding(.horizontal, Space.xl)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var list: some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: 12)],
-                      spacing: 12) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: Space.s)],
+                      spacing: Space.s) {
                 ForEach(analysis.analysisResults) { result in
                     // HeroCardButton wraps the card so the tap can play a
                     // press-scale + radial pulse BEFORE the sheet dismisses.
@@ -155,9 +155,9 @@ struct AnalysisHistoryView: View {
                     }
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.top, 12)
-            .padding(.bottom, 24)
+            .padding(.horizontal, Space.m)
+            .padding(.top, Space.s)
+            .padding(.bottom, Space.l)
         }
         .refreshable {
             // Pull-to-refresh — actually does nothing here since data is
@@ -206,7 +206,7 @@ private struct HeroCardButton<Content: View>: View {
             content()
                 .overlay {
                     if pulse {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        RoundedRectangle(cornerRadius: Radius.inner, style: .continuous)
                             .stroke(T.accent, lineWidth: 2)
                             .scaleEffect(pulse ? 1.06 : 0.98)
                             .opacity(pulse ? 0 : 0.85)
@@ -245,13 +245,13 @@ struct AnalysisHistoryCard: View {
                 }
 
                 modeBadge
-                    .padding(6)
+                    .padding(Space.xs)
             }
             .overlay(alignment: .bottom) {
                 Rectangle().fill(T.rule).frame(height: 1)
             }
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Space.xxs) {
                 KMono(text: result.detection.label, size: 10, weight: .medium, color: T.ink)
                     .lineLimit(1)
                 Text(snippet)
@@ -265,9 +265,9 @@ struct AnalysisHistoryCard: View {
                            size: 9, color: T.ink3)
                     Spacer()
                     if !result.questionAnswers.isEmpty {
-                        HStack(spacing: 2) {
+                        HStack(spacing: Space.hair) {
                             Image(systemName: "bubble.left.and.bubble.right")
-                                .font(.system(size: 9))
+                                .font(.system(.caption2))
                             Text("\(result.questionAnswers.count)")
                                 .font(T.mono(9))
                         }
@@ -275,9 +275,9 @@ struct AnalysisHistoryCard: View {
                     }
                 }
             }
-            .padding(10)
+            .padding(Space.s)
         }
-        .kGlass(cornerRadius: 8, fallbackFill: T.surface)
+        .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
     }
 
     private var snippet: String {
@@ -289,15 +289,14 @@ struct AnalysisHistoryCard: View {
     }
 
     private var modeBadge: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: Space.xxs) {
             Image(systemName: result.mode.systemImage)
-                .font(.system(size: 8, weight: .bold))
+                .font(.system(.caption2, weight: .bold))
             Text(result.mode.displayName.lowercased())
                 .font(T.mono(9, .semibold))
-                .tracking(0.4)
         }
         .foregroundColor(result.mode == .visual ? T.accent : T.good)
-        .padding(.horizontal, 5).padding(.vertical, 2)
+        .padding(.horizontal, Space.xs).padding(.vertical, Space.hair)
         .background(RoundedRectangle(cornerRadius: 3)
             .fill((result.mode == .visual ? T.accent : T.good).opacity(0.15)))
     }

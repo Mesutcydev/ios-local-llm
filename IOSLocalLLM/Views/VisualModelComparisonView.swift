@@ -70,12 +70,12 @@ struct VisualModelComparisonView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 16) {
+                VStack(spacing: Space.cardGap) {
                     header
                     imagePickerCard
                     promptCard
                     blindToggle
-                    HStack(alignment: .top, spacing: 12) {
+                    HStack(alignment: .top, spacing: Space.s) {
                         panel(side: .left)
                         panel(side: .right)
                     }
@@ -84,8 +84,8 @@ struct VisualModelComparisonView: View {
                     ArenaLeaderboardCard(lane: .vision)
                     Color.clear.frame(height: 24)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .padding(.horizontal, Space.m)
+                .padding(.top, Space.s)
             }
             .background(LiquidPinkBackdrop())
             .navigationBarTitleDisplayMode(.inline)
@@ -105,12 +105,12 @@ struct VisualModelComparisonView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             KCaption(text: "CAMERA · A/B")
             KPageTitle(title: "compare vlms", size: 28)
             KMono(text: "run two models on the same image to see which suits you",
                   size: 11, color: T.ink3)
-                .padding(.top, 2)
+                .padding(.top, Space.hair)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -119,25 +119,25 @@ struct VisualModelComparisonView: View {
     // MARK: - Image picker
 
     private var imagePickerCard: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: Space.s) {
             if let img = image {
                 Image(uiImage: img)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(maxHeight: 220)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(RoundedRectangle(cornerRadius: Radius.inner))
             } else {
                 ZStack {
                     Color.clear
                         .frame(height: 140)
-                    VStack(spacing: 6) {
+                    VStack(spacing: Space.xs) {
                         Image(systemName: "photo.on.rectangle.angled")
-                            .font(.system(size: 22, weight: .light))
+                            .font(.system(.title2, weight: .light))
                             .foregroundColor(T.ink3)
                         KMono(text: "pick an image to compare", size: 11, color: T.ink3)
                     }
                 }
-                .kGlass(cornerRadius: 8, fallbackFill: T.surface)
+                .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
             }
             // Snapshot main-actor state (image, theme) into locals so
             // the PhotosPicker label closure — which Swift 6 treats as
@@ -151,15 +151,15 @@ struct VisualModelComparisonView: View {
             PhotosPicker(selection: $photoSelection,
                          matching: .images,
                          photoLibrary: .shared()) {
-                HStack(spacing: 6) {
+                HStack(spacing: Space.xs) {
                     Image(systemName: "photo")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(.caption2, weight: .medium))
                     Text(hasImage ? "change image" : "pick image")
                         .font(labelFont)
                 }
                 .foregroundColor(fgColor)
-                .padding(.horizontal, 12).padding(.vertical, 6)
-                .background(RoundedRectangle(cornerRadius: 6).fill(bgColor))
+                .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(bgColor))
             }
         }
     }
@@ -167,14 +167,14 @@ struct VisualModelComparisonView: View {
     // MARK: - Prompt
 
     private var promptCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             KCaption(text: "PROMPT")
             TextField("", text: $prompt, axis: .vertical)
                 .font(T.mono(11))
                 .foregroundColor(T.ink)
                 .lineLimit(2...4)
-                .padding(8)
-                .kGlass(cornerRadius: 6, fallbackFill: T.surface2)
+                .padding(Space.s)
+                .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface2)
         }
     }
 
@@ -182,7 +182,7 @@ struct VisualModelComparisonView: View {
 
     private var blindToggle: some View {
         Toggle(isOn: $blind) {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Space.hair) {
                 Text("blind mode")
                     .font(T.mono(11, .semibold))
                     .foregroundColor(T.ink)
@@ -192,8 +192,8 @@ struct VisualModelComparisonView: View {
             }
         }
         .tint(T.accent)
-        .padding(10)
-        .kGlass(cornerRadius: 8, fallbackFill: T.surface)
+        .padding(Space.s)
+        .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
     }
 
     // MARK: - Voting
@@ -205,10 +205,10 @@ struct VisualModelComparisonView: View {
 
     @ViewBuilder
     private var voteCard: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: Space.s) {
             KCaption(text: "VERDICT")
             if let outcome = votedOutcome {
-                HStack(spacing: 6) {
+                HStack(spacing: Space.xs) {
                     Image(systemName: "checkmark.seal.fill").foregroundColor(T.accent)
                     Text(verdictLabel(outcome))
                         .font(T.mono(10, .semibold))
@@ -221,15 +221,15 @@ struct VisualModelComparisonView: View {
                                   : "which model read the image better?",
                       size: 10, color: T.ink3)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     voteButton(title: "← left", outcome: .aWins)
                     voteButton(title: "tie", outcome: .tie)
                     voteButton(title: "right →", outcome: .bWins)
                 }
             }
         }
-        .padding(12)
-        .kGlass(cornerRadius: 8, fallbackFill: T.surface)
+        .padding(Space.s)
+        .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
     }
 
     @ViewBuilder
@@ -242,9 +242,9 @@ struct VisualModelComparisonView: View {
                 .font(T.mono(11, .semibold))
                 .foregroundColor(T.ink)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 9)
-                .background(RoundedRectangle(cornerRadius: 6).fill(T.surface2))
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.rule, lineWidth: 1))
+                .padding(.vertical, Space.s)
+                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface2))
+                .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.rule, lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
@@ -291,13 +291,13 @@ struct VisualModelComparisonView: View {
         let output = side == .left ? leftOutput : rightOutput
         let tps = side == .left ? leftTPS : rightTPS
         let running = side == .left ? leftRunning : rightRunning
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             modelPicker(side: side, currentID: id)
             ZStack(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: 8).fill(T.surface)
-                VStack(alignment: .leading, spacing: 4) {
+                RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface)
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     if running {
-                        HStack(spacing: 6) {
+                        HStack(spacing: Space.xs) {
                             ProgressView().scaleEffect(0.6).tint(T.accent)
                             KMono(text: "running…", size: 9, color: T.ink3)
                         }
@@ -313,10 +313,10 @@ struct VisualModelComparisonView: View {
                         .foregroundColor(output.isEmpty ? T.ink3 : T.ink)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(10)
+                .padding(Space.s)
             }
             .frame(minHeight: 160, alignment: .topLeading)
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(T.rule, lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.rule, lineWidth: 1))
         }
         .frame(maxWidth: .infinity)
     }
@@ -329,7 +329,7 @@ struct VisualModelComparisonView: View {
                 Button(m.displayName) { setID(m.sourceRepoID, for: side) }
             }
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 // While judging blind, mask identity with a neutral slot
                 // label so panel position can't bias the vote.
                 let masked = blind && !revealed
@@ -347,12 +347,12 @@ struct VisualModelComparisonView: View {
                     .foregroundColor(T.ink)
                     .lineLimit(1)
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 8, weight: .semibold))
+                    .font(.system(.caption2, weight: .semibold))
                     .foregroundColor(T.ink3)
             }
-            .padding(.horizontal, 8).padding(.vertical, 5)
+            .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .kGlass(cornerRadius: 6, fallbackFill: T.surface2)
+            .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface2)
         }
     }
 
@@ -367,27 +367,26 @@ struct VisualModelComparisonView: View {
 
     private var runButton: some View {
         let reason = blockerReason
-        return VStack(spacing: 6) {
+        return VStack(spacing: Space.xs) {
             Button {
                 Task { await runComparison() }
             } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: Space.xs) {
                     if leftRunning || rightRunning {
                         ProgressView().scaleEffect(0.7).tint(T.bg)
                     } else {
                         Image(systemName: "play.fill")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(.caption2, weight: .semibold))
                     }
                     Text(leftRunning ? "running left…"
                          : rightRunning ? "running right…"
                          : "compare")
                         .font(T.mono(13, .semibold))
-                        .tracking(0.5)
                 }
                 .foregroundColor(T.bg)
-                .padding(.horizontal, 16).padding(.vertical, 10)
+                .padding(.horizontal, Space.m).padding(.vertical, Space.s)
                 .frame(maxWidth: .infinity)
-                .background(RoundedRectangle(cornerRadius: 8).fill(canRun ? T.ink : T.ink3))
+                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(canRun ? T.ink : T.ink3))
             }
             .buttonStyle(.plain)
             .disabled(!canRun)

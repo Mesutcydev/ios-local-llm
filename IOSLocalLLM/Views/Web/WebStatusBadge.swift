@@ -40,12 +40,12 @@ struct WebStatusBadge: View {
 
     @ViewBuilder
     private func pill(symbol: String, text: String, color: Color) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: symbol).font(.system(size: 9))
+        HStack(spacing: Space.xxs) {
+            Image(systemName: symbol).font(.system(.caption2))
             Text(text).font(T.mono(10, .semibold))
         }
         .foregroundColor(color)
-        .padding(.horizontal, 6).padding(.vertical, 3)
+        .padding(.horizontal, Space.xs).padding(.vertical, Space.xxs)
         .background(RoundedRectangle(cornerRadius: 4).fill(color.opacity(0.12)))
         .overlay(RoundedRectangle(cornerRadius: 4).stroke(color.opacity(0.4), lineWidth: 0.5))
     }

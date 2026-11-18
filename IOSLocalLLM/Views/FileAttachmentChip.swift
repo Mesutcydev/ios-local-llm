@@ -9,9 +9,9 @@ struct FileAttachmentChip: View {
     let onRemove: () -> Void
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Space.xs) {
             Image(systemName: icon)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(.caption2, weight: .medium))
                 .foregroundColor(tint)
             VStack(alignment: .leading, spacing: 1) {
                 Text(verbatim: attachment.displayName)
@@ -19,7 +19,7 @@ struct FileAttachmentChip: View {
                     .foregroundColor(T.ink)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                HStack(spacing: 4) {
+                HStack(spacing: Space.xxs) {
                     Text("\(Int64(attachment.byteSize).formattedBytes)")
                         .font(.caption2)
                         .foregroundColor(T.ink3)
@@ -36,17 +36,17 @@ struct FileAttachmentChip: View {
                 HapticManager.impact(.light)
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 13))
+                    .font(.system(.footnote))
                     .foregroundColor(T.ink3)
-                    .frame(width: 44, height: 44)
+                    .frame(width: Size.control, height: Size.control)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Remove \(attachment.displayName)")
         }
-        .padding(.horizontal, 8)
-        .background(RoundedRectangle(cornerRadius: 12).fill(tint.opacity(0.08)))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(tint.opacity(0.20), lineWidth: 0.5))
+        .padding(.horizontal, Space.s)
+        .background(RoundedRectangle(cornerRadius: Radius.control).fill(tint.opacity(0.08)))
+        .overlay(RoundedRectangle(cornerRadius: Radius.control).stroke(tint.opacity(0.20), lineWidth: 0.5))
     }
 
     private var icon: String {

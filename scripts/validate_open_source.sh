@@ -193,5 +193,6 @@ for executable_script in \
 done
 
 python3 scripts/audit_localizations.py
+python3 scripts/audit_ui_metrics.py
 
 echo "Repository hygiene checks passed."

@@ -21,7 +21,7 @@ struct PersonaPickerView: View {
                     customSection
                     createButton
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, Space.l)
             }
             .background(LiquidPinkBackdrop())
             .navigationBarTitleDisplayMode(.inline)
@@ -40,16 +40,16 @@ struct PersonaPickerView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             KCaption(text: "ASSISTANT")
             KPageTitle(title: "personas", size: 28)
             KMono(text: "tap to switch how the assistant responds",
                    size: 11, color: T.ink3)
-                .padding(.top, 2)
+                .padding(.top, Space.hair)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.xxs)
     }
 
     private var builtInsSection: some View {
@@ -93,18 +93,18 @@ struct PersonaPickerView: View {
             ToastCenter.shared.info("Switched to \(persona.name)")
             dismiss()
         } label: {
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: Space.s) {
                 ZStack {
                     Circle()
                         .fill(persona.accent.opacity(0.12))
-                        .frame(width: 32, height: 32)
+                        .frame(width: Size.tile, height: Size.tile)
                     Image(systemName: persona.icon)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(.subheadline, weight: .medium))
                         .foregroundColor(persona.accent)
                 }
 
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
+                VStack(alignment: .leading, spacing: Space.hair) {
+                    HStack(spacing: Space.xs) {
                         Text(persona.name)
                             .font(T.mono(13, .semibold))
                             .foregroundColor(T.ink)
@@ -119,11 +119,11 @@ struct PersonaPickerView: View {
                 if isActive {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(persona.accent)
-                        .font(.system(size: 16))
+                        .font(.system(.callout))
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 11)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
         }
         .buttonStyle(.plain)
     }
@@ -133,22 +133,21 @@ struct PersonaPickerView: View {
             editingPersona = nil
             showEditor = true
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: "plus")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.caption, weight: .semibold))
                 Text("create persona")
                     .font(T.mono(12, .semibold))
-                    .tracking(0.3)
             }
             .foregroundColor(T.bg)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, Space.m)
             .frame(height: 44)
             .frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 8).fill(T.ink))
+            .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 16)
-        .padding(.top, 18)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.m)
     }
 }
 
@@ -174,13 +173,13 @@ struct PersonaEditorView: View {
                         TextField("e.g. Python Tutor", text: $name)
                             .font(T.sans(14))
                             .foregroundColor(T.ink)
-                            .padding(12)
+                            .padding(Space.s)
                     }
                     KSection(title: "subtitle") {
                         TextField("short description shown in the picker", text: $subtitle)
                             .font(T.sans(13))
                             .foregroundColor(T.ink)
-                            .padding(12)
+                            .padding(Space.s)
                     }
                     KSection(title: "system_prompt") {
                         TextEditor(text: $systemPrompt)
@@ -188,10 +187,10 @@ struct PersonaEditorView: View {
                             .foregroundColor(T.ink)
                             .scrollContentBackground(.hidden)
                             .frame(minHeight: 220)
-                            .padding(10)
+                            .padding(Space.s)
                     }
                 }
-                .padding(.bottom, 24)
+                .padding(.bottom, Space.l)
             }
             .background(LiquidPinkBackdrop())
             .navigationTitle(isNew ? "new persona" : "edit persona")

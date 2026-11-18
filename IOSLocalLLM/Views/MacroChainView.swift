@@ -34,7 +34,7 @@ struct MacroChainView: View {
                         }
                     }
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, Space.l)
             }
             .background(LiquidPinkBackdrop())
             .navigationBarTitleDisplayMode(.inline)
@@ -49,16 +49,16 @@ struct MacroChainView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             KCaption(text: "WORKFLOWS")
             KPageTitle(title: "macros", size: 28)
             KMono(text: "multi-step prompts · output of step N feeds step N+1",
                   size: 11, color: T.ink3)
-                .padding(.top, 2)
+                .padding(.top, Space.hair)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.xxs)
     }
 
     private var macroList: some View {
@@ -69,16 +69,16 @@ struct MacroChainView: View {
                     selectedMacroID = m.id
                     HapticManager.impact(.light)
                 } label: {
-                    HStack(spacing: 10) {
+                    HStack(spacing: Space.s) {
                         ZStack {
                             Circle()
                                 .stroke(selectedMacroID == m.id ? T.accent : T.rule2, lineWidth: 1.5)
-                                .frame(width: 16, height: 16)
+                                .frame(width: Size.glyph, height: Size.glyph)
                             if selectedMacroID == m.id {
                                 Circle().fill(T.accent).frame(width: 9, height: 9)
                             }
                         }
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: Space.hair) {
                             Text(m.title)
                                 .font(T.mono(13, .semibold))
                                 .foregroundColor(T.ink)
@@ -89,7 +89,7 @@ struct MacroChainView: View {
                             .font(T.mono(10))
                             .foregroundColor(T.ink3)
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 12)
+                    .padding(.horizontal, Space.m).padding(.vertical, Space.s)
                 }
                 .buttonStyle(.plain)
             }
@@ -99,16 +99,16 @@ struct MacroChainView: View {
     @ViewBuilder
     private func runCard(macro: Macro) -> some View {
         KSection(title: "input") {
-            VStack(spacing: 10) {
+            VStack(spacing: Space.s) {
                 TextEditor(text: $input)
                     .font(T.mono(12))
                     .frame(minHeight: 100, maxHeight: 200)
-                    .padding(8)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(T.surface2))
-                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.rule, lineWidth: 1))
+                    .padding(Space.s)
+                    .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface2))
+                    .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.rule, lineWidth: 1))
                 runButton(macro: macro)
             }
-            .padding(12)
+            .padding(Space.s)
         }
     }
 
@@ -121,7 +121,7 @@ struct MacroChainView: View {
             // While the chain runs, the primary control becomes a live
             // progress label plus a Stop button so the user is never stuck
             // waiting on a long multi-step run with no way out.
-            HStack(spacing: 10) {
+            HStack(spacing: Space.s) {
                 ProgressView().tint(T.accent).scaleEffect(0.8)
                 if case .running(let i, let n) = runner.phase {
                     Text("step \(i + 1)/\(macro.steps.count): \(n)")
@@ -136,14 +136,14 @@ struct MacroChainView: View {
                     HapticManager.impact(.rigid)
                     ToastCenter.shared.info("Macro stopped")
                 } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: "stop.fill").font(.system(size: 10))
+                    HStack(spacing: Space.xs) {
+                        Image(systemName: "stop.fill").font(.system(.caption2))
                         Text("stop").font(T.mono(11, .semibold))
                     }
                     .foregroundColor(T.bad)
-                    .padding(.horizontal, 12).padding(.vertical, 7)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(T.bad.opacity(0.12)))
-                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.bad.opacity(0.4), lineWidth: 1))
+                    .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                    .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.bad.opacity(0.12)))
+                    .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.bad.opacity(0.4), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Stop macro")
@@ -156,13 +156,13 @@ struct MacroChainView: View {
                 Task { await runner.run(macro: macro, input: input) }
                 HapticManager.impact(.medium)
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "play.fill").font(.system(size: 11))
+                HStack(spacing: Space.xs) {
+                    Image(systemName: "play.fill").font(.system(.caption2))
                     Text("run macro").font(T.mono(12, .semibold))
                 }
                 .foregroundColor(T.bg)
-                .padding(.horizontal, 14).padding(.vertical, 8)
-                .background(RoundedRectangle(cornerRadius: 6).fill(T.ink))
+                .padding(.horizontal, Space.m).padding(.vertical, Space.s)
+                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
             }
             .buttonStyle(.plain)
             .disabled(disabled)
@@ -174,12 +174,11 @@ struct MacroChainView: View {
 
     private var intermediatesCard: some View {
         KSection(title: "intermediate") {
-            VStack(spacing: 12) {
+            VStack(spacing: Space.s) {
                 ForEach(Array(runner.intermediates.enumerated()), id: \.offset) { i, out in
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         Text("step \(i + 1)")
                             .font(T.mono(10, .semibold))
-                            .tracking(0.5)
                             .foregroundColor(T.accent)
                         Text(out)
                             .font(T.sans(12))
@@ -189,14 +188,14 @@ struct MacroChainView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-            .padding(12)
+            .padding(Space.s)
         }
     }
 
     @ViewBuilder
     private func finalCard(text: String) -> some View {
         KSection(title: "result") {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 Text(text)
                     .font(T.sans(13))
                     .foregroundColor(T.ink)
@@ -207,15 +206,15 @@ struct MacroChainView: View {
                     HapticManager.impact(.light)
                     ToastCenter.shared.info("Copied")
                 } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "doc.on.doc").font(.system(size: 10))
+                    HStack(spacing: Space.xxs) {
+                        Image(systemName: "doc.on.doc").font(.system(.caption2))
                         Text("copy").font(T.mono(11, .semibold))
                     }
                     .foregroundColor(T.accent)
                 }
                 .buttonStyle(.plain)
             }
-            .padding(12)
+            .padding(Space.s)
         }
     }
 }

@@ -78,7 +78,7 @@ struct HFSearchView: View {
     // MARK: - Filter bar
 
     private var filterBar: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Space.s) {
             HStack {
                 Menu {
                     ForEach(HFSearchService.Filter.allCases) { f in
@@ -97,8 +97,8 @@ struct HFSearchView: View {
                     Label(filter.rawValue, systemImage: "line.3.horizontal.decrease")
                         .font(T.sans(14, .medium))
                         .foregroundColor(T.ink)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
+                        .padding(.horizontal, Space.s)
+                        .padding(.vertical, Space.s)
                         .frame(minHeight: 44)
                         .kGlassCapsule(fallbackFill: T.surface, fallbackStroke: T.glassBorder)
                 }
@@ -115,7 +115,7 @@ struct HFSearchView: View {
             }
 
             Toggle(isOn: $showOnlyCompatible) {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Space.hair) {
                     Text("Fits this device".tr)
                         .font(T.sans(14, .medium))
                         .foregroundColor(T.ink)
@@ -130,8 +130,8 @@ struct HFSearchView: View {
                 HapticManager.impact(.light)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
     }
 
     // MARK: - Results list
@@ -141,18 +141,18 @@ struct HFSearchView: View {
         if search.isSearching && results.isEmpty {
             // Skeleton rows for native-feeling loading
             Group {
-                LazyVStack(spacing: 12) {
+                LazyVStack(spacing: Space.s) {
                     ForEach(0..<5, id: \.self) { _ in
                         SearchRowSkeleton()
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
             }
         } else if let err = search.lastError {
-            VStack(spacing: 10) {
+            VStack(spacing: Space.s) {
                 Image(systemName: "wifi.exclamationmark")
-                    .font(.system(size: 30))
+                    .font(.system(.title))
                     .foregroundColor(T.ink3)
                 KMono(text: "search failed", size: 12, color: T.ink2)
                 Button("Retry") { scheduleSearch() }
@@ -161,15 +161,15 @@ struct HFSearchView: View {
                     .font(T.sans(11))
                     .foregroundColor(T.ink3)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 30)
+                    .padding(.horizontal, Space.l)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && filter == .all {
             promotedSuggestions
         } else if results.isEmpty {
-            VStack(spacing: 10) {
+            VStack(spacing: Space.s) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 30))
+                    .font(.system(.title))
                     .foregroundColor(T.ink3)
                 KMono(text: "no matches", size: 12, color: T.ink2)
                 KMono(text: "try a different query or filter.", size: 10, color: T.ink3)
@@ -177,13 +177,13 @@ struct HFSearchView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             Group {
-                LazyVStack(spacing: 12) {
+                LazyVStack(spacing: Space.s) {
                     ForEach(results) { model in
                         HFSearchRow(model: model, estimateSize: estimateSizes)
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
             }
 
         }
@@ -193,10 +193,10 @@ struct HFSearchView: View {
 
     private var promotedSuggestions: some View {
         Group {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 KCaption(text: "Suggestions")
-                    .padding(.horizontal, 16)
-                    .padding(.top, 10)
+                    .padding(.horizontal, Space.m)
+                    .padding(.top, Space.s)
 
                 VStack(spacing: 0) {
                     ForEach(Array(curated.enumerated()), id: \.offset) { i, q in
@@ -205,33 +205,33 @@ struct HFSearchView: View {
                             query = q
                             HapticManager.impact(.light)
                         } label: {
-                            HStack(spacing: 8) {
+                            HStack(spacing: Space.s) {
                                 Image(systemName: "sparkle.magnifyingglass")
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(.system(.caption, weight: .medium))
                                     .foregroundColor(T.accent)
                                 Text(q)
                                     .font(T.sans(14))
                                     .foregroundColor(T.ink)
                                 Spacer()
                                 Image(systemName: "arrow.up.left")
-                                    .font(.system(size: 10))
+                                    .font(.system(.caption2))
                                     .foregroundColor(T.ink3)
                             }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 10)
+                            .padding(.horizontal, Space.m)
+                            .padding(.vertical, Space.s)
                         }
                         .buttonStyle(.plain)
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
-                .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.glassBorder)
-                .padding(.horizontal, 16)
+                .clipShape(RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
+                .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface, fallbackStroke: T.glassBorder)
+                .padding(.horizontal, Space.m)
 
                 infoBox
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
+                    .padding(.horizontal, Space.m)
+                    .padding(.top, Space.s)
             }
-            .padding(.bottom, 16)
+            .padding(.bottom, Space.m)
         }
     }
 
@@ -242,10 +242,10 @@ struct HFSearchView: View {
     ]
 
     private var infoBox: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 5) {
+        VStack(alignment: .leading, spacing: Space.xs) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: "iphone.gen3")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(.footnote, weight: .medium))
                     .foregroundColor(T.good)
                 Text("Built for on-device use")
                     .font(T.sans(13, .semibold))
@@ -256,8 +256,8 @@ struct HFSearchView: View {
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(14)
-        .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.glassBorder)
+        .padding(Space.m)
+        .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface, fallbackStroke: T.glassBorder)
     }
 
     // MARK: - Debounced search
@@ -306,21 +306,21 @@ struct HFSearchRow: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Space.s) {
             let headerLayout = dynamicTypeSize.isAccessibilitySize
-                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
-                : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: Space.s))
+                : AnyLayout(HStackLayout(alignment: .top, spacing: Space.s))
             headerLayout {
                 Image(systemName: pipelineIcon)
                     .foregroundColor(T.accent)
-                    .font(.system(size: 17, weight: .semibold))
-                    .frame(width: 44, height: 44)
+                    .font(.system(.body, weight: .semibold))
+                    .frame(width: Size.control, height: Size.control)
                     .background(
-                        RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                             .fill(T.accentSoft)
                     )
 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     Text(model.modelName)
                         .font(T.display(16, .semibold))
                         .foregroundStyle(T.ink)
@@ -332,17 +332,17 @@ struct HFSearchRow: View {
 
                 Spacer(minLength: 4)
 
-                VStack(alignment: .trailing, spacing: 2) {
-                    HStack(spacing: 6) {
-                        HStack(spacing: 2) {
+                VStack(alignment: .trailing, spacing: Space.hair) {
+                    HStack(spacing: Space.xs) {
+                        HStack(spacing: Space.hair) {
                             Image(systemName: "arrow.down")
-                                .font(.system(size: 9))
+                                .font(.system(.caption2))
                             Text(model.downloads.compactCount)
                                 .font(T.mono(9))
                         }
-                        HStack(spacing: 2) {
+                        HStack(spacing: Space.hair) {
                             Image(systemName: "heart")
-                                .font(.system(size: 9))
+                                .font(.system(.caption2))
                             Text(model.likes.compactCount)
                                 .font(T.mono(9))
                         }
@@ -364,8 +364,8 @@ struct HFSearchRow: View {
                         Text(tag)
                             .font(T.sans(11, .medium))
                             .foregroundColor(tagColor(tag).contentColor)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
+                            .padding(.horizontal, Space.s)
+                            .padding(.vertical, Space.xxs)
                             .background(Capsule().fill(tagColor(tag).background))
                             .overlay(Capsule()
                                 .stroke(tagColor(tag).contentColor.opacity(0.22), lineWidth: 0.5))
@@ -376,8 +376,8 @@ struct HFSearchRow: View {
             Rectangle().fill(T.rule).frame(height: 1)
 
             let actionsLayout = dynamicTypeSize.isAccessibilitySize
-                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
-                : AnyLayout(HStackLayout(spacing: 8))
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: Space.s))
+                : AnyLayout(HStackLayout(spacing: Space.s))
             actionsLayout {
                 downloadButton
 
@@ -386,9 +386,9 @@ struct HFSearchRow: View {
                 if let url = model.hfURL {
                     Link(destination: url) {
                         Image(systemName: "arrow.up.right")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(.caption, weight: .medium))
                             .foregroundColor(T.ink2)
-                            .frame(width: 44, height: 44)
+                            .frame(width: Size.control, height: Size.control)
                             .background(Circle().fill(T.surface2))
                     }
                     .accessibilityLabel("Open model on Hugging Face")
@@ -399,9 +399,9 @@ struct HFSearchRow: View {
                     isExpanded.toggle()
                 } label: {
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(.caption2, weight: .semibold))
                         .foregroundColor(T.ink2)
-                        .frame(width: 44, height: 44)
+                        .frame(width: Size.control, height: Size.control)
                         .background(Circle().fill(T.surface2))
                 }
                 .buttonStyle(.plain)
@@ -411,9 +411,9 @@ struct HFSearchRow: View {
 
             if isExpanded { expandedDetail }
         }
-        .padding(16)
+        .padding(Space.m)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.glassBorder)
+        .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface, fallbackStroke: T.glassBorder)
         .sheet(isPresented: $showPreflight) { installationPreflight }
         .task {
             if estimateSize && !didFetchSize {
@@ -498,10 +498,10 @@ struct HFSearchRow: View {
 
     @ViewBuilder
     private func badgePill(symbol: String, text: String, detail: String, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(alignment: .top, spacing: 7) {
+        VStack(alignment: .leading, spacing: Space.hair) {
+            HStack(alignment: .top, spacing: Space.xs) {
                 Image(systemName: symbol)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.caption, weight: .semibold))
                     .padding(.top, 1)
                 Text(text.tr)
                     .font(T.sans(12, .medium))
@@ -513,13 +513,13 @@ struct HFSearchRow: View {
                     .font(T.sans(11))
                     .foregroundColor(T.ink3)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.leading, 19)
+                    .padding(.leading, Space.m)
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(.horizontal, Space.s)
+        .padding(.vertical, Space.s)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+        .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
             .fill(color.opacity(0.09)))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(text.tr)
@@ -535,15 +535,15 @@ struct HFSearchRow: View {
         if categoryGuess == .imageGen {
             // Diffusion models can only be installed from the curated Images
             // tab — surface that here instead of a (broken) generic download.
-            HStack(spacing: 4) {
+            HStack(spacing: Space.xxs) {
                 Image(systemName: "wand.and.stars")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.caption, weight: .semibold))
                 Text("Images tab")
                     .font(T.sans(13, .semibold))
             }
             .foregroundColor(T.accent2)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
                 .frame(minHeight: 44)
             .background(Capsule().fill(T.accent2.opacity(0.12)))
         } else {
@@ -553,16 +553,16 @@ struct HFSearchRow: View {
             Button {
                 showPreflight = true
             } label: {
-                HStack(spacing: 4) {
+                HStack(spacing: Space.xxs) {
                     Image(systemName: isFailed ? "arrow.clockwise" : "arrow.down")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(.caption, weight: .semibold))
                     Text((isFailed ? "retry" : (isBlocked ? "incompatible" : "download")).tr)
                         .font(T.sans(13, .semibold))
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .foregroundColor(.white)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
                 .frame(minHeight: 44)
                 .background(Capsule().fill(isBlocked ? T.ink3 : T.accentStrong))
             }
@@ -571,15 +571,15 @@ struct HFSearchRow: View {
             .disabled(isBlocked)
             .opacity(isBlocked ? 0.6 : 1)
         case .enumerating:
-            HStack(spacing: 4) {
+            HStack(spacing: Space.xxs) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 9))
+                    .font(.system(.caption2))
                 Text("checking…")
                     .font(T.mono(10))
             }
             .foregroundColor(T.ink3)
         case .downloading:
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Rectangle().fill(T.surface2).frame(height: 2)
@@ -594,9 +594,9 @@ struct HFSearchRow: View {
                     .animation(.easeInOut(duration: 0.18), value: downloader.progress)
                 Button { downloader.cancel() } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(.caption2, weight: .bold))
                         .foregroundColor(T.warn)
-                        .frame(width: 44, height: 44)
+                        .frame(width: Size.control, height: Size.control)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Cancel download")
@@ -609,9 +609,9 @@ struct HFSearchRow: View {
     }
 
     private var expandedDetail: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             Rectangle().fill(T.rule).frame(height: 1)
-                .padding(.vertical, 4)
+                .padding(.vertical, Space.xxs)
 
             if let license = model.licenseTag {
                 KMono(text: "license · \(license)", size: 10, color: T.ink2)
@@ -628,7 +628,7 @@ struct HFSearchRow: View {
                 .lineLimit(2)
                 .truncationMode(.middle)
         }
-        .padding(.top, 2)
+        .padding(.top, Space.hair)
     }
 
     // MARK: - Helpers
@@ -679,16 +679,16 @@ struct SearchRowSkeleton: View {
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             // Each shape gets the shimmer modifier individually so the
             // gradient sweep masks the actual placeholder geometry rather
             // than a uniform rectangle behind everything. The cumulative
             // effect reads as "filling in" rather than "fading".
             RoundedRectangle(cornerRadius: 3)
                 .fill(T.surface2)
-                .frame(width: 18, height: 18)
+                .frame(width: Size.glyph, height: Size.glyph)
                 .shimmer(duration: 1.4)
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 RoundedRectangle(cornerRadius: 2)
                     .fill(T.surface2)
                     .frame(height: 12)
@@ -705,7 +705,7 @@ struct SearchRowSkeleton: View {
                 .frame(width: 70, height: 24)
                 .shimmer(duration: 1.4)
         }
-        .padding(16)
-        .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface)
+        .padding(Space.m)
+        .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
     }
 }

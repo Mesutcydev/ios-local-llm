@@ -46,7 +46,7 @@ struct KeyboardToolbar: View {
             }
 
             // Main toolbar row — always visible while keyboard is up
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 // Left cluster: editing accessories
                 actionButton(icon: "doc.on.clipboard",
                              label: "paste",
@@ -73,24 +73,23 @@ struct KeyboardToolbar: View {
                     KeyboardDismiss.now()
                     HapticManager.impact(.light)
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: Space.xxs) {
                         Image(systemName: "keyboard.chevron.compact.down")
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.system(.caption2, weight: .medium))
                         Text("done")
                             .font(T.mono(11, .semibold))
-                            .tracking(0.3)
                     }
                     .foregroundColor(T.ink2)
-                    .padding(.horizontal, 9).padding(.vertical, 6)
-                    .kGlass(cornerRadius: 6, fallbackFill: T.surface2)
+                    .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                    .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface2)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Hide keyboard")
 
                 sendButton
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
+            .padding(.horizontal, Space.s)
+            .padding(.vertical, Space.xs)
         }
         .background(
             T.surface
@@ -106,9 +105,9 @@ struct KeyboardToolbar: View {
 
     private var recentsStrip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 KCaption(text: "recent")
-                    .padding(.leading, 4)
+                    .padding(.leading, Space.xxs)
                 ForEach(Array(recentPrompts.enumerated()), id: \.offset) { _, prompt in
                     Button {
                         let glue: String = inputText.isEmpty ? "" : (inputText.hasSuffix(" ") ? "" : " ")
@@ -119,15 +118,15 @@ struct KeyboardToolbar: View {
                             .font(T.mono(10))
                             .foregroundColor(T.ink2)
                             .lineLimit(1)
-                            .padding(.horizontal, 8).padding(.vertical, 4)
-                            .background(RoundedRectangle(cornerRadius: 5).fill(T.surface2))
-                            .overlay(RoundedRectangle(cornerRadius: 5).stroke(T.rule, lineWidth: 1))
+                            .padding(.horizontal, Space.s).padding(.vertical, Space.xxs)
+                            .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface2))
+                            .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.rule, lineWidth: 1))
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .padding(.horizontal, Space.s)
+            .padding(.vertical, Space.xs)
         }
         .background(
             T.bg
@@ -146,10 +145,10 @@ struct KeyboardToolbar: View {
             action()
         } label: {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(.subheadline, weight: .medium))
                 .foregroundColor(T.ink2)
-                .frame(width: 34, height: 34)
-                .kGlass(cornerRadius: 7, fallbackFill: T.surface2)
+                .frame(width: Size.control, height: Size.control)
+                .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface2)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
@@ -164,13 +163,13 @@ struct KeyboardToolbar: View {
             saveRecent(inputText)
             onSend()
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: Space.xxs) {
                 if isSending {
                     ProgressView().tint(T.bg).scaleEffect(0.55)
                         .frame(width: 14, height: 14)
                 } else {
                     Image(systemName: "arrow.up")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.system(.footnote, weight: .bold))
                         // Bounce the arrow whenever the button transitions
                         // back to the idle "send" state — gives the eye a
                         // satisfying micro-confirmation that the previous
@@ -180,7 +179,6 @@ struct KeyboardToolbar: View {
                 }
                 Text(isSending ? "sending" : "send")
                     .font(T.mono(11, .semibold))
-                    .tracking(0.3)
                     // Cross-fade the label text rather than snapping. Pairs
                     // with the symbol bounce above so the entire pill morphs
                     // as one unit on state change.
@@ -188,7 +186,7 @@ struct KeyboardToolbar: View {
                     .animation(.easeInOut(duration: 0.18), value: isSending)
             }
             .foregroundColor(.white)
-            .padding(.horizontal, 12).padding(.vertical, 9)
+            .padding(.horizontal, Space.s).padding(.vertical, Space.s)
             .frame(minWidth: 78)
             .background(
                 RoundedRectangle(cornerRadius: 9999, style: .continuous)

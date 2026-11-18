@@ -60,7 +60,7 @@ struct HFTokenSheet: View {
                     if let result = testResult { resultBanner(for: result) }
                     helpCard
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, Space.l)
             }
             .background(LiquidPinkBackdrop())
             .navigationBarTitleDisplayMode(.inline)
@@ -99,7 +99,7 @@ struct HFTokenSheet: View {
     // MARK: - Header
 
     private var headerBlock: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             KCaption(text: "API · HUGGING FACE")
             Text("Access Token")
                 .font(T.display(26, .semibold))
@@ -109,34 +109,34 @@ struct HFTokenSheet: View {
                 .font(T.sans(13))
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 2)
+                .padding(.top, Space.hair)
 
             if let masked = store.maskedPreview {
-                HStack(spacing: 6) {
+                HStack(spacing: Space.xs) {
                     Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 11))
+                        .font(.system(.caption2))
                         .foregroundColor(T.good)
                     Text("Token saved · \(masked)")
                         .font(T.mono(10.5, .semibold))
                         .foregroundColor(T.good)
                 }
-                .padding(.top, 6)
+                .padding(.top, Space.xs)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 18)
-        .padding(.top, 12)
-        .padding(.bottom, 18)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.s)
+        .padding(.bottom, Space.m)
     }
 
     // MARK: - Input card
 
     private var inputCard: some View {
         KSection(title: "token") {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.s) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "key.fill")
-                        .font(.system(size: 12))
+                        .font(.system(.caption))
                         .foregroundColor(T.ink3)
                     Group {
                         if revealed {
@@ -155,16 +155,16 @@ struct HFTokenSheet: View {
                         HapticManager.impact(.light)
                     } label: {
                         Image(systemName: revealed ? "eye.slash" : "eye")
-                            .font(.system(size: 13))
+                            .font(.system(.footnote))
                             .foregroundColor(T.ink3)
                     }
                     .buttonStyle(.plain)
                 }
-                .padding(10)
-                .background(RoundedRectangle(cornerRadius: 8).fill(T.surface2))
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(T.rule, lineWidth: 0.5))
+                .padding(Space.s)
+                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface2))
+                .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.rule, lineWidth: 0.5))
 
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     Button {
                         if let s = UIPasteboard.general.string {
                             input = s.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -172,16 +172,15 @@ struct HFTokenSheet: View {
                             HapticManager.impact(.light)
                         }
                     } label: {
-                        HStack(spacing: 4) {
+                        HStack(spacing: Space.xxs) {
                             Image(systemName: "doc.on.clipboard")
-                                .font(.system(size: 10))
+                                .font(.system(.caption2))
                             Text("Paste")
                                 .font(T.mono(10, .semibold))
-                                .tracking(0.4)
                         }
                         .foregroundColor(T.ink2)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
+                        .padding(.horizontal, Space.s)
+                        .padding(.vertical, Space.xs)
                         .kGlassCapsule(fallbackFill: T.surface)
                     }
                     .buttonStyle(.plain)
@@ -189,21 +188,20 @@ struct HFTokenSheet: View {
                     Button {
                         Task { await runTest() }
                     } label: {
-                        HStack(spacing: 4) {
+                        HStack(spacing: Space.xxs) {
                             if testing {
                                 ProgressView().scaleEffect(0.6)
                                     .frame(width: 10, height: 10)
                             } else {
                                 Image(systemName: "checkmark.circle")
-                                    .font(.system(size: 10))
+                                    .font(.system(.caption2))
                             }
                             Text("Test")
                                 .font(T.mono(10, .semibold))
-                                .tracking(0.4)
                         }
                         .foregroundColor(T.accent)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
+                        .padding(.horizontal, Space.s)
+                        .padding(.vertical, Space.xs)
                         .background(Capsule().fill(T.accentSoft))
                         .overlay(Capsule().stroke(T.accent.opacity(0.4), lineWidth: 0.5))
                     }
@@ -219,10 +217,9 @@ struct HFTokenSheet: View {
                         } label: {
                             Text("Remove")
                                 .font(T.mono(10, .semibold))
-                                .tracking(0.4)
                                 .foregroundColor(T.bad)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
+                                .padding(.horizontal, Space.s)
+                                .padding(.vertical, Space.xs)
                                 .background(Capsule().fill(T.bad.opacity(0.10)))
                                 .overlay(Capsule().stroke(T.bad.opacity(0.30), lineWidth: 0.5))
                         }
@@ -230,8 +227,8 @@ struct HFTokenSheet: View {
                     }
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
         }
     }
 
@@ -252,14 +249,14 @@ struct HFTokenSheet: View {
                         detail)
             }
         }()
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: icon)
-                    .font(.system(size: 12))
+                    .font(.system(.caption))
                     .foregroundColor(tint)
                 Text(title.uppercased())
                     .font(T.mono(10, .semibold))
-                    .tracking(0.5)
+                    .tracking(TextScale.capsTracking)
                     .foregroundColor(tint)
             }
             Text(detail)
@@ -267,18 +264,18 @@ struct HFTokenSheet: View {
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(12)
+        .padding(Space.s)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 10).fill(tint.opacity(0.08)))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(tint.opacity(0.35), lineWidth: 0.5))
-        .padding(.horizontal, 16)
-        .padding(.top, 10)
+        .background(RoundedRectangle(cornerRadius: Radius.control).fill(tint.opacity(0.08)))
+        .overlay(RoundedRectangle(cornerRadius: Radius.control).stroke(tint.opacity(0.35), lineWidth: 0.5))
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.s)
     }
 
     // MARK: - Help
 
     private var helpCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             KCaption(text: "WHY DO I NEED THIS?")
             Text("Hugging Face requires a token for repositories where the publisher gates access — typically because the model has a license that requires you to accept terms. Examples: official google/gemma-* mirrors, meta-llama/* models, mistralai/Ministral-*.")
                 .font(T.sans(11.5))
@@ -288,10 +285,10 @@ struct HFTokenSheet: View {
                 .font(T.sans(11.5))
                 .foregroundColor(T.ink3)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 2)
+                .padding(.top, Space.hair)
         }
-        .padding(.horizontal, 18)
-        .padding(.top, 18)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.m)
     }
 
     // MARK: - Actions

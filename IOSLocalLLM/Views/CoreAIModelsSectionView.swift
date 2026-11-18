@@ -19,7 +19,7 @@ struct CoreAIModelsSectionView: View {
 
     var body: some View {
         if showsCatalog || !installedPacks.isEmpty {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Space.m) {
             Label("Core AI · Optional local runtime", systemImage: "cpu")
                 .font(.headline)
             // On a device that can't run Core AI the reason sits inside the
@@ -40,7 +40,7 @@ struct CoreAIModelsSectionView: View {
             }
             if showsCatalog {
                 DisclosureGroup("Core AI model downloads") {
-                    LazyVStack(alignment: .leading, spacing: 16) {
+                    LazyVStack(alignment: .leading, spacing: Space.m) {
                         if let reason = CoreAIInferenceService.availabilityReason {
                             Text(reason).font(.subheadline).foregroundStyle(.secondary)
                         }
@@ -52,13 +52,13 @@ struct CoreAIModelsSectionView: View {
                             }
                         }
                     }
-                    .padding(.top, 12)
+                    .padding(.top, Space.s)
                 }
                 .accessibilityIdentifier("coreai.catalog")
             }
         }
-        .padding(16)
-        .background(theme.surface, in: RoundedRectangle(cornerRadius: AppRadius.card))
+        .padding(Space.m)
+        .background(theme.surface, in: RoundedRectangle(cornerRadius: Radius.card))
         .onAppear { store.refresh() }
         .confirmationDialog("Download Core AI pack?", isPresented: Binding(get: { pendingDownload != nil }, set: { if !$0 { pendingDownload = nil } }), presenting: pendingDownload) { pack in
             Button("Download \(pack.approxDownloadBytes.formattedBytes)") {
@@ -88,7 +88,7 @@ private struct CoreAIInstalledPackRow: View {
     @ObservedObject private var assistant = CodingAssistantService.shared
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             Text(installed.manifest.displayName).font(.headline)
             Label("Installed · Core AI", systemImage: "checkmark.circle")
                 .font(.caption).foregroundStyle(.secondary)
@@ -113,7 +113,7 @@ private struct CoreAICatalogPackRow: View {
     @ObservedObject private var downloads = CoreAIDownloadCenter.shared
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             Text(pack.displayName).font(.headline)
             Text(pack.subtitle).font(.subheadline).foregroundStyle(.secondary)
             Text(pack.approxDownloadBytes.formattedBytes).font(.caption.monospaced())
@@ -129,6 +129,6 @@ private struct CoreAICatalogPackRow: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 6)
+        .padding(.vertical, Space.xs)
     }
 }

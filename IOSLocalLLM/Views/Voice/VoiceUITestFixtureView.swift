@@ -23,7 +23,7 @@ struct VoiceUITestFixtureView: View {
     }
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Space.s) {
             Text("Conversation model")
                 .font(.caption)
                 .accessibilityIdentifier("conversationModelLabel")
@@ -192,8 +192,8 @@ private struct ComposerUITestFixtureView: View {
                 onModel: {}, onVoice: {}, onAdd: {}, onPhoto: {}, onFile: {}, onSampling: {},
                 onSend: { text = "" }, onStop: { generating = false }
             )
-            .background(.background, in: RoundedRectangle(cornerRadius: 24))
-            .padding(12)
+            .background(.background, in: RoundedRectangle(cornerRadius: Radius.panel))
+            .padding(Space.s)
         }
     }
 }

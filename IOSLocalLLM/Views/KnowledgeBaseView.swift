@@ -24,15 +24,15 @@ struct KnowledgeBaseView: View {
             ZStack {
                 LiquidPinkBackdrop()
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
+                    VStack(alignment: .leading, spacing: Space.cardGap) {
                         if !kb.isAvailable { unavailableCard }
                         toggleCard
                         addStrip
                         if kb.isIndexing { indexingRow }
                         documentsList
                     }
-                    .padding(16)
-                    .padding(.bottom, 40)
+                    .padding(Space.m)
+                    .padding(.bottom, Space.xl)
                 }
             }
             .navigationTitle("Knowledge Base")
@@ -89,22 +89,22 @@ struct KnowledgeBaseView: View {
     // MARK: - Cards
 
     private var unavailableCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             Text("On-device embeddings unavailable")
                 .font(T.sans(14, .semibold)).foregroundColor(T.bad)
             Text("This device's language doesn't have a local embedding model, so the Knowledge Base can't index text here.")
                 .font(T.mono(10)).foregroundColor(T.ink3)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(14)
+        .padding(Space.m)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 16).fill(T.bad.opacity(0.10)))
+        .background(RoundedRectangle(cornerRadius: Radius.card).fill(T.bad.opacity(0.10)))
     }
 
     private var toggleCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.s) {
             Toggle(isOn: $kb.isEnabled) {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Space.hair) {
                     Text("Use in answers")
                         .font(T.sans(15, .semibold)).foregroundColor(T.ink)
                     Text("The assistant grounds replies in your files and cites them — fully offline.")
@@ -115,12 +115,12 @@ struct KnowledgeBaseView: View {
             .tint(T.accent)
             .disabled(!kb.isAvailable)
         }
-        .padding(14)
-        .kGlass(cornerRadius: 16, fallbackFill: T.surface)
+        .padding(Space.m)
+        .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
     }
 
     private var addStrip: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             actionButton(icon: "doc.badge.plus", label: "Add files") { showImporter = true }
             actionButton(icon: "text.cursor", label: "Paste text") {
                 pasteText = ""; pasteName = ""; showPaste = true
@@ -132,33 +132,33 @@ struct KnowledgeBaseView: View {
 
     private func actionButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: { action(); HapticManager.impact(.light) }) {
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: icon)
                 Text(label).font(T.display(15, .semibold))
             }
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 13)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(T.roseHi))
+            .padding(.vertical, Space.m)
+            .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous).fill(T.roseHi))
         }
         .buttonStyle(.plain)
     }
 
     private var indexingRow: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             ProgressView().tint(T.accent)
             Text("Indexing…").font(T.mono(11)).foregroundColor(T.ink2)
             Spacer()
         }
-        .padding(.horizontal, 4)
+        .padding(.horizontal, Space.xxs)
     }
 
     @ViewBuilder
     private var documentsList: some View {
         if kb.documents.isEmpty {
-            VStack(spacing: 8) {
+            VStack(spacing: Space.s) {
                 Image(systemName: "books.vertical")
-                    .font(.system(size: 30, weight: .light)).foregroundColor(T.ink4)
+                    .font(.system(.title, weight: .light)).foregroundColor(T.ink4)
                 Text("No documents yet")
                     .font(T.sans(14, .semibold)).foregroundColor(T.ink2)
                 Text("Add files or paste text to chat with your own content.")
@@ -166,11 +166,11 @@ struct KnowledgeBaseView: View {
                     .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
-            .padding(.top, 30)
+            .padding(.top, Space.l)
         } else {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 HStack {
-                    Text("DOCUMENTS").font(T.mono(10, .semibold)).foregroundColor(T.ink3).tracking(0.6)
+                    Text("DOCUMENTS").font(T.mono(10, .semibold)).foregroundColor(T.ink3).tracking(TextScale.capsTracking)
                     Spacer()
                     Text("\(kb.totalChunks) chunks").font(T.mono(9.5)).foregroundColor(T.ink3)
                 }
@@ -180,13 +180,13 @@ struct KnowledgeBaseView: View {
     }
 
     private func documentRow(_ doc: KBDocument) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: Space.s) {
             Image(systemName: "doc.text")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(.subheadline, weight: .semibold))
                 .foregroundColor(T.accent2)
-                .frame(width: 36, height: 36)
-                .background(RoundedRectangle(cornerRadius: 9).fill(T.accent2Soft))
-            VStack(alignment: .leading, spacing: 3) {
+                .frame(width: Size.control, height: Size.control)
+                .background(RoundedRectangle(cornerRadius: Radius.control).fill(T.accent2Soft))
+            VStack(alignment: .leading, spacing: Space.xxs) {
                 Text(doc.name).font(T.sans(14, .semibold)).foregroundColor(T.ink).lineLimit(1)
                 Text("\(doc.chunkCount) chunks · \(Int64(doc.byteCount).formattedBytes)")
                     .font(T.mono(9.5)).foregroundColor(T.ink3)
@@ -195,13 +195,13 @@ struct KnowledgeBaseView: View {
             Button {
                 pendingDelete = doc
             } label: {
-                Image(systemName: "trash").font(.system(size: 13)).foregroundColor(T.bad)
+                Image(systemName: "trash").font(.system(.footnote)).foregroundColor(T.bad)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Remove \(doc.name)")
         }
-        .padding(12)
-        .kGlass(cornerRadius: 14, fallbackFill: T.surface)
+        .padding(Space.s)
+        .kGlass(cornerRadius: Radius.control, fallbackFill: T.surface)
     }
 
     // MARK: - Paste sheet
@@ -210,18 +210,18 @@ struct KnowledgeBaseView: View {
         NavigationStack {
             ZStack {
                 LiquidPinkBackdrop()
-                VStack(spacing: 12) {
+                VStack(spacing: Space.s) {
                     TextField("Name (e.g. Project notes)", text: $pasteName)
-                        .font(T.sans(15)).padding(12)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(T.surface))
+                        .font(T.sans(15)).padding(Space.s)
+                        .background(RoundedRectangle(cornerRadius: Radius.control).fill(T.surface))
                     TextEditor(text: $pasteText)
                         .font(T.mono(12)).scrollContentBackground(.hidden)
-                        .padding(10)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(T.surface))
+                        .padding(Space.s)
+                        .background(RoundedRectangle(cornerRadius: Radius.control).fill(T.surface))
                         .frame(minHeight: 220)
                     Spacer()
                 }
-                .padding(16)
+                .padding(Space.m)
             }
             .navigationTitle("Paste text")
             .navigationBarTitleDisplayMode(.inline)

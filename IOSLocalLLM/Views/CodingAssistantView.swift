@@ -276,8 +276,8 @@ struct CodingAssistantView: View {
                                             inputFocused = true
                                         }
                                     )
-                                    .padding(.horizontal, 16)
-                                    .padding(.top, 22)
+                                    .padding(.horizontal, Space.m)
+                                    .padding(.top, Space.l)
                                 }
                                 ForEach(filteredMessages) { msg in
                                     VStack(spacing: 0) {
@@ -325,15 +325,15 @@ struct CodingAssistantView: View {
                                             }
                                         // Inline action bar for completed assistant messages
                                         if msg.role == .assistant && !msg.isStreaming && !msg.content.isEmpty {
-                                            VStack(alignment: .leading, spacing: 6) {
-                                                HStack(spacing: 16) {
+                                            VStack(alignment: .leading, spacing: Space.xs) {
+                                                HStack(spacing: Space.m) {
                                                     Button {
                                                         UIPasteboard.general.string = msg.content
                                                         HapticManager.impact(.light)
                                                         ToastCenter.shared.info("Copied")
                                                     } label: {
                                                         Image(systemName: "doc.on.doc")
-                                                            .font(.system(size: 12))
+                                                            .font(.system(.caption))
                                                             .foregroundColor(T.ink3)
                                                     }
                                                     .buttonStyle(.plain)
@@ -343,7 +343,7 @@ struct CodingAssistantView: View {
                                                             HapticManager.impact(.medium)
                                                         } label: {
                                                             Image(systemName: "arrow.clockwise")
-                                                                .font(.system(size: 12))
+                                                                .font(.system(.caption))
                                                                 .foregroundColor(T.ink3)
                                                     }
                                                     .buttonStyle(.plain)
@@ -354,7 +354,7 @@ struct CodingAssistantView: View {
                                                     HapticManager.impact(.light)
                                                 } label: {
                                                     Image(systemName: "square.and.arrow.up")
-                                                        .font(.system(size: 12))
+                                                        .font(.system(.caption))
                                                         .foregroundColor(T.ink3)
                                                 }
                                                 .buttonStyle(.plain)
@@ -377,8 +377,8 @@ struct CodingAssistantView: View {
                                                     )
                                                 }
                                             }
-                                            .padding(.horizontal, 14)
-                                            .padding(.bottom, 8)
+                                            .padding(.horizontal, Space.m)
+                                            .padding(.bottom, Space.s)
                                         }
                                     }
                                     .id(msg.id)
@@ -407,7 +407,7 @@ struct CodingAssistantView: View {
                                     .frame(height: 12)
                                     .id(conversationBottomAnchorID)
                             }
-                            .padding(.vertical, 12)
+                            .padding(.vertical, Space.s)
                             .frame(maxWidth: AppLayout.readingWidth)
                             .frame(maxWidth: .infinity)
                         }
@@ -479,14 +479,14 @@ struct CodingAssistantView: View {
                                 }
                             } label: {
                                 Image(systemName: "arrow.down")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .frame(width: 44, height: 44)
+                                    .font(.system(.subheadline, weight: .semibold))
+                                    .frame(width: Size.control, height: Size.control)
                                     .background(.thinMaterial, in: Circle())
                                     .overlay(Circle().stroke(T.rule, lineWidth: 0.5))
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("Jump to latest message")
-                            .padding(16)
+                            .padding(Space.m)
                         }
                     }
                 }
@@ -500,7 +500,8 @@ struct CodingAssistantView: View {
                 if route == .chat {
                     if !isGenerating {
                         inputBar
-                            .padding(.horizontal, 12)
+                            // Same edge as bubbles, cards and the status row.
+                            .padding(.horizontal, Space.screenMargin)
                             .avoidingDisplayDivision()
                             .accessibilityElement(children: .contain)
                             .accessibilityIdentifier("assistant.composer")
@@ -508,7 +509,7 @@ struct CodingAssistantView: View {
                             // gone, so its full visual gap should disappear too.
                             .padding(
                                 .bottom,
-                                inputFocused ? AssistantSpacing.xxSmall : floatingTabBarVisualGap
+                                inputFocused ? Space.s : floatingTabBarVisualGap
                             )
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
@@ -520,7 +521,7 @@ struct CodingAssistantView: View {
                     // The same bottom row keeps it above the tab bar
                     // regardless of scroll position.
                     askAnythingPill
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, Space.m)
                         .avoidingDisplayDivision()
                         .padding(.bottom, floatingTabBarVisualGap)
                 }
@@ -565,7 +566,7 @@ struct CodingAssistantView: View {
                             HapticManager.impact(.light)
                         } label: {
                             Label("Back", systemImage: "chevron.backward")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.system(.callout, weight: .semibold))
                                 .foregroundColor(T.ink)
                         }
                         .accessibilityLabel("Back")
@@ -1040,9 +1041,9 @@ struct CodingAssistantView: View {
     }
 
     private var conversationSearchBar: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Space.s) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 12))
+                .font(.system(.caption))
                 .foregroundColor(T.ink3)
             TextField("filter messages…", text: $conversationFilter)
                 .font(T.mono(12))
@@ -1054,7 +1055,7 @@ struct CodingAssistantView: View {
                     conversationFilter = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 13))
+                        .font(.system(.footnote))
                         .foregroundColor(T.ink3)
                 }
                 .buttonStyle(.plain)
@@ -1063,8 +1064,8 @@ struct CodingAssistantView: View {
                 .font(T.mono(10))
                 .foregroundColor(T.ink3)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, Space.s)
+        .padding(.vertical, Space.s)
         .kClearGlass(in: Rectangle(), fallbackFill: T.surface)
         .overlay(Rectangle().fill(T.rule).frame(height: 1), alignment: .bottom)
     }
@@ -1279,7 +1280,7 @@ struct CodingAssistantView: View {
                 HapticManager.impact(.light)
             }
         } label: {
-            HStack(spacing: AppSpacing.small) {
+            HStack(spacing: Space.s) {
                 if isModelPreparing {
                     ProgressView()
                         .controlSize(.small)
@@ -1309,7 +1310,7 @@ struct CodingAssistantView: View {
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
-                Spacer(minLength: AppSpacing.small)
+                Spacer(minLength: Space.s)
                 if canLoadSelectedModel {
                     Label(
                         hasPermanentModelCapacityFailure || needsModelDownload ? "Choose" : "Load",
@@ -1319,8 +1320,8 @@ struct CodingAssistantView: View {
                     )
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(T.accent)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
+                        .padding(.horizontal, Space.s)
+                        .padding(.vertical, Space.xs)
                         .background(
                             Capsule()
                                 .fill(T.accent.opacity(T.isDark ? 0.18 : 0.10))
@@ -1330,7 +1331,7 @@ struct CodingAssistantView: View {
                         .foregroundStyle(T.ink3)
                 }
             }
-            .padding(.horizontal, AppSpacing.large)
+            .padding(.horizontal, Space.m)
             .frame(minHeight: 44)
             .contentShape(Rectangle())
         }
@@ -1393,33 +1394,32 @@ struct CodingAssistantView: View {
     private var legacyModelStatusBar: some View {
         let safety = DeviceSafetyMonitor.shared
         let descriptor = modelStatusDescriptor
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             // Tappable model name → Models tab (the unified hub owns
             // assistant-model selection now).
             Button {
                 AppBridge.shared.requestTab(.models)
                 HapticManager.impact(.light)
             } label: {
-                HStack(spacing: 10) {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                HStack(spacing: Space.s) {
+                    RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                         .fill(descriptor.color.opacity(T.isDark ? 0.24 : 0.14))
-                        .frame(width: 30, height: 30)
+                        .frame(width: Size.tile, height: Size.tile)
                         .overlay {
                             Image(systemName: descriptor.symbol)
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.system(.caption, weight: .semibold))
                                 .foregroundColor(descriptor.color)
                         }
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         Text(assistant.activeDisplayName)
                             .font(T.sans(12, .semibold))
                             .foregroundColor(T.ink)
                             .lineLimit(1)
                             .truncationMode(.tail)
                             .minimumScaleFactor(0.85)
-                        HStack(spacing: 6) {
+                        HStack(spacing: Space.xs) {
                             Text(loc.t(descriptor.title))
                                 .font(T.mono(9.5, .semibold))
-                                .tracking(0)
                                 .foregroundColor(descriptor.color)
                                 .lineLimit(1)
                                 .fixedSize(horizontal: true, vertical: false)
@@ -1429,8 +1429,8 @@ struct CodingAssistantView: View {
                                     .foregroundColor(descriptor.color)
                                     .lineLimit(1)
                                     .fixedSize(horizontal: true, vertical: false)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
+                                    .padding(.horizontal, Space.xs)
+                                    .padding(.vertical, Space.hair)
                                     .background(
                                         Capsule()
                                             .fill(descriptor.color.opacity(T.isDark ? 0.22 : 0.12))
@@ -1445,11 +1445,11 @@ struct CodingAssistantView: View {
                     .layoutPriority(1)
                     Spacer(minLength: 6)
                     Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 8, weight: .semibold))
+                        .font(.system(.caption2, weight: .semibold))
                         .foregroundColor(T.ink3)
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
+                .padding(.horizontal, Space.s)
+                .padding(.vertical, Space.xs)
                 // Fill only the space the row offers. Intrinsic fixed sizing
                 // let long imported filenames extend beyond the screen and
                 // push Retry/status controls off the trailing edge.
@@ -1483,13 +1483,13 @@ struct CodingAssistantView: View {
                     default:       return T.ink2
                     }
                 }()
-                HStack(spacing: 4) {
+                HStack(spacing: Space.xxs) {
                     Image(systemName: "thermometer.medium")
-                        .font(.system(size: 9))
+                        .font(.system(.caption2))
                     Text(loc.t(label)).font(T.mono(10, .semibold))
                 }
                 .foregroundColor(color)
-                .padding(.horizontal, 6).padding(.vertical, 3)
+                .padding(.horizontal, Space.xs).padding(.vertical, Space.xxs)
                 .kGlass(cornerRadius: 4,
                         tint: color.opacity(0.4),
                         fallbackFill: color.opacity(0.12),
@@ -1504,14 +1504,14 @@ struct CodingAssistantView: View {
             let configuredMaxTokens = assistant.effectiveGenerationSettings.maxTokens
             let effectiveMax = assistant.effectiveOutputTokenCap
             if effectiveMax < configuredMaxTokens {
-                HStack(spacing: 2) {
+                HStack(spacing: Space.hair) {
                     Image(systemName: "arrow.down")
-                        .font(.system(size: 8, weight: .semibold))
+                        .font(.system(.caption2, weight: .semibold))
                     Text("\(effectiveMax) tok")
                         .font(T.mono(10, .semibold))
                 }
                 .foregroundColor(T.warn)
-                .padding(.horizontal, 5).padding(.vertical, 2)
+                .padding(.horizontal, Space.xs).padding(.vertical, Space.hair)
                 .background(T.warn.opacity(0.12))
                 .clipShape(RoundedRectangle(cornerRadius: 4))
                 .overlay(RoundedRectangle(cornerRadius: 4).stroke(T.warn.opacity(0.3), lineWidth: 0.5))
@@ -1521,14 +1521,14 @@ struct CodingAssistantView: View {
                 Button {
                     continueTruncatedReply()
                 } label: {
-                    HStack(spacing: 2) {
+                    HStack(spacing: Space.hair) {
                         Image(systemName: "text.append")
-                            .font(.system(size: 8, weight: .semibold))
+                            .font(.system(.caption2, weight: .semibold))
                         Text("cut off")
                             .font(T.mono(10, .semibold))
                     }
                     .foregroundColor(T.warn)
-                    .padding(.horizontal, 5).padding(.vertical, 2)
+                    .padding(.horizontal, Space.xs).padding(.vertical, Space.hair)
                     .background(T.warn.opacity(0.12))
                     .clipShape(RoundedRectangle(cornerRadius: 4))
                     .overlay(RoundedRectangle(cornerRadius: 4).stroke(T.warn.opacity(0.3), lineWidth: 0.5))
@@ -1543,14 +1543,14 @@ struct CodingAssistantView: View {
                 Button {
                     Task { await assistant.load(reselectFromSettings: false) }
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: Space.xxs) {
                         Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 10))
+                            .font(.system(.caption2))
                         Text("retry")
                             .font(T.mono(10, .semibold))
                     }
                     .foregroundColor(T.warn)
-                    .padding(.horizontal, 7).padding(.vertical, 3)
+                    .padding(.horizontal, Space.xs).padding(.vertical, Space.xxs)
                     .kGlass(cornerRadius: 4,
                             tint: T.warn.opacity(0.3),
                             fallbackFill: T.warn.opacity(0.12),
@@ -1559,8 +1559,8 @@ struct CodingAssistantView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
         .kClearGlass(in: Rectangle(), fallbackFill: T.bg)
         .overlay(alignment: .bottom) {
             Rectangle().fill(T.rule).frame(height: 0.5)
@@ -1577,14 +1577,14 @@ struct CodingAssistantView: View {
                 showSettings = true
                 HapticManager.impact(.light)
             } label: {
-                HStack(spacing: 3) {
+                HStack(spacing: Space.xxs) {
                     Image(systemName: "brain.head.profile")
-                        .font(.system(size: 9))
+                        .font(.system(.caption2))
                     Text("\(count)")
                         .font(T.mono(10, .semibold))
                 }
                 .foregroundColor(T.accent)
-                .padding(.horizontal, 5).padding(.vertical, 3)
+                .padding(.horizontal, Space.xs).padding(.vertical, Space.xxs)
                 .kGlass(cornerRadius: 4,
                         tint: T.accent.opacity(0.3),
                         fallbackFill: T.accentSoft,
@@ -1711,7 +1711,7 @@ struct CodingAssistantView: View {
         } label: {
             ViewThatFits(in: .horizontal) {
                 VStack(spacing: 1) {
-                    HStack(spacing: 4) {
+                    HStack(spacing: Space.xxs) {
                         Text(loc.t("assistant"))
                             .font(.headline)
                             .foregroundStyle(T.ink)
@@ -1763,15 +1763,15 @@ struct CodingAssistantView: View {
             HapticManager.impact(.light)
             probeBridge()
         } label: {
-            HStack(spacing: 5) {
+            HStack(spacing: Space.xs) {
                 bridgePillIcon
                 Text(bridgePillLabel)
                     .font(T.mono(9.5, .semibold))
                     .foregroundColor(bridgePillColor)
                     .lineLimit(1)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
+            .padding(.horizontal, Space.s)
+            .padding(.vertical, Space.xs)
             .background(
                 Capsule().fill(bridgePillColor.opacity(T.isDark ? 0.18 : 0.10))
             )
@@ -1793,11 +1793,11 @@ struct CodingAssistantView: View {
                 .frame(width: 10, height: 10)
         case .connected:
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 9, weight: .semibold))
+                .font(.system(.caption2, weight: .semibold))
                 .foregroundColor(bridgePillColor)
         case .unreachable:
             Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 9, weight: .semibold))
+                .font(.system(.caption2, weight: .semibold))
                 .foregroundColor(bridgePillColor)
         case .notPaired, .unknown:
             Circle()
@@ -1915,14 +1915,14 @@ struct CodingAssistantView: View {
         case .loading(let msg):
             let progress = Self.percentage(in: msg)
             let isDownload = msg.lowercased().contains("download")
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: Space.s) {
+                HStack(spacing: Space.s) {
                     Image(systemName: isDownload
                           ? "arrow.down.circle.fill"
                           : "bolt.fill")
-                        .font(.system(size: 18, weight: .medium))
+                        .font(.system(.body, weight: .medium))
                         .foregroundColor(T.accent)
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         Text("\(loc.t(isDownload ? "Downloading" : "Preparing")) \(assistant.activeModel.displayName)")
                             .font(T.sans(14, .semibold))
                             .foregroundColor(T.ink)
@@ -1953,17 +1953,17 @@ struct CodingAssistantView: View {
                         .shimmer(isActive: true, duration: 1.2)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .kGlass(cornerRadius: 14, fallbackFill: T.surface)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.m)
+            .kGlass(cornerRadius: Radius.control, fallbackFill: T.surface)
             .shimmer(isActive: progress == nil, duration: 1.6)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, Space.m)
 
         case .failed(let err):
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.s) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 13))
+                        .font(.system(.footnote))
                         .foregroundColor(T.bad)
                     Text(loc.t("Model failed to load"))
                         .font(T.sans(13, .semibold))
@@ -1974,7 +1974,7 @@ struct CodingAssistantView: View {
                     .font(T.mono(11))
                     .foregroundColor(T.ink2)
                     .lineLimit(2)
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     Button {
                         Task { await ensureModelReady() }
                         HapticManager.impact(.light)
@@ -1982,13 +1982,13 @@ struct CodingAssistantView: View {
                         Text("Retry")
                             .font(T.sans(12, .semibold))
                             .foregroundColor(T.ink)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
+                            .padding(.horizontal, Space.s)
+                            .padding(.vertical, Space.xs)
                             .background(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                RoundedRectangle(cornerRadius: Radius.inner, style: .continuous)
                                     .fill(T.surface)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                        RoundedRectangle(cornerRadius: Radius.inner, style: .continuous)
                                             .stroke(T.glassBorder, lineWidth: 0.5)
                                     )
                             )
@@ -2002,27 +2002,27 @@ struct CodingAssistantView: View {
                         Text("Switch model")
                             .font(T.sans(12, .semibold))
                             .foregroundColor(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
+                            .padding(.horizontal, Space.s)
+                            .padding(.vertical, Space.xs)
                             .background(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                RoundedRectangle(cornerRadius: Radius.inner, style: .continuous)
                                     .fill(T.accent)
                             )
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(14)
-            .kGlass(cornerRadius: 14, tint: T.bad.opacity(T.isDark ? 0.08 : 0.04))
-            .padding(.horizontal, 16)
+            .padding(Space.m)
+            .kGlass(cornerRadius: Radius.card, tint: T.bad.opacity(T.isDark ? 0.08 : 0.04))
+            .padding(.horizontal, Space.m)
 
         case .unloaded:
             if !legal.needsAcceptance {
-                HStack(spacing: 12) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "arrow.down.circle")
-                        .font(.system(size: 18))
+                        .font(.system(.body))
                         .foregroundColor(T.ink3)
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         Text(loc.t("No model loaded"))
                             .font(T.sans(13, .semibold))
                             .foregroundColor(T.ink)
@@ -2039,10 +2039,10 @@ struct CodingAssistantView: View {
                         Text("Load")
                             .font(T.sans(12, .semibold))
                             .foregroundColor(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
+                            .padding(.horizontal, Space.s)
+                            .padding(.vertical, Space.xs)
                             .background(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                RoundedRectangle(cornerRadius: Radius.inner, style: .continuous)
                                     .fill(T.accent)
                             )
                     }
@@ -2057,10 +2057,10 @@ struct CodingAssistantView: View {
                     }
                     .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-                .kGlass(cornerRadius: 14, fallbackFill: T.surface)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
+                .kGlass(cornerRadius: Radius.control, fallbackFill: T.surface)
+                .padding(.horizontal, Space.m)
             }
 
         default:
@@ -2085,7 +2085,7 @@ struct CodingAssistantView: View {
     private var landingContent: some View {
         GeometryReader { geo in
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: Space.l) {
                     Spacer().frame(height: 24)
                     landingHero
                     landingStatusPill
@@ -2112,7 +2112,7 @@ struct CodingAssistantView: View {
     }
 
     private var landingHero: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: Space.s) {
             KCaption(
                 text: assistant.activeExecutionLocation == .applePrivateCloud
                     ? "APPLE PRIVATE CLOUD"
@@ -2121,13 +2121,12 @@ struct CodingAssistantView: View {
 
             Text(assistant.activeDisplayName)
                 .font(T.display(30, .semibold))
-                .tracking(0)
                 .foregroundColor(T.ink)
                 .multilineTextAlignment(.center)
                 .lineLimit(3)
                 .minimumScaleFactor(0.78)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 24)
+                .padding(.horizontal, Space.l)
 
             Text(
                 assistant.activeExecutionLocation == .applePrivateCloud
@@ -2137,8 +2136,8 @@ struct CodingAssistantView: View {
                 .font(T.sans(13.5))
                 .foregroundColor(T.ink2)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-                .padding(.top, 4)
+                .padding(.horizontal, Space.l)
+                .padding(.top, Space.xxs)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -2172,7 +2171,7 @@ struct CodingAssistantView: View {
     /// Translate) so they apply to any persona.
     private var landingSuggestionsRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
+            HStack(spacing: Space.s) {
                 landingChip(
                     title: "Explain",
                     subtitle: "a complex topic simply",
@@ -2204,10 +2203,10 @@ struct CodingAssistantView: View {
                     prompt: "Translate the following:\n\n"
                 )
             }
-            .padding(.leading, 16)
+            .padding(.leading, Space.m)
             // Trailing inset is short on purpose so the next chip "peeks"
             // past the screen edge, signalling more content to scroll into.
-            .padding(.trailing, 40)
+            .padding(.trailing, Space.xl)
         }
         // Soft right-edge fade reinforces the scroll affordance — without
         // it the cut-off third chip looks like a layout bug.
@@ -2230,13 +2229,13 @@ struct CodingAssistantView: View {
             showImageGen = true
             HapticManager.impact(.medium)
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: Space.s) {
                 Image(systemName: "wand.and.stars")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                     .foregroundColor(.white)
-                    .frame(width: 40, height: 40)
-                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(T.roseHi))
-                VStack(alignment: .leading, spacing: 3) {
+                    .frame(width: Size.control, height: Size.control)
+                    .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous).fill(T.roseHi))
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     Text(loc.t("Generate an image"))
                         .font(T.sans(15, .semibold))
                         .foregroundColor(T.ink)
@@ -2248,17 +2247,17 @@ struct CodingAssistantView: View {
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.forward")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.caption, weight: .semibold))
                     .foregroundColor(T.ink3)
             }
-            .padding(14)
+            .padding(Space.m)
             .frame(maxWidth: .infinity, alignment: .leading)
             .kGlass(
-                cornerRadius: 16,
+                cornerRadius: Radius.card,
                 fallbackFill: T.surface,
                 fallbackStroke: T.rule
             )
-            .padding(.horizontal, 16)
+            .padding(.horizontal, Space.m)
         }
         .buttonStyle(KTactileButtonStyle())
     }
@@ -2268,12 +2267,12 @@ struct CodingAssistantView: View {
             openChat(prefill: prompt)
             HapticManager.impact(.light)
         } label: {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.s) {
+                HStack(spacing: Space.s) {
                     Image(systemName: systemImage)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .foregroundColor(T.accent)
-                        .frame(width: 28, height: 28)
+                        .frame(width: Size.tile, height: Size.tile)
                         .background(Circle().fill(T.accentSoft))
                     
                     Text(loc.t(title))
@@ -2289,10 +2288,10 @@ struct CodingAssistantView: View {
                     .frame(height: 32, alignment: .topLeading)
             }
             .frame(width: 158, alignment: .leading)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 14)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.m)
             .kGlass(
-                cornerRadius: 14,
+                cornerRadius: Radius.control,
                 fallbackFill: T.surface,
                 fallbackStroke: T.rule
             )
@@ -2309,18 +2308,18 @@ struct CodingAssistantView: View {
     /// the text composer instead. Splitting the interaction gives the icon its
     /// own hit region while keeping the visuals identical.
     private var askAnythingPill: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             // Body — opens the chat composer. `.contentShape(Rectangle())`
             // makes the whole zone (including the trailing Spacer) tappable.
             Button {
                 openChat()
                 HapticManager.impact(.light)
             } label: {
-                HStack(spacing: 10) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "plus")
-                        .font(.system(size: 20, weight: .medium))
+                        .font(.system(.title3, weight: .medium))
                         .foregroundColor(T.ink3)
-                        .frame(width: 44, height: 44)
+                        .frame(width: Size.control, height: Size.control)
                     Text(loc.t("Ask anything…"))
                         .font(.body)
                         .foregroundColor(T.ink3)
@@ -2337,19 +2336,19 @@ struct CodingAssistantView: View {
                 HapticManager.impact(.light)
             } label: {
                 Image(systemName: "waveform")
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(.title3, weight: .semibold))
                     .foregroundColor(T.bg)
-                    .frame(width: 44, height: 44)
+                    .frame(width: Size.control, height: Size.control)
                     .background(Circle().fill(T.ink))
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(loc.t("Voice conversation"))
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 8)
+        .padding(.horizontal, Space.s)
+        .padding(.vertical, Space.s)
         .kGlass(
-            cornerRadius: 24,
+            cornerRadius: Radius.panel,
             fallbackFill: T.surface,
             fallbackStroke: T.rule
         )
@@ -2387,16 +2386,15 @@ struct CodingAssistantView: View {
 
     private var emptyStateView: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: Space.m) {
                 if assistant.activeExecutionLocation != .applePrivateCloud {
                     modelLoadBanner
                 }
 
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: Space.xs) {
                         KCaption(text: "local-first ai assistant")
                     Text("Run open language models on your phone.")
                     .font(T.display(30, .semibold))
-                    .tracking(0)
                     .foregroundColor(T.ink)
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
@@ -2407,10 +2405,10 @@ struct CodingAssistantView: View {
                     )
                         .font(T.sans(14))
                         .foregroundColor(T.ink2)
-                        .padding(.top, 8)
+                        .padding(.top, Space.s)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, Space.m)
 
                 // Capability matrix
                 VStack(spacing: 0) {
@@ -2422,28 +2420,28 @@ struct CodingAssistantView: View {
                             KMono(text: row.1, size: 11, color: T.ink)
                             Spacer()
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 9)
+                        .padding(.horizontal, Space.s)
+                        .padding(.vertical, Space.s)
                     }
                 }
                 // Liquid Glass spec table — translucent material catches the
                 // backdrop bloom for the warm-rose ambience.
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .kGlass(cornerRadius: 16, fallbackFill: T.surface)
-                .padding(.horizontal, 16)
+                .clipShape(RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
+                .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
+                .padding(.horizontal, Space.m)
 
                 // Suggestion chips
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: Space.xs) {
                     KCaption(text: "try")
-                        .padding(.horizontal, 16)
-                    VStack(spacing: 6) {
+                        .padding(.horizontal, Space.m)
+                    VStack(spacing: Space.xs) {
                         ForEach(suggestions, id: \.self) { suggestion in
                             Button {
                                 inputText = suggestion
                                 inputFocused = true
                                 HapticManager.impact(.light)
                             } label: {
-                                HStack(spacing: 8) {
+                                HStack(spacing: Space.s) {
                                     Text("›")
                                         .font(T.mono(13, .semibold))
                                         .foregroundColor(T.accent)
@@ -2453,26 +2451,26 @@ struct CodingAssistantView: View {
                                         .multilineTextAlignment(.leading)
                                     Spacer()
                                     Image(systemName: "arrow.up.left")
-                                        .font(.system(size: 10))
+                                        .font(.system(.caption2))
                                         .foregroundColor(T.ink3)
                                 }
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 12)
+                                .padding(.horizontal, Space.m)
+                                .padding(.vertical, Space.s)
                                 // Liquid Glass row — translucent material with
                                 // a hairline highlight; rose-soft hover via
                                 // accentSofter would go here once we model
                                 // press-state.
-                                .kGlass(cornerRadius: 14, fallbackFill: T.surface)
+                                .kGlass(cornerRadius: Radius.control, fallbackFill: T.surface)
                             }
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Space.m)
                 }
 
                 Spacer(minLength: floatingTabBarReservedHeight + 16)
             }
-            .padding(.vertical, 8)
+            .padding(.vertical, Space.s)
         }
     }
 
@@ -2553,17 +2551,17 @@ struct CodingAssistantView: View {
             // photos before sending. Supports multiple images (Feature #11).
             if !pendingImageThumbnails.isEmpty || pendingImageThumbnail != nil {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: Space.s) {
                         ForEach(Array(pendingImageThumbnails.enumerated()), id: \.offset) { idx, att in
                             if let ui = UIImage(data: att.data) {
                                 ZStack(alignment: .topTrailing) {
                                     Image(uiImage: ui)
                                         .resizable()
                                         .scaledToFill()
-                                        .frame(width: 48, height: 48)
-                                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                        .frame(width: Size.feature, height: Size.feature)
+                                        .clipShape(RoundedRectangle(cornerRadius: Radius.inner, style: .continuous))
                                         .overlay(
-                                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                            RoundedRectangle(cornerRadius: Radius.inner, style: .continuous)
                                                 .stroke(T.rule, lineWidth: 0.5)
                                         )
                                     Button {
@@ -2574,7 +2572,7 @@ struct CodingAssistantView: View {
                                         HapticManager.impact(.light)
                                     } label: {
                                         Image(systemName: "xmark.circle.fill")
-                                            .font(.system(size: 14))
+                                            .font(.system(.subheadline))
                                             .foregroundColor(T.ink)
                                             .background(Circle().fill(T.bg))
                                     }
@@ -2591,10 +2589,10 @@ struct CodingAssistantView: View {
                                 Image(uiImage: ui)
                                     .resizable()
                                     .scaledToFill()
-                                    .frame(width: 56, height: 56)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                    .frame(width: Size.feature, height: Size.feature)
+                                    .clipShape(RoundedRectangle(cornerRadius: Radius.inner, style: .continuous))
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                        RoundedRectangle(cornerRadius: Radius.inner, style: .continuous)
                                             .stroke(T.rule, lineWidth: 0.5)
                                     )
                                 Button {
@@ -2602,7 +2600,7 @@ struct CodingAssistantView: View {
                                     HapticManager.impact(.light)
                                 } label: {
                                     Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 16))
+                                        .font(.system(.callout))
                                         .foregroundColor(T.ink)
                                         .background(Circle().fill(T.bg))
                                 }
@@ -2616,22 +2614,22 @@ struct CodingAssistantView: View {
                                 .fixedSize(horizontal: true, vertical: false)
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Space.m)
                 }
-                .padding(.top, 8)
+                .padding(.top, Space.s)
             }
             // Attached-file chips — horizontal scroll above the field.
             if !pendingAttachments.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: Space.xs) {
                         ForEach(pendingAttachments) { att in
                             FileAttachmentChip(attachment: att) {
                                 pendingAttachments.removeAll { $0.id == att.id }
                             }
                         }
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.top, 8)
+                    .padding(.horizontal, Space.s)
+                    .padding(.top, Space.s)
                 }
             }
             AssistantComposer(
@@ -2654,16 +2652,16 @@ struct CodingAssistantView: View {
         }
         .background(
             T.isDark ? Color(white: T.isOLED ? 0.10 : 0.16) : Color.white,
-            in: RoundedRectangle(cornerRadius: 24, style: .continuous)
+            in: RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
         )
         .overlay {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
                 .strokeBorder(T.ink.opacity(inputFocused ? 0.24 : 0.12), lineWidth: 1)
                 .allowsHitTesting(false)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
         .shadow(color: Color.black.opacity(T.isDark ? 0 : 0.04), radius: 12, y: 4)
-        .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
         .zIndex(20)
     }
 
@@ -2855,9 +2853,9 @@ struct CodingAssistantView: View {
 
         return Button { sendMessage() } label: {
             Image(systemName: "arrow.up")
-                .font(.system(size: 14, weight: .bold))
+                .font(.system(.subheadline, weight: .bold))
                 .foregroundColor(.white)
-                .frame(width: 36, height: 36)
+                .frame(width: Size.control, height: Size.control)
                 .background(
                     Circle().fill(
                         canSend ? AnyShapeStyle(T.accentStrong) : AnyShapeStyle(T.ink3)
@@ -4601,14 +4599,14 @@ private struct ApplePrivateCloudLandingStatusPill: View {
 
     var body: some View {
         Button(action: onRefresh) {
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 if generationState == .generating {
                     ProgressView()
                         .controlSize(.small)
                         .tint(T.accent)
                 } else {
                     Image(systemName: symbol)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(.caption, weight: .semibold))
                         .foregroundStyle(color)
                 }
                 Text(label)
@@ -4618,9 +4616,9 @@ private struct ApplePrivateCloudLandingStatusPill: View {
                     .font(T.mono(9, .semibold))
                     .foregroundStyle(T.ink3)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .kGlass(cornerRadius: 16, fallbackFill: T.surface)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
+            .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
         }
         .buttonStyle(.plain)
         .accessibilityHint("Refreshes Apple Private Cloud availability")
@@ -4682,17 +4680,17 @@ private struct ChatThreadEmptyState: View {
     ]
 
     var body: some View {
-        VStack(spacing: AssistantSpacing.medium) {
+        VStack(spacing: Space.m) {
             Image(systemName: emptyStateSymbol)
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(loadFailure == nil ? T.accent : T.bad)
-                .frame(width: 48, height: 48)
+                .frame(width: Size.feature, height: Size.feature)
                 .kClearGlass(in: Circle(),
                              tint: loadFailure == nil ? T.accentSoft : T.bad.opacity(0.12),
                              fallbackFill: T.surface2, fallbackStroke: T.rule2)
                 .shadow(color: T.accent.opacity(0.10), radius: 10, y: 4)
 
-            VStack(spacing: AppSpacing.small) {
+            VStack(spacing: Space.s) {
                 Text(emptyStateTitle)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(T.ink)
@@ -4705,7 +4703,7 @@ private struct ChatThreadEmptyState: View {
             }
 
             if !isFiltering, let loadFailure {
-                VStack(spacing: AppSpacing.medium) {
+                VStack(spacing: Space.s) {
                     Text(loadFailure)
                         .font(.callout)
                         .foregroundStyle(T.ink2)
@@ -4713,18 +4711,18 @@ private struct ChatThreadEmptyState: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     ViewThatFits(in: .horizontal) {
-                        HStack(spacing: AssistantSpacing.xxSmall) {
+                        HStack(spacing: Space.s) {
                             recoveryButtons
                         }
-                        VStack(spacing: AssistantSpacing.xxSmall) {
+                        VStack(spacing: Space.s) {
                             recoveryButtons
                         }
                     }
                 }
                 .frame(maxWidth: 440)
-                .padding(AssistantSpacing.medium)
+                .padding(Space.m)
                 .kGlass(
-                    cornerRadius: AppRadius.card,
+                    cornerRadius: Radius.card,
                     tint: T.bad.opacity(T.isDark ? 0.10 : 0.05),
                     fallbackFill: T.surface2,
                     fallbackStroke: T.bad.opacity(0.25)
@@ -4736,21 +4734,21 @@ private struct ChatThreadEmptyState: View {
                         systemImage: needsModelDownload ? "square.stack.3d.up" : "play.fill"
                     )
                     .font(.body.weight(.semibold))
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Space.m)
                     .frame(minHeight: 44)
                 }
                 .buttonStyle(.kPrimary)
                 .accessibilityIdentifier("assistant.model.setup")
             } else if !isFiltering {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: AssistantSpacing.xxSmall)],
-                          spacing: AssistantSpacing.xxSmall) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: Space.s)],
+                          spacing: Space.s) {
                     suggestionButtons
                 }
                 .frame(maxWidth: 440)
             }
         }
-        .padding(.horizontal, AssistantSpacing.small)
-        .padding(.vertical, AssistantSpacing.large)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.l)
         .frame(maxWidth: .infinity, alignment: .center)
         .accessibilityElement(children: .contain)
     }
@@ -4837,11 +4835,11 @@ private struct ChatThreadEmptyState: View {
             Label(title, systemImage: symbol)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(foreground)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
                 .frame(maxWidth: .infinity)
                 .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                         .fill(background)
                 )
         }
@@ -4855,7 +4853,7 @@ private struct ChatThreadEmptyState: View {
                 onSuggestion(suggestion)
                 HapticManager.impact(.light)
             } label: {
-                HStack(spacing: AssistantSpacing.xxSmall) {
+                HStack(spacing: Space.s) {
                     Image(systemName: symbol(for: suggestion))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(T.accent)
@@ -4866,9 +4864,9 @@ private struct ChatThreadEmptyState: View {
                         .lineLimit(2)
                     Spacer(minLength: 0)
                 }
-                .padding(.horizontal, AssistantSpacing.xSmall)
+                .padding(.horizontal, Space.s)
                 .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
-                .kClearGlass(in: RoundedRectangle(cornerRadius: AssistantRadius.small),
+                .kClearGlass(in: RoundedRectangle(cornerRadius: Radius.control),
                              interactive: true, fallbackFill: T.surface,
                              fallbackStroke: T.rule2)
             }
@@ -4901,7 +4899,7 @@ private struct TightModelLoadConfirmationSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
+                VStack(alignment: .leading, spacing: Space.l) {
                     Label("Try a smaller memory margin", systemImage: "memorychip")
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(T.bad)
@@ -4911,7 +4909,7 @@ private struct TightModelLoadConfirmationSheet: View {
                         .foregroundStyle(T.ink)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: Space.m) {
                         riskRow(
                             symbol: "xmark.app.fill",
                             text: "Memory estimates vary with context length and other active apps. Choose a smaller model if loading is refused."
@@ -4942,16 +4940,16 @@ private struct TightModelLoadConfirmationSheet: View {
                             .font(.headline)
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 13)
+                            .padding(.vertical, Space.m)
                             .background(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                                     .fill(hasAcknowledgedRisk ? T.bad : T.ink3)
                             )
                     }
                     .buttonStyle(.plain)
                     .disabled(!hasAcknowledgedRisk)
                 }
-                .padding(22)
+                .padding(Space.l)
             }
             .background(T.bg)
             .navigationTitle("Memory margin")
@@ -5011,9 +5009,9 @@ struct ConversationPickerView: View {
                 if store.conversations.isEmpty {
                     emptyState
                 } else if filtered.isEmpty {
-                    VStack(spacing: 8) {
+                    VStack(spacing: Space.s) {
                         Image(systemName: "magnifyingglass")
-                            .font(.system(size: 28))
+                            .font(.system(.title))
                             .foregroundColor(T.ink3)
                         KMono(text: "no matches", size: 12, color: T.ink2)
                     }
@@ -5111,28 +5109,28 @@ struct ConversationPickerView: View {
         Button {
             onSelect(conv)
         } label: {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Space.xxs) {
                 Text(conv.title)
                     .font(T.sans(14, .medium))
                     .foregroundColor(T.ink)
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     KMono(text: conv.updatedAt.relativeShort, size: 10, color: T.ink3)
                     KMono(text: "·", size: 10, color: T.ink4)
                     KMono(text: "\(conv.messages.filter { $0.role != "system" }.count) msgs",
                            size: 10, color: T.ink3)
                 }
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, Space.xxs)
         }
         .listRowBackground(T.surface)
     }
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: Space.m) {
             Image(systemName: "bubble.left.and.bubble.right")
-                .font(.system(size: 40))
+                .font(.system(size: Space.xl))
                 .foregroundColor(T.ink3)
-            VStack(spacing: 4) {
+            VStack(spacing: Space.xxs) {
                 Text("no saved conversations yet")
                     .font(T.mono(13, .semibold))
                     .foregroundColor(T.ink2)
@@ -5140,25 +5138,25 @@ struct ConversationPickerView: View {
                     .font(T.sans(12))
                     .foregroundColor(T.ink3)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, Space.l)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Button {
                 dismiss()
                 HapticManager.impact(.light)
             } label: {
-                HStack(spacing: 5) {
+                HStack(spacing: Space.xs) {
                     Image(systemName: "plus")
-                        .font(.system(size: 11))
+                        .font(.system(.caption2))
                     Text("start a new chat")
                         .font(T.mono(11, .semibold))
                 }
                 .foregroundColor(T.bg)
-                .padding(.horizontal, 14).padding(.vertical, 7)
-                .background(RoundedRectangle(cornerRadius: 6).fill(T.ink))
+                .padding(.horizontal, Space.m).padding(.vertical, Space.xs)
+                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
             }
             .buttonStyle(.plain)
-            .padding(.top, 4)
+            .padding(.top, Space.xxs)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -5250,18 +5248,18 @@ struct MessageBubble: View, Equatable {
     private func toolResultChip(_ tr: (name: String, result: String)) -> some View {
         AssistantToolResultCard(name: tr.name, result: tr.result)
             .frame(maxWidth: 520, alignment: .leading)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 6)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.xs)
     }
 
     // User turn — right-aligned neutral bubble.
     private var userBubble: some View {
         HStack(alignment: .bottom, spacing: 0) {
             Spacer(minLength: 48)
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 if message.imageThumbnails.count > 1 {
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: Space.s) {
                             ForEach(Array(message.imageThumbnails.enumerated()), id: \.offset) { _, att in
                                 imageCard(data: att.data, isCarousel: true)
                             }
@@ -5278,8 +5276,8 @@ struct MessageBubble: View, Equatable {
                         .textSelection(.enabled)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
             .kClearGlass(
                 in: UnevenRoundedRectangle(topLeadingRadius: 14, bottomLeadingRadius: 14,
                                            bottomTrailingRadius: 5, topTrailingRadius: 14,
@@ -5288,15 +5286,15 @@ struct MessageBubble: View, Equatable {
             )
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
-        .padding(.horizontal, 18)
-        .padding(.vertical, 6)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.xs)
     }
 
     // Assistant turn — left-aligned white bubble + on-device meta footer.
     private var assistantBubble: some View {
         HStack(alignment: .bottom, spacing: 0) {
-            VStack(alignment: .leading, spacing: 6) {
-                VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.xs) {
+                VStack(alignment: .leading, spacing: Space.s) {
                     // An image from a generate_image call.
                     if let imgData = message.imageThumbnailData {
                         imageCard(data: imgData, isCarousel: false)
@@ -5311,7 +5309,7 @@ struct MessageBubble: View, Equatable {
                     if message.isStreaming,
                        AssistantActivity.hidingToolCallMarkup(message.content)
                         .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        HStack(spacing: 10) {
+                        HStack(spacing: Space.s) {
                             StreamingDots(color: T.ink3)
                             Capsule()
                                 .fill(T.surface2)
@@ -5319,11 +5317,11 @@ struct MessageBubble: View, Equatable {
                                 .frame(maxWidth: 120)
                                 .shimmer(isActive: true, duration: 1.2)
                         }
-                        .padding(.leading, 2)
+                        .padding(.leading, Space.hair)
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 13)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.m)
                 .kClearGlass(
                     in: UnevenRoundedRectangle(topLeadingRadius: 14, bottomLeadingRadius: 5,
                                                bottomTrailingRadius: 14, topTrailingRadius: 14,
@@ -5332,8 +5330,8 @@ struct MessageBubble: View, Equatable {
                 )
 
                 // On-device meta footer (replaces the old speaker divider).
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
+                    HStack(spacing: Space.xs) {
                         if message.isStreaming {
                             Circle()
                                 .fill(T.accent)
@@ -5341,7 +5339,7 @@ struct MessageBubble: View, Equatable {
                                 .opacity(0.85)
                         } else {
                             Image(systemName: assistantMetaIcon)
-                                .font(.system(size: 10, weight: .semibold))
+                                .font(.system(.caption2, weight: .semibold))
                         }
                         Text(assistantMeta)
                             .font(T.sans(11.5, .medium))
@@ -5352,7 +5350,7 @@ struct MessageBubble: View, Equatable {
                     if message.generationTokensPerSecond != nil
                         || message.generationDuration != nil
                         || message.hitTokenLimit == true {
-                        HStack(spacing: 10) {
+                        HStack(spacing: Space.s) {
                             if let rate = message.generationTokensPerSecond, rate > 0 {
                                 generationMetric(
                                     icon: "speedometer",
@@ -5374,13 +5372,13 @@ struct MessageBubble: View, Equatable {
                         }
                     }
                 }
-                .padding(.leading, 4)
+                .padding(.leading, Space.xxs)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Spacer(minLength: 12)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 6)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.xs)
     }
 
     private var assistantMeta: String {
@@ -5415,9 +5413,9 @@ struct MessageBubble: View, Equatable {
     }
 
     private func generationMetric(icon: String, text: String) -> some View {
-        HStack(spacing: 3) {
+        HStack(spacing: Space.xxs) {
             Image(systemName: icon)
-                .font(.system(size: 9, weight: .semibold))
+                .font(.system(.caption2, weight: .semibold))
             Text(text)
                 .font(T.sans(10.5, .medium))
         }
@@ -5445,9 +5443,9 @@ struct MessageBubble: View, Equatable {
                         .resizable()
                         .scaledToFill()
                         .frame(width: 140, height: 140)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                                 .stroke(T.glassBorder, lineWidth: 0.5)
                         )
                 } else {
@@ -5457,9 +5455,9 @@ struct MessageBubble: View, Equatable {
                         .resizable()
                         .scaledToFit()
                         .frame(maxHeight: 240)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                                 .stroke(T.glassBorder, lineWidth: 0.5)
                         )
                 }
@@ -5469,26 +5467,26 @@ struct MessageBubble: View, Equatable {
                     onAnalyzeImage?(data)
                     HapticManager.impact(.medium)
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: Space.xxs) {
                         Image(systemName: "eye.fill")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(.caption2, weight: .bold))
                         Text("Analyze")
                             .font(T.mono(9, .bold))
                     }
                     .foregroundColor(T.ink)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, Space.s)
+                    .padding(.vertical, Space.xxs)
                     // Material, not the theme's translucent surface: the pill
                     // sits on a photo and has to stay legible.
                     .background(.regularMaterial,
-                                in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                in: RoundedRectangle(cornerRadius: Radius.inner, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        RoundedRectangle(cornerRadius: Radius.inner, style: .continuous)
                             .stroke(T.glassBorder, lineWidth: 0.5)
                     )
                 }
                 .buttonStyle(KTactileButtonStyle())
-                .padding(8)
+                .padding(Space.s)
             }
             .frame(maxWidth: isCarousel ? nil : .infinity, alignment: .leading)
         }
@@ -5504,7 +5502,7 @@ private struct AssistantToolResultCard: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        VStack(alignment: .leading, spacing: isExpanded ? 12 : 0) {
+        VStack(alignment: .leading, spacing: isExpanded ? Space.s : 0) {
             Button {
                 // Keep the surrounding LazyVStack's scroll anchor stable.
                 // Animating a large web-result height change could move the
@@ -5512,13 +5510,13 @@ private struct AssistantToolResultCard: View {
                 isExpanded.toggle()
                 HapticManager.selection()
             } label: {
-                HStack(spacing: 10) {
+                HStack(spacing: Space.s) {
                     Image(systemName: symbol)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(T.accent)
-                        .frame(width: 28, height: 28)
+                        .frame(width: Size.tile, height: Size.tile)
                         .background(T.accent.opacity(0.10), in: Circle())
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         Text(title)
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(T.ink)
@@ -5555,10 +5553,10 @@ private struct AssistantToolResultCard: View {
                 .frame(maxHeight: 220)
             }
         }
-        .padding(12)
-        .glassSurface(.card, cornerRadius: 16)
+        .padding(Space.s)
+        .glassSurface(.card, cornerRadius: Radius.card)
         .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                 .stroke(T.rule.opacity(0.7), lineWidth: 0.5)
         }
         .shadow(color: .black.opacity(T.isDark ? 0.14 : 0.05), radius: 10, y: 4)
@@ -5601,7 +5599,7 @@ struct SamplerControlsRow: View {
     private let topPDefault: Double = 0.95
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             sliderRow(
                 label: "temp",
                 value: $temperature,
@@ -5619,13 +5617,13 @@ struct SamplerControlsRow: View {
                 format: "%.2f"
             )
         }
-        .padding(10)
+        .padding(Space.s)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .fill(T.surface2.opacity(0.85))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .stroke(T.rule.opacity(0.6), lineWidth: 0.5)
         )
     }
@@ -5639,7 +5637,7 @@ struct SamplerControlsRow: View {
         step: Double,
         format: String
     ) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             KMono(text: label, size: 10, weight: .semibold, color: T.ink2)
                 .frame(width: 36, alignment: .leading)
             if let v = value.wrappedValue {
@@ -5668,9 +5666,9 @@ struct SamplerControlsRow: View {
                     HapticManager.selection()
                 } label: {
                     Image(systemName: "arrow.uturn.backward")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(.caption2, weight: .semibold))
                         .foregroundColor(T.ink3)
-                        .frame(width: 22, height: 22)
+                        .frame(width: Size.control, height: Size.control)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Reset \(label) to default")
@@ -5679,9 +5677,9 @@ struct SamplerControlsRow: View {
                     value.wrappedValue = fallback
                     HapticManager.selection()
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: Space.xxs) {
                         Image(systemName: "plus.circle")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.system(.caption2, weight: .semibold))
                         Text("override (default \(String(format: format, fallback)))")
                             .font(T.mono(10))
                     }
@@ -5734,20 +5732,20 @@ struct AssistantQuickActions: View {
         // devices without truncating chip labels. Native iOS pattern
         // (mirrors the model picker bar across cloud-AI competitors).
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 ForEach(QuickActionKind.allCases) { kind in
                     Button {
                         onAction(kind)
                     } label: {
-                        HStack(spacing: 4) {
+                        HStack(spacing: Space.xxs) {
                             Image(systemName: kind.systemImage)
-                                .font(.system(size: 10, weight: .semibold))
+                                .font(.system(.caption2, weight: .semibold))
                             Text(kind.label)
                                 .font(.caption.weight(.semibold))
                         }
                         .foregroundColor(T.ink2)
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 5)
+                        .padding(.horizontal, Space.s)
+                        .padding(.vertical, Space.xs)
                         .kClearGlass(in: Capsule(), interactive: true,
                                      fallbackFill: T.surface2, fallbackStroke: T.rule)
                     }
@@ -5756,7 +5754,7 @@ struct AssistantQuickActions: View {
                     .opacity(disabled ? 0.45 : 1.0)
                 }
             }
-            .padding(.trailing, 8)
+            .padding(.trailing, Space.s)
         }
         // Don't let the inner ScrollView eat the parent's gesture
         // (chat ScrollView scroll/tap dismiss). showsIndicators false
@@ -5778,7 +5776,7 @@ private struct FocusBreatheHalo: View {
     @State private var phase = false
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 22, style: .continuous)
+        RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
             .strokeBorder(T.accent.opacity(active ? (phase ? 0.22 : 0.10) : 0),
                           lineWidth: 4)
             .blur(radius: 6)
@@ -5853,7 +5851,7 @@ struct AssistantMarkdownView: View, Equatable {
         if isStreaming {
             streamingBody
         } else {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 ForEach(
                     Array(parseBlocks(AssistantOutputSanitizer.clean(content)).enumerated()),
                     id: \.offset
@@ -5912,7 +5910,7 @@ struct AssistantMarkdownView: View, Equatable {
                     .trimmingCharacters(in: .whitespacesAndNewlines)
                 let afterThink = String(c[closeRange.upperBound...])
                     .trimmingCharacters(in: .whitespacesAndNewlines)
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Space.s) {
                     ThinkingBlock(content: thinkContent, isOpen: false)
                     if !afterThink.isEmpty {
                         Text(afterThink)
@@ -5931,7 +5929,7 @@ struct AssistantMarkdownView: View, Equatable {
         } else if !c.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             // No think block — plain streaming text. Before the first visible
             // token the bubble's dots show instead of a lone caret.
-            HStack(alignment: .lastTextBaseline, spacing: 2) {
+            HStack(alignment: .lastTextBaseline, spacing: Space.hair) {
                 Text(c)
                     .font(T.conversationBody)
                     .foregroundColor(T.ink)
@@ -5967,7 +5965,7 @@ struct AssistantMarkdownView: View, Equatable {
         let blocks = AssistantMarkdownBlocks.parse(
             AssistantOutputSanitizer.preservingLineBreaksForMarkdown(source)
         )
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
                 markdownBlock(block)
             }
@@ -5984,12 +5982,12 @@ struct AssistantMarkdownView: View, Equatable {
                 .foregroundColor(T.ink)
                 .fixedSize(horizontal: false, vertical: true)
                 .textSelection(.enabled)
-                .padding(.top, 6)
+                .padding(.top, Space.xs)
         case .paragraph:
             markdownBody(Text(block.text))
-                .padding(.vertical, 2)
+                .padding(.vertical, Space.hair)
         case .listItem(let ordered, let ordinal, let depth):
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: Space.s) {
                 Text(ordered ? "\(ordinal)." : "•")
                     .font(T.conversationBody)
                     .foregroundColor(T.ink2)
@@ -5999,7 +5997,7 @@ struct AssistantMarkdownView: View, Equatable {
         case .quote:
             markdownBody(Text(block.text))
                 .foregroundColor(T.ink2)
-                .padding(.leading, 12)
+                .padding(.leading, Space.s)
                 .overlay(Rectangle().fill(T.rule2).frame(width: 3), alignment: .leading)
         case .code:
             Text(String(block.text.characters)
@@ -6007,9 +6005,9 @@ struct AssistantMarkdownView: View, Equatable {
                     .trimmingCharacters(in: .whitespacesAndNewlines))
                 .font(T.mono(13))
                 .foregroundColor(T.ink)
-                .padding(10)
+                .padding(Space.s)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 8).fill(T.surface))
+                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface))
                 .textSelection(.enabled)
         }
     }
@@ -6174,10 +6172,9 @@ struct CodeBlock: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header: lang label + preview (HTML only) / save / copy
-            HStack(spacing: 2) {
+            HStack(spacing: Space.hair) {
                 Text((language.isEmpty ? "code" : language).lowercased())
                     .font(T.mono(9, .regular))
-                    .tracking(0.4)
                     .foregroundColor(T.ink2)
                 Spacer()
                 if CodeBlockFile.isHTML(language: language, code: code) {
@@ -6203,8 +6200,8 @@ struct CodeBlock: View {
                 }
                 .accessibilityIdentifier("code.copy")
             }
-            .padding(.leading, 10)
-            .padding(.trailing, 4)
+            .padding(.leading, Space.s)
+            .padding(.trailing, Space.xxs)
             .background(T.surface2)
             .overlay(alignment: .bottom) {
                 Rectangle().fill(T.rule).frame(height: 1)
@@ -6214,13 +6211,13 @@ struct CodeBlock: View {
                 Text(code)
                     .font(T.mono(11))
                     .foregroundColor(T.ink)
-                    .padding(12)
+                    .padding(Space.s)
                     .textSelection(.enabled)
             }
         }
         .background(T.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.rule, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.inner))
+        .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.rule, lineWidth: 1))
         .sheet(isPresented: $showPreview) {
             HTMLPreviewSheet(html: code)
         }
@@ -6242,15 +6239,15 @@ struct CodeBlock: View {
     private func headerButton(label: LocalizedStringKey, icon: String, tint: Color,
                               action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 3) {
+            HStack(spacing: Space.xxs) {
                 Image(systemName: icon)
-                    .font(.system(size: 9))
+                    .font(.system(.caption2))
                 Text(label)
                     .font(T.mono(9))
             }
             .foregroundColor(tint)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 7)
+            .padding(.horizontal, Space.xs)
+            .padding(.vertical, Space.xs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -6283,18 +6280,18 @@ struct HTMLPreviewSheet: View {
             VStack(spacing: 0) {
                 HTMLPreviewWebView(html: html)
                     .id(reload)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                             .stroke(T.rule, lineWidth: 1)
                     )
-                    .padding(.horizontal, 12)
-                    .padding(.top, 8)
+                    .padding(.horizontal, Space.s)
+                    .padding(.top, Space.s)
                     .accessibilityIdentifier("code.preview.web")
                 Label("sandboxed preview · network blocked", systemImage: "lock.fill")
                     .font(T.mono(10))
                     .foregroundColor(T.ink3)
-                    .padding(.vertical, 10)
+                    .padding(.vertical, Space.s)
             }
             .background(T.bg)
             .navigationTitle("Preview")
@@ -6393,14 +6390,14 @@ struct MathBlock: View {
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: "function")
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.system(.caption2, weight: .semibold))
                     .foregroundColor(T.accent)
                 Text("MATH · LATEX")
                     .scaledFont(size: 9, weight: .semibold, design: .monospaced)
-                    .tracking(0.8)
+                    .tracking(TextScale.capsTracking)
                     .foregroundColor(T.accent)
                 Spacer(minLength: 0)
                 Button {
@@ -6412,29 +6409,29 @@ struct MathBlock: View {
                     }
                 } label: {
                     Image(systemName: copied ? "checkmark" : "doc.on.doc")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(.caption2, weight: .semibold))
                         .foregroundColor(copied ? T.good : T.ink3)
                         .symbolEffect(.bounce, value: copied)
                 }
                 .buttonStyle(.plain)
             }
             Text(latex)
-                .font(.system(size: 14, weight: .regular, design: .serif).italic())
+                .font(.system(.subheadline, design: .serif, weight: .regular).italic())
                 .foregroundColor(T.ink)
                 .lineSpacing(2)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.vertical, 4)
+                .padding(.vertical, Space.xxs)
         }
-        .padding(12)
+        .padding(Space.s)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .fill(T.accent.opacity(T.isDark ? 0.06 : 0.04))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .stroke(T.accent.opacity(0.25), lineWidth: 0.6)
         )
     }
@@ -6459,7 +6456,7 @@ struct ThinkingBlock: View {
                 guard !isOpen else { return }
                 withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
             } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: Space.xs) {
                     if isOpen {
                         // Pulsing dot while the model is still reasoning
                         Circle()
@@ -6468,7 +6465,7 @@ struct ThinkingBlock: View {
                             .opacity(0.9)
                     } else {
                         Image(systemName: expanded ? "chevron.down" : "chevron.forward")
-                            .font(.system(size: 8, weight: .semibold))
+                            .font(.system(.caption2, weight: .semibold))
                             .foregroundColor(T.ink3)
                     }
                     Text(isOpen ? "reasoning…" : "reasoning")
@@ -6486,8 +6483,8 @@ struct ThinkingBlock: View {
                             .foregroundColor(T.ink3)
                     }
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
+                .padding(.horizontal, Space.s)
+                .padding(.vertical, Space.xs)
             }
             .buttonStyle(.plain)
             .disabled(isOpen)
@@ -6504,9 +6501,9 @@ struct ThinkingBlock: View {
             }
         }
         .background(T.surface2.opacity(0.85))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .stroke(T.glassBorder, lineWidth: 0.5)
         )
     }
@@ -6517,7 +6514,7 @@ struct ThinkingBlock: View {
             .foregroundColor(T.ink3)
             .lineSpacing(2)
             .fixedSize(horizontal: false, vertical: true)
-            .padding(8)
+            .padding(Space.s)
             .transition(.opacity.combined(with: .move(edge: .top)))
     }
 
@@ -6566,12 +6563,11 @@ private struct LandingStatusPillView: View {
         let (label, badge, color, percent) = unpack()
         let isActive = isActiveState
 
-        VStack(spacing: 6) {
-            HStack(spacing: 8) {
+        VStack(spacing: Space.xs) {
+            HStack(spacing: Space.s) {
                 pulseDot(color: color, active: isActive)
                 Text(label)
                     .font(theme.mono(10.5, .semibold))
-                    .tracking(0.5)
                     .foregroundColor(color)
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -6579,8 +6575,8 @@ private struct LandingStatusPillView: View {
                     Text(badge)
                         .font(theme.mono(8.5, .semibold))
                         .foregroundColor(color)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
+                        .padding(.horizontal, Space.xs)
+                        .padding(.vertical, Space.hair)
                         .background(
                             Capsule()
                                 .fill(color.opacity(theme.isDark ? 0.22 : 0.12))
@@ -6591,8 +6587,8 @@ private struct LandingStatusPillView: View {
                         )
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 7)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.xs)
             .kGlassCapsule(tint: color.opacity(theme.isDark ? 0.20 : 0.12))
 
             // Thin progress arc — only visible when we have a numeric
@@ -6625,20 +6621,19 @@ private struct LandingStatusPillView: View {
                     HapticManager.impact(.light)
                     onRepair()
                 } label: {
-                    HStack(spacing: 5) {
+                    HStack(spacing: Space.xs) {
                         Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.system(.caption2, weight: .semibold))
                         Text("Repair & retry")
                             .font(theme.mono(10.5, .semibold))
-                            .tracking(0.3)
                     }
                     .foregroundColor(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 7)
+                    .padding(.horizontal, Space.m)
+                    .padding(.vertical, Space.xs)
                     .background(Capsule().fill(theme.accent))
                 }
                 .buttonStyle(.plain)
-                .padding(.top, 2)
+                .padding(.top, Space.hair)
             }
         }
         .animation(.easeOut(duration: 0.25), value: label)
@@ -6666,7 +6661,7 @@ private struct LandingStatusPillView: View {
                 .fill(color)
                 .frame(width: 7, height: 7)
         }
-        .frame(width: 16, height: 16)
+        .frame(width: Size.glyph, height: Size.glyph)
     }
 
     private func startPulse(active: Bool) {

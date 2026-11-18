@@ -39,13 +39,13 @@ struct VoiceSettingsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 0) {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         KCaption(text: "SYSTEM")
                         KPageTitle(title: "voice", size: 28)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 4)
+                    .padding(.horizontal, Space.m)
+                    .padding(.top, Space.xxs)
 
                     engineSection
                     voiceSection
@@ -55,7 +55,7 @@ struct VoiceSettingsView: View {
                     perModelSection
                     modelsSection
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, Space.l)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -84,8 +84,8 @@ struct VoiceSettingsView: View {
             Button {
                 showEnginePicker = true
             } label: {
-                HStack(spacing: 10) {
-                    VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: Space.s) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         KMono(text: "tts engine", size: 11.5, color: T.ink)
                         KMono(text: vm.selectedEngineKind.shortName.lowercased(),
                                size: 10, color: T.ink3)
@@ -99,11 +99,11 @@ struct VoiceSettingsView: View {
                         engineStateBadge(vm.selectedEngineState)
                     }
                     Image(systemName: "chevron.forward")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(.caption2, weight: .semibold))
                         .foregroundColor(T.ink3)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -114,8 +114,8 @@ struct VoiceSettingsView: View {
             Button {
                 showChatModelPicker = true
             } label: {
-                HStack(spacing: 10) {
-                    VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: Space.s) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         KMono(text: "speech-native chat model", size: 11.5, color: T.ink)
                         KMono(text: assistant.activeModel.supportsNativeAudio
                                 ? assistant.activeModel.displayName.lowercased()
@@ -124,11 +124,11 @@ struct VoiceSettingsView: View {
                     }
                     Spacer()
                     Image(systemName: "chevron.forward")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(.caption2, weight: .semibold))
                         .foregroundColor(T.ink3)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -144,7 +144,7 @@ struct VoiceSettingsView: View {
                 Text("No voices available for this engine.")
                     .font(T.sans(11))
                     .foregroundColor(T.ink3)
-                    .padding(14)
+                    .padding(Space.m)
             } else {
                 KRow(label: "voice", trailing: {
                     Picker("", selection: Binding(
@@ -166,14 +166,14 @@ struct VoiceSettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: voiceService.isPlaying ? "stop.circle" : "speaker.wave.2")
-                        .font(.system(size: 12))
+                        .font(.system(.caption))
                         .foregroundColor(voiceService.isPlaying ? T.warn : T.accent)
                     KMono(text: voiceService.isPlaying ? "stop preview" : "preview voice",
                            size: 11.5, color: voiceService.isPlaying ? T.warn : T.accent)
                     Spacer()
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
             }
             .buttonStyle(.plain)
         }
@@ -183,7 +183,7 @@ struct VoiceSettingsView: View {
 
     private var appearanceSection: some View {
         KSection(title: "appearance") {
-            HStack(spacing: 14) {
+            HStack(spacing: Space.m) {
                 VoiceActivityOrb(
                     phase: .listening,
                     micLevel: 0.35,
@@ -195,7 +195,7 @@ struct VoiceSettingsView: View {
                     VoiceVisualLevelStore.shared.micLevel = 0.35
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     KMono(text: "thinking orbs",
                           size: 11.5, color: T.ink)
                     KMono(text: "state-driven dotted activity",
@@ -208,8 +208,8 @@ struct VoiceSettingsView: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
         }
     }
 
@@ -260,7 +260,7 @@ struct VoiceSettingsView: View {
                     : "speaks the full caption once per frame instead of streaming. enable this for low-vision or hands-free use.",
                 size: 10, color: T.ink3
             )
-            .padding(14)
+            .padding(Space.m)
             Rectangle().fill(T.rule).frame(height: 1)
             KRow(label: "auto-read analysis results", trailing: {
                 KToggle(isOn: Binding(
@@ -278,7 +278,7 @@ struct VoiceSettingsView: View {
                 Rectangle().fill(T.rule).frame(height: 1)
                 KMono(text: "code blocks are skipped; only prose and review text are read.",
                        size: 10, color: T.ink3)
-                    .padding(14)
+                    .padding(Space.m)
             }
             Rectangle().fill(T.rule).frame(height: 1)
             KRow(label: "echo cancellation", trailing: {
@@ -294,7 +294,7 @@ struct VoiceSettingsView: View {
                     : "turn this off if replies sound distorted on your headset or car audio.",
                 size: 10, color: T.ink3
             )
-            .padding(14)
+            .padding(Space.m)
         }
     }
 
@@ -327,18 +327,18 @@ struct VoiceSettingsView: View {
                     showPerModelOverrides.toggle()
                 }
             } label: {
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     Image(systemName: showPerModelOverrides ? "chevron.down" : "chevron.forward")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(.caption2, weight: .semibold))
                         .foregroundColor(T.ink3)
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         KMono(text: "customize for this model", size: 11.5, color: T.ink)
                         KMono(text: displayName.lowercased(), size: 9.5, color: T.ink3)
                             .lineLimit(1)
                     }
                     Spacer()
                 }
-                .padding(.horizontal, 14).padding(.vertical, 10)
+                .padding(.horizontal, Space.m).padding(.vertical, Space.s)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -409,14 +409,14 @@ struct VoiceSettingsView: View {
                 showPerModelOverrides.toggle()
                 showPerModelOverrides.toggle()
             } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: Space.xs) {
                     Image(systemName: "arrow.uturn.backward")
-                        .font(.system(size: 11))
+                        .font(.system(.caption2))
                     KMono(text: "reset to profile defaults", size: 11, color: T.bad)
                     Spacer()
                 }
                 .foregroundColor(T.bad)
-                .padding(.horizontal, 14).padding(.vertical, 10)
+                .padding(.horizontal, Space.m).padding(.vertical, Space.s)
             }
             .buttonStyle(.plain)
 
@@ -427,7 +427,7 @@ struct VoiceSettingsView: View {
                 size: 9.5, color: T.ink3
             )
             .fixedSize(horizontal: false, vertical: true)
-            .padding(14)
+            .padding(Space.m)
         }
     }
 
@@ -485,7 +485,7 @@ struct VoiceSettingsView: View {
                             value: Binding<Double>,
                             range: ClosedRange<Double>,
                             format: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             HStack {
                 KMono(text: label, size: 11.5, color: T.ink)
                 Spacer()
@@ -495,14 +495,14 @@ struct VoiceSettingsView: View {
             Slider(value: value, in: range, step: 0.05)
                 .tint(T.accent)
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
+        .padding(.horizontal, Space.m).padding(.vertical, Space.s)
     }
 
     // MARK: - Model status
 
     private var modelsSection: some View {
         KSection(title: "engine status") {
-            VoiceStatusView().padding(.horizontal, 14)
+            VoiceStatusView().padding(.horizontal, Space.m)
         }
     }
 
@@ -517,7 +517,7 @@ struct VoiceSettingsView: View {
         scale: Double = 1.0,
         last: Bool = false
     ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             HStack {
                 KMono(text: label, size: 11.5, color: T.ink)
                 Spacer()
@@ -527,8 +527,8 @@ struct VoiceSettingsView: View {
             Slider(value: value, in: range, step: 0.05)
                 .tint(T.accent)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
     }
 
     @ViewBuilder

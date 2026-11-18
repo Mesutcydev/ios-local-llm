@@ -29,9 +29,9 @@ struct CodePanelView: View {
                         copyFeedback ? "Copied!" : "Copy",
                         systemImage: copyFeedback ? "checkmark.circle.fill" : "doc.on.doc"
                     )
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.footnote, weight: .semibold))
                     .foregroundColor(.white)
-                    .padding(.horizontal, 14).padding(.vertical, 8)
+                    .padding(.horizontal, Space.m).padding(.vertical, Space.s)
                     .background(Capsule().fill(copyFeedback ? Color.green : Color.blue))
                 }
                 .padding()

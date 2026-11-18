@@ -56,7 +56,7 @@ struct ArgentRemoteView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: Space.cardGap) {
                 header
                 statusCard
                 if case .ready = status {
@@ -70,9 +70,9 @@ struct ArgentRemoteView: View {
                     outputSection
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
-            .padding(.bottom, 24)
+            .padding(.horizontal, Space.m)
+            .padding(.top, Space.s)
+            .padding(.bottom, Space.l)
         }
         .background(LiquidPinkBackdrop())
         .navigationTitle("Argent Remote")
@@ -83,7 +83,7 @@ struct ArgentRemoteView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             KCaption(text: "REMOTE CONTROL")
             KPageTitle(title: "argent")
         }
@@ -96,25 +96,25 @@ struct ArgentRemoteView: View {
         switch status {
         case .checking:
             KSection(title: "checking…") {
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     ProgressView().controlSize(.small)
                     KMono(text: "asking the Mac if argent is available",
                           size: 11, color: T.ink3)
                     Spacer()
                 }
-                .padding(14)
+                .padding(Space.m)
             }
         case .notInstalled(let hint):
             KSection(title: "argent not installed") {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Space.s) {
                     KMono(text: hint ?? "Install argent on your Mac to enable this tab.",
                           size: 11, color: T.ink2)
                         .fixedSize(horizontal: false, vertical: true)
                     KMono(text: "npm install -g @swmansion/argent",
                           size: 11, color: T.ink)
                         .textSelection(.enabled)
-                        .padding(.horizontal, 8).padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 6,
+                        .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner,
                                                      style: .continuous)
                                         .fill(T.surface3))
                     KSecondaryButton(label: "re-check",
@@ -124,11 +124,11 @@ struct ArgentRemoteView: View {
                     }
                     .frame(maxWidth: 160)
                 }
-                .padding(14)
+                .padding(Space.m)
             }
         case .ready(let version):
             KSection(title: "argent · ready") {
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     Circle().fill(T.good).frame(width: 7, height: 7)
                     KMono(text: version ?? "version unknown",
                           size: 11, color: T.ink2)
@@ -141,12 +141,12 @@ struct ArgentRemoteView: View {
                     .fixedSize()
                     .disabled(runningCommand != nil)
                 }
-                .padding(14)
+                .padding(Space.m)
             }
         case .installedButUnreachable(let hint):
             KSection(title: "argent · not responding") {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: Space.s) {
+                    HStack(spacing: Space.s) {
                         Circle().fill(T.warn).frame(width: 7, height: 7)
                         KMono(text: "argent is installed but didn't report a version. Commands won't work until it's reachable.",
                               size: 11, color: T.ink2)
@@ -163,11 +163,11 @@ struct ArgentRemoteView: View {
                     }
                     .frame(maxWidth: 160)
                 }
-                .padding(14)
+                .padding(Space.m)
             }
         case .bridgeUnreachable(let msg):
             KSection(title: "bridge unreachable") {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Space.s) {
                     KMono(text: msg, size: 11, color: T.bad)
                         .fixedSize(horizontal: false, vertical: true)
                     KMono(text: "Pair (or re-pair) your Mac from the previous screen.",
@@ -179,7 +179,7 @@ struct ArgentRemoteView: View {
                     }
                     .frame(maxWidth: 130)
                 }
-                .padding(14)
+                .padding(Space.m)
             }
         }
     }
@@ -195,7 +195,7 @@ struct ArgentRemoteView: View {
                               size: 11, color: T.ink3)
                         Spacer()
                     }
-                    .padding(14)
+                    .padding(Space.m)
                 } else {
                     ForEach(Array(devices.enumerated()), id: \.element.udid) { idx, d in
                         if idx > 0 { Rectangle().fill(T.rule).frame(height: 1) }
@@ -213,17 +213,17 @@ struct ArgentRemoteView: View {
                     .fixedSize()
                     .disabled(runningCommand != nil)
                 }
-                .padding(10)
+                .padding(Space.s)
             }
         }
     }
 
     private func deviceRow(_ d: DeviceRow) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             Circle()
                 .fill(d.state == "Booted" ? T.good : T.ink4)
                 .frame(width: 7, height: 7)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Space.hair) {
                 KMono(text: d.name, size: 12,
                       weight: .semibold, color: T.ink)
                 KMono(text: d.state, size: 9.5, color: T.ink3)
@@ -238,8 +238,8 @@ struct ArgentRemoteView: View {
             .fixedSize()
             .disabled(runningCommand != nil)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
         .background(selectedUDID == d.udid
                     ? T.accentSoft.opacity(0.35) : Color.clear)
         .contentShape(Rectangle())
@@ -250,7 +250,7 @@ struct ArgentRemoteView: View {
 
     private var captureSection: some View {
         KSection(title: "capture") {
-            HStack(spacing: 10) {
+            HStack(spacing: Space.s) {
                 gridButton(label: "screenshot",
                            systemImage: "camera",
                            commandID: "screenshot") {
@@ -262,7 +262,7 @@ struct ArgentRemoteView: View {
                     await callTool("argent.describe", risk: .safeRead)
                 }
             }
-            .padding(14)
+            .padding(Space.m)
         }
     }
 
@@ -270,8 +270,8 @@ struct ArgentRemoteView: View {
 
     private var interactionSection: some View {
         KSection(title: "interaction") {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: Space.s) {
+                HStack(spacing: Space.s) {
                     gridButton(label: "tap center",
                                systemImage: "hand.tap",
                                commandID: "tap") {
@@ -290,7 +290,7 @@ struct ArgentRemoteView: View {
                                        ]))
                     }
                 }
-                HStack(spacing: 10) {
+                HStack(spacing: Space.s) {
                     gridButton(label: "lock",
                                systemImage: "lock",
                                commandID: "lock") {
@@ -308,7 +308,7 @@ struct ArgentRemoteView: View {
                                        ]))
                     }
                 }
-                HStack(spacing: 10) {
+                HStack(spacing: Space.s) {
                     gridButton(label: "swipe ↑",
                                systemImage: "arrow.up",
                                commandID: "swipe-up") {
@@ -326,7 +326,7 @@ struct ArgentRemoteView: View {
                                        ]))
                     }
                 }
-                HStack(spacing: 10) {
+                HStack(spacing: Space.s) {
                     gridButton(label: "swipe ←",
                                systemImage: "arrow.left",
                                commandID: "swipe-left") {
@@ -347,12 +347,12 @@ struct ArgentRemoteView: View {
                 // Type-text composer. MEDIUM risk so the Mac will
                 // pop an approval — useful escape hatch for "send a
                 // few keys without manually picking up the Mac".
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     TextField("text to type", text: $customText)
                         .textFieldStyle(.plain)
                         .font(T.mono(11))
-                        .padding(.horizontal, 8).padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 6,
+                        .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner,
                                                      style: .continuous)
                                         .fill(T.surface3))
                         .autocorrectionDisabled(true)
@@ -372,7 +372,7 @@ struct ArgentRemoteView: View {
                     .disabled(customText.isEmpty || runningCommand != nil)
                 }
             }
-            .padding(14)
+            .padding(Space.m)
         }
     }
 
@@ -380,8 +380,8 @@ struct ArgentRemoteView: View {
 
     private var deviceStateSection: some View {
         KSection(title: "device state") {
-            VStack(spacing: 10) {
-                HStack(spacing: 10) {
+            VStack(spacing: Space.s) {
+                HStack(spacing: Space.s) {
                     gridButton(label: "portrait",
                                systemImage: "iphone",
                                commandID: "rot-p") {
@@ -399,7 +399,7 @@ struct ArgentRemoteView: View {
                                        ]))
                     }
                 }
-                HStack(spacing: 10) {
+                HStack(spacing: Space.s) {
                     gridButton(label: "landscape ←",
                                systemImage: "iphone.landscape",
                                commandID: "rot-l") {
@@ -418,7 +418,7 @@ struct ArgentRemoteView: View {
                     }
                 }
             }
-            .padding(14)
+            .padding(Space.m)
         }
     }
 
@@ -426,13 +426,13 @@ struct ArgentRemoteView: View {
 
     private var appSection: some View {
         KSection(title: "app") {
-            VStack(spacing: 10) {
-                HStack(spacing: 8) {
+            VStack(spacing: Space.s) {
+                HStack(spacing: Space.s) {
                     TextField("bundle id", text: $customBundleID)
                         .textFieldStyle(.plain)
                         .font(T.mono(11))
-                        .padding(.horizontal, 8).padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 6,
+                        .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner,
                                                      style: .continuous)
                                         .fill(T.surface3))
                         .autocorrectionDisabled(true)
@@ -450,12 +450,12 @@ struct ArgentRemoteView: View {
                     .fixedSize()
                     .disabled(customBundleID.isEmpty || runningCommand != nil)
                 }
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     TextField("url / scheme", text: $customURL)
                         .textFieldStyle(.plain)
                         .font(T.mono(11))
-                        .padding(.horizontal, 8).padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 6,
+                        .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner,
                                                      style: .continuous)
                                         .fill(T.surface3))
                         .keyboardType(.URL)
@@ -474,12 +474,12 @@ struct ArgentRemoteView: View {
                     .fixedSize()
                     .disabled(customURL.isEmpty || runningCommand != nil)
                 }
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     TextField("flow name", text: $customFlow)
                         .textFieldStyle(.plain)
                         .font(T.mono(11))
-                        .padding(.horizontal, 8).padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 6,
+                        .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner,
                                                      style: .continuous)
                                         .fill(T.surface3))
                         .autocorrectionDisabled(true)
@@ -500,7 +500,7 @@ struct ArgentRemoteView: View {
                     .disabled(customFlow.isEmpty || runningCommand != nil)
                 }
             }
-            .padding(14)
+            .padding(Space.m)
         }
     }
 
@@ -508,7 +508,7 @@ struct ArgentRemoteView: View {
 
     private var inspectionSection: some View {
         KSection(title: "inspection") {
-            HStack(spacing: 10) {
+            HStack(spacing: Space.s) {
                 gridButton(label: "a11y tree",
                            systemImage: "rectangle.3.group",
                            commandID: "ax") {
@@ -525,7 +525,7 @@ struct ArgentRemoteView: View {
                                    reason: "Native UIKit hierarchy via argent.run")
                 }
             }
-            .padding(14)
+            .padding(Space.m)
         }
     }
 
@@ -533,14 +533,14 @@ struct ArgentRemoteView: View {
 
     private var customSection: some View {
         KSection(title: "any argent tool") {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.s) {
+                HStack(spacing: Space.s) {
                     TextField("tool name",
                               text: $customToolName)
                         .textFieldStyle(.plain)
                         .font(T.mono(11))
-                        .padding(.horizontal, 8).padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 6,
+                        .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner,
                                                      style: .continuous)
                                         .fill(T.surface3))
                         .autocorrectionDisabled(true)
@@ -548,13 +548,13 @@ struct ArgentRemoteView: View {
                         .frame(maxWidth: 180)
                     Spacer()
                 }
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     TextField("--flag value …",
                               text: $customToolArgs)
                         .textFieldStyle(.plain)
                         .font(T.mono(11))
-                        .padding(.horizontal, 8).padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 6,
+                        .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner,
                                                      style: .continuous)
                                         .fill(T.surface3))
                         .autocorrectionDisabled(true)
@@ -578,7 +578,7 @@ struct ArgentRemoteView: View {
                       size: 9.5, color: T.ink4)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(14)
+            .padding(Space.m)
         }
     }
 
@@ -589,13 +589,13 @@ struct ArgentRemoteView: View {
         KSection(title: "output") {
             VStack(alignment: .leading, spacing: 0) {
                 if let cmd = runningCommand {
-                    HStack(spacing: 8) {
+                    HStack(spacing: Space.s) {
                         ProgressView().controlSize(.small)
                         KMono(text: "running \(cmd)…",
                               size: 11, color: T.ink2)
                         Spacer()
                     }
-                    .padding(14)
+                    .padding(Space.m)
                 } else if lastSummary.isEmpty && lastJSON.isEmpty && lastImage == nil {
                     HStack {
                         Image(systemName: "terminal")
@@ -604,9 +604,9 @@ struct ArgentRemoteView: View {
                               size: 10.5, color: T.ink3)
                         Spacer()
                     }
-                    .padding(14)
+                    .padding(Space.m)
                 } else {
-                    HStack(spacing: 8) {
+                    HStack(spacing: Space.s) {
                         Image(systemName: lastOk ? "checkmark.circle.fill"
                                                  : "xmark.octagon.fill")
                             .foregroundColor(lastOk ? T.good : T.bad)
@@ -615,9 +615,9 @@ struct ArgentRemoteView: View {
                               color: lastOk ? T.good : T.bad)
                         Spacer()
                     }
-                    .padding(.horizontal, 14).padding(.top, 10)
-                    Rectangle().fill(T.rule).frame(height: 1).padding(.top, 8)
-                    VStack(alignment: .leading, spacing: 10) {
+                    .padding(.horizontal, Space.m).padding(.top, Space.s)
+                    Rectangle().fill(T.rule).frame(height: 1).padding(.top, Space.s)
+                    VStack(alignment: .leading, spacing: Space.s) {
                         if let img = lastImage {
                             // Screenshot results — render inline so
                             // the user sees the Simulator state
@@ -626,10 +626,10 @@ struct ArgentRemoteView: View {
                             Image(uiImage: img)
                                 .resizable()
                                 .scaledToFit()
-                                .clipShape(RoundedRectangle(cornerRadius: 8,
+                                .clipShape(RoundedRectangle(cornerRadius: Radius.inner,
                                                             style: .continuous))
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 8,
+                                    RoundedRectangle(cornerRadius: Radius.inner,
                                                      style: .continuous)
                                         .stroke(T.rule, lineWidth: 0.5)
                                 )
@@ -651,7 +651,7 @@ struct ArgentRemoteView: View {
                             .frame(maxHeight: 280)
                         }
                     }
-                    .padding(14)
+                    .padding(Space.m)
                 }
             }
         }

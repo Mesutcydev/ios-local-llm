@@ -1,4 +1,5 @@
 import CoreGraphics
+import SwiftUI
 import XCTest
 @testable import IOSLocalLLM
 
@@ -44,5 +45,26 @@ final class DisplayDivisionLayoutTests: XCTestCase {
             CGRect(x: 0, y: 30, width: 800, height: 20)
         ]), .init())
         XCTAssertEqual(DisplayDivisionInsets.resolve(in: .zero, avoiding: [bounds]), .init())
+    }
+}
+
+/// The app's layout scale (AppDesignSystem.swift): spacing is 16·φⁿ.
+final class DesignScaleTests: XCTestCase {
+    func testSpacingStepsAreBaseTimesPowersOfPhi() {
+        let phi = (1 + 5.0.squareRoot()) / 2
+        let steps: [(CGFloat, Int)] = [(Space.hair, -4), (Space.xxs, -3), (Space.xs, -2), (Space.s, -1),
+                                       (Space.m, 0), (Space.l, 1), (Space.xl, 2), (Space.xxl, 3)]
+        for (value, n) in steps {
+            XCTAssertEqual(value, CGFloat((16 * pow(phi, Double(n))).rounded()), "16·φ^\(n)")
+        }
+    }
+
+    func testLegacySizesSnapToNearestTextStyle() {
+        XCTAssertEqual(TextScale.style(for: 9.5), .caption2)
+        XCTAssertEqual(TextScale.style(for: 12.5), .caption)
+        XCTAssertEqual(TextScale.style(for: 14), .subheadline)
+        XCTAssertEqual(TextScale.style(for: 17), .body)
+        XCTAssertEqual(TextScale.style(for: 24), .title2)
+        XCTAssertEqual(TextScale.style(for: 34), .largeTitle)
     }
 }

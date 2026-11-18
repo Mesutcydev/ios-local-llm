@@ -6,25 +6,25 @@ struct UserGuideView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(spacing: Space.cardGap) {
                 // Intro Section
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: Space.xs) {
                     KCaption(text: "manual")
                     KPageTitle(title: "User Guide", size: 28)
                     KMono(text: "On-device AI studio manual & workflows", size: 12, color: T.ink3)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .padding(.horizontal, Space.m)
+                .padding(.top, Space.s)
 
                 // Privacy Note
-                HStack(spacing: 12) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 16))
+                        .font(.system(.callout))
                         .foregroundColor(T.accent)
-                        .frame(width: 32, height: 32)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(T.accentSoft))
-                    VStack(alignment: .leading, spacing: 2) {
+                        .frame(width: Size.tile, height: Size.tile)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.accentSoft))
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         Text("100% On-Device & Private")
                             .font(T.sans(14, .semibold))
                             .foregroundColor(T.ink)
@@ -34,13 +34,13 @@ struct UserGuideView: View {
                     }
                     Spacer()
                 }
-                .padding(14)
-                .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface)
-                .padding(.horizontal, 16)
+                .padding(Space.m)
+                .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
+                .padding(.horizontal, Space.m)
 
                 // 1. Assistant View Section
                 KSection(title: "assistant") {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: Space.s) {
                         Text("Interactive Local Chat")
                             .font(T.sans(15, .semibold))
                             .foregroundColor(T.ink)
@@ -56,12 +56,12 @@ struct UserGuideView: View {
                         bulletPoint("Conversation Search", "Filter local chat histories by keywords in real-time.")
                         bulletPoint("Tool Integrations", "Supports local tool-calling like Web Search, with user approvals.")
                     }
-                    .padding(14)
+                    .padding(Space.m)
                 }
 
                 // 2. Image Generation Section
                 KSection(title: "image_generation") {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: Space.s) {
                         Text("Local Diffusion Models")
                             .font(T.sans(15, .semibold))
                             .foregroundColor(T.ink)
@@ -71,7 +71,7 @@ struct UserGuideView: View {
                             .foregroundColor(T.ink2)
                             .lineSpacing(3)
 
-                        HStack(spacing: 10) {
+                        HStack(spacing: Space.s) {
                             visualImage("img_prompting")
                             visualImage("img_generation")
                         }
@@ -79,12 +79,12 @@ struct UserGuideView: View {
                         bulletPoint("Model Profiles", "Select specialized profiles like DreamShaper 8 and configure negative prompts.")
                         bulletPoint("Refining Details", "Configure generation steps. Fast models require only 1–4 steps.")
                     }
-                    .padding(14)
+                    .padding(Space.m)
                 }
 
                 // 3. Lens (Camera) Section
                 KSection(title: "camera_&_lens") {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: Space.s) {
                         Text("Real-Time Code & Vision")
                             .font(T.sans(15, .semibold))
                             .foregroundColor(T.ink)
@@ -100,12 +100,12 @@ struct UserGuideView: View {
                         bulletPoint("Visual Mode (VLM)", "Point at anything to generate live text descriptions of objects, screens, or layouts.")
                         bulletPoint("Describe Interval", "Adjust follow-up refresh intervals from 6s to 30s. Manual describes can be triggered at any time.")
                     }
-                    .padding(14)
+                    .padding(Space.m)
                 }
 
                 // 4. Voice Section
                 KSection(title: "voice_assistant") {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: Space.s) {
                         Text("Hands-Free Conversational Loop")
                             .font(T.sans(15, .semibold))
                             .foregroundColor(T.ink)
@@ -120,12 +120,12 @@ struct UserGuideView: View {
                         bulletPoint("Synchronized Audio", "Uses a single synchronized audio session for seamless transitions between listening and speaking.")
                         bulletPoint("Neural TTS Engines", "Select between system voice synthesis and advanced local voices (KittenTTS, Kokoro).")
                     }
-                    .padding(14)
+                    .padding(Space.m)
                 }
 
                 // 5. Models Hub
                 KSection(title: "model_management") {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: Space.s) {
                         Text("Unified Model Library")
                             .font(T.sans(15, .semibold))
                             .foregroundColor(T.ink)
@@ -139,12 +139,12 @@ struct UserGuideView: View {
                         bulletPoint("Disk Management", "Segments total storage sizes per type (Language, Vision, Voice) and allows one-tap cleanups of orphaned files.")
                         bulletPoint("Hugging Face Search", "Find and download any compatible open-source model directly by entering its repository path.")
                     }
-                    .padding(14)
+                    .padding(Space.m)
                 }
 
                 // 6. Mac Bridge Section
                 KSection(title: "mac_bridge") {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: Space.s) {
                         Text("Desktop Coupling")
                             .font(T.sans(15, .semibold))
                             .foregroundColor(T.ink)
@@ -159,10 +159,10 @@ struct UserGuideView: View {
                         bulletPoint("Dual Inference Routing", "Offload complex reasoning tasks from your Mac to your iOS device's Neural Engine.")
                         bulletPoint("Visual Inspection", "Streams Mac screenshots, simulator boundaries, and Xcode logs directly to the iOS visual model.")
                     }
-                    .padding(14)
+                    .padding(Space.m)
                 }
             }
-            .padding(.bottom, 40)
+            .padding(.bottom, Space.xl)
         }
         .background(LiquidPinkBackdrop())
         .navigationBarTitleDisplayMode(.inline)
@@ -175,14 +175,14 @@ struct UserGuideView: View {
             .resizable()
             .aspectRatio(contentMode: .fit)
             .cornerRadius(12)
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(T.glassBorder, lineWidth: 0.5))
+            .overlay(RoundedRectangle(cornerRadius: Radius.control).stroke(T.glassBorder, lineWidth: 0.5))
             .shadow(color: .black.opacity(0.08), radius: 14, y: 3)
     }
 
     @ViewBuilder
     private func bulletPoint(_ title: String, _ desc: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.hair) {
+            HStack(spacing: Space.xs) {
                 Circle().fill(T.accent).frame(width: 4, height: 4)
                 KMono(text: title.uppercased(), size: 10, weight: .semibold, color: T.accent)
             }
@@ -190,7 +190,7 @@ struct UserGuideView: View {
                 .font(T.sans(12))
                 .foregroundColor(T.ink3)
                 .lineSpacing(2)
-                .padding(.leading, 10)
+                .padding(.leading, Space.s)
         }
     }
 }

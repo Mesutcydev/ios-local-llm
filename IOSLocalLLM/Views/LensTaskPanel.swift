@@ -35,7 +35,7 @@ struct LensTaskPanel: View {
     @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: Space.m) {
             if state != .analyzing && state != .captured {
                 Capsule()
                     .fill(.white.opacity(0.42))
@@ -65,12 +65,12 @@ struct LensTaskPanel: View {
             )
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 18)
-        .padding(.top, 10)
-        .padding(.bottom, 18)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.s)
+        .padding(.bottom, Space.m)
         .foregroundStyle(.white)
         .background {
-            let shape = RoundedRectangle(cornerRadius: 36, style: .continuous)
+            let shape = RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
             if reduceTransparency {
                 shape.fill(Color.black.opacity(0.92))
             } else {
@@ -79,7 +79,7 @@ struct LensTaskPanel: View {
             }
         }
         .overlay {
-            RoundedRectangle(cornerRadius: 36, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
                 .stroke(.white.opacity(contrast == .increased ? 0.48 : 0.20), lineWidth: 0.75)
                 .allowsHitTesting(false)
         }
@@ -156,17 +156,17 @@ private struct LensEmptyState: View {
     let onCompose: () -> Void
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: Space.s) {
             ZStack {
                 Circle().fill(mode.accent.opacity(0.14))
                 Image(systemName: mode.emptyStateSymbol)
-                    .font(.system(size: 20, weight: .medium))
+                    .font(.system(.title3, weight: .medium))
                     .foregroundStyle(mode.accent)
             }
-            .frame(width: 48, height: 48)
+            .frame(width: Size.feature, height: Size.feature)
             .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: Space.xxs) {
                 Text(mode.instruction)
                     .font(.headline)
                 Text("Ask questions about anything you see")
@@ -177,8 +177,8 @@ private struct LensEmptyState: View {
 
             Button(action: onCompose) {
                 Image(systemName: "text.bubble")
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 44, height: 44)
+                    .font(.system(.callout, weight: .semibold))
+                    .frame(width: Size.control, height: Size.control)
                     .background(.primary.opacity(0.08), in: Circle())
             }
             .buttonStyle(LensSpringButtonStyle())
@@ -197,12 +197,12 @@ private struct LensPromptEditor: View {
     let onAnalyze: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Space.s) {
             HStack {
                 Text(mode.promptTitle).font(.headline)
                 Spacer()
                 Button(action: onCollapse) {
-                    Image(systemName: "chevron.down").frame(width: 44, height: 44)
+                    Image(systemName: "chevron.down").frame(width: Size.control, height: Size.control)
                 }
                 .buttonStyle(LensSpringButtonStyle())
                 .accessibilityLabel("Collapse prompt")
@@ -214,10 +214,10 @@ private struct LensPromptEditor: View {
                 .focused($promptFocused)
                 .submitLabel(.go)
                 .onSubmit { if canAnalyze { onAnalyze() } }
-                .padding(14)
-                .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .padding(Space.m)
+                .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                         .stroke(promptFocused ? mode.accent.opacity(0.75) : .primary.opacity(0.09))
                 }
 
@@ -226,7 +226,7 @@ private struct LensPromptEditor: View {
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity, minHeight: 50)
                     .foregroundStyle(.white)
-                    .background(mode.accent, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .background(mode.accent, in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
             }
             .buttonStyle(LensSpringButtonStyle())
             .disabled(!canAnalyze)
@@ -244,16 +244,16 @@ private struct LensProcessingView: View {
     @State private var pulsing = false
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: Space.s) {
             LensFrameThumbnail(image: thumbnail, size: 72)
                 .overlay {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                         .stroke(.blue.opacity(pulsing ? 0.85 : 0.28), lineWidth: 2)
                         .scaleEffect(pulsing ? 1.04 : 1)
                 }
                 .shimmer(isActive: !reduceMotion, duration: 1.35, intensity: 0.42)
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 Label(captured ? "Frame captured" : "Processing on device", systemImage: "cpu")
                     .font(.headline)
                     .contentTransition(.interpolate)
@@ -289,11 +289,11 @@ private struct LensResultView: View {
     @State private var reveal = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(spacing: 14) {
+        VStack(alignment: .leading, spacing: Space.m) {
+            HStack(spacing: Space.s) {
                 LensFrameThumbnail(image: thumbnail, size: 68)
                     .opacity(reveal ? 1 : 0)
-                VStack(alignment: .leading, spacing: 5) {
+                VStack(alignment: .leading, spacing: Space.xs) {
                     Text(mode.resultTitle)
                         .font(.title3.weight(.semibold))
                     Label("Processed locally", systemImage: "checkmark.circle.fill")
@@ -316,7 +316,7 @@ private struct LensResultView: View {
             .opacity(reveal ? 1 : 0)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     LensActionButton(title: "Copy", symbol: "doc.on.doc", action: onCopy)
                     LensActionButton(title: "Share", symbol: "square.and.arrow.up", action: onShare)
                     if mode == .translate {
@@ -326,7 +326,7 @@ private struct LensResultView: View {
                     LensActionButton(title: "Retake", symbol: "arrow.clockwise", action: onRetake)
                     LensActionButton(title: "Expand", symbol: "arrow.up.left.and.arrow.down.right", action: onExpand)
                 }
-                .padding(.vertical, 2)
+                .padding(.vertical, Space.hair)
             }
             .opacity(reveal ? 1 : 0)
             .offset(y: reveal || reduceMotion ? 0 : 8)
@@ -347,9 +347,9 @@ private struct LensActionButton: View {
         Button(action: action) {
             Label(title, systemImage: symbol)
                 .font(.caption.weight(.semibold))
-                .padding(.horizontal, 14)
+                .padding(.horizontal, Space.m)
                 .frame(minHeight: 50)
-                .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
         }
         .buttonStyle(LensSpringButtonStyle())
     }
@@ -361,14 +361,14 @@ private struct LensErrorView: View {
     let onRetake: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: Space.m) {
             Label("Lens couldn’t finish", systemImage: "exclamationmark.triangle.fill")
                 .font(.headline)
                 .foregroundStyle(.red)
             Text(errorText ?? "The selected model could not analyze this frame.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 LensActionButton(title: "Retry", symbol: "arrow.clockwise", action: onRetry)
                 LensActionButton(title: "Retake", symbol: "camera", action: onRetake)
             }
@@ -392,8 +392,8 @@ private struct LensFrameThumbnail: View {
         }
         .frame(width: size, height: size)
         .background(.primary.opacity(0.07))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
         .accessibilityLabel("Captured frame")
     }
 }
@@ -405,7 +405,7 @@ struct LensModeSelector: View {
     @Namespace private var selectionAnimation
 
     var body: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: Space.xxs) {
             ForEach(LensMode.allCases) { mode in
                 Button {
                     selection = mode
@@ -417,10 +417,10 @@ struct LensModeSelector: View {
                         .frame(maxWidth: .infinity, minHeight: 38)
                         .background {
                             if selection == mode {
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                                     .fill(mode.accent.opacity(0.16))
                                     .overlay {
-                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                                             .stroke(mode.accent.opacity(0.32), lineWidth: 0.75)
                                     }
                                     .matchedGeometryEffect(id: "lens-mode", in: selectionAnimation)
@@ -433,8 +433,8 @@ struct LensModeSelector: View {
                 .accessibilityAddTraits(selection == mode ? .isSelected : [])
             }
         }
-        .padding(3)
-        .background(.primary.opacity(0.065), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(Space.xxs)
+        .background(.primary.opacity(0.065), in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
         .animation(reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.88), value: selection)
     }
 }

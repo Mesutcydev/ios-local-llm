@@ -76,7 +76,7 @@ struct VoiceLibraryView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: Space.cardGap) {
                 header
                 if let c = current { activeHero(c) }
                 enginePicker
@@ -84,9 +84,9 @@ struct VoiceLibraryView: View {
                 chips
                 library
             }
-            .padding(.horizontal, AppSpacing.large)
-            .padding(.top, AppSpacing.large)
-            .padding(.bottom, 28)
+            .padding(.horizontal, Space.m)
+            .padding(.top, Space.m)
+            .padding(.bottom, Space.l)
             .frame(maxWidth: AppLayout.readingWidth)
             .frame(maxWidth: .infinity)
         }
@@ -121,34 +121,35 @@ struct VoiceLibraryView: View {
     // MARK: Active-voice hero
 
     private func activeHero(_ v: VoiceOption) -> some View {
-        VStack(spacing: 14) {
-            HStack(spacing: 13) {
+        VStack(spacing: Space.m) {
+            // Tile and its label are one group: s, not m.
+            HStack(spacing: Space.s) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                         .fill(LinearGradient(colors: [T.roseHi, T.accentStrong],
                                              startPoint: .topLeading, endPoint: .bottomTrailing))
                     Image(systemName: "waveform")
-                        .font(.system(size: 24, weight: .semibold)).foregroundColor(.white)
+                        .font(.system(.title2, weight: .semibold)).foregroundColor(.white)
                 }
-                .frame(width: 52, height: 52)
+                .frame(width: Size.feature, height: Size.feature)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Space.hair) {
                     Text(loc.t("NOW USING"))
                         .font(T.sans(11.5, .semibold)).foregroundColor(T.ink2)
                     Text(v.name).font(T.display(20, .semibold)).foregroundColor(T.ink).fixedSize(horizontal: false, vertical: true)
                     Text(voiceSubtitle(v)).font(T.sans(13)).foregroundColor(T.ink2).fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer(minLength: 6)
+                Spacer(minLength: Space.xs)
 
                 Button(action: { preview(v) }) {
                     ZStack {
                         Circle().fill(LinearGradient(colors: [T.roseHi, T.accentStrong],
                                                      startPoint: .topLeading, endPoint: .bottomTrailing))
                         Image(systemName: voice.isPlaying ? "stop.fill" : "play.fill")
-                            .font(.system(size: 16, weight: .bold)).foregroundColor(.white)
+                            .font(.system(.callout, weight: .bold)).foregroundColor(.white)
                             .offset(x: voice.isPlaying ? 0 : 1)
                     }
-                    .frame(width: 46, height: 46)
+                    .frame(width: Size.control, height: Size.control)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(voice.isPlaying ? loc.t("Stop preview") : loc.t("Preview voice"))
@@ -158,9 +159,9 @@ struct VoiceLibraryView: View {
             EqualizerBars(playing: voice.isPlaying, active: isActive && tabVisible)
                 .frame(height: 30)
         }
-        .padding(16)
+        .padding(Space.m)
         .kClearGlass(
-            in: RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous),
+            in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous),
             tint: T.accent.opacity(0.08),
             fallbackFill: T.surface,
             fallbackStroke: T.rule
@@ -183,26 +184,26 @@ struct VoiceLibraryView: View {
     // existing one-tap engine picker.
     private var enginePicker: some View {
         Button(action: { HapticManager.impact(.light); showEnginePicker = true }) {
-            HStack(spacing: 12) {
+            HStack(spacing: Space.s) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 11, style: .continuous).fill(T.accentSoft)
+                    RoundedRectangle(cornerRadius: Radius.control, style: .continuous).fill(T.accentSoft)
                     Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 16, weight: .semibold)).foregroundColor(T.accent)
+                        .font(.system(.callout, weight: .semibold)).foregroundColor(T.accent)
                 }
-                .frame(width: 38, height: 38)
+                .frame(width: Size.control, height: Size.control)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(loc.t("Voice engine").uppercased())
-                        .font(T.sans(11, .bold)).tracking(0.4).foregroundColor(T.ink3)
+                        .font(T.sans(11, .bold)).tracking(TextScale.capsTracking).foregroundColor(T.ink3)
                     Text(voice.currentEngineKind.displayName)
                         .font(T.sans(15.5, .semibold)).foregroundColor(T.ink)
                 }
                 Spacer(minLength: 6)
                 Image(systemName: "chevron.forward")
-                    .font(.system(size: 12, weight: .semibold)).foregroundColor(T.ink4)
+                    .font(.system(.caption, weight: .semibold)).foregroundColor(T.ink4)
             }
-            .padding(14)
+            .padding(Space.m)
             .kClearGlass(
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous),
+                in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous),
                 interactive: true,
                 fallbackFill: T.surface,
                 fallbackStroke: T.rule
@@ -214,9 +215,9 @@ struct VoiceLibraryView: View {
     // MARK: Filter chips + search
 
     private var chips: some View {
-        VStack(spacing: 11) {
+        VStack(spacing: Space.s) {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     ForEach(Filter.allCases) { f in
                         KFilterChip(title: loc.t(f.label), isSelected: filter == f) {
                             HapticManager.selection()
@@ -224,7 +225,7 @@ struct VoiceLibraryView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 2)
+                .padding(.horizontal, Space.hair)
             }
             KSearchField(placeholder: loc.t("Search voices"), text: $query)
         }
@@ -233,18 +234,19 @@ struct VoiceLibraryView: View {
     // MARK: Library list
 
     private var library: some View {
-        VStack(alignment: .leading, spacing: 9) {
+        VStack(alignment: .leading, spacing: Space.s) {
             Text(loc.t("Library").uppercased())
-                .font(T.sans(13, .semibold)).tracking(0.3).foregroundColor(T.ink2)
-                .padding(.leading, 4).padding(.top, 4)
+                .font(T.sans(13, .semibold)).tracking(TextScale.capsTracking).foregroundColor(T.ink2)
+                // Section break: card gap + m = l above, s below.
+                .padding(.leading, Space.xxs).padding(.top, Space.m)
 
             LazyVStack(spacing: 0) {
                 if !voicesLoaded {
                     ProgressView()
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 24)
+                        .padding(.vertical, Space.l)
                 } else if filtered.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: Space.s) {
                         Label(loc.t("No voices match."), systemImage: "magnifyingglass")
                             .font(T.sans(15, .semibold)).foregroundStyle(T.ink)
                         Text(loc.t("Try another name or language filter."))
@@ -262,7 +264,7 @@ struct VoiceLibraryView: View {
                         .buttonStyle(.plain)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
+                    .padding(Space.m)
                 } else {
                     ForEach(filtered, id: \.id) { v in
                         voiceRow(v)
@@ -270,7 +272,7 @@ struct VoiceLibraryView: View {
                 }
             }
             .kClearGlass(
-                in: RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous),
+                in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous),
                 fallbackFill: T.surface,
                 fallbackStroke: T.rule
             )
@@ -280,11 +282,11 @@ struct VoiceLibraryView: View {
     private func voiceRow(_ v: VoiceOption) -> some View {
         let isCurrent = v.id == current?.id
         return Button(action: { preview(v) }) {
-            HStack(spacing: 12) {
+            HStack(spacing: Space.s) {
                 Circle()
                     .fill(LinearGradient(colors: avatarColors(for: v),
                                          startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .frame(width: 38, height: 38)
+                    .frame(width: Size.control, height: Size.control)
                     .overlay {
                         if isCurrent {
                             Circle().strokeBorder(T.accent, lineWidth: 2)
@@ -296,14 +298,14 @@ struct VoiceLibraryView: View {
                 }
                 Spacer(minLength: 6)
                 ZStack {
-                    Circle().fill(isCurrent ? T.ink : T.accentSoft).frame(width: 36, height: 36)
+                    Circle().fill(isCurrent ? T.ink : T.accentSoft).frame(width: Size.control, height: Size.control)
                     Image(systemName: isCurrent ? "checkmark" : "play.fill")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(.subheadline, weight: .bold))
                         .foregroundColor(isCurrent ? T.bg : T.accent)
                         .offset(x: isCurrent ? 0 : 1)
                 }
             }
-            .padding(.horizontal, 15).padding(.vertical, 11)
+            .padding(.horizontal, Space.m).padding(.vertical, Space.s)
             .contentShape(Rectangle())
             .overlay(alignment: .bottom) {
                 Rectangle().fill(T.rule).frame(height: 0.5).padding(.leading, 59)
@@ -378,7 +380,7 @@ private struct EqualizerBars: View {
             GeometryReader { proxy in
                 let count = max(1, min(44, Int(proxy.size.width / 7)))
                 let time = animates ? ctx.date.timeIntervalSinceReferenceDate : 0
-                HStack(alignment: .center, spacing: 4) {
+                HStack(alignment: .center, spacing: Space.xxs) {
                     ForEach(0..<count, id: \.self) { index in
                         let position = Double(index) / Double(max(count - 1, 1))
                         let envelope = sin(position * .pi)

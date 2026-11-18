@@ -71,10 +71,10 @@ struct LensDebugOverlay: View {
     private let timer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             section(title: "MODEL") {
                 Text(loop.capabilities?.description ?? "no model loaded")
-                    .font(.system(size: 10, weight: .regular, design: .monospaced))
+                    .font(.system(.caption2, design: .monospaced, weight: .regular))
                     .foregroundColor(.white)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
@@ -83,11 +83,11 @@ struct LensDebugOverlay: View {
             section(title: "LAST FRAME") {
                 if let p = lastPrep {
                     Text(framePrepLine(p))
-                        .font(.system(size: 10, weight: .regular, design: .monospaced))
+                        .font(.system(.caption2, design: .monospaced, weight: .regular))
                         .foregroundColor(.white)
                 } else {
                     Text("no frame prepared yet")
-                        .font(.system(size: 10, weight: .regular, design: .monospaced))
+                        .font(.system(.caption2, design: .monospaced, weight: .regular))
                         .foregroundColor(.white.opacity(0.5))
                 }
             }
@@ -97,7 +97,7 @@ struct LensDebugOverlay: View {
                             loop.lastInferenceMillis,
                             loop.lastTokensPerSecond,
                             availableMemoryMB))
-                    .font(.system(size: 10, weight: .regular, design: .monospaced))
+                    .font(.system(.caption2, design: .monospaced, weight: .regular))
                     .foregroundColor(.white)
                     // Cross-fade numbers between updates instead of cutting.
                     // The latency/TPS pair changes per inference; without this
@@ -112,26 +112,26 @@ struct LensDebugOverlay: View {
             // output, so the visual treatment is intentionally loud
             // (warn color + "DIAGNOSTIC" caption) when enabled.
             Toggle(isOn: $loop.debugSendRaw) {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Space.hair) {
                     Text(loop.debugSendRaw ? "send raw (DIAGNOSTIC)" : "send raw")
-                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        .font(.system(.caption2, design: .monospaced, weight: .semibold))
                         .foregroundColor(loop.debugSendRaw ? .orange : .white)
                     Text("bypasses LensFramePreparer — captions will degrade")
-                        .font(.system(size: 9, design: .monospaced))
+                        .font(.system(.caption2, design: .monospaced))
                         .foregroundColor(.white.opacity(0.5))
                         .lineLimit(1)
                 }
             }
             .toggleStyle(SwitchToggleStyle(tint: .orange))
-            .padding(.top, 2)
+            .padding(.top, Space.hair)
         }
-        .padding(10)
+        .padding(Space.s)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Radius.control)
                 .fill(Color.black.opacity(0.75))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Radius.control)
                 .stroke(Color.white.opacity(0.25), lineWidth: 0.5)
         )
         .frame(maxWidth: 340)
@@ -157,9 +157,9 @@ struct LensDebugOverlay: View {
 
     @ViewBuilder
     private func section<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: Space.hair) {
             Text(title)
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .font(.system(.caption2, design: .monospaced, weight: .bold))
                 .foregroundColor(.white.opacity(0.5))
                 .tracking(1.0)
             content()
@@ -240,7 +240,7 @@ struct LensDebugOverlayModifier: ViewModifier {
             .overlay(alignment: .top) {
                 if visible {
                     LensDebugOverlay()
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, Space.s)
                         .padding(.top, 60)        // clear the status bar / notch
                         .transition(.opacity.combined(with: .move(edge: .top)))
                         .allowsHitTesting(true)   // so the diagnostic toggle is tappable

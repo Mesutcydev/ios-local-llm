@@ -37,7 +37,7 @@ struct BridgeAgentCard: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Space.s) {
             header
             buttonRow
             if let result = lastResult {
@@ -46,18 +46,18 @@ struct BridgeAgentCard: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .kGlass(cornerRadius: 14, fallbackFill: T.surface)
+        .padding(Space.m)
+        .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
     }
 
     private var header: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Space.s) {
             Text("AGENT (PREVIEW)")
                 .font(T.mono(11, .semibold))
                 .foregroundColor(T.ink4)
             Spacer()
             if case .running(let label) = state {
-                HStack(spacing: 6) {
+                HStack(spacing: Space.xs) {
                     ProgressView().tint(T.accent).scaleEffect(0.6)
                     Text(label)
                         .font(T.mono(10, .regular))
@@ -70,8 +70,8 @@ struct BridgeAgentCard: View {
     // MARK: - Buttons
 
     private var buttonRow: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.s) {
+            HStack(spacing: Space.s) {
                 probeButton(
                     label: "Heartbeat",
                     systemImage: "wave.3.right",
@@ -85,7 +85,7 @@ struct BridgeAgentCard: View {
                     action: runActiveContext
                 )
             }
-            HStack(spacing: 10) {
+            HStack(spacing: Space.s) {
                 probeButton(
                     label: "Focus Xcode (asks approval)",
                     systemImage: "hammer",
@@ -104,21 +104,21 @@ struct BridgeAgentCard: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(.caption, weight: .medium))
                 Text(label)
                     .font(T.mono(12, .semibold))
             }
             .foregroundColor(running ? T.ink3 : T.ink)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, Space.s)
+            .padding(.vertical, Space.s)
             .background(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: Radius.control)
                     .fill(running ? T.surface2 : T.surface3)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: Radius.control)
                     .stroke(T.rule, lineWidth: 0.5)
             )
         }
@@ -132,22 +132,22 @@ struct BridgeAgentCard: View {
     private func resultBlock(_ result: ProbeResult) -> some View {
         switch result {
         case .heartbeat(let hb):
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 resultRow("Mac",      hb.macName)
                 resultRow("Tools",    "\(hb.toolCount)")
                 resultRow("Mac time", hb.macTime)
             }
         case .approval(let focusedApp):
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 12))
+                    .font(.system(.caption))
                     .foregroundColor(T.good)
                 Text("Approved on Mac → focused \(focusedApp)")
                     .font(T.mono(11, .regular))
                     .foregroundColor(T.ink2)
             }
         case .activeContext(let ctx):
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 resultRow("App",       ctx.frontmostApp ?? "—")
                 if let bundle = ctx.bundleIdentifier, !bundle.isEmpty {
                     resultRow("Bundle",  bundle)
@@ -163,9 +163,9 @@ struct BridgeAgentCard: View {
                 }
             }
         case .error(let msg):
-            HStack(alignment: .top, spacing: 6) {
+            HStack(alignment: .top, spacing: Space.xs) {
                 Image(systemName: "exclamationmark.triangle")
-                    .font(.system(size: 11))
+                    .font(.system(.caption2))
                     .foregroundColor(T.bad)
                 Text(msg)
                     .font(T.mono(11, .regular))
@@ -177,10 +177,10 @@ struct BridgeAgentCard: View {
 
     @ViewBuilder
     private func resultRow(_ label: String, _ value: String) -> some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .top, spacing: Space.s) {
             Text(label.uppercased())
                 .font(T.mono(9, .semibold))
-                .tracking(0.5)
+                .tracking(TextScale.capsTracking)
                 .foregroundColor(T.ink4)
                 .frame(width: 70, alignment: .leading)
             Text(value)
@@ -192,17 +192,17 @@ struct BridgeAgentCard: View {
     }
 
     private func permissionHint(missing: [String]) -> some View {
-        HStack(alignment: .top, spacing: 6) {
+        HStack(alignment: .top, spacing: Space.xs) {
             Image(systemName: "lock")
-                .font(.system(size: 10))
+                .font(.system(.caption2))
                 .foregroundColor(T.warn)
             Text(permissionMessage(for: missing))
                 .font(T.mono(10, .regular))
                 .foregroundColor(T.warn)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(8)
-        .background(RoundedRectangle(cornerRadius: 6).fill(T.warn.opacity(0.10)))
+        .padding(Space.s)
+        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.warn.opacity(0.10)))
     }
 
     private func permissionMessage(for codes: [String]) -> String {

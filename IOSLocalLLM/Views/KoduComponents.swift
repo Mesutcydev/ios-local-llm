@@ -57,7 +57,7 @@ struct KCaption: View {
         Text(localization.t(text).uppercased(with: localization.resolvedLocale))
             .font(T.sans(11, .bold))
             .foregroundColor(color ?? T.ink3)
-            .tracking(0)
+            .tracking(TextScale.capsTracking)
     }
 }
 
@@ -79,7 +79,7 @@ struct KStatusBadge: View {
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: Space.xxs) {
             Text(glyph.rawValue)
             Text(localization.t(label))
         }
@@ -121,10 +121,10 @@ struct KScreenHeader<Actions: View>: View {
 
     var body: some View {
         let layout = textSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
-            : AnyLayout(HStackLayout(alignment: .center, spacing: 12))
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Space.s))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: Space.s))
         layout {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Space.xxs) {
                 Text(localization.t(eyebrow))
                     .font(T.sans(12, .medium))
                     .foregroundStyle(T.ink2)
@@ -153,7 +153,7 @@ struct KSearchField: View {
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             Image(systemName: "magnifyingglass")
                 .font(.body)
                 .foregroundStyle(T.ink3)
@@ -180,18 +180,18 @@ struct KSearchField: View {
                     Image(systemName: "xmark.circle.fill")
                         .font(.body)
                         .foregroundStyle(T.ink2)
-                        .frame(width: 44, height: 44)
+                        .frame(width: Size.control, height: Size.control)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(LocalizationService.shared.t("Clear search"))
             }
         }
-        .padding(.leading, 14)
+        .padding(.leading, Space.m)
         .padding(.trailing, text.isEmpty ? 14 : 2)
         .frame(minHeight: 48)
-        .padding(.vertical, 2)
-        .kGlass(cornerRadius: AppRadius.control)
+        .padding(.vertical, Space.hair)
+        .kGlass(cornerRadius: Radius.control)
     }
 }
 
@@ -206,7 +206,7 @@ struct KFilterChip: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 5) {
+            HStack(spacing: Space.xs) {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .font(.caption.weight(.semibold))
@@ -217,8 +217,8 @@ struct KFilterChip: View {
                     .fixedSize(horizontal: true, vertical: false)
             }
             .foregroundStyle(isSelected ? T.ink : T.ink2)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, Space.s)
+            .padding(.vertical, Space.s)
             .background(isSelected ? T.accentSoft : T.surface, in: Capsule())
             .overlay(Capsule().strokeBorder(isSelected ? T.rule2 : T.rule, lineWidth: AppStroke.hairline))
             .frame(minHeight: 44)
@@ -273,36 +273,31 @@ struct KPrimaryButton: View {
     @ObservedObject private var localization = LocalizationService.shared
     let label: String
     var systemImage: String? = nil
-    var trailing: String? = nil      // e.g. "↵" mono hint on the right
+    var trailing: String? = nil      // e.g. a size on the right
     var action: () -> Void = {}
     var disabled: Bool = false
 
-    @Environment(\.koduTheme) private var T
-
     var body: some View {
+        // The screen's main action: Apple's prominent glass, app accent tint.
         Button(action: action) {
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 if let sys = systemImage {
                     Image(systemName: sys)
-                        .font(.system(size: 13, weight: .medium))
                 }
                 Text(localization.t(label))
-                    .font(T.sans(15, .semibold))
                 Spacer(minLength: 0)
                 if let trailing {
                     Text(trailing)
-                        .font(T.mono(10))
-                        .foregroundColor(T.bg.opacity(0.75))
+                        .monospacedDigit()
+                        .opacity(0.75)
                 }
             }
-            .foregroundColor(T.bg)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .frame(maxWidth: .infinity, minHeight: 48)
-            .background(T.ink, in: RoundedRectangle(cornerRadius: AppRadius.control, style: .continuous))
-            .opacity(disabled ? 0.45 : 1)
+            .font(.body.weight(.semibold))
+            // Height comes from the large glass control (~50 pt).
+            .frame(maxWidth: .infinity)
         }
-        .buttonStyle(KTactileButtonStyle())
+        .glassButton(prominent: true)
+        .controlSize(.large)
         .disabled(disabled)
     }
 }
@@ -320,10 +315,10 @@ struct KSecondaryButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 10) {
+            HStack(spacing: Space.s) {
                 if let sys = systemImage {
                     Image(systemName: sys)
-                        .font(.system(size: 13))
+                        .font(.system(.footnote))
                         .foregroundColor(destructive ? T.bad : T.ink)
                 }
                 Text(localization.t(label))
@@ -336,11 +331,11 @@ struct KSecondaryButton: View {
                         .foregroundColor(T.ink3)
                 }
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, Space.m)
             .frame(height: 44)
             .frame(maxWidth: .infinity)
             .kClearGlass(
-                in: RoundedRectangle(cornerRadius: 10, style: .continuous),
+                in: RoundedRectangle(cornerRadius: Radius.control, style: .continuous),
                 interactive: true,
                 fallbackFill: T.surface,
                 fallbackStroke: T.rule
@@ -381,7 +376,7 @@ private struct KCompactButtonBody: View {
             .lineLimit(1)
             .minimumScaleFactor(0.85)
             .foregroundStyle(foreground)
-            .padding(.horizontal, 14)
+            .padding(.horizontal, Space.m)
             .frame(minHeight: 34)
             .background {
                 if kind == .primary {
@@ -430,24 +425,24 @@ struct KSection<Content: View>: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 KCaption(text: title.replacingOccurrences(of: "_", with: " "))
                 Rectangle().fill(T.rule).frame(height: 1)
             }
-            .padding(.bottom, 8)
+            .padding(.bottom, Space.s)
 
             VStack(spacing: 0) {
                 content()
             }
             .kClearGlass(
-                in: RoundedRectangle(cornerRadius: 12, style: .continuous),
+                in: RoundedRectangle(cornerRadius: Radius.control, style: .continuous),
                 tint: tinted ? T.accentSofter : nil,
                 fallbackFill: T.surface,
                 fallbackStroke: T.rule
             )
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 20)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.l)   // section break: l above the header, s below
     }
 }
 
@@ -487,11 +482,11 @@ struct KCollapsibleSection<Content: View>: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 KCaption(text: title.replacingOccurrences(of: "_", with: " "))
                 Rectangle().fill(T.rule).frame(height: 1)
             }
-            .padding(.bottom, 8)
+            .padding(.bottom, Space.s)
 
             Button {
                 withAnimation(.easeInOut(duration: 0.28)) {
@@ -500,18 +495,18 @@ struct KCollapsibleSection<Content: View>: View {
                 HapticManager.impact(.light)
             } label: {
                 VStack(spacing: 0) {
-                    HStack(spacing: 12) {
+                    HStack(spacing: Space.s) {
                         Text(rowTitle.map { localization.t($0) }
                              ?? localization.t(title.replacingOccurrences(of: "_", with: " ")).capitalized(with: localization.resolvedLocale))
                             .font(T.sans(15, .semibold)).foregroundColor(T.ink)
                         Spacer()
                         Image(systemName: "chevron.forward")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(.caption2, weight: .semibold))
                             .foregroundColor(T.ink4)
                             .rotationEffect(.degrees(localExpanded ? 90 : 0))
                     }
-                    .padding(.horizontal, 15)
-                    .padding(.vertical, 13)
+                    .padding(.horizontal, Space.m)
+                    .padding(.vertical, Space.m)
 
                     if localExpanded {
                         Rectangle().fill(T.rule).frame(height: 1)
@@ -521,15 +516,15 @@ struct KCollapsibleSection<Content: View>: View {
             }
             .buttonStyle(.plain)
             .kClearGlass(
-                in: RoundedRectangle(cornerRadius: 12, style: .continuous),
+                in: RoundedRectangle(cornerRadius: Radius.control, style: .continuous),
                 tint: tinted ? T.accentSofter : nil,
                 fallbackFill: T.surface,
                 fallbackStroke: T.rule
             )
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 20)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.m)
     }
 }
 
@@ -548,12 +543,12 @@ struct KRow<Trailing: View>: View {
         VStack(spacing: 0) {
             Group {
                 if stack || textSize.isAccessibilitySize {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: Space.s) {
                         Text(localization.t(label)).font(T.sans(15)).foregroundColor(T.ink)
                         trailing().accessibilityLabel(localization.t(label))
                     }
                 } else {
-                    HStack(spacing: 12) {
+                    HStack(spacing: Space.s) {
                         Text(localization.t(label)).font(T.sans(15)).foregroundColor(T.ink)
                             .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 8)
@@ -561,8 +556,8 @@ struct KRow<Trailing: View>: View {
                     }
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
 
             if !last {
                 Rectangle().fill(T.rule).frame(height: 1)
@@ -584,18 +579,18 @@ struct KSpecTable: View {
         VStack(spacing: 0) {
             ForEach(Array(rows.enumerated()), id: \.offset) { i, row in
                 if i > 0 { Rectangle().fill(T.rule).frame(height: 1) }
-                HStack(spacing: 12) {
+                HStack(spacing: Space.s) {
                     KMono(text: row.0, size: 11, color: T.ink3)
                         .frame(width: keyWidth, alignment: .leading)
                     KMono(text: row.1, size: 11, color: T.ink)
                     Spacer()
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, Space.s)
+                .padding(.vertical, Space.s)
             }
         }
         .kClearGlass(
-            in: RoundedRectangle(cornerRadius: 8),
+            in: RoundedRectangle(cornerRadius: Radius.inner),
             fallbackFill: T.surface,
             fallbackStroke: T.rule
         )
@@ -619,7 +614,7 @@ struct KTelemetryStrip: View {
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Space.s) {
             ForEach(items) { item in
                 VStack(alignment: item.align, spacing: 1) {
                     KCaption(text: item.caption)
@@ -630,10 +625,10 @@ struct KTelemetryStrip: View {
                 .frame(maxWidth: .infinity, alignment: alignment(item.align))
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.horizontal, Space.s)
+        .padding(.vertical, Space.xs)
         .kClearGlass(
-            in: RoundedRectangle(cornerRadius: 6),
+            in: RoundedRectangle(cornerRadius: Radius.inner),
             fallbackFill: T.surface,
             fallbackStroke: T.rule
         )
@@ -661,8 +656,8 @@ struct KTag: View {
         Text(localization.t(text))
             .font(T.mono(size))
             .foregroundColor(T.ink2)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 2)
+            .padding(.horizontal, Space.xs)
+            .padding(.vertical, Space.hair)
             .kClearGlass(
                 in: RoundedRectangle(cornerRadius: 4),
                 fallbackFill: T.surface,
@@ -754,9 +749,9 @@ struct KActivePill: View {
     var body: some View {
         Text(localization.t(text).uppercased(with: localization.resolvedLocale))
             .font(T.mono(9, .semibold))
-            .tracking(0)
+            .tracking(TextScale.capsTracking)
             .foregroundColor(T.accent)
-            .padding(.horizontal, 5)
+            .padding(.horizontal, Space.xs)
             .padding(.vertical, 1)
             .kClearGlass(
                 in: RoundedRectangle(cornerRadius: 3),
@@ -805,15 +800,15 @@ struct KCompatChip: View {
             showDetail = true
             HapticManager.impact(.light)
         } label: {
-            HStack(spacing: 4) {
-                Image(systemName: level.glyph).font(.system(size: 9, weight: .bold))
+            HStack(spacing: Space.xxs) {
+                Image(systemName: level.glyph).font(.system(.caption2, weight: .bold))
                 Text(localization.t(text)).font(T.mono(10, .medium))
                 if detail != nil {
-                    Image(systemName: "info.circle").font(.system(size: 8, weight: .semibold)).opacity(0.65)
+                    Image(systemName: "info.circle").font(.system(.caption2, weight: .semibold)).opacity(0.65)
                 }
             }
             .foregroundColor(color)
-            .padding(.horizontal, 7).padding(.vertical, 2.5)
+            .padding(.horizontal, Space.xs).padding(.vertical, Space.hair)
             .kClearGlass(in: Capsule(), tint: color.opacity(T.isDark ? 0.16 : 0.10))
         }
         .buttonStyle(.plain)
@@ -858,16 +853,16 @@ struct KDisclosureRows<Content: View>: View {
                 withAnimation(.easeInOut(duration: 0.25)) { open.toggle() }
                 HapticManager.impact(.light)
             } label: {
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     Text(count.map { "\(localization.t(title)) (\($0))" } ?? localization.t(title))
                         .font(T.sans(13, .medium)).foregroundColor(T.ink2)
                     Spacer()
                     Image(systemName: "chevron.forward")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(.caption2, weight: .semibold))
                         .foregroundColor(T.ink4)
                         .rotationEffect(.degrees(open ? 90 : 0))
                 }
-                .padding(.horizontal, 14).padding(.vertical, 12)
+                .padding(.horizontal, Space.m).padding(.vertical, Space.s)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -887,23 +882,22 @@ struct KWordmark: View {
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Space.s) {
             if let logoAsset {
                 Image(logoAsset)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 26, height: 26)
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .frame(width: Size.tile, height: Size.tile)
+                    .clipShape(RoundedRectangle(cornerRadius: Radius.inner, style: .continuous))
             } else {
                 Text(monogram)
                     .font(T.mono(14, .semibold))
                     .foregroundColor(T.bg)
-                    .frame(width: 26, height: 26)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(T.ink))
+                    .frame(width: Size.tile, height: Size.tile)
+                    .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
             }
             Text(name)
                 .font(T.display(17, .semibold))
-                .tracking(0)
                 .foregroundColor(T.ink)
         }
     }
@@ -922,7 +916,6 @@ struct KPageTitle: View {
     var body: some View {
         Text(localization.t(title))
             .font(T.display(size, .semibold))
-            .tracking(0)
             .foregroundColor(T.ink)
             .lineLimit(1)
     }
@@ -940,13 +933,13 @@ struct KToggle: View {
             withAnimation(reduceMotion ? nil : .spring(response: 0.25, dampingFraction: 0.85)) { isOn.toggle() }
         } label: {
             ZStack(alignment: isOn ? .trailing : .leading) {
-                RoundedRectangle(cornerRadius: 9)
+                RoundedRectangle(cornerRadius: Radius.control)
                     .fill(isOn ? T.accent : T.ink4.opacity(0.5))
                     .frame(width: 32, height: 18)
                 Circle()
                     .fill(T.surface)
                     .frame(width: 14, height: 14)
-                    .padding(.horizontal, 2)
+                    .padding(.horizontal, Space.hair)
             }
             .frame(minWidth: 44, minHeight: 44)
             .contentShape(Rectangle())

@@ -46,7 +46,7 @@ struct ArenaLeaderboardCard: View {
         HStack(spacing: 0) {
             Text("#").font(T.mono(9, .semibold)).foregroundColor(T.ink3)
                 .frame(width: 24, alignment: .leading)
-            Text("MODEL").font(T.mono(9, .semibold)).tracking(0.5)
+            Text("MODEL").font(T.mono(9, .semibold)).tracking(TextScale.capsTracking)
                 .foregroundColor(T.ink3)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Text("ELO").font(T.mono(9, .semibold)).foregroundColor(T.ink3)
@@ -54,8 +54,8 @@ struct ArenaLeaderboardCard: View {
             Text("W-L-T").font(T.mono(9, .semibold)).foregroundColor(T.ink3)
                 .frame(width: 64, alignment: .trailing)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, Space.s)
+        .padding(.vertical, Space.s)
     }
 
     @ViewBuilder
@@ -65,7 +65,7 @@ struct ArenaLeaderboardCard: View {
                 .font(T.mono(11, .semibold))
                 .foregroundColor(rank == 1 ? T.accent : T.ink3)
                 .frame(width: 24, alignment: .leading)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Space.hair) {
                 Text(r.displayName)
                     .font(T.mono(11, .semibold))
                     .foregroundColor(T.ink)
@@ -85,8 +85,8 @@ struct ArenaLeaderboardCard: View {
                 .foregroundColor(T.ink2)
                 .frame(width: 64, alignment: .trailing)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 9)
+        .padding(.horizontal, Space.s)
+        .padding(.vertical, Space.s)
     }
 
     private var footer: some View {
@@ -97,7 +97,7 @@ struct ArenaLeaderboardCard: View {
                 .font(T.mono(10, .semibold))
                 .foregroundColor(T.bad)
                 .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.vertical, 9)
+                .padding(.vertical, Space.s)
         }
         .buttonStyle(.plain)
         .confirmationDialog("Reset \(lane.rawValue) standings?",
@@ -110,9 +110,9 @@ struct ArenaLeaderboardCard: View {
 
     private var emptyState: some View {
         KSection(title: title) {
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 Image(systemName: "trophy")
-                    .font(.system(size: 12))
+                    .font(.system(.caption))
                     .foregroundColor(T.ink3)
                 Text("no votes yet — run a comparison and pick a winner to start the ladder")
                     .font(T.mono(10))
@@ -120,7 +120,7 @@ struct ArenaLeaderboardCard: View {
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer()
             }
-            .padding(14)
+            .padding(Space.m)
         }
     }
 }

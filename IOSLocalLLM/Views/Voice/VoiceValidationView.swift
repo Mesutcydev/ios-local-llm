@@ -114,7 +114,7 @@ struct VoiceValidationView: View {
     }
 
     private func labeled(_ title: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: Space.hair) {
             Text(title)
                 .font(.caption)
                 .foregroundStyle(.secondary)

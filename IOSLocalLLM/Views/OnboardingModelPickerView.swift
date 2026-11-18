@@ -153,7 +153,7 @@ struct OnboardingModelPickerView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: Space.l) {
                 heroBlock
                 Picker("Start with", selection: $goal) {
                     ForEach(Goal.allCases, id: \.self) { Text($0.rawValue).tag($0) }
@@ -167,8 +167,8 @@ struct OnboardingModelPickerView: View {
                 }
                 Color.clear.frame(height: 16)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
+            .padding(.horizontal, Space.m)
+            .padding(.top, Space.s)
         }
         .background(LiquidPinkBackdrop())
         .overlay {
@@ -206,7 +206,7 @@ struct OnboardingModelPickerView: View {
     // MARK: - Hero
 
     private var heroBlock: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: Space.s) {
             // Custom hero glyph — concentric rings with a pick mark.
             // Differentiates from the reference's downward-arrow icon
             // while landing in the same conceptual space.
@@ -218,15 +218,15 @@ struct OnboardingModelPickerView: View {
                     .fill(T.accentSoft)
                     .frame(width: 60, height: 60)
                 Image(systemName: "checkmark")
-                    .font(.system(size: 26, weight: .semibold))
+                    .font(.system(.title, weight: .semibold))
                     .foregroundColor(T.accent)
             }
-            .padding(.top, 4)
+            .padding(.top, Space.xxs)
             // Decorative: VoiceOver otherwise announced "Selected" before
             // anything had been chosen.
             .accessibilityHidden(true)
 
-            VStack(spacing: 6) {
+            VStack(spacing: Space.xs) {
                 KCaption(text: "STEP · MODEL PICK")
                 Text("Choose your models")
                     .font(T.display(26, .semibold))
@@ -237,7 +237,7 @@ struct OnboardingModelPickerView: View {
                     .foregroundColor(T.ink2)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, Space.s)
             }
         }
     }
@@ -245,11 +245,11 @@ struct OnboardingModelPickerView: View {
     // MARK: - Sections
 
     private var assistantSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.s) {
             sectionHeader(eyebrow: "ASSISTANT",
                           title: "Text & code",
                           subtitle: "Chat, code review, refactoring, planning.")
-            VStack(spacing: 10) {
+            VStack(spacing: Space.s) {
                 ForEach(assistantPicks) { pick in
                     assistantCard(pick)
                 }
@@ -258,11 +258,11 @@ struct OnboardingModelPickerView: View {
     }
 
     private var visualSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.s) {
             sectionHeader(eyebrow: "VISION",
                           title: "Multimodal",
                           subtitle: "Camera capture, screen reading, image-to-text. Only multimodal models — text-only LLMs can't fill this slot.")
-            VStack(spacing: 10) {
+            VStack(spacing: Space.s) {
                 ForEach(visualPicks) { pick in
                     visualCard(pick)
                 }
@@ -272,8 +272,8 @@ struct OnboardingModelPickerView: View {
 
     @ViewBuilder
     private func sectionHeader(eyebrow: String, title: String, subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
+            HStack(spacing: Space.s) {
                 KCaption(text: eyebrow)
                     .fixedSize(horizontal: true, vertical: false)
                 Rectangle().fill(T.rule).frame(height: 1)
@@ -286,7 +286,7 @@ struct OnboardingModelPickerView: View {
                 .foregroundColor(T.ink3)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.horizontal, 2)
+        .padding(.horizontal, Space.hair)
     }
 
     // MARK: - Cards
@@ -351,15 +351,15 @@ struct OnboardingModelPickerView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: Space.s) {
                 if !dynamicTypeSize.isAccessibilitySize {
                     KVendorThumb(vendor: vendor, size: .card)
                         .accessibilityHidden(true)   // avatar letter was read as "Q, Qwen…"
                 }
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     let titleLayout = dynamicTypeSize.isAccessibilitySize
-                        ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
-                        : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 6))
+                        ? AnyLayout(VStackLayout(alignment: .leading, spacing: Space.xs))
+                        : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: Space.xs))
                     titleLayout {
                         Text(title)
                             .font(T.display(15, .semibold))
@@ -377,21 +377,21 @@ struct OnboardingModelPickerView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     if !caps.isEmpty {
                         KCapabilityPillRow(capabilities: Array(caps), size: .compact)
-                            .padding(.top, 2)
+                            .padding(.top, Space.hair)
                     }
                     deviceFitNotice(verdict: verdict)
                 }
                 radio(selected: selected)
-                    .padding(.top, 4)
+                    .padding(.top, Space.xxs)
             }
-            .padding(14)
+            .padding(Space.m)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .kGlass(cornerRadius: 16,
+            .kGlass(cornerRadius: Radius.card,
                     tint: selected ? T.accentSoft : nil,
                     fallbackFill: selected ? T.accentSoft : T.surface)
             .overlay(
                 // Selected: 1pt accent border + tiny glow.
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                     .stroke(selected ? T.accent.opacity(0.7) : Color.clear,
                             lineWidth: 1.2)
             )
@@ -421,27 +421,27 @@ struct OnboardingModelPickerView: View {
         case .fitsComfortably:
             EmptyView()
         case .marginal(let warning):
-            HStack(spacing: 4) {
+            HStack(spacing: Space.xxs) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 8.5, weight: .bold))
+                    .font(.system(.caption2, weight: .bold))
                 Text(warning)
                     .font(T.mono(9.5))
                     .fixedSize(horizontal: false, vertical: true)
                     .lineLimit(2)
             }
             .foregroundColor(T.warn)
-            .padding(.top, 4)
+            .padding(.top, Space.xxs)
         case .wontFit(let warning):
-            HStack(spacing: 4) {
+            HStack(spacing: Space.xxs) {
                 Image(systemName: "xmark.octagon.fill")
-                    .font(.system(size: 8.5, weight: .bold))
+                    .font(.system(.caption2, weight: .bold))
                 Text(warning)
                     .font(T.mono(9.5))
                     .fixedSize(horizontal: false, vertical: true)
                     .lineLimit(2)
             }
             .foregroundColor(T.bad)
-            .padding(.top, 4)
+            .padding(.top, Space.xxs)
         }
     }
 
@@ -450,7 +450,7 @@ struct OnboardingModelPickerView: View {
         ZStack {
             Circle()
                 .stroke(selected ? T.accent : T.ink4, lineWidth: 1.5)
-                .frame(width: 20, height: 20)
+                .frame(width: Size.glyph, height: Size.glyph)
             if selected {
                 Circle()
                     .fill(T.accent)
@@ -462,20 +462,20 @@ struct OnboardingModelPickerView: View {
     // MARK: - CTA bar
 
     private var ctaBar: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: Space.xs) {
             Button(action: requestCommit) {
                 Label(needsAnyDownload ? "Download model" : "Continue",
                       systemImage: needsAnyDownload ? "arrow.down.circle" : "arrow.right")
                     .font(T.sans(16, .semibold))
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, minHeight: 44)
-                    .padding(12)
+                    .padding(Space.s)
                     .foregroundStyle(T.bg)
-                    .background(T.ink, in: RoundedRectangle(cornerRadius: 12))
+                    .background(T.ink, in: RoundedRectangle(cornerRadius: Radius.control))
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("onboarding.install")
-            .padding(.horizontal, 16)
+            .padding(.horizontal, Space.m)
 
             // Starting a multi-gigabyte download must not be the only way out
             // of onboarding; models can be added later from Models.
@@ -491,8 +491,8 @@ struct OnboardingModelPickerView: View {
                 .accessibilityIdentifier("onboarding.skip")
             }
         }
-        .padding(.top, 12)
-        .padding(.bottom, 14)
+        .padding(.top, Space.s)
+        .padding(.bottom, Space.m)
         .background(T.bg)
         .confirmationDialog("Download over cellular data?",
                             isPresented: $confirmCellular,
@@ -551,8 +551,8 @@ struct OnboardingModelPickerView: View {
     }
 
     private var gateBar: some View {
-        VStack(spacing: 14) {
-            VStack(spacing: 6) {
+        VStack(spacing: Space.m) {
+            VStack(spacing: Space.xs) {
                 Text("Setting up your models")
                     .font(T.display(17, .semibold))
                     .foregroundColor(T.ink)
@@ -561,22 +561,22 @@ struct OnboardingModelPickerView: View {
                     .foregroundColor(T.ink2)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, Space.s)
             }
 
-            VStack(spacing: 10) {
+            VStack(spacing: Space.s) {
                 if needsAssistant { gateProgressRow(label: "Assistant", model: assistantDLModel, settled: assistantSettled) }
                 if needsVision { gateProgressRow(label: "Vision", model: visualDLModel, settled: visualSettled) }
             }
 
             if anyDownloadFailed {
                 Button { retryDownloads() } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "arrow.clockwise").font(.system(size: 11, weight: .semibold))
+                    HStack(spacing: Space.xs) {
+                        Image(systemName: "arrow.clockwise").font(.system(.caption2, weight: .semibold))
                         Text("Retry download").font(T.mono(11, .semibold))
                     }
                     .foregroundColor(T.bad)
-                    .padding(.horizontal, 12).padding(.vertical, 7)
+                    .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
                     .background(Capsule().fill(T.bad.opacity(0.10)))
                     .overlay(Capsule().stroke(T.bad.opacity(0.4), lineWidth: 0.5))
                 }
@@ -586,28 +586,27 @@ struct OnboardingModelPickerView: View {
             Button { onComplete() } label: {
                 Text("Skip for now — finish in Models")
                     .font(T.mono(10, .semibold))
-                    .tracking(0.5)
                     .foregroundColor(T.ink3)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, Space.xs)
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 18)
-        .padding(.bottom, 14)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.m)
+        .padding(.bottom, Space.m)
         .frame(maxWidth: .infinity)
         .background(
             // Solid panel (no gradient): a rounded card edge fading the scrim
             // into a fully opaque surface so the gate copy always reads clean.
             ZStack {
                 T.bg
-                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                     .fill(T.surface)
                     .overlay(
-                        RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                        RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                             .stroke(T.glassBorder, lineWidth: 0.5)
                     )
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, Space.s)
             }
             .ignoresSafeArea(edges: .bottom)
         )
@@ -617,7 +616,7 @@ struct OnboardingModelPickerView: View {
     private func gateProgressRow(label: String, model: DownloadableModel?, settled: Bool) -> some View {
         let failed = isFailed(model)
         let progress = settled ? 1.0 : (model?.progress ?? 0)
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             ZStack {
                 if settled {
                     Image(systemName: "checkmark.circle.fill").foregroundColor(T.good)
@@ -627,8 +626,8 @@ struct OnboardingModelPickerView: View {
                     ProgressView().scaleEffect(0.7).tint(T.accent)
                 }
             }
-            .frame(width: 18, height: 18)
-            VStack(alignment: .leading, spacing: 4) {
+            .frame(width: Size.glyph, height: Size.glyph)
+            VStack(alignment: .leading, spacing: Space.xxs) {
                 HStack {
                     KMono(text: label, size: 11, color: T.ink2)
                     Spacer()
@@ -646,8 +645,8 @@ struct OnboardingModelPickerView: View {
                 .frame(height: 3)
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .kGlass(cornerRadius: 10, fallbackFill: T.surface)
+        .padding(.horizontal, Space.s).padding(.vertical, Space.s)
+        .kGlass(cornerRadius: Radius.control, fallbackFill: T.surface)
     }
 
     private func retryDownloads() {

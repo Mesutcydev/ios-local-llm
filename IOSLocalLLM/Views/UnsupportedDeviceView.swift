@@ -31,16 +31,16 @@ struct UnsupportedDeviceView: View {
         ZStack {
             LiquidPinkBackdrop()
             ScrollView {
-                VStack(spacing: 28) {
+                VStack(spacing: Space.l) {
                     Spacer().frame(height: 8)
 
                     Image(systemName: DeviceCompatibility.isiPad()
                           ? "ipad.and.iphone.slash"
                           : "iphone.slash")
-                        .font(.system(size: 52, weight: .thin))
+                        .font(.system(size: Space.xl, weight: .thin))
                         .foregroundColor(T.ink3)
 
-                    VStack(spacing: 10) {
+                    VStack(spacing: Space.s) {
                         Text("Device Not Supported")
                             .font(T.display(22, .semibold))
                             .foregroundColor(T.ink)
@@ -49,7 +49,7 @@ struct UnsupportedDeviceView: View {
                             .foregroundColor(T.ink2)
                             .multilineTextAlignment(.center)
                             .lineSpacing(3)
-                            .padding(.horizontal, 28)
+                            .padding(.horizontal, Space.l)
                     }
 
                     // iPhone column.
@@ -65,16 +65,16 @@ struct UnsupportedDeviceView: View {
                     )
 
                     // Diagnostic + "why".
-                    VStack(spacing: 6) {
+                    VStack(spacing: Space.xs) {
                         KMono(text: "WHY?", size: 10, color: T.ink4)
                         Text("Under 8 GB the OS evicts the model mid-inference and the app crashes or freezes. We'd rather block install than ship that experience.")
                             .font(T.sans(12))
                             .foregroundColor(T.ink3)
                             .multilineTextAlignment(.center)
                             .lineSpacing(3)
-                            .padding(.horizontal, 32)
+                            .padding(.horizontal, Space.l)
                         KMono(text: diagnosticLine, size: 9.5, color: T.ink4)
-                            .padding(.top, 6)
+                            .padding(.top, Space.xs)
                     }
 
                     Spacer().frame(height: 24)
@@ -85,13 +85,13 @@ struct UnsupportedDeviceView: View {
 
     @ViewBuilder
     private func supportedCard(title: String, items: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.s) {
             KMono(text: title.uppercased(), size: 10, color: T.ink4)
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 ForEach(items, id: \.self) { item in
-                    HStack(spacing: 8) {
+                    HStack(spacing: Space.s) {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.system(.caption2, weight: .semibold))
                             .foregroundColor(T.good)
                         Text(item)
                             .font(T.sans(13))
@@ -101,8 +101,8 @@ struct UnsupportedDeviceView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .kGlass(cornerRadius: 14, fallbackFill: T.surface)
-        .padding(.horizontal, 24)
+        .padding(Space.m)
+        .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
+        .padding(.horizontal, Space.l)
     }
 }

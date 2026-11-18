@@ -191,7 +191,7 @@ struct AssistantModelPickerView: View {
                     }
                     if downloadedOnly {
                         if downloadedOnlyAssistantModels.isEmpty {
-                            VStack(spacing: 18) {
+                            VStack(spacing: Space.m) {
                                 ContentUnavailableView(
                                     "No downloaded assistant models",
                                     systemImage: "internaldrive",
@@ -209,16 +209,16 @@ struct AssistantModelPickerView: View {
                                     Label("Browse Models", systemImage: "cube.box")
                                         .font(T.sans(15, .semibold))
                                         .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 13)
+                                        .padding(.vertical, Space.m)
                                 }
                                 .buttonStyle(.kPrimary)
                                 .tint(T.accent)
-                                .padding(.horizontal, 24)
+                                .padding(.horizontal, Space.l)
                             }
-                            .padding(.top, 48)
+                            .padding(.top, Space.xl)
                         } else {
                             modelSection(title: "Downloaded") {
-                                LazyVStack(spacing: 12) {
+                                LazyVStack(spacing: Space.s) {
                                     ForEach(downloadedOnlyAssistantModels) { model in
                                         row(for: model)
                                     }
@@ -252,7 +252,7 @@ struct AssistantModelPickerView: View {
                         customSection
                     }
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, Space.l)
             }
             .sheet(isPresented: $showLocalImport) {
                 LocalModelDocumentPicker(
@@ -333,11 +333,11 @@ struct AssistantModelPickerView: View {
             default:       return T.ink2
             }
         }()
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             Image(systemName: "thermometer.medium")
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(.subheadline, weight: .semibold))
                 .foregroundColor(color)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Space.hair) {
                 Text(text)
                     .font(T.mono(11, .semibold))
                     .foregroundColor(color)
@@ -349,17 +349,17 @@ struct AssistantModelPickerView: View {
             }
             Spacer()
         }
-        .padding(10)
-        .background(RoundedRectangle(cornerRadius: 6).fill(color.opacity(0.10)))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(color.opacity(0.4), lineWidth: 1))
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .padding(Space.s)
+        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(color.opacity(0.10)))
+        .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(color.opacity(0.4), lineWidth: 1))
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.s)
     }
 
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             KCaption(text: "ASSISTANT")
             KPageTitle(
                 title: downloadedOnly
@@ -377,11 +377,11 @@ struct AssistantModelPickerView: View {
                 .font(T.sans(13))
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 2)
+                .padding(.top, Space.hair)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.s)
     }
 
     private func recommendedSection(model: AssistantModel) -> some View {
@@ -394,18 +394,18 @@ struct AssistantModelPickerView: View {
                     dismiss()
                 }
             } label: {
-                HStack(alignment: .top, spacing: 10) {
+                HStack(alignment: .top, spacing: Space.s) {
                     Image(systemName: "sparkles")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.system(.body, weight: .semibold))
                         .foregroundColor(T.accent)
-                        .frame(width: 48, height: 48)
+                        .frame(width: Size.feature, height: Size.feature)
                         .background(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                                 .fill(T.accentSoft)
                         )
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(alignment: .center, spacing: 6) {
+                    VStack(alignment: .leading, spacing: Space.xs) {
+                        HStack(alignment: .center, spacing: Space.xs) {
                             KModelName(model.displayName,
                                        font: T.display(17, .semibold),
                                        color: T.ink)
@@ -434,12 +434,12 @@ struct AssistantModelPickerView: View {
                     Spacer(minLength: 4)
 
                     Image(systemName: "chevron.forward")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(.caption, weight: .semibold))
                         .foregroundColor(T.accent)
                 }
-                .padding(16)
+                .padding(Space.m)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface)
+                .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -517,7 +517,7 @@ struct AssistantModelPickerView: View {
         let recommendedID = recommendedAssistant?.id
         let remainingPresets = visiblePresets.filter { $0.id != recommendedID }
         return modelSection(title: "Models") {
-            LazyVStack(spacing: 12) {
+            LazyVStack(spacing: Space.s) {
                 ForEach(remainingPresets) { model in
                     row(for: model)
                 }
@@ -529,15 +529,15 @@ struct AssistantModelPickerView: View {
         title: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
+            HStack(spacing: Space.s) {
                 KCaption(text: title)
                 Rectangle().fill(T.rule).frame(height: 1)
             }
             content()
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 22)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.l)
     }
 
     @ViewBuilder
@@ -549,7 +549,7 @@ struct AssistantModelPickerView: View {
         let avgTPS = ModelUsageTracker.shared.avgTPS(for: model.id)
         let isDefault = settings.assistantModelID == model.id
 
-        VStack(alignment: .trailing, spacing: 8) {
+        VStack(alignment: .trailing, spacing: Space.s) {
             Button {
                 guard !isActivating else { return }
                 selectedID = model.id
@@ -565,12 +565,12 @@ struct AssistantModelPickerView: View {
                     dismiss()
                 }
             } label: {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: Space.s) {
+                    HStack(alignment: .top, spacing: Space.s) {
                         KVendorThumb(vendor: vendor, size: .card)
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(alignment: .center, spacing: 6) {
+                        VStack(alignment: .leading, spacing: Space.xxs) {
+                            HStack(alignment: .center, spacing: Space.xs) {
                                 KModelName(model.displayName,
                                            font: T.display(17, .semibold),
                                            color: T.ink)
@@ -598,14 +598,14 @@ struct AssistantModelPickerView: View {
                         ZStack {
                             Circle()
                                 .stroke(isSelected ? T.accent : T.rule2, lineWidth: 2)
-                                .frame(width: 22, height: 22)
+                                .frame(width: Size.glyph, height: Size.glyph)
                             if isSelected {
                                 Circle()
                                     .fill(T.accent)
                                     .frame(width: 12, height: 12)
                             }
                         }
-                        .padding(.top, 2)
+                        .padding(.top, Space.hair)
                     }
 
                     KFlowLayout(horizontalSpacing: 6, verticalSpacing: 6) {
@@ -631,15 +631,15 @@ struct AssistantModelPickerView: View {
                         }
                     }
                 }
-                .padding(16)
+                .padding(Space.m)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface)
+                .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
                 .overlay(
-                    RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                    RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                         .stroke(isSelected ? T.accent.opacity(0.35) : Color.clear,
                                 lineWidth: 1)
                 )
-                .contentShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
             }
             .buttonStyle(.plain)
 
@@ -673,10 +673,10 @@ struct AssistantModelPickerView: View {
     private func assistantFormatPill(text: String) -> some View {
         Text(text.uppercased())
             .font(T.mono(8.5, .semibold))
-            .tracking(0.6)
+            .tracking(TextScale.capsTracking)
             .foregroundColor(T.ink2)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2.5)
+            .padding(.horizontal, Space.xs)
+            .padding(.vertical, Space.hair)
             .background(Capsule().fill(T.ink2.opacity(0.10)))
             .overlay(Capsule().stroke(T.ink2.opacity(0.28), lineWidth: 0.5))
             .fixedSize(horizontal: true, vertical: false)
@@ -691,15 +691,14 @@ struct AssistantModelPickerView: View {
             case .wontFit:         return T.bad
             }
         }()
-        HStack(spacing: 4) {
+        HStack(spacing: Space.xxs) {
             Circle().fill(color).frame(width: 6, height: 6)
             Text(bytes.formattedBytes)
                 .font(T.mono(8.5, .semibold))
-                .tracking(0.4)
                 .foregroundColor(T.ink2)
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2.5)
+        .padding(.horizontal, Space.xs)
+        .padding(.vertical, Space.hair)
         .background(Capsule().fill(color.opacity(0.10)))
         .overlay(Capsule().stroke(color.opacity(0.32), lineWidth: 0.5))
         .fixedSize(horizontal: true, vertical: false)
@@ -708,16 +707,15 @@ struct AssistantModelPickerView: View {
     @ViewBuilder
     private func assistantPerfPill(tokensPerSecond: Double) -> some View {
         let label = String(format: "%.0f tok/s", tokensPerSecond)
-        HStack(spacing: 4) {
+        HStack(spacing: Space.xxs) {
             Image(systemName: "bolt.fill")
-                .font(.system(size: 8, weight: .bold))
+                .font(.system(.caption2, weight: .bold))
             Text(label)
                 .font(T.mono(8.5, .semibold))
-                .tracking(0.4)
         }
         .foregroundColor(T.accent)
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2.5)
+        .padding(.horizontal, Space.xs)
+        .padding(.vertical, Space.hair)
         .background(Capsule().fill(T.accent.opacity(0.10)))
         .overlay(Capsule().stroke(T.accent.opacity(0.32), lineWidth: 0.5))
         .fixedSize(horizontal: true, vertical: false)
@@ -725,16 +723,15 @@ struct AssistantModelPickerView: View {
 
     @ViewBuilder
     private func assistantCompatibilityPill(_ compatibility: ModelPlatformCompatibility) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: Space.xxs) {
             Image(systemName: compatibility.symbol)
-                .font(.system(size: 8, weight: .semibold))
+                .font(.system(.caption2, weight: .semibold))
             Text(LocalizedStringKey(compatibility.label))
                 .font(T.mono(8.5, .semibold))
-                .tracking(0.2)
         }
         .foregroundColor(T.ink2)
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2.5)
+        .padding(.horizontal, Space.xs)
+        .padding(.vertical, Space.hair)
         .background(Capsule().fill(T.ink2.opacity(0.08)))
         .overlay(Capsule().stroke(T.ink2.opacity(0.24), lineWidth: 0.5))
         .fixedSize(horizontal: true, vertical: false)
@@ -745,7 +742,7 @@ struct AssistantModelPickerView: View {
 
     private var downloadedSection: some View {
         modelSection(title: "Downloaded") {
-            LazyVStack(spacing: 12) {
+            LazyVStack(spacing: Space.s) {
                 ForEach(downloadedModels) { model in
                     row(for: assistantModel(from: model))
                 }
@@ -774,14 +771,14 @@ struct AssistantModelPickerView: View {
                 showLocalImport = true
                 HapticManager.impact(.light)
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "tray.and.arrow.down")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(.subheadline, weight: .medium))
                         .foregroundColor(T.good)
-                        .frame(width: 32, height: 32)
-                        .background(RoundedRectangle(cornerRadius: 6)
+                        .frame(width: Size.tile, height: Size.tile)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner)
                             .fill(T.good.opacity(0.12)))
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         Text("import from files")
                             .font(T.mono(13, .semibold))
                             .foregroundColor(T.ink)
@@ -794,12 +791,12 @@ struct AssistantModelPickerView: View {
                         ProgressView().tint(T.good).scaleEffect(0.7)
                     } else {
                         Image(systemName: "chevron.forward")
-                            .font(.system(size: 10))
+                            .font(.system(.caption2))
                             .foregroundColor(T.ink3)
                     }
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -843,7 +840,7 @@ struct AssistantModelPickerView: View {
 
     private var customSection: some View {
         KSection(title: "custom_repo") {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 KMono(text: "load any mlx-compatible model directly from huggingface.",
                        size: 10, color: T.ink3)
                     .fixedSize(horizontal: false, vertical: true)
@@ -851,9 +848,9 @@ struct AssistantModelPickerView: View {
                           text: $customRepoID)
                     .font(T.mono(11))
                     .foregroundColor(T.ink)
-                    .padding(8)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(T.surface2))
-                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.rule, lineWidth: 1))
+                    .padding(Space.s)
+                    .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface2))
+                    .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.rule, lineWidth: 1))
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
                 Button {
@@ -872,19 +869,19 @@ struct AssistantModelPickerView: View {
                         dismiss()
                     }
                 } label: {
-                    HStack(spacing: 5) {
+                    HStack(spacing: Space.xs) {
                         Image(systemName: "arrow.down.circle")
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.system(.caption2, weight: .medium))
                         Text("load this repo")
                             .font(T.mono(11, .semibold))
                     }
                     .foregroundColor(T.bg)
-                    .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(T.ink))
+                    .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                    .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
                 }
                 .buttonStyle(.plain)
             }
-            .padding(14)
+            .padding(Space.m)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
@@ -905,26 +902,26 @@ private struct ApplePrivateCloudPickerSection: View {
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
+            HStack(spacing: Space.s) {
                 KCaption(text: "APPLE PRIVATE CLOUD")
                 Rectangle().fill(T.rule).frame(height: 1)
             }
 
-            VStack(alignment: .trailing, spacing: 8) {
+            VStack(alignment: .trailing, spacing: Space.s) {
                 Button(action: onSelect) {
-                    HStack(alignment: .top, spacing: 12) {
+                    HStack(alignment: .top, spacing: Space.s) {
                         Image(systemName: "apple.intelligence")
-                            .font(.system(size: 22, weight: .semibold))
+                            .font(.system(.title2, weight: .semibold))
                             .foregroundStyle(T.accent)
-                            .frame(width: 48, height: 48)
+                            .frame(width: Size.feature, height: Size.feature)
                             .background(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                                     .fill(T.accentSoft)
                             )
 
-                        VStack(alignment: .leading, spacing: 5) {
-                            HStack(spacing: 6) {
+                        VStack(alignment: .leading, spacing: Space.xs) {
+                            HStack(spacing: Space.xs) {
                                 KModelName(
                                     ApplePrivateCloud.displayName,
                                     font: T.display(17, .semibold),
@@ -952,14 +949,14 @@ private struct ApplePrivateCloudPickerSection: View {
                             ProgressView().controlSize(.small)
                         } else {
                             Image(systemName: "chevron.forward")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.system(.caption, weight: .semibold))
                                 .foregroundStyle(T.accent)
                         }
                     }
-                    .padding(16)
+                    .padding(Space.m)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface)
-                    .contentShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
+                    .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
+                    .contentShape(RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .disabled(isActivating)
@@ -1000,8 +997,8 @@ private struct ApplePrivateCloudPickerSection: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 22)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.l)
     }
 
     private var statusTitle: String {
@@ -1070,9 +1067,9 @@ private struct ApplePrivateCloudPrivacyDisclosureView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: Space.m) {
                     Image(systemName: "lock.icloud.fill")
-                        .font(.system(size: 38, weight: .semibold))
+                        .font(.system(size: Space.xl, weight: .semibold))
                         .foregroundStyle(T.accent)
 
                     Text("Use Apple Private Cloud")
@@ -1085,7 +1082,7 @@ private struct ApplePrivateCloudPrivacyDisclosureView: View {
                     .font(T.sans(15))
                     .foregroundStyle(T.ink2)
 
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: Space.s) {
                         disclosureRow(
                             symbol: "text.bubble",
                             text: "This can include recent messages, system instructions, and text extracted from files, web pages, or images."
@@ -1107,12 +1104,12 @@ private struct ApplePrivateCloudPrivacyDisclosureView: View {
                         Text("Agree and Continue")
                             .font(T.sans(15, .semibold))
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 13)
+                            .padding(.vertical, Space.m)
                     }
                     .buttonStyle(.kPrimary)
                     .tint(T.accent)
                 }
-                .padding(22)
+                .padding(Space.l)
             }
             .background(LiquidPinkBackdrop())
             .toolbar {

@@ -27,9 +27,9 @@ struct VoiceRouteControl: View {
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Space.xs) {
             Image(systemName: sessionManager.route.symbolName)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(.caption2, weight: .semibold))
                 .foregroundStyle(T.ink2)
             Text(sessionManager.route.displayName)
                 .font(T.mono(10.5, .semibold))
@@ -37,12 +37,12 @@ struct VoiceRouteControl: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
             AudioRoutePicker(tintColor: UIColor(T.ink2))
-                .frame(width: 28, height: 28)
+                .frame(width: Size.control, height: Size.control)
                 .accessibilityLabel("Audio output route")
                 .accessibilityHint("Opens system route picker")
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.horizontal, Space.s)
+        .padding(.vertical, Space.xxs)
         .background(
             Capsule().fill(T.surface)
                 .overlay(Capsule().stroke(T.rule, lineWidth: 0.5))

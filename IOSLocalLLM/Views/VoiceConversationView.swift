@@ -50,7 +50,7 @@ struct VoiceConversationView: View {
                 backdrop.ignoresSafeArea()
 
                 ScrollView {
-                    VStack(spacing: 14) {
+                    VStack(spacing: Space.m) {
                         topBar
                         identityRows
                         statusRow
@@ -80,18 +80,18 @@ struct VoiceConversationView: View {
                         }
                         Spacer(minLength: 24)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 4)
+                    .padding(.horizontal, Space.m)
+                    .padding(.top, Space.xxs)
                     .frame(minHeight: proxy.size.height - 100)
                     .frame(maxWidth: AppLayout.readingWidth)
                     .frame(maxWidth: .infinity)
                 }
                 .safeAreaInset(edge: .bottom) {
                     controlDock
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, Space.m)
                         .avoidingDisplayDivision()
-                        .padding(.bottom, 10)
-                        .padding(.top, 8)
+                        .padding(.bottom, Space.s)
+                        .padding(.top, Space.s)
                         .background(.ultraThinMaterial.opacity(0.92))
                 }
             }
@@ -198,7 +198,7 @@ struct VoiceConversationView: View {
     // MARK: - Top bar
 
     private var topBar: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             conversationModelStrip
             Spacer(minLength: 8)
             #if DEBUG
@@ -220,14 +220,13 @@ struct VoiceConversationView: View {
         Menu {
             modelStripMenuContent
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 Circle()
                     .fill(assistantStatusColor)
                     .frame(width: 7, height: 7)
                     .shadow(color: assistantStatusColor.opacity(0.5), radius: 3)
                 Text("Conversation")
                     .font(T.mono(9, .semibold))
-                    .tracking(0.4)
                     .foregroundColor(T.ink3)
                 Text("·")
                     .font(T.mono(10))
@@ -240,11 +239,11 @@ struct VoiceConversationView: View {
                     .frame(maxWidth: 160, alignment: .leading)
                 Spacer(minLength: 4)
                 Image(systemName: "chevron.up.chevron.down")
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.system(.caption2, weight: .semibold))
                     .foregroundColor(T.ink3)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
+            .padding(.horizontal, Space.s)
+            .padding(.vertical, Space.xs)
             .kGlassCapsule(fallbackFill: T.surface)
             .contentShape(Capsule())
         }
@@ -258,8 +257,8 @@ struct VoiceConversationView: View {
     /// the strip) is never mistaken for a voice. The strip already names the
     /// model; repeating it here was redundant chrome.
     private var identityRows: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
+            HStack(spacing: Space.xs) {
                 Text("Voice")
                     .font(T.mono(9, .semibold))
                     .foregroundStyle(T.ink3)
@@ -384,9 +383,9 @@ struct VoiceConversationView: View {
                              action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(.footnote, weight: .semibold))
                 .foregroundColor(T.ink2)
-                .frame(width: 44, height: 44)
+                .frame(width: Size.control, height: Size.control)
                 .kClearGlass(in: Circle(), fallbackFill: T.surface)
         }
         .buttonStyle(.plain)
@@ -396,8 +395,8 @@ struct VoiceConversationView: View {
     // MARK: - Status row (TTS readiness)
 
     private var statusRow: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
+            HStack(spacing: Space.s) {
                 readinessChip
                 engineChip
                 if !assistant.activeModel.supportsNativeAudio && voiceControls.isFallbackEngine {
@@ -409,11 +408,11 @@ struct VoiceConversationView: View {
 
             if isLargeVoiceModel { largeModelHint }
 
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 VoiceRouteControl(sessionManager: routeManager)
                 Spacer(minLength: 0)
                 if voice.isPlaying {
-                    HStack(spacing: 4) {
+                    HStack(spacing: Space.xxs) {
                         Circle()
                             .fill(T.good)
                             .frame(width: 6, height: 6)
@@ -438,9 +437,9 @@ struct VoiceConversationView: View {
     }
 
     private var largeModelHint: some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .top, spacing: Space.s) {
             Image(systemName: "tortoise.fill")
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(.caption2, weight: .semibold))
                 .foregroundStyle(T.warn)
             Text(loc.t("Large model: replies will be slower and the phone may warm up. A model of 1.5B or smaller works best for voice."))
                 .font(T.sans(11.5))
@@ -450,11 +449,11 @@ struct VoiceConversationView: View {
             Button(loc.t("Change")) { showModelPicker = true }
                 .font(T.mono(10.5, .semibold))
                 .foregroundStyle(T.accent)
-                .padding(.vertical, 6)
+                .padding(.vertical, Space.xs)
                 .contentShape(Rectangle())   // the bare label was an ~11 pt tap target
         }
-        .padding(10)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(T.warn.opacity(0.08)))
+        .padding(Space.s)
+        .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous).fill(T.warn.opacity(0.08)))
     }
 
     #if DEBUG
@@ -463,7 +462,7 @@ struct VoiceConversationView: View {
         let perf = VoicePerformanceMonitor.shared.snapshot
         let audio = AudioPlaybackSnapshotStore.shared.load()
         let session = AVAudioSession.sharedInstance()
-        return VStack(alignment: .leading, spacing: 2) {
+        return VStack(alignment: .leading, spacing: Space.hair) {
             Text("Timing: \(snap.timingSource?.diagnosticLabel ?? "—")")
             Text(String(format: "Playback UI: %.2f / %.2f s", snap.currentTime, snap.duration))
             Text(String(
@@ -497,9 +496,9 @@ struct VoiceConversationView: View {
         }
         .font(T.mono(9))
         .foregroundStyle(T.ink3)
-        .padding(8)
+        .padding(Space.s)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 8).fill(T.surface.opacity(0.9)))
+        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface.opacity(0.9)))
         .accessibilityHidden(true)
     }
     #endif
@@ -530,14 +529,14 @@ struct VoiceConversationView: View {
     }
 
     private var engineChip: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: Space.xs) {
             Image(systemName: engineSymbol)
-                .font(.system(size: 9, weight: .semibold))
+                .font(.system(.caption2, weight: .semibold))
             Text(engineLabel)
                 .font(T.mono(9.5, .semibold))
         }
         .foregroundColor(T.ink3)
-        .padding(.horizontal, 7).padding(.vertical, 3)
+        .padding(.horizontal, Space.xs).padding(.vertical, Space.xxs)
         .background(
             Capsule().fill(T.surface)
                 .overlay(Capsule().stroke(T.rule, lineWidth: 0.5))
@@ -554,7 +553,7 @@ struct VoiceConversationView: View {
         Text(text)
             .font(T.mono(9, .semibold))
             .foregroundStyle(color)
-            .padding(.horizontal, 7).padding(.vertical, 3)
+            .padding(.horizontal, Space.xs).padding(.vertical, Space.xxs)
             .background(
                 Capsule().fill(color.opacity(0.12))
                     .overlay(Capsule().stroke(color.opacity(0.35), lineWidth: 0.5))
@@ -565,20 +564,20 @@ struct VoiceConversationView: View {
         Button {
             runAudioTest()
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: Space.xxs) {
                 if testTTSInFlight {
                     ProgressView()
                         .scaleEffect(0.55)
                         .tint(T.accent)
                 } else {
                     Image(systemName: "speaker.wave.2")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(.caption2, weight: .semibold))
                 }
                 Text(loc.t("test audio"))
                     .font(T.mono(9.5, .semibold))
             }
             .foregroundColor(T.accent)
-            .padding(.horizontal, 8).padding(.vertical, 4)
+            .padding(.horizontal, Space.s).padding(.vertical, Space.xxs)
             .background(
                 Capsule().fill(T.accentSoft)
                     .overlay(Capsule().stroke(T.accent.opacity(0.3), lineWidth: 0.5))
@@ -650,7 +649,7 @@ struct VoiceConversationView: View {
     // MARK: - Transcript
 
     private var transcriptArea: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: Space.s) {
             if !conv.liveTranscript.isEmpty {
                 VoiceUserTranscriptBubble(text: conv.liveTranscript)
             }
@@ -670,7 +669,7 @@ struct VoiceConversationView: View {
                     .foregroundColor(T.ink3)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
-                    .padding(.top, 4)
+                    .padding(.top, Space.xxs)
             }
         }
         .animation(.easeInOut(duration: 0.2), value: conv.liveTranscript)
@@ -738,7 +737,7 @@ struct VoiceConversationView: View {
     }
 
     private func failureBanner(_ msg: String) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Space.s) {
             Text(msg)
                 .font(T.sans(13))
                 .foregroundColor(T.bad)
@@ -750,7 +749,7 @@ struct VoiceConversationView: View {
                 }
                 .font(T.mono(11, .semibold))
                 .foregroundStyle(T.accent)
-                .padding(.horizontal, 16).padding(.vertical, 10)
+                .padding(.horizontal, Space.m).padding(.vertical, Space.s)
                 .contentShape(Rectangle())
             } else {
                 Button(loc.t("Retry")) {
@@ -758,19 +757,19 @@ struct VoiceConversationView: View {
                 }
                 .font(T.mono(11, .semibold))
                 .foregroundStyle(T.accent)
-                .padding(.horizontal, 16).padding(.vertical, 10)
+                .padding(.horizontal, Space.m).padding(.vertical, Space.s)
                 .contentShape(Rectangle())
             }
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .kGlass(cornerRadius: 14, fallbackFill: T.surface)
+        .kGlass(cornerRadius: Radius.control, fallbackFill: T.surface)
     }
 
     // MARK: - Control dock
 
     private var controlDock: some View {
-        HStack(spacing: 18) {
+        HStack(spacing: Space.m) {
             dockButton(
                 systemImage: "xmark",
                 label: loc.t("end"),
@@ -811,11 +810,11 @@ struct VoiceConversationView: View {
             } else if conv.phase == .listening {
                 // Status, not a button: listening is automatic. The old
                 // greyed-out disabled mic read as "mic is off".
-                VStack(spacing: 6) {
+                VStack(spacing: Space.xs) {
                     Image(systemName: "mic.fill")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.system(.body, weight: .semibold))
                         .foregroundStyle(T.accent)
-                        .frame(width: 48, height: 48)
+                        .frame(width: Size.feature, height: Size.feature)
                         .background(Circle().fill(T.accent.opacity(0.14)))
                     Text(loc.t("listening"))
                         .font(T.mono(10, .semibold))
@@ -838,13 +837,13 @@ struct VoiceConversationView: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
         .background(
-            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                 .fill(.ultraThinMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                    RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                         .stroke(T.rule.opacity(0.6), lineWidth: 0.5)
                 )
         )
@@ -867,11 +866,11 @@ struct VoiceConversationView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            VStack(spacing: 6) {
+            VStack(spacing: Space.xs) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                     .foregroundStyle(tint)
-                    .frame(width: 48, height: 48)
+                    .frame(width: Size.feature, height: Size.feature)
                     .background(Circle().fill(tint.opacity(0.14)))
                 Text(label)
                     .font(T.mono(10, .semibold))
@@ -1036,7 +1035,7 @@ private struct VoiceModelPickerSheet: View {
                     }
                     footnote
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, Space.l)
             }
             .background(LiquidPinkBackdrop())
             .navigationBarTitleDisplayMode(.inline)
@@ -1073,20 +1072,20 @@ private struct VoiceModelPickerSheet: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             KCaption(text: loc.t("VOICE"))
             KPageTitle(title: loc.t("voice model"), size: 28)
             KMono(text: loc.t("the llm used while you're in voice conversation mode"),
                   size: 11, color: T.ink3)
-                .padding(.top, 2)
+                .padding(.top, Space.hair)
             KMono(text: loc.t("tip: a smaller model replies faster — latency matters more than raw smarts in a spoken back-and-forth"),
                   size: 10, color: T.ink3)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.xxs)
     }
 
     private var matchChatTabRow: some View {
@@ -1095,9 +1094,9 @@ private struct VoiceModelPickerSheet: View {
             Button {
                 pick(nil)
             } label: {
-                HStack(spacing: 10) {
+                HStack(spacing: Space.s) {
                     radio(isSelected: isMatching)
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         Text(loc.t("match chat tab"))
                             .font(T.mono(13, .semibold))
                             .foregroundColor(T.ink)
@@ -1106,7 +1105,7 @@ private struct VoiceModelPickerSheet: View {
                     }
                     Spacer()
                 }
-                .padding(.horizontal, 14).padding(.vertical, 12)
+                .padding(.horizontal, Space.m).padding(.vertical, Space.s)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -1146,9 +1145,9 @@ private struct VoiceModelPickerSheet: View {
                 pick(modelID)
             }
         } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: Space.s) {
                 radio(isSelected: isSelected)
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Space.hair) {
                     Text(name)
                         .font(T.mono(13, .semibold))
                         .foregroundColor(T.ink)
@@ -1159,12 +1158,12 @@ private struct VoiceModelPickerSheet: View {
                 Spacer()
                 if needsDownload != nil {
                     Image(systemName: "arrow.down.circle")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .foregroundStyle(T.ink3)
                         .accessibilityLabel(loc.t("Download"))
                 }
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
+            .padding(.horizontal, Space.m).padding(.vertical, Space.s)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -1173,7 +1172,7 @@ private struct VoiceModelPickerSheet: View {
     private func radio(isSelected: Bool) -> some View {
         ZStack {
             Circle().stroke(isSelected ? T.accent : T.rule2, lineWidth: 1.5)
-                .frame(width: 16, height: 16)
+                .frame(width: Size.glyph, height: Size.glyph)
             if isSelected {
                 Circle().fill(T.accent).frame(width: 9, height: 9)
             }
@@ -1186,8 +1185,8 @@ private struct VoiceModelPickerSheet: View {
             size: 10, color: T.ink3
         )
         .fixedSize(horizontal: false, vertical: true)
-        .padding(.horizontal, 16)
-        .padding(.top, 14)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.m)
     }
 }
 

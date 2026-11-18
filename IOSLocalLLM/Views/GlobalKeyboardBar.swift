@@ -22,19 +22,18 @@ struct GlobalKeyboardBar: View {
                         KeyboardDismiss.now()
                         HapticManager.impact(.light)
                     } label: {
-                        HStack(spacing: 5) {
+                        HStack(spacing: Space.xs) {
                             Image(systemName: "keyboard.chevron.compact.down")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.system(.caption, weight: .medium))
                             Text("done")
                                 .font(T.mono(12, .semibold))
-                                .tracking(0.3)
                         }
                         .foregroundColor(T.ink)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
-                        .kGlass(cornerRadius: 6, fallbackFill: T.surface)
+                        .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                        .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
                     }
                     .buttonStyle(.plain)
-                    .padding(.trailing, 12)
+                    .padding(.trailing, Space.s)
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 38)

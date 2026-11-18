@@ -32,7 +32,7 @@ struct LegalAcceptanceView: View {
             LiquidPinkBackdrop()
 
             ScrollView {
-                VStack(spacing: 16) {
+                VStack(spacing: Space.m) {
                     headerView
                     Spacer().frame(height: 4)
                     rowFor(title: "privacy policy",
@@ -73,17 +73,16 @@ struct LegalAcceptanceView: View {
                             Text("agree and continue".tr)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .font(T.mono(14, .semibold))
-                                .tracking(0.3)
                             Spacer()
                             Text("↵")
                                 .font(T.mono(11))
                                 .foregroundColor(T.ink4)
                         }
                         .foregroundColor(canContinue ? T.bg : T.ink3)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
+                        .padding(.horizontal, Space.m)
+                        .padding(.vertical, Space.s)
                         .frame(minHeight: 50)
-                        .background(RoundedRectangle(cornerRadius: 10)
+                        .background(RoundedRectangle(cornerRadius: Radius.control)
                             .fill(canContinue ? T.ink : T.surface2))
                     }
                     .buttonStyle(.plain)
@@ -95,10 +94,10 @@ struct LegalAcceptanceView: View {
                         .font(T.sans(11))
                         .foregroundColor(T.ink3)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 6)
+                        .padding(.horizontal, Space.xs)
                 }
-                .padding(.horizontal, 22)
-                .padding(.vertical, 30)
+                .padding(.horizontal, Space.l)
+                .padding(.vertical, Space.l)
             }
         }
         // Each doc counts as "read" ONLY after the user scrolls to the end and
@@ -138,11 +137,11 @@ struct LegalAcceptanceView: View {
     // MARK: - Sub-views
 
     private var headerView: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             if !dynamicTypeSize.isAccessibilitySize {
                 KWordmark(name: "OnDevice LLM", logoAsset: "app_logo_small")
             }
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Space.xxs) {
                 KCaption(text: "first launch".tr)
                 Text("Before\nyou start.".tr)
                     .font(T.display(34, .semibold))
@@ -151,7 +150,7 @@ struct LegalAcceptanceView: View {
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.top, 8)
+            .padding(.top, Space.s)
             Text("Review the four documents below. Tap each to read.".tr)
                 .font(T.sans(13))
                 .foregroundColor(T.ink2)
@@ -170,14 +169,14 @@ struct LegalAcceptanceView: View {
         openAction: @escaping () -> Void
     ) -> some View {
         Button(action: openAction) {
-            HStack(spacing: 12) {
+            HStack(spacing: Space.s) {
                 Image(systemName: icon)
-                    .font(.system(size: 14))
+                    .font(.system(.subheadline))
                     .foregroundColor(tint)
-                    .frame(width: 32, height: 32)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(tint.opacity(0.12)))
+                    .frame(width: Size.tile, height: Size.tile)
+                    .background(RoundedRectangle(cornerRadius: Radius.inner).fill(tint.opacity(0.12)))
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Space.hair) {
                     KMono(text: title.tr, size: 13, weight: .semibold, color: T.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     KMono(text: subtitle.tr, size: 10, color: T.ink3)
@@ -193,13 +192,13 @@ struct LegalAcceptanceView: View {
                 } else {
                     Image(systemName: "chevron.forward")
                         .foregroundColor(T.ink3)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(.caption, weight: .medium))
                 }
             }
-            .padding(12)
+            .padding(Space.s)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .kGlass(cornerRadius: 8, fallbackFill: T.surface)
-            .overlay(RoundedRectangle(cornerRadius: 8)
+            .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
+            .overlay(RoundedRectangle(cornerRadius: Radius.inner)
                 .stroke(accepted.wrappedValue ? T.good.opacity(0.5) : Color.clear, lineWidth: 1))
         }
         .buttonStyle(.plain)

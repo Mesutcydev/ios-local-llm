@@ -28,7 +28,7 @@ struct KCapabilityPill: View {
                 .font(.system(size: glyphSize, weight: .bold))
             Text(localization.t(capability.label).uppercased(with: localization.resolvedLocale))
                 .font(T.mono(textSize, .semibold))
-                .tracking(0.6)
+                .tracking(TextScale.capsTracking)
         }
         .foregroundColor(capability.tint)
         .padding(.horizontal, hPad)
@@ -140,7 +140,7 @@ struct KVendorThumb: View {
                     .foregroundColor(.white)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, Space.xxs)
             }
         }
         .frame(width: size.px, height: size.px)
@@ -168,10 +168,10 @@ struct KVendorThumb: View {
 #if DEBUG
 private struct CapabilityPillPreview: View {
     var body: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: Space.m) {
             KCapabilityPillRow(capabilities: [.recommended, .best, .newRelease,
                                               .vision, .thinking, .gated])
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 KVendorThumb(vendor: .apple, size: .row)
                 KVendorThumb(vendor: .google, size: .row)
                 KVendorThumb(vendor: .mistral, size: .row)
@@ -182,7 +182,7 @@ private struct CapabilityPillPreview: View {
                 KVendorThumb(vendor: .mlxCommunity, size: .row)
                 KVendorThumb(vendor: .liquid, size: .row)
             }
-            HStack(spacing: 12) {
+            HStack(spacing: Space.s) {
                 KVendorThumb(vendor: .qwen, size: .card)
                 KVendorThumb(vendor: .google, size: .hero)
             }

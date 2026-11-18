@@ -51,7 +51,7 @@ struct AnalysisPanelView: View {
                 }
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
-                .padding(.vertical, 8)
+                .padding(.vertical, Space.s)
 
                 Divider().background(Color.white.opacity(0.1))
 
@@ -63,7 +63,7 @@ struct AnalysisPanelView: View {
             }
         }
         .background(
-            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                 .fill(T.bg)
                 .ignoresSafeArea()
         )
@@ -111,10 +111,10 @@ struct AnalysisPanelView: View {
     // MARK: - Header
 
     private var headerView: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: Space.s) {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
+                    HStack(spacing: Space.xs) {
                         Text("analysis")
                             .font(T.display(17, .semibold))
                             .tracking(-0.4)
@@ -129,7 +129,7 @@ struct AnalysisPanelView: View {
                             sourcePill(label: "fastvlm", color: T.good)
                         }
                     }
-                    HStack(spacing: 6) {
+                    HStack(spacing: Space.xs) {
                         KMono(text: result.detection.label, size: 11, color: T.ink3)
                             .lineLimit(1)
                         KMono(text: "·", size: 11, color: T.ink4)
@@ -142,7 +142,7 @@ struct AnalysisPanelView: View {
                 KIconButton(
                     icon: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.system(.caption2, weight: .medium))
                             .foregroundColor(T.ink)
                     },
                     action: {
@@ -156,8 +156,8 @@ struct AnalysisPanelView: View {
             // inline action button beneath it when the result carries
             // a SuggestedAction (passive error → one-tap recovery).
             if let reason = result.fallbackReason {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(alignment: .top, spacing: 8) {
+                VStack(alignment: .leading, spacing: Space.s) {
+                    HStack(alignment: .top, spacing: Space.s) {
                         Text("◉")
                             .font(T.mono(11))
                             .foregroundColor(T.warn)
@@ -170,10 +170,10 @@ struct AnalysisPanelView: View {
                         suggestedActionButton(action)
                     }
                 }
-                .padding(10)
+                .padding(Space.s)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 6).fill(T.warn.opacity(0.08)))
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.warn.opacity(0.3), lineWidth: 1))
+                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.warn.opacity(0.08)))
+                .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.warn.opacity(0.3), lineWidth: 1))
             }
 
             // Action row — adapts to mode. Horizontal scroll keeps all buttons
@@ -181,7 +181,7 @@ struct AnalysisPanelView: View {
             let hasContent = !result.extractedCode.isEmpty
             if hasContent {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: Space.s) {
                     // Primary: Ask Assistant — Studio ink-on-bg fill
                     Button {
                         HapticManager.impact(.medium)
@@ -190,16 +190,15 @@ struct AnalysisPanelView: View {
                         bridge.sendToAssistant(code: result.extractedCode, source: source)
                         withAnimation { isPresented = false }
                     } label: {
-                        HStack(spacing: 6) {
+                        HStack(spacing: Space.xs) {
                             Image(systemName: "brain")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.system(.caption, weight: .medium))
                             Text("ask assistant")
                                 .font(T.mono(12, .semibold))
-                                .tracking(0.2)
                         }
                         .foregroundColor(T.bg)
-                        .padding(.horizontal, 12).padding(.vertical, 8)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(T.ink))
+                        .padding(.horizontal, Space.s).padding(.vertical, Space.s)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
                     }
                     .buttonStyle(.plain)
 
@@ -208,15 +207,15 @@ struct AnalysisPanelView: View {
                         shareItems = [result.fullMarkdown]
                         showShareSheet = true
                     } label: {
-                        HStack(spacing: 5) {
+                        HStack(spacing: Space.xs) {
                             Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 12))
+                                .font(.system(.caption))
                             Text("share")
                                 .font(T.mono(12))
                         }
                         .foregroundColor(T.ink2)
-                        .padding(.horizontal, 10).padding(.vertical, 8)
-                        .kGlass(cornerRadius: 6, fallbackFill: T.surface)
+                        .padding(.horizontal, Space.s).padding(.vertical, Space.s)
+                        .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
                     }
                     .buttonStyle(.plain)
 
@@ -231,7 +230,7 @@ struct AnalysisPanelView: View {
                     KIconButton(
                         icon: {
                             Image(systemName: "doc.on.doc")
-                                .font(.system(size: 12))
+                                .font(.system(.caption))
                                 .foregroundColor(T.ink2)
                         },
                         action: {
@@ -241,29 +240,28 @@ struct AnalysisPanelView: View {
                         accessibilityLabel: "Copy extracted code"
                     )
                     }   // HStack
-                    .padding(.trailing, 4)
+                    .padding(.trailing, Space.xxs)
                 }       // ScrollView
             }
         }
         .padding(.horizontal)
-        .padding(.top, 12)
-        .padding(.bottom, 8)
+        .padding(.top, Space.s)
+        .padding(.bottom, Space.s)
     }
 
     /// Mode-source pill (FastVLM / OCR / Vision / streaming) — flat.
     @ViewBuilder
     private func sourcePill(label: String, color: Color) -> some View {
-        HStack(spacing: 3) {
+        HStack(spacing: Space.xxs) {
             if label == "streaming" {
                 Circle().fill(color).frame(width: 5, height: 5)
                     .modifier(BlinkModifier())
             }
             Text(label)
                 .font(T.mono(9, .semibold))
-                .tracking(0.5)
         }
         .foregroundColor(color)
-        .padding(.horizontal, 5)
+        .padding(.horizontal, Space.xs)
         .padding(.vertical, 1)
         .background(RoundedRectangle(cornerRadius: 3).fill(color.opacity(0.12)))
     }
@@ -274,20 +272,20 @@ struct AnalysisPanelView: View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: Space.m) {
                         // Tappable area to dismiss keyboard
                         Color.clear.frame(height: 0)
                         if result.extractedCode.isEmpty && result.isStreaming {
-                            HStack(spacing: 6) {
+                            HStack(spacing: Space.xs) {
                                 StreamingCaret()
                                 KMono(text: "describing scene…", size: 11, color: T.ink3)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding()
                         } else if result.extractedCode.isEmpty {
-                            VStack(spacing: 12) {
+                            VStack(spacing: Space.s) {
                                 Image(systemName: "eye.slash")
-                                    .font(.system(size: 28))
+                                    .font(.system(.title))
                                     .foregroundColor(T.ink3)
                                 Text(result.fallbackReason ?? "FastVLM pipeline required for Visual mode.")
                                     .font(T.sans(12))
@@ -296,7 +294,7 @@ struct AnalysisPanelView: View {
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                             .frame(maxWidth: .infinity)
-                            .padding(.top, 40)
+                            .padding(.top, Space.xl)
                         } else {
                             // Scene description (with caret while streaming)
                             VStack(alignment: .leading, spacing: 0) {
@@ -311,12 +309,12 @@ struct AnalysisPanelView: View {
                                     .fixedSize(horizontal: false, vertical: true)
                                     .modifier(StreamSafeTextSelection(streaming: result.isStreaming))
                                 if result.isStreaming {
-                                    StreamingCaret().padding(.top, 4)
+                                    StreamingCaret().padding(.top, Space.xxs)
                                 }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding()
-                            .kGlass(cornerRadius: 8, fallbackFill: T.surface)
+                            .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
 
                             // Q&A exchanges
                             ForEach(result.questionAnswers) { qa in
@@ -347,12 +345,12 @@ struct AnalysisPanelView: View {
 
     @ViewBuilder
     private func qaBubble(_ qa: AnalysisResult.QAExchange) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             // USER ───────
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 Text("USER")
                     .font(T.mono(9))
-                    .tracking(0.5)
+                    .tracking(TextScale.capsTracking)
                     .foregroundColor(T.ink3)
                 Rectangle().fill(T.rule).frame(height: 1)
             }
@@ -363,10 +361,9 @@ struct AnalysisPanelView: View {
                 .textSelection(.enabled)
 
             // QWEN ← ─────
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 Text("QWEN ←")
                     .font(T.mono(9, .semibold))
-                    .tracking(0.5)
                     .foregroundColor(T.accent)
                 Rectangle().fill(T.rule).frame(height: 1)
                 if qa.isStreaming {
@@ -375,7 +372,7 @@ struct AnalysisPanelView: View {
                         .foregroundColor(T.warn)
                 }
             }
-            HStack(alignment: .bottom, spacing: 4) {
+            HStack(alignment: .bottom, spacing: Space.xxs) {
                 Text(qa.answer.isEmpty && qa.isStreaming ? "thinking…" : qa.answer)
                     .font(T.sans(13))
                     .foregroundColor(T.ink)
@@ -384,9 +381,9 @@ struct AnalysisPanelView: View {
                 if qa.isStreaming { StreamingCaret() }
             }
         }
-        .padding(12)
+        .padding(Space.s)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .kGlass(cornerRadius: 8, fallbackFill: T.surface)
+        .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
     }
 
     // MARK: - Ask Question bar
@@ -398,9 +395,9 @@ struct AnalysisPanelView: View {
                 Rectangle().fill(T.rule).frame(height: 1)
 
                 // Question text field — matches the assistant chat composer
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "questionmark.bubble")
-                        .font(.system(size: 13))
+                        .font(.system(.footnote))
                         .foregroundColor(T.ink3)
                     TextField("ask about this image…",
                               text: $pendingQuestion,
@@ -413,16 +410,16 @@ struct AnalysisPanelView: View {
                         .submitLabel(.send)
                         .onSubmit { submitQuestion() }
                 }
-                .padding(12)
+                .padding(Space.s)
                 .background(
-                    RoundedRectangle(cornerRadius: 12).fill(T.surface)
+                    RoundedRectangle(cornerRadius: Radius.control).fill(T.surface)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: Radius.control)
                         .stroke(questionFocused ? T.accent.opacity(0.55) : T.rule, lineWidth: 1)
                 )
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, Space.s)
+                .padding(.vertical, Space.s)
                 .animation(.easeOut(duration: 0.15), value: questionFocused)
 
                 // Studio-themed toolbar above the keyboard (only while focused)
@@ -465,10 +462,10 @@ struct AnalysisPanelView: View {
 
     private var codeTab: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 if result.extractedCode.isEmpty && result.isStreaming {
                     // Streaming placeholder
-                    HStack(spacing: 6) {
+                    HStack(spacing: Space.xs) {
                         StreamingCaret()
                         KMono(text: "waiting for first token…", size: 11, color: T.ink3)
                     }
@@ -484,28 +481,28 @@ struct AnalysisPanelView: View {
                             )
                             if result.isStreaming {
                                 StreamingCaret()
-                                    .padding(.top, 2)
+                                    .padding(.top, Space.hair)
                             }
                         }
                         .padding()
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(
-                            RoundedRectangle(cornerRadius: 8).fill(T.surface)
+                            RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface)
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: 8).stroke(T.rule, lineWidth: 1)
+                            RoundedRectangle(cornerRadius: Radius.inner).stroke(T.rule, lineWidth: 1)
                         )
 
                         if !result.isStreaming {
                             Button { showCodeEditor = true } label: {
                                 Image(systemName: "pencil")
-                                    .font(.system(size: 11))
-                                    .padding(6)
+                                    .font(.system(.caption2))
+                                    .padding(Space.xs)
                                     .background(RoundedRectangle(cornerRadius: 4).fill(T.surface2))
                                     .overlay(RoundedRectangle(cornerRadius: 4).stroke(T.rule, lineWidth: 1))
                                     .foregroundColor(T.ink2)
                             }
-                            .padding(8)
+                            .padding(Space.s)
                         }
                     }
                 }
@@ -528,7 +525,7 @@ struct AnalysisPanelView: View {
     private var reviewWithQATab: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: Space.s) {
                     if !result.reviewMarkdown.isEmpty {
                         MarkdownTextView(markdown: result.reviewMarkdown)
                     } else if result.questionAnswers.isEmpty {
@@ -579,16 +576,15 @@ struct AnalysisPanelView: View {
             HapticManager.impact(.light)
             handleSuggestedAction(action)
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: icon)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(.caption2, weight: .semibold))
                 Text(label)
                     .font(T.mono(11, .semibold))
-                    .tracking(0.3)
             }
             .foregroundColor(tint)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .padding(.horizontal, Space.s)
+            .padding(.vertical, Space.xs)
             .background(Capsule().fill(tint.opacity(0.12)))
             .overlay(Capsule().stroke(tint.opacity(0.40), lineWidth: 0.5))
         }
@@ -681,7 +677,7 @@ struct MarkdownTextView: View {
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in block }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -756,9 +752,9 @@ struct MarkdownTextView: View {
                         Text(code)
                             .font(T.mono(11))
                             .foregroundColor(T.ink)
-                            .padding(10).frame(maxWidth: .infinity, alignment: .leading)
-                            .background(RoundedRectangle(cornerRadius: 6).fill(T.surface))
-                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.rule, lineWidth: 1))
+                            .padding(Space.s).frame(maxWidth: .infinity, alignment: .leading)
+                            .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface))
+                            .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.rule, lineWidth: 1))
                     ))
                     codeLines = []; inCodeBlock = false
                 } else { inCodeBlock = true }
@@ -778,12 +774,12 @@ struct MarkdownTextView: View {
                 .font(T.display(20, .semibold))
                 .tracking(-0.5)
                 .foregroundColor(T.ink)
-                .padding(.top, 8)
+                .padding(.top, Space.s)
         } else if line.hasPrefix("## ") {
             Text(String(line.dropFirst(3)))
                 .font(T.display(16, .semibold))
                 .foregroundColor(T.ink)
-                .padding(.top, 6)
+                .padding(.top, Space.xs)
         } else if line.hasPrefix("### ") {
             Text(String(line.dropFirst(4)))
                 .font(T.sans(13, .semibold))
@@ -794,7 +790,7 @@ struct MarkdownTextView: View {
                 .font(T.sans(13, .semibold))
                 .foregroundColor(T.ink)
         } else if line.hasPrefix("- ") {
-            HStack(alignment: .top, spacing: 6) {
+            HStack(alignment: .top, spacing: Space.xs) {
                 Text("·").foregroundColor(T.ink3)
                 inline(String(line.dropFirst(2)))
                     .font(T.sans(13))
@@ -805,7 +801,7 @@ struct MarkdownTextView: View {
             Text(String(line.dropFirst(2)))
                 .font(T.mono(11))
                 .foregroundColor(T.ink2)
-                .padding(.leading, 10)
+                .padding(.leading, Space.s)
                 .overlay(Rectangle().fill(T.warn.opacity(0.6)).frame(width: 2), alignment: .leading)
         } else if line.isEmpty {
             Spacer().frame(height: 4)

@@ -28,7 +28,7 @@ struct WebSettingsView: View {
                     activitySection
                     privacyCard
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, Space.l)
             }
             .background(LiquidPinkBackdrop())
             .navigationBarTitleDisplayMode(.inline)
@@ -49,16 +49,16 @@ struct WebSettingsView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             KCaption(text: "WEB TOOL")
             KPageTitle(title: "Web Access", size: 28)
             KMono(text: "optional · off by default · on-device LLM stays on-device",
                   size: 11, color: T.ink3)
-                .padding(.top, 2)
+                .padding(.top, Space.hair)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.xxs)
     }
 
     // MARK: - Mode
@@ -74,7 +74,7 @@ struct WebSettingsView: View {
                     } label: {
                         HStack {
                             radio(selected: webTool.settings.mode == mode)
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: Space.hair) {
                                 Text(label(for: mode))
                                     .font(T.mono(12, .semibold))
                                     .foregroundColor(T.ink)
@@ -82,8 +82,8 @@ struct WebSettingsView: View {
                             }
                             Spacer()
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
+                        .padding(.horizontal, Space.m)
+                        .padding(.vertical, Space.s)
                     }
                     .buttonStyle(.plain)
                 }
@@ -123,11 +123,11 @@ struct WebSettingsView: View {
                               size: 12, color: T.ink)
                         Spacer()
                         Image(systemName: "chevron.up.chevron.down")
-                            .font(.system(size: 10))
+                            .font(.system(.caption2))
                             .foregroundColor(T.ink3)
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, Space.m)
+                    .padding(.vertical, Space.s)
                 }
 
                 if webTool.settings.provider.requiresApiKey {
@@ -146,7 +146,7 @@ struct WebSettingsView: View {
     private var keyField: some View {
         let account = "\(webTool.settings.provider.rawValue).apiKey"
         let hasKey = KeychainStore.has(account: account)
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             HStack {
                 KMono(text: hasKey ? "api key saved in keychain" : "api key required",
                       size: 10, color: hasKey ? T.good : T.warn)
@@ -165,9 +165,9 @@ struct WebSettingsView: View {
             }
             SecureField("paste API key", text: $apiKeyInput)
                 .font(T.mono(11))
-                .padding(8)
-                .background(RoundedRectangle(cornerRadius: 6).fill(T.surface))
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.rule, lineWidth: 1))
+                .padding(Space.s)
+                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface))
+                .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.rule, lineWidth: 1))
             Button {
                 let trimmed = apiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !trimmed.isEmpty else { return }
@@ -179,39 +179,39 @@ struct WebSettingsView: View {
                 Text("save key")
                     .font(T.mono(11, .semibold))
                     .foregroundColor(T.bg)
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(RoundedRectangle(cornerRadius: 5).fill(T.ink))
+                    .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                    .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
             }
             .buttonStyle(.plain)
             .disabled(apiKeyInput.isEmpty)
         }
-        .padding(14)
+        .padding(Space.m)
     }
 
     @ViewBuilder
     private var endpointField: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             KMono(text: "instance url (https only)", size: 10, color: T.ink3)
             TextField("https://search.example.com", text: $endpointInput)
                 .font(T.mono(11))
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
-                .padding(8)
-                .background(RoundedRectangle(cornerRadius: 6).fill(T.surface))
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.rule, lineWidth: 1))
+                .padding(Space.s)
+                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface))
+                .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.rule, lineWidth: 1))
             Button {
                 Task { await saveEndpoint() }
             } label: {
                 Text("save endpoint")
                     .font(T.mono(11, .semibold))
                     .foregroundColor(T.bg)
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(RoundedRectangle(cornerRadius: 5).fill(T.ink))
+                    .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                    .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
             }
             .buttonStyle(.plain)
             .disabled(endpointInput.isEmpty)
         }
-        .padding(14)
+        .padding(Space.m)
     }
 
     private var currentEndpoint: URL? {
@@ -282,8 +282,8 @@ struct WebSettingsView: View {
             }
         }
         .tint(T.accent)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
     }
 
     // MARK: - Network
@@ -292,18 +292,18 @@ struct WebSettingsView: View {
         KSection(title: "network") {
             VStack(spacing: 0) {
                 Toggle(isOn: $webTool.settings.allowOnCellular) {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         KMono(text: "allow on cellular", size: 11.5, color: T.ink)
                         KMono(text: "off: web tool only runs on wi-fi", size: 10, color: T.ink3)
                     }
                 }
                 .tint(T.accent)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
 
                 Rectangle().fill(T.rule).frame(height: 1)
                 HStack {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         KMono(text: "block private ips", size: 11.5, color: T.ink)
                         KMono(text: "always on · prevents ssrf to your local network",
                               size: 10, color: T.ink3)
@@ -311,7 +311,7 @@ struct WebSettingsView: View {
                     Spacer()
                     Image(systemName: "lock.fill").foregroundColor(T.good)
                 }
-                .padding(.horizontal, 14).padding(.vertical, 10)
+                .padding(.horizontal, Space.m).padding(.vertical, Space.s)
             }
         }
     }
@@ -325,7 +325,7 @@ struct WebSettingsView: View {
                     KMono(text: "enable cache", size: 11.5, color: T.ink)
                 }
                 .tint(T.accent)
-                .padding(.horizontal, 14).padding(.vertical, 10)
+                .padding(.horizontal, Space.m).padding(.vertical, Space.s)
             }
         }
     }
@@ -345,10 +345,10 @@ struct WebSettingsView: View {
                             .font(T.mono(10))
                             .foregroundColor(T.ink3)
                         Image(systemName: "chevron.forward")
-                            .font(.system(size: 10))
+                            .font(.system(.caption2))
                             .foregroundColor(T.ink3)
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 10)
+                    .padding(.horizontal, Space.m).padding(.vertical, Space.s)
                 }
                 .buttonStyle(.plain)
                 if !log.entries.isEmpty {
@@ -360,7 +360,7 @@ struct WebSettingsView: View {
                             KMono(text: "clear log", size: 11.5, color: T.bad)
                             Spacer()
                         }
-                        .padding(.horizontal, 14).padding(.vertical, 10)
+                        .padding(.horizontal, Space.m).padding(.vertical, Space.s)
                     }
                     .buttonStyle(.plain)
                 }
@@ -371,7 +371,7 @@ struct WebSettingsView: View {
     // MARK: - Privacy
 
     private var privacyCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             KCaption(text: "privacy")
             Text("Model inference runs locally on this device. Web Access is optional. When enabled, the app may send a short search query or a URL you provide to the search provider you chose. Your chat history, attachments, and personal content are not sent. Fetched pages are processed on this device and given to the local model as reference material. You can turn Web Access off at any time.")
                 .font(T.sans(12))
@@ -379,8 +379,8 @@ struct WebSettingsView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 12)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.s)
     }
 
     @ViewBuilder
@@ -388,7 +388,7 @@ struct WebSettingsView: View {
         ZStack {
             Circle()
                 .stroke(selected ? T.accent : T.rule2, lineWidth: 1.5)
-                .frame(width: 16, height: 16)
+                .frame(width: Size.glyph, height: Size.glyph)
             if selected {
                 Circle().fill(T.accent).frame(width: 9, height: 9)
             }

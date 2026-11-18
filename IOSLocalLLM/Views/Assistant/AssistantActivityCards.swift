@@ -12,16 +12,16 @@ private struct ActivityCardChrome<Content: View>: View {
 
     var body: some View {
         content
-            .padding(12)
+            .padding(Space.s)
             .frame(maxWidth: 520, alignment: .leading)
-            .glassSurface(.card, cornerRadius: 16)
+            .glassSurface(.card, cornerRadius: Radius.card)
             .overlay {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                     .stroke(T.rule.opacity(0.7), lineWidth: 0.5)
             }
             .shadow(color: .black.opacity(T.isDark ? 0.14 : 0.05), radius: 10, y: 4)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 6)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.xs)
             .accessibilityElement(children: .contain)
     }
 }
@@ -34,14 +34,14 @@ private struct ActivityCardHeader: View {
     var pulsing: Bool = false
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             Image(systemName: symbol)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(T.accent)
-                .frame(width: 28, height: 28)
+                .frame(width: Size.tile, height: Size.tile)
                 .background(T.accent.opacity(0.10), in: Circle())
                 .symbolEffect(.pulse, isActive: pulsing)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Space.hair) {
                 Text(title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(T.ink)
@@ -64,22 +64,22 @@ struct AssistantLiveStatusRow: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Space.xs) {
             Circle()
                 .fill(T.accent)
                 .frame(width: 6, height: 6)
                 .opacity(reduceMotion ? 0.7 : 0.9)
             if let symbol {
                 Image(systemName: symbol)
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(.caption2, weight: .semibold))
             }
             Text(title)
                 .font(T.sans(11.5, .medium))
             Spacer(minLength: 0)
         }
         .foregroundStyle(T.ink3)
-        .padding(.horizontal, 18)
-        .padding(.vertical, 2)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.hair)
         .accessibilityLabel(title)
     }
 }
@@ -137,7 +137,7 @@ struct AssistantApprovalCard: View {
 
     var body: some View {
         ActivityCardChrome {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 ActivityCardHeader(
                     symbol: AssistantActivity.symbol(forTool: toolName),
                     title: AssistantActivity.statusTitle(.awaitingApproval(toolName)),
@@ -152,13 +152,13 @@ struct AssistantApprovalCard: View {
                     .foregroundStyle(T.ink)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(10)
-                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(T.surface))
+                    .padding(Space.s)
+                    .background(RoundedRectangle(cornerRadius: Radius.inner, style: .continuous).fill(T.surface))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        RoundedRectangle(cornerRadius: Radius.inner, style: .continuous)
                             .stroke(T.rule, lineWidth: 0.5)
                     )
-                VStack(spacing: 8) {
+                VStack(spacing: Space.s) {
                     Button(action: {
                         HapticManager.impact(.medium)
                         onAllowOnce()
@@ -166,9 +166,9 @@ struct AssistantApprovalCard: View {
                         Text("Allow once")
                             .scaledFont(size: 13, weight: .semibold, design: .monospaced)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 11)
+                            .padding(.vertical, Space.s)
                             .foregroundStyle(T.bg)
-                            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(T.ink))
+                            .background(RoundedRectangle(cornerRadius: Radius.inner, style: .continuous).fill(T.ink))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Allow this \(AssistantActivity.displayName(forTool: toolName)) once")
@@ -181,9 +181,9 @@ struct AssistantApprovalCard: View {
                             Text("Always allow")
                                 .scaledFont(size: 13, weight: .semibold, design: .monospaced)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 11)
+                                .padding(.vertical, Space.s)
                                 .foregroundStyle(T.ink)
-                                .kGlass(cornerRadius: 8, fallbackFill: T.surface)
+                                .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Always allow \(AssistantActivity.displayName(forTool: toolName))")
@@ -196,7 +196,7 @@ struct AssistantApprovalCard: View {
                         Text("Not now")
                             .scaledFont(size: 13, design: .monospaced)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
+                            .padding(.vertical, Space.s)
                             .foregroundStyle(T.ink3)
                     }
                     .buttonStyle(.plain)
@@ -218,7 +218,7 @@ struct AssistantFileApprovalCard: View {
 
     var body: some View {
         ActivityCardChrome {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 ActivityCardHeader(
                     symbol: "doc.text",
                     title: AssistantActivity.statusTitle(.awaitingApproval("file_read")),
@@ -235,9 +235,9 @@ struct AssistantFileApprovalCard: View {
                     Text("Choose file")
                         .scaledFont(size: 13, weight: .semibold, design: .monospaced)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 11)
+                        .padding(.vertical, Space.s)
                         .foregroundStyle(T.bg)
-                        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(T.ink))
+                        .background(RoundedRectangle(cornerRadius: Radius.inner, style: .continuous).fill(T.ink))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Choose a file for the assistant")
@@ -249,7 +249,7 @@ struct AssistantFileApprovalCard: View {
                     Text("Not now")
                         .scaledFont(size: 13, design: .monospaced)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
+                        .padding(.vertical, Space.s)
                         .foregroundStyle(T.ink3)
                 }
                 .buttonStyle(.plain)
@@ -267,7 +267,7 @@ struct AssistantImageGenerationCard: View {
 
     var body: some View {
         ActivityCardChrome {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 ActivityCardHeader(
                     symbol: "photo.on.rectangle.angled",
                     title: "Image generation",
@@ -306,7 +306,7 @@ struct AssistantCitationCard: View {
         let visible = citations.filter { citedIndices.contains($0.index) }
         if !visible.isEmpty {
             ActivityCardChrome {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: Space.s) {
                     ActivityCardHeader(
                         symbol: "quote.opening",
                         title: AssistantActivity.citationTitle(visibleCount: visible.count),

@@ -61,18 +61,17 @@ struct DetectionBoxView: View {
                 )
 
             // Label chip — flat rectangle in the surface color
-            HStack(spacing: 4) {
+            HStack(spacing: Space.xxs) {
                 Text(detection.label.lowercased())
                     .font(T.mono(10, .semibold))
-                    .tracking(0.3)
                 Text(String(format: "%.0f%%", detection.confidence * 100))
                     .font(T.mono(10))
                     .foregroundColor(T.ink3)
                     .contentTransition(.numericText())
                     .animation(.easeInOut(duration: 0.15), value: detection.confidence)
             }
-            .padding(.horizontal, 5)
-            .padding(.vertical, 2)
+            .padding(.horizontal, Space.xs)
+            .padding(.vertical, Space.hair)
             .background(
                 RoundedRectangle(cornerRadius: 3).fill(T.surface)
             )

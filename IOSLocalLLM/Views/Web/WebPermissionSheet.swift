@@ -18,14 +18,14 @@ struct WebPermissionSheet: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: Space.m) {
                 header
                 payloadCard
                 providerCard
                 privacyCard
                 buttons
             }
-            .padding(20)
+            .padding(Space.m)
         }
         .background(LiquidPinkBackdrop())
         .presentationDetents([.medium, .large])
@@ -34,20 +34,20 @@ struct WebPermissionSheet: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             KCaption(text: "WEB TOOL")
             KPageTitle(title: "Use web sources?", size: 28)
             Text(reason)
                 .font(T.sans(13))
                 .foregroundColor(T.ink2)
-                .padding(.top, 4)
+                .padding(.top, Space.xxs)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
 
     @ViewBuilder
     private var payloadCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             KMono(text: "what will be sent", size: 9, color: T.ink3)
             switch payload {
             case .query(let q):
@@ -56,9 +56,9 @@ struct WebPermissionSheet: View {
                     .foregroundColor(T.ink)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(10)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(T.surface))
-                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.rule, lineWidth: 1))
+                    .padding(Space.s)
+                    .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface))
+                    .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.rule, lineWidth: 1))
             case .url(let u):
                 Text("URL: \(u.absoluteString)")
                     .font(T.mono(13))
@@ -66,9 +66,9 @@ struct WebPermissionSheet: View {
                     .textSelection(.enabled)
                     .lineLimit(3)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(10)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(T.surface))
-                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.rule, lineWidth: 1))
+                    .padding(Space.s)
+                    .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface))
+                    .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.rule, lineWidth: 1))
             }
         }
     }
@@ -80,7 +80,7 @@ struct WebPermissionSheet: View {
             case .query: return webTool.settings.provider.displayName
             }
         }()
-        return VStack(alignment: .leading, spacing: 4) {
+        return VStack(alignment: .leading, spacing: Space.xxs) {
             KMono(text: "sent to", size: 9, color: T.ink3)
             Text(providerName)
                 .font(T.mono(12, .semibold))
@@ -89,7 +89,7 @@ struct WebPermissionSheet: View {
     }
 
     private var privacyCard: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             KMono(text: "privacy", size: 9, color: T.ink3)
             Text("Only the query or URL shown above is sent. Chat history and attachments are not sent by the web tool. The recipient receives your IP address and an API credential when configured. Search providers may retain queries and reuse them to improve their services. Do not include private information.")
                 .font(T.sans(12))
@@ -113,7 +113,7 @@ struct WebPermissionSheet: View {
     }
 
     private var buttons: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Space.s) {
             Button {
                 HapticManager.impact(.medium)
                 webTool.settings.acceptPrivacyDisclosure()
@@ -123,9 +123,9 @@ struct WebPermissionSheet: View {
                 Text("Allow Once")
                     .font(T.mono(13, .semibold))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, Space.s)
                     .foregroundColor(T.bg)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(T.ink))
+                    .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Allow this web request once")
@@ -139,9 +139,9 @@ struct WebPermissionSheet: View {
                 Text("Always Allow")
                     .font(T.mono(13, .semibold))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, Space.s)
                     .foregroundColor(T.ink)
-                    .kGlass(cornerRadius: 8, fallbackFill: T.surface)
+                    .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Always allow web requests")
@@ -154,7 +154,7 @@ struct WebPermissionSheet: View {
                 Text("Not Now")
                     .font(T.mono(13))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, Space.s)
                     .foregroundColor(T.ink3)
             }
             .buttonStyle(.plain)

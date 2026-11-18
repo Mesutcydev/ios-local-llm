@@ -48,7 +48,7 @@ struct SettingsView: View {
                     // overwhelmed first-time users. Each row navigates to a
                     // focused sub-screen that still hosts the original
                     // KSection bodies — same content, less noise.
-                    VStack(spacing: 8) {
+                    VStack(spacing: Space.s) {
                         ForEach(filteredCategories) { cat in
                             NavigationLink {
                                 categoryDestination(cat)
@@ -59,14 +59,15 @@ struct SettingsView: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.horizontal, 12)
+                    // Same edge as the system search field above.
+                    .padding(.horizontal, Space.screenMargin)
 
                     if filteredCategories.isEmpty {
                         ContentUnavailableView.search(text: settingsSearch)
                     }
                 }
-                .padding(.top, 12)
-                .padding(.bottom, 32)
+                .padding(.top, Space.s)
+                .padding(.bottom, Space.l)
                 .frame(maxWidth: AppLayout.readingWidth)
                 .frame(maxWidth: .infinity)
             }
@@ -204,17 +205,17 @@ struct SettingsView: View {
 
     // Privacy hero — quiet card with the on-device promise.
     private var privacyHero: some View {
-        HStack(spacing: 13) {
+        HStack(spacing: Space.s) {
             ZStack {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                     .fill(T.surface2)
-                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                         .stroke(T.rule, lineWidth: 1))
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 20, weight: .semibold)).foregroundColor(T.ink)
+                    .font(.system(.title3, weight: .semibold)).foregroundColor(T.ink)
             }
-            .frame(width: 46, height: 46)
-            VStack(alignment: .leading, spacing: 2) {
+            .frame(width: Size.feature, height: Size.feature)
+            VStack(alignment: .leading, spacing: Space.hair) {
                 Text(loc.t("On-device & private"))
                     .font(T.sans(17, .bold)).foregroundColor(T.ink)
                 Text(loc.t("No account required for local models. Network features are optional."))
@@ -223,22 +224,22 @@ struct SettingsView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(16)
-        .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
+        .padding(Space.m)
+        .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
     }
 
     @ViewBuilder
     private func categoryDestination(_ cat: SettingsCategory) -> some View {
         ScrollView {
             VStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     KCaption(text: "SETTINGS")
                     KPageTitle(title: cat.title.capitalized, size: 28)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 4)
+                .padding(.horizontal, Space.m)
+                .padding(.top, Space.s)
+                .padding(.bottom, Space.xxs)
 
                 switch cat {
                 case .userGuide:
@@ -259,16 +260,16 @@ struct SettingsView: View {
                     developerSection
                 case .about:
                     aboutSection
-                    imageStudioBanner.padding(16)
+                    imageStudioBanner.padding(Space.m)
                 case .privacyLegal:
-                    privacyHero.padding(16)
+                    privacyHero.padding(Space.m)
                     CloudSyncSettingsSection()
                     ImageParentalControlsView()
                     privacyResetSection
                     legalSection
                 }
             }
-            .padding(.bottom, 32)
+            .padding(.bottom, Space.l)
         }
         .background(LiquidPinkBackdrop())
         .navigationBarTitleDisplayMode(.inline)
@@ -287,7 +288,7 @@ struct SettingsView: View {
 
     private var analysisModeSection: some View {
         KSection(title: "analysis_mode") {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 Picker("Mode", selection: $settings.analysisMode) {
                     ForEach(AnalysisMode.allCases) { mode in
                         Label(mode.displayName, systemImage: mode.systemImage).tag(mode.rawValue)
@@ -303,7 +304,7 @@ struct SettingsView: View {
                     .foregroundColor(T.ink2)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(14)
+            .padding(Space.m)
         }
     }
 
@@ -314,13 +315,13 @@ struct SettingsView: View {
                 dismiss()
                 AppBridge.shared.requestTab(.models)
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "arrow.down.circle")
-                        .font(.system(size: 16))
+                        .font(.system(.callout))
                         .foregroundColor(T.accent)
-                        .frame(width: 32, height: 32)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(T.accentSoft))
-                    VStack(alignment: .leading, spacing: 2) {
+                        .frame(width: Size.tile, height: Size.tile)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.accentSoft))
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         Text("Download models")
                             .font(T.sans(13, .semibold))
                             .foregroundColor(T.ink)
@@ -329,11 +330,11 @@ struct SettingsView: View {
                     Spacer()
                     downloadStatusBadge
                     Image(systemName: "chevron.forward")
-                        .font(.system(size: 10))
+                        .font(.system(.caption2))
                         .foregroundColor(T.ink3)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -348,13 +349,13 @@ struct SettingsView: View {
                 showingModelPickerSheet = true
                 HapticManager.impact(.light)
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "checkmark.circle.badge.questionmark")
-                        .font(.system(size: 15))
+                        .font(.system(.subheadline))
                         .foregroundColor(T.accent)
-                        .frame(width: 32, height: 32)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(T.accentSoft))
-                    VStack(alignment: .leading, spacing: 2) {
+                        .frame(width: Size.tile, height: Size.tile)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.accentSoft))
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         Text("Pick models again")
                             .font(T.sans(13, .semibold))
                             .foregroundColor(T.ink)
@@ -362,11 +363,11 @@ struct SettingsView: View {
                     }
                     Spacer()
                     Image(systemName: "chevron.forward")
-                        .font(.system(size: 10))
+                        .font(.system(.caption2))
                         .foregroundColor(T.ink3)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
             }
             .buttonStyle(.plain)
 
@@ -399,7 +400,7 @@ struct SettingsView: View {
                     KToggle(isOn: $settings.largeModelLowMemoryEnabled)
                 })
                 KRow(label: "Load timeout", trailing: {
-                    HStack(spacing: 8) {
+                    HStack(spacing: Space.s) {
                         KMono(text: settings.modelLoadTimeoutSeconds == 0
                                 ? "Off"
                                 : "\(settings.modelLoadTimeoutSeconds / 60) min",
@@ -419,14 +420,14 @@ struct SettingsView: View {
                 AppBridge.shared.requestTab(.models)
                 HapticManager.impact(.light)
             } label: {
-                HStack(spacing: 10) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "brain")
-                        .font(.system(size: 13))
+                        .font(.system(.footnote))
                         .foregroundColor(T.accent)
-                        .frame(width: 28, height: 28)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(T.accentSoft))
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 6) {
+                        .frame(width: Size.tile, height: Size.tile)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.accentSoft))
+                    VStack(alignment: .leading, spacing: Space.hair) {
+                        HStack(spacing: Space.xs) {
                             KMono(
                                 text: "Default assistant model",
                                 size: 11,
@@ -457,11 +458,11 @@ struct SettingsView: View {
                     Spacer()
                     assistantStatusBadge
                     Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 10))
+                        .font(.system(.caption2))
                         .foregroundColor(T.ink3)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 11)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -475,13 +476,13 @@ struct SettingsView: View {
                 showVoiceModelPicker = true
                 HapticManager.impact(.light)
             } label: {
-                HStack(spacing: 10) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "waveform")
-                        .font(.system(size: 13))
+                        .font(.system(.footnote))
                         .foregroundColor(T.accent)
-                        .frame(width: 28, height: 28)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(T.accentSoft))
-                    VStack(alignment: .leading, spacing: 2) {
+                        .frame(width: Size.tile, height: Size.tile)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.accentSoft))
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         KMono(text: "Voice model", size: 11, color: T.ink3, mono: false)
                         MarqueeText(
                             text: voiceModelDisplayName,
@@ -493,11 +494,11 @@ struct SettingsView: View {
                     Spacer()
                     voiceModelStatusBadge
                     Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 10))
+                        .font(.system(.caption2))
                         .foregroundColor(T.ink3)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 11)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
             }
             .buttonStyle(.plain)
 
@@ -507,25 +508,25 @@ struct SettingsView: View {
                 showPersonaPicker = true
                 HapticManager.impact(.light)
             } label: {
-                HStack(spacing: 10) {
+                HStack(spacing: Space.s) {
                     Image(systemName: PersonaStore.shared.active.icon)
-                        .font(.system(size: 13))
+                        .font(.system(.footnote))
                         .foregroundColor(PersonaStore.shared.active.accent)
-                        .frame(width: 28, height: 28)
-                        .background(RoundedRectangle(cornerRadius: 6)
+                        .frame(width: Size.tile, height: Size.tile)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner)
                             .fill(PersonaStore.shared.active.accent.opacity(0.12)))
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         KMono(text: "Persona", size: 11, color: T.ink3, mono: false)
                         KMono(text: PersonaStore.shared.active.name,
                                size: 13, weight: .semibold, color: T.ink, mono: false)
                     }
                     Spacer()
                     Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 10))
+                        .font(.system(.caption2))
                         .foregroundColor(T.ink3)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 11)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
             }
             .buttonStyle(.plain)
 
@@ -537,12 +538,12 @@ struct SettingsView: View {
                                      systemImage: "memorychip",
                                      trailing: nil,
                                      destructive: true) { assistant.unload() }
-                        .padding(10)
+                        .padding(Space.s)
                 }
             } else if case .failed(let msg) = assistant.state {
                 VStack(spacing: 0) {
                     Rectangle().fill(T.rule).frame(height: 1)
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: Space.s) {
                         Text(msg)
                             .font(T.sans(10))
                             .foregroundColor(T.bad)
@@ -553,7 +554,7 @@ struct SettingsView: View {
                             Task { await assistant.load() }
                         }
                     }
-                    .padding(10)
+                    .padding(Space.s)
                 }
             }
         }
@@ -637,20 +638,20 @@ struct SettingsView: View {
     private var systemStatusSection: some View {
         KCollapsibleSection(title: "system_status", defaultExpanded: false) {
             VStack(spacing: 0) {
-                HStack(spacing: 10) {
+                HStack(spacing: Space.s) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: Radius.inner)
                             .fill(T.good.opacity(0.12))
-                            .frame(width: 28, height: 28)
+                            .frame(width: Size.tile, height: Size.tile)
                         Image(systemName: "waveform.path.ecg")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(.caption, weight: .medium))
                             .foregroundColor(T.good)
                     }
                     statusSummary
                     Spacer()
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
 
                 Rectangle().fill(T.rule).frame(height: 1)
 
@@ -658,18 +659,18 @@ struct SettingsView: View {
                     showSystemStatus = true
                     HapticManager.impact(.light)
                 } label: {
-                    HStack(spacing: 10) {
+                    HStack(spacing: Space.s) {
                         Image(systemName: "chart.bar.xaxis")
-                            .font(.system(size: 12))
+                            .font(.system(.caption))
                             .foregroundColor(T.accent)
                         KMono(text: "Open full diagnostics", size: 11.5, color: T.accent, mono: false)
                         Spacer()
                         Image(systemName: "chevron.forward")
-                            .font(.system(size: 10))
+                            .font(.system(.caption2))
                             .foregroundColor(T.ink3)
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 11)
+                    .padding(.horizontal, Space.m)
+                    .padding(.vertical, Space.s)
                 }
                 .buttonStyle(.plain)
             }
@@ -684,7 +685,7 @@ struct SettingsView: View {
         // Static snapshot — refreshed on view appear, not via observation.
         // This prevents the 2s timer from re-rendering all of Settings.
         let snap = settingsStatusSnap
-        HStack(spacing: 6) {
+        HStack(spacing: Space.xs) {
             KMono(text: snap.totalRAM.formattedBytes + " RAM", size: 10, color: T.ink3, mono: false)
             KMono(text: "·", size: 10, color: T.ink4, mono: false)
             KMono(text: snap.supportsNeuralEngine ? "ANE available" : "No ANE",
@@ -712,24 +713,24 @@ struct SettingsView: View {
             // button label flips based on whether a token is already
             // saved, so the row carries that state without a separate
             // status pill cluttering the right edge.
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .top, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Space.s) {
+                HStack(alignment: .top, spacing: Space.s) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         KMono(text: "Hugging Face token", size: 11.5, color: T.ink, mono: false)
                         Text("Required for gated repos (google/gemma-*, meta-llama/*, mistralai/Ministral-*). Stored in Keychain.")
                             .font(T.sans(11))
                             .foregroundColor(T.ink3)
                             .fixedSize(horizontal: false, vertical: true)
                         if let masked = hfToken.maskedPreview {
-                            HStack(spacing: 4) {
+                            HStack(spacing: Space.xxs) {
                                 Image(systemName: "checkmark.seal.fill")
-                                    .font(.system(size: 9))
+                                    .font(.system(.caption2))
                                     .foregroundColor(T.good)
                                 Text(masked)
                                     .font(T.mono(10, .semibold))
                                     .foregroundColor(T.good)
                             }
-                            .padding(.top, 2)
+                            .padding(.top, Space.hair)
                         }
                     }
                     Spacer(minLength: 6)
@@ -739,10 +740,9 @@ struct SettingsView: View {
                     } label: {
                         Text(hfToken.hasToken ? "Update" : "Set token")
                             .font(T.sans(11, .semibold))
-                            .tracking(0.4)
                             .foregroundColor(T.accent)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
+                            .padding(.horizontal, Space.s)
+                            .padding(.vertical, Space.xs)
                             .background(Capsule().fill(T.accentSoft))
                             .overlay(Capsule().stroke(T.accent.opacity(0.4), lineWidth: 0.5))
                     }
@@ -750,17 +750,17 @@ struct SettingsView: View {
                     .fixedSize()
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
 
             Rectangle().fill(T.rule).frame(height: 1)
 
             // Use token toggle — gates the Authorization header
             // application across all HF requests. Disabled when no
             // token is stored (nothing to toggle).
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 HStack {
-                    VStack(alignment: .leading, spacing: 3) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         KMono(text: "Use token for downloads", size: 11.5, color: T.ink, mono: false)
                         Text("Sends your token with HF requests. Turn off temporarily to debug 401s without removing the token.")
                             .font(T.sans(10.5))
@@ -773,8 +773,8 @@ struct SettingsView: View {
                         .disabled(!hfToken.hasToken)
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
         }
     }
 
@@ -797,14 +797,14 @@ struct SettingsView: View {
                 KMono(text: String(format: "%.2f", settings.fastvlmTemperature),
                        color: T.ink2, mono: false)
             }, stack: true)
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Space.xxs) {
                 Slider(value: $settings.fastvlmTemperature, in: 0.0...1.0, step: 0.05)
                     .tint(T.accent)
                 KMono(text: "0 = greedy. Recommended 0.2 for extraction.",
                        size: 10, color: T.ink3, mono: false)
             }
-            .padding(.horizontal, 14)
-            .padding(.bottom, 10)
+            .padding(.horizontal, Space.m)
+            .padding(.bottom, Space.s)
             Rectangle().fill(T.rule).frame(height: 1)
 
             KRow(label: "Max tokens", trailing: {
@@ -828,7 +828,7 @@ struct SettingsView: View {
             if usingFastVLM, !fastVLMStatus.canGenerate {
                 let filesOnDisk = ModelDownloadCenter.shared.fastvlmModel?.isReady == true
                 Rectangle().fill(T.rule).frame(height: 1)
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Space.s) {
                     KCaption(
                         text: filesOnDisk ? "DOWNLOADED — NOT YET LOADED" : "MISSING COMPONENTS",
                         color: T.warn
@@ -850,21 +850,21 @@ struct SettingsView: View {
                             AppBridge.shared.requestTab(.models)
                         }
                     } label: {
-                        HStack(spacing: 5) {
+                        HStack(spacing: Space.xs) {
                             Image(systemName: filesOnDisk
                                   ? "arrow.triangle.2.circlepath"
                                   : "arrow.down.circle")
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.system(.caption2, weight: .medium))
                             Text(filesOnDisk ? "Load now" : "Download models")
                                 .font(T.sans(11, .semibold))
                         }
                         .foregroundColor(T.bg)
-                        .padding(.horizontal, 10).padding(.vertical, 5)
-                        .background(RoundedRectangle(cornerRadius: 5).fill(T.ink))
+                        .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
                     }
                     .buttonStyle(.plain)
                 }
-                .padding(14)
+                .padding(Space.m)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -884,16 +884,16 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: "stethoscope")
-                        .font(.system(size: 13))
+                        .font(.system(.footnote))
                         .foregroundColor(T.ink)
                     KMono(text: "Diagnostics & crash log", size: 11.5, color: T.ink, mono: false)
                     Spacer()
                     Image(systemName: "chevron.forward")
-                        .font(.system(size: 10))
+                        .font(.system(.caption2))
                         .foregroundColor(T.ink3)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
             }
             .buttonStyle(.plain)
 
@@ -904,7 +904,7 @@ struct SettingsView: View {
             })
 
             if settings.showDebugModelShapes, let debug = fastVLMDebugInfo {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     if let shape = debug.encoderOutputShape {
                         KMono(text: "encoder out: \(shape.map(String.init).joined(separator: "×"))",
                                size: 10, color: T.ink2)
@@ -921,7 +921,7 @@ struct SettingsView: View {
                         KMono(text: "error: \(err)", size: 10, color: T.bad)
                     }
                 }
-                .padding(14)
+                .padding(Space.m)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 Rectangle().fill(T.rule).frame(height: 1)
             }
@@ -947,13 +947,13 @@ struct SettingsView: View {
                 } label: {
                     HStack {
                         Image(systemName: "square.and.arrow.down")
-                            .font(.system(size: 12))
+                            .font(.system(.caption))
                             .foregroundColor(T.ink)
                         KMono(text: "Save last model input PNG", size: 11.5, color: T.ink, mono: false)
                         Spacer()
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, Space.m)
+                    .padding(.vertical, Space.s)
                 }
                 .buttonStyle(.plain)
             }
@@ -963,7 +963,7 @@ struct SettingsView: View {
     @ViewBuilder
     private func componentStatusRow(_ label: String, state: FastVLMModelState, last: Bool = false) -> some View {
         KRow(label: label, trailing: {
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 Text(stateGlyph(for: state))
                     .font(T.mono(10))
                     .foregroundColor(statusColor(for: state))
@@ -1007,7 +1007,7 @@ struct SettingsView: View {
             })
 
             Rectangle().fill(T.rule).frame(height: 1)
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 KMono(text: "Response style", size: 11, color: T.ink3, mono: false)
                 Picker("", selection: Binding(
                     get: { ResponseStyle.nearest(settings.assistantTemperature) },
@@ -1020,11 +1020,11 @@ struct SettingsView: View {
                 .pickerStyle(.segmented)
                 KMono(text: ResponseStyle.nearest(settings.assistantTemperature).hint, size: 10, color: T.ink3, mono: false)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
 
             Rectangle().fill(T.rule).frame(height: 1)
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 KMono(text: "Response length", size: 11, color: T.ink3, mono: false)
                 Picker("", selection: Binding(
                     get: { ResponseLength.nearest(settings.assistantMaxTokens) },
@@ -1040,8 +1040,8 @@ struct SettingsView: View {
                 .pickerStyle(.segmented)
                 KMono(text: ResponseLength.nearest(settings.assistantMaxTokens).hint, size: 10, color: T.ink3, mono: false)
             }
-            .padding(.horizontal, 14)
-            .padding(.bottom, 10)
+            .padding(.horizontal, Space.m)
+            .padding(.bottom, Space.s)
 
             Rectangle().fill(T.rule).frame(height: 1)
             // On-device RAG over the user's own files — chat with your
@@ -1049,7 +1049,7 @@ struct SettingsView: View {
             Button { showingKnowledgeBase = true } label: {
                 HStack {
                     Image(systemName: "books.vertical")
-                        .font(.system(size: 13))
+                        .font(.system(.footnote))
                         .foregroundColor(T.ink)
                     KMono(text: "Knowledge base (RAG)", size: 11.5, color: T.ink, mono: false)
                     Spacer()
@@ -1058,11 +1058,11 @@ struct SettingsView: View {
                             : "\(knowledgeBase.documents.count) docs · \(knowledgeBase.isEnabled ? "on" : "off")",
                            size: 10, color: T.ink3)
                     Image(systemName: "chevron.forward")
-                        .font(.system(size: 10))
+                        .font(.system(.caption2))
                         .foregroundColor(T.ink3)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
             }
             .buttonStyle(.plain)
         }
@@ -1077,19 +1077,19 @@ struct SettingsView: View {
             } label: {
                 // Same type and height as the KRow toggles below, and the
                 // whole row is the target (it used to be just the text).
-                HStack(spacing: 10) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "speaker.wave.2")
-                        .font(.system(size: 15))
+                        .font(.system(.subheadline))
                         .foregroundColor(T.ink)
                     Text(loc.t("Voice settings")).font(T.sans(15)).foregroundColor(T.ink)
                     Spacer(minLength: 8)
                     Text(loc.t(currentEngineLabel).lowercased(with: loc.resolvedLocale)).font(T.sans(13)).foregroundColor(T.ink3)
                     Image(systemName: "chevron.forward")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(.caption2, weight: .semibold))
                         .foregroundColor(T.ink3)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())
             }
@@ -1118,7 +1118,7 @@ struct SettingsView: View {
                                  destructive: true) {
                     VoiceService.shared.stop()
                 }
-                .padding(10)
+                .padding(Space.s)
             }
         }
     }
@@ -1134,16 +1134,16 @@ struct SettingsView: View {
     /// Declared via CFBundleAlternateIcons in Info.plist; the classic asset
     /// compiles because of INCLUDE_ALL_APPICON_ASSETS.
     private var appIconPickerRow: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             KMono(text: "app icon", size: 11.5, color: T.ink, mono: false)
-            HStack(spacing: 14) {
+            HStack(spacing: Space.m) {
                 appIconOption(name: nil, title: "Silver", preview: "AppIconPreview")
                 appIconOption(name: "AppIconClassic", title: "Classic", preview: "AppIconClassicPreview")
                 Spacer()
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
     }
 
     private func appIconOption(name: String?, title: String, preview: String) -> some View {
@@ -1162,14 +1162,14 @@ struct SettingsView: View {
                 }
             }
         } label: {
-            VStack(spacing: 5) {
+            VStack(spacing: Space.xs) {
                 Image(preview)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 52, height: 52)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .frame(width: Size.feature, height: Size.feature)
+                    .clipShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                             .strokeBorder(selected ? T.accent : T.rule,
                                           lineWidth: selected ? 2 : 1)
                     )
@@ -1228,13 +1228,13 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 12))
+                        .font(.system(.caption))
                         .foregroundColor(T.ink)
                     KMono(text: "Show onboarding again", size: 11.5, color: T.ink, mono: false)
                     Spacer()
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
             }
             .buttonStyle(.plain)
 
@@ -1247,13 +1247,13 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: "lightbulb")
-                        .font(.system(size: 12))
+                        .font(.system(.caption))
                         .foregroundColor(T.ink)
                     KMono(text: "Reset onboarding tips", size: 11.5, color: T.ink, mono: false)
                     Spacer()
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
             }
             .buttonStyle(.plain)
         }
@@ -1275,15 +1275,15 @@ struct SettingsView: View {
                     ("low-power mode",  safetyMonitor.lowPowerMode ? "on" : "off"),
                     ("warnings",        settings.thermalWarningsEnabled ? "enabled" : "disabled"),
                 ], keyWidth: 110)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
 
                 Rectangle().fill(T.rule).frame(height: 1)
 
                 // Toggle — for users who know their device is fine and want
                 // to silence the pill / lift the max-token cap.
                 Toggle(isOn: $settings.thermalWarningsEnabled) {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         KMono(text: "Thermal warnings", size: 11.5, color: T.ink, mono: false)
                         KMono(
                             text: "off → hide pill, no auto-cap on max tokens",
@@ -1292,8 +1292,8 @@ struct SettingsView: View {
                     }
                 }
                 .tint(T.accent)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
 
                 Rectangle().fill(T.rule).frame(height: 1)
 
@@ -1307,16 +1307,16 @@ struct SettingsView: View {
                 } label: {
                     HStack {
                         Image(systemName: "thermometer.snowflake")
-                            .font(.system(size: 12))
+                            .font(.system(.caption))
                             .foregroundColor(T.accent)
                         KMono(text: "Clear current warning", size: 11.5, color: T.accent, mono: false)
                         Spacer()
                         Image(systemName: "chevron.forward")
-                            .font(.system(size: 10))
+                            .font(.system(.caption2))
                             .foregroundColor(T.ink3)
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, Space.m)
+                    .padding(.vertical, Space.s)
                 }
                 .buttonStyle(.plain)
             }
@@ -1347,21 +1347,21 @@ struct SettingsView: View {
                 } label: {
                     HStack {
                         Image(systemName: "trash.slash")
-                            .font(.system(size: 12))
+                            .font(.system(.caption))
                             .foregroundColor(T.bad)
                         KMono(text: "Wipe all on-device data", size: 11.5, color: T.bad, mono: false)
                         Spacer()
                         Image(systemName: "chevron.forward")
-                            .font(.system(size: 10))
+                            .font(.system(.caption2))
                             .foregroundColor(T.ink3)
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, Space.m)
+                    .padding(.vertical, Space.s)
                 }
                 .buttonStyle(.plain)
                 if let r = lastWipeReceipt {
                     Rectangle().fill(T.rule).frame(height: 1)
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         KMono(text: "wiped", size: 9, color: T.ink3, mono: false)
                         Text("\(r.modelsDeleted) models · \(r.conversationsDeleted) conversations · \(r.snippetsDeleted) snippets · \(r.memoriesDeleted) memories · \(r.keychainItemsCleared) credentials · freed \(r.bytesFreed.formattedBytes)")
                             .font(T.mono(11))
@@ -1369,7 +1369,7 @@ struct SettingsView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 14).padding(.vertical, 10)
+                    .padding(.horizontal, Space.m).padding(.vertical, Space.s)
                 }
             }
         }
@@ -1422,29 +1422,29 @@ struct SettingsView: View {
                 Rectangle().fill(T.rule).frame(height: 1)
                 HStack {
                     Image(systemName: "checkmark.seal")
-                        .font(.system(size: 11))
+                        .font(.system(.caption2))
                         .foregroundColor(T.ink3)
                     KMono(text: "accepted v\(LegalDocuments.currentVersion) on \(when)",
                           size: 10, color: T.ink3)
                     Spacer()
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
             }
             if let supportURL = URL(string: LegalDocuments.supportURL) {
                 Link(destination: supportURL) {
                     HStack {
                         Image(systemName: "questionmark.circle")
-                            .font(.system(size: 12))
+                            .font(.system(.caption))
                             .foregroundColor(T.accent)
                         KMono(text: "Support", size: 11.5, color: T.accent, mono: false)
                         Spacer()
                         Image(systemName: "arrow.up.right")
-                            .font(.system(size: 10))
+                            .font(.system(.caption2))
                             .foregroundColor(T.accent)
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, Space.m)
+                    .padding(.vertical, Space.s)
                 }
             }
         }
@@ -1474,16 +1474,16 @@ struct SettingsView: View {
         Button(action: action) {
             HStack {
                 Image(systemName: icon)
-                    .font(.system(size: 12))
+                    .font(.system(.caption))
                     .foregroundColor(T.ink)
                 KMono(text: label, size: 11.5, color: T.ink, mono: false)
                 Spacer()
                 Image(systemName: "chevron.forward")
-                    .font(.system(size: 10))
+                    .font(.system(.caption2))
                     .foregroundColor(T.ink3)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
             .overlay(alignment: .bottom) {
                 if !last {
                     Rectangle().fill(T.rule).frame(height: 1)
@@ -1500,19 +1500,19 @@ struct SettingsView: View {
             openURL(Self.imageStudioWebsiteURL)
             HapticManager.impact(.light)
         } label: {
-            VStack(alignment: .leading, spacing: 13) {
-                HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: Space.m) {
+                HStack(alignment: .center, spacing: Space.s) {
                     Image("image_studio_app_icon")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 58, height: 58)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                                 .stroke(T.rule, lineWidth: 1)
                         )
 
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         KCaption(text: "also by mesut")
                         Text("OnDevice: AI Image Studio")
                             .font(T.sans(18, .bold))
@@ -1529,59 +1529,59 @@ struct SettingsView: View {
                     Spacer(minLength: 0)
                 }
 
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     promoFeaturePill(icon: "lock.shield", text: "private")
                     promoFeaturePill(icon: "iphone", text: "on-device")
                     Spacer(minLength: 8)
                     Text("coming soon")
                         .font(T.mono(10, .semibold))
                         .foregroundColor(T.warn)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 5)
+                        .padding(.horizontal, Space.s)
+                        .padding(.vertical, Space.xs)
                         .background(Capsule().fill(T.warn.opacity(0.10)))
                         .overlay(Capsule().stroke(T.warn.opacity(0.32), lineWidth: 0.5))
                 }
 
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     Text("See the preview and follow launch updates.")
                         .font(T.sans(11.5))
                         .foregroundColor(T.ink3)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                     Spacer(minLength: 8)
-                    HStack(spacing: 5) {
+                    HStack(spacing: Space.xs) {
                         Text("Website")
                             .font(T.mono(11, .semibold))
                             .lineLimit(1)
                         Image(systemName: "chevron.forward")
-                            .font(.system(size: 9, weight: .bold))
+                            .font(.system(.caption2, weight: .bold))
                     }
                     .foregroundColor(T.ink)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, Space.s)
+                    .padding(.vertical, Space.xs)
                     .background(Capsule().fill(T.surface2))
                     .overlay(Capsule().stroke(T.rule, lineWidth: 1))
                 }
             }
-            .padding(15)
+            .padding(Space.m)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
+            .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
         }
         .buttonStyle(KTactileButtonStyle())
         .accessibilityLabel("Open the OnDevice AI Image Studio preview website. App Store release coming soon.")
     }
 
     private func promoFeaturePill(icon: String, text: String) -> some View {
-        HStack(spacing: 5) {
+        HStack(spacing: Space.xs) {
             Image(systemName: icon)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(.caption2, weight: .semibold))
             Text(text)
                 .font(T.mono(10, .semibold))
                 .lineLimit(1)
         }
         .foregroundColor(T.ink2)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
+        .padding(.horizontal, Space.s)
+        .padding(.vertical, Space.xs)
         .background(Capsule().fill(T.surface2))
         .overlay(Capsule().stroke(T.rule, lineWidth: 0.5))
     }
@@ -1594,11 +1594,11 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 KCaption(text: "about")
                 Rectangle().fill(T.rule).frame(height: 1)
             }
-            .padding(.bottom, 8)
+            .padding(.bottom, Space.s)
             KSpecTable(rows: [
                 ("version",   appVersionLabel),
                 ("models",    "apple vision · fastvit-hd · qwen2.5"),
@@ -1608,8 +1608,8 @@ struct SettingsView: View {
                 ("privacy",   "Local by default"),
             ], keyWidth: 80)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 18)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.m)
     }
 
     @ViewBuilder
@@ -1773,10 +1773,10 @@ private struct WhisperSTTBlock: View {
     }
 
     private var idleCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.s) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: "info.circle")
-                    .font(.system(size: 11))
+                    .font(.system(.caption2))
                     .foregroundColor(T.ink3)
                 KMono(text: "Install Whisper for on-device, multilingual STT.", size: 10, color: T.ink3, mono: false)
                 .fixedSize(horizontal: false, vertical: true)
@@ -1791,13 +1791,13 @@ private struct WhisperSTTBlock: View {
                 HapticManager.impact(.medium)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
     }
 
     private var progressCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
+            HStack(spacing: Space.s) {
                 ProgressView()
                     .tint(T.accent)
                     .scaleEffect(0.7)
@@ -1813,7 +1813,7 @@ private struct WhisperSTTBlock: View {
                     HapticManager.impact(.light)
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
+                        .font(.system(.subheadline))
                         .foregroundColor(T.ink3)
                 }
                 .buttonStyle(.plain)
@@ -1836,15 +1836,15 @@ private struct WhisperSTTBlock: View {
                 )
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
     }
 
     private func failedCard(message: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.s) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: "exclamationmark.triangle")
-                    .font(.system(size: 11))
+                    .font(.system(.caption2))
                     .foregroundColor(T.bad)
                 KMono(text: "Download failed: \(message)", size: 10, color: T.bad, mono: false)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1859,8 +1859,8 @@ private struct WhisperSTTBlock: View {
                 HapticManager.impact(.medium)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
     }
 }
 
@@ -1871,7 +1871,7 @@ private struct CloudSyncSettingsSection: View {
 
     var body: some View {
         KSection(title: "optional_icloud_sync") {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 Toggle("Enable iCloud conversation sync", isOn: $settings.iCloudSyncEnabled)
                 Text("When enabled, Sync Now uploads conversation history to your private iCloud database and merges it with your other devices. Turning this off stops new sync work; it does not delete copies already in iCloud.")
                     .font(.footnote)
@@ -1886,7 +1886,7 @@ private struct CloudSyncSettingsSection: View {
                 Button(sync.isSyncing ? "Syncing…" : "Sync Now") { Task { await sync.syncNow() } }
                     .disabled(!settings.iCloudSyncEnabled || sync.isSyncing)
             }
-            .padding(14)
+            .padding(Space.m)
         }
     }
 }
@@ -1898,12 +1898,12 @@ struct SettingsNavigationRow: View {
     @Environment(\.koduTheme) private var theme
 
     var body: some View {
-        HStack(spacing: 13) {
+        HStack(spacing: Space.s) {
             Image(systemName: icon)
-                .font(.system(size: 20))
+                .font(.system(.title3))
                 .foregroundStyle(theme.accent)
-                .frame(width: 38, height: 38)
-            VStack(alignment: .leading, spacing: 4) {
+                .frame(width: Size.control, height: Size.control)
+            VStack(alignment: .leading, spacing: Space.xxs) {
                 Text(title).font(.headline).foregroundStyle(theme.ink)
                 Text(subtitle).font(.subheadline).foregroundStyle(theme.ink2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1911,9 +1911,9 @@ struct SettingsNavigationRow: View {
             Spacer(minLength: 0)
             Image(systemName: "chevron.forward").foregroundStyle(theme.ink2)
         }
-        .padding(16)
+        .padding(Space.m)
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-        .background(theme.surface, in: RoundedRectangle(cornerRadius: 16))
+        .background(theme.surface, in: RoundedRectangle(cornerRadius: Radius.card))
         .accessibilityElement(children: .combine)
     }
 }

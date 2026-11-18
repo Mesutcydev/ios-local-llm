@@ -66,16 +66,16 @@ struct FirstLightSplashView: View {
                     Spacer(minLength: 20)
 
                     lensAssembly(logoSize: logoSize)
-                        .padding(.bottom, 34)
+                        .padding(.bottom, Space.xl)
 
                     wordmark
 
                     Spacer(minLength: 20)
 
                     footer
-                        .padding(.bottom, 40)
+                        .padding(.bottom, Space.xl)
                 }
-                .padding(.horizontal, 28)
+                .padding(.horizontal, Space.l)
             }
         }
         .ignoresSafeArea()
@@ -279,9 +279,9 @@ struct FirstLightSplashView: View {
     // MARK: - Wordmark
 
     private var wordmark: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: Space.m) {
             Text("iOS Local LLM")
-                .font(.system(size: 31, weight: .semibold))
+                .font(.system(.largeTitle, weight: .semibold))
                 // Tracking settles from wide to tight as the name lands —
                 // reads as focus being pulled, matching the lens motif.
                 .tracking(textIn ? -0.6 : 7)
@@ -325,7 +325,7 @@ struct FirstLightSplashView: View {
     // MARK: - Footer (privacy line + dwell beam)
 
     private var footer: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: Space.m) {
             Text("Private. On your device.")
                 .font(.footnote)
                 .foregroundStyle(.white.opacity(0.45))

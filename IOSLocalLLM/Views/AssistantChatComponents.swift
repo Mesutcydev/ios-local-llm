@@ -29,8 +29,8 @@ struct AssistantComposer: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .bottom, spacing: 12) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
+            HStack(alignment: .bottom, spacing: Space.s) {
                 TextField("Message your assistant", text: $text, prompt: Text("Message your assistant").foregroundStyle(theme.ink3), axis: .vertical)
                 .font(.body)
                 .foregroundStyle(theme.ink)
@@ -43,8 +43,8 @@ struct AssistantComposer: View {
                     onSend()
                 }
                 .frame(minHeight: 44, alignment: .center)
-                .padding(.leading, 6)
-                .padding(.vertical, 2)
+                .padding(.leading, Space.xs)
+                .padding(.vertical, Space.hair)
                 .layoutPriority(1)
                 .accessibilityLabel("Message your on-device assistant")
                 .accessibilityIdentifier("assistant.composer.input")
@@ -55,7 +55,7 @@ struct AssistantComposer: View {
                 modelButton
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            HStack(spacing: 2) {
+            HStack(spacing: Space.hair) {
                 Menu {
                     Button(action: onAdd) { Label("Prompt or snippet", systemImage: "text.badge.plus") }
                     Button(action: onPhoto) { Label("Photo", systemImage: "photo") }
@@ -69,8 +69,8 @@ struct AssistantComposer: View {
                     }
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 20, weight: .medium))
-                        .frame(width: 44, height: 44)
+                        .font(.system(.title3, weight: .medium))
+                        .frame(width: Size.control, height: Size.control)
                         .contentShape(Circle())
                 }
                 .accessibilityLabel("Add a prompt or attachment")
@@ -78,7 +78,7 @@ struct AssistantComposer: View {
                 if !textSize.isAccessibilitySize { modelButton }
                 Spacer(minLength: 4)
                 MicDictationButton(text: $text, compact: true, composerStyle: true)
-                    .frame(width: 44, height: 44)
+                    .frame(width: Size.control, height: Size.control)
                     .accessibilityIdentifier("assistant.composer.dictation")
                 if isFocused {
                     Button {
@@ -86,7 +86,7 @@ struct AssistantComposer: View {
                         KeyboardDismiss.now()
                     } label: {
                         Image(systemName: "keyboard.chevron.compact.down")
-                            .frame(width: 44, height: 44)
+                            .frame(width: Size.control, height: Size.control)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Dismiss keyboard")
@@ -95,9 +95,9 @@ struct AssistantComposer: View {
             }
             .foregroundStyle(theme.ink2)
         }
-        .padding(.horizontal, 10)
-        .padding(.top, 12)
-        .padding(.bottom, 6)
+        .padding(.horizontal, Space.s)
+        .padding(.top, Space.s)
+        .padding(.bottom, Space.xs)
         .onChange(of: verticalSizeClass) { _, height in
             // ponytail: iOS 27.0 drops the keyboard inset when an iPhone turns
             // to landscape with the keyboard up, leaving this composer under
@@ -124,7 +124,7 @@ struct AssistantComposer: View {
             Image(systemName: isGenerating ? "stop.fill" : offersVoice ? "waveform" : "arrow.up")
                 .font(.system(size: isGenerating ? 17 : 20, weight: .semibold))
                 .foregroundStyle(enabled ? theme.bg : theme.ink3)
-                .frame(width: 44, height: 44)
+                .frame(width: Size.control, height: Size.control)
                 .background(enabled ? theme.ink : theme.ink.opacity(0.08), in: Circle())
         }
         .buttonStyle(AssistantSendButtonStyle(reduceMotion: reduceMotion))
@@ -136,17 +136,17 @@ struct AssistantComposer: View {
 
     private var modelButton: some View {
         Button(action: onModel) {
-            HStack(spacing: 5) {
+            HStack(spacing: Space.xs) {
                 Text(verbatim: modelName)
                     .font(.caption.weight(.medium))
                     .lineLimit(textSize.isAccessibilitySize ? 2 : 1)
                     .truncationMode(.middle)
-                Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold))
+                Image(systemName: "chevron.down").font(.system(.caption2, weight: .semibold))
                 if hasCustomSampling {
                     Circle().fill(theme.accent).frame(width: 5, height: 5)
                 }
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, Space.s)
             .frame(minHeight: 44)
             .contentShape(Capsule())
         }
@@ -257,7 +257,7 @@ struct SamplingSettingsSheet: View {
                         step: 0.01
                     )
 
-                    VStack(alignment: .leading, spacing: AppSpacing.small) {
+                    VStack(alignment: .leading, spacing: Space.s) {
                         LabeledContent("Top-k", value: "\(topK ?? defaults.topK)")
                         Slider(
                             value: Binding(
@@ -309,7 +309,7 @@ struct SamplingSettingsSheet: View {
         range: ClosedRange<Double>,
         step: Double
     ) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.small) {
+        VStack(alignment: .leading, spacing: Space.s) {
             LabeledContent(title, value: String(format: "%.2f", value.wrappedValue ?? fallback))
             Slider(
                 value: Binding(
@@ -569,7 +569,7 @@ private struct AssistantModelSettingsSliderRow: View {
     let step: Double
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.small) {
+        VStack(alignment: .leading, spacing: Space.s) {
             LabeledContent(title) {
                 Text(value, format: .number.precision(.fractionLength(2)))
             }

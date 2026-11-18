@@ -155,7 +155,7 @@ struct ModelsManagerView: View {
                 .allowsHitTesting(false)
 
             ScrollView {
-                LazyVStack(spacing: AppSpacing.large) {
+                LazyVStack(spacing: Space.cardGap) {
                     ModelsDestinationPicker(isLibrary: $isLibrary)
                     searchBar
                     ModelsCategoryFilter(selection: Binding(
@@ -167,9 +167,9 @@ struct ModelsManagerView: View {
                     ))
                     activeContent
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                .padding(.bottom, AppSpacing.xLarge)
+                .padding(.horizontal, Space.m)
+                .padding(.top, Space.s)
+                .padding(.bottom, Space.l)
                 .frame(maxWidth: AppLayout.readingWidth)
                 .frame(maxWidth: .infinity)
             }
@@ -358,14 +358,14 @@ struct ModelsManagerView: View {
 
     private var detailActionsLayout: AnyLayout {
         textSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Space.s))
             : AnyLayout(KFlowLayout(horizontalSpacing: 8, verticalSpacing: 8))
     }
 
     private var detailHeaderLayout: AnyLayout {
         textSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
-            : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Space.s))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: Space.s))
     }
 
     private func presentAfterDetails(_ action: @escaping () -> Void) {
@@ -378,7 +378,7 @@ struct ModelsManagerView: View {
     private func modelDetails(_ destination: ModelDetails) -> some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: AppSpacing.large) {
+                VStack(alignment: .leading, spacing: Space.m) {
                     switch destination {
                     case let .model(model, role):
                         if let runtime = LocalModelRegistry.descriptor(for: model).runtime {
@@ -409,7 +409,7 @@ struct ModelsManagerView: View {
                         }
                     }
                 }
-                .padding(AppSpacing.large)
+                .padding(Space.m)
                 .frame(maxWidth: AppLayout.readingWidth)
                 .frame(maxWidth: .infinity)
             }
@@ -491,9 +491,9 @@ struct ModelsManagerView: View {
             HapticManager.impact(.light)
             showDownloads = true
         } label: {
-            HStack(spacing: 5) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: "arrow.down.circle.fill")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(.caption2, weight: .semibold))
                     .symbolEffect(.variableColor.iterative.dimInactiveLayers,
                                   options: .repeating, isActive: activeDownloadCount > 0)
                 if activeDownloadCount > 0 {
@@ -505,7 +505,7 @@ struct ModelsManagerView: View {
                 }
             }
             .foregroundColor(.white)
-            .padding(.horizontal, 10).padding(.vertical, 6)
+            .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
             .background(Capsule().fill(T.accent))
         }
         .buttonStyle(.plain)
@@ -524,7 +524,7 @@ struct ModelsManagerView: View {
         return ZStack {
             LiquidPinkBackdrop()
             ScrollView {
-                VStack(spacing: 14) {
+                VStack(spacing: Space.cardGap) {
                     HStack {
                         KPageTitle(title: loc.t("Downloads"), size: 28)
                         Spacer()
@@ -541,7 +541,7 @@ struct ModelsManagerView: View {
                         if !coreAI.isEmpty {
                             sectionLabel("Core AI", glyph: "cpu", tint: T.accent)
                             ForEach(coreAI) { manager in
-                                VStack(alignment: .leading, spacing: 8) {
+                                VStack(alignment: .leading, spacing: Space.s) {
                                     Text(manager.displayName).font(.headline)
                                     CoreAIDownloadControlsView(manager: manager)
                                 }
@@ -573,8 +573,8 @@ struct ModelsManagerView: View {
                         }
                     }
                 }
-                .padding(16)
-                .padding(.top, 24)
+                .padding(Space.m)
+                .padding(.top, Space.l)
             }
         }
     }
@@ -595,7 +595,7 @@ struct ModelsManagerView: View {
         let sum = max(1, lang + vision + voice)
         let visionColor = Color(red: 0.24, green: 0.36, blue: 1.0)
         let voiceColor = Color(red: 0.06, green: 0.64, blue: 0.50)
-        return VStack(alignment: .leading, spacing: 11) {
+        return VStack(alignment: .leading, spacing: Space.s) {
             HStack {
                 Text(loc.t("On-device storage"))
                     .font(T.sans(15, .semibold)).foregroundColor(T.ink)
@@ -618,7 +618,7 @@ struct ModelsManagerView: View {
             .frame(height: 10)
             .background(T.ink4.opacity(0.3))
             .clipShape(Capsule())
-            HStack(spacing: 16) {
+            HStack(spacing: Space.m) {
                 storageLegend(loc.t("Language"), T.accent)
                 storageLegend(loc.t("Vision"), visionColor)
                 storageLegend(loc.t("Voice"), voiceColor)
@@ -626,9 +626,9 @@ struct ModelsManagerView: View {
 
             Rectangle().fill(T.rule).frame(height: 1)
 
-            HStack(alignment: .center, spacing: 10) {
+            HStack(alignment: .center, spacing: Space.s) {
                 Image(systemName: "externaldrive.badge.exclamationmark")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.footnote, weight: .semibold))
                     .foregroundColor(T.warn)
                 Text(loc.t("Model downloads can grow quickly. Keep the ones you use and remove the rest without resetting the app."))
                     .font(T.sans(11.5))
@@ -642,23 +642,23 @@ struct ModelsManagerView: View {
                     Text(loc.t("Clean up"))
                         .font(T.sans(12, .semibold))
                         .foregroundColor(T.accent)
-                        .padding(.horizontal, 11)
+                        .padding(.horizontal, Space.s)
                         .frame(height: 32)
                         .background(Capsule().fill(T.accentSoft))
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(16)
+        .padding(Space.m)
         .kClearGlass(
-            in: RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous),
+            in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous),
             fallbackFill: T.surface,
             fallbackStroke: T.rule
         )
     }
 
     private func storageLegend(_ label: String, _ color: Color) -> some View {
-        HStack(spacing: 5) {
+        HStack(spacing: Space.xs) {
             RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 8, height: 8)
             Text(label).font(T.sans(12)).foregroundColor(T.ink2)
         }
@@ -676,11 +676,11 @@ struct ModelsManagerView: View {
     }
 
     private var inventoryBadge: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             Image(systemName: activeLoadedCount > 0 ? "bolt.horizontal.circle.fill" : "circle.dashed")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(.caption, weight: .semibold))
                 .foregroundColor(activeLoadedCount > 0 ? T.good : T.ink3)
-                .frame(width: 28, height: 28)
+                .frame(width: Size.tile, height: Size.tile)
                 .background(
                     Circle()
                         .fill((activeLoadedCount > 0 ? T.good : T.ink3).opacity(T.isDark ? 0.18 : 0.10))
@@ -705,8 +705,8 @@ struct ModelsManagerView: View {
                       size: 11, weight: .semibold, color: T.ink3)
             }
         }
-        .padding(.horizontal, 11)
-        .padding(.vertical, 9)
+        .padding(.horizontal, Space.s)
+        .padding(.vertical, Space.s)
         .fixedSize(horizontal: true, vertical: false)
         .kClearGlass(
             in: Capsule(),
@@ -717,8 +717,8 @@ struct ModelsManagerView: View {
 
     private var libraryHero: some View {
         modelCardShell(accent: T.accent, prominence: 0.16) {
-            HStack(alignment: .center, spacing: 14) {
-                VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .center, spacing: Space.m) {
+                VStack(alignment: .leading, spacing: Space.xs) {
                     KCaption(text: "Library Overview", color: T.accent)
                     Text("Chat, vision, and imported MLX models.")
                         .font(T.sans(16, .semibold))
@@ -727,11 +727,11 @@ struct ModelsManagerView: View {
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "square.stack.3d.up.fill")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                     .foregroundColor(T.accent)
-                    .frame(width: 38, height: 38)
+                    .frame(width: Size.control, height: Size.control)
                     .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                             .fill(T.accentSoft)
                     )
             }
@@ -770,10 +770,10 @@ struct ModelsManagerView: View {
         }.count
 
         return ViewThatFits(in: .horizontal) {
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 summaryChips(storage: storage, installed: installedCount, downloading: downloading)
             }
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 summaryChips(storage: storage, installed: installedCount, downloading: downloading)
             }
         }
@@ -792,7 +792,7 @@ struct ModelsManagerView: View {
 
     @ViewBuilder
     private func metaChip(text: String, color: Color) -> some View {
-        HStack(spacing: 5) {
+        HStack(spacing: Space.xs) {
             Circle()
                 .fill(color)
                 .frame(width: 4, height: 4)
@@ -801,8 +801,8 @@ struct ModelsManagerView: View {
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: true, vertical: false)
         }
-        .padding(.horizontal, 9)
-        .padding(.vertical, 4)
+        .padding(.horizontal, Space.s)
+        .padding(.vertical, Space.xxs)
         .kClearGlass(
             in: Capsule(style: .continuous),
             fallbackFill: T.surface,
@@ -812,22 +812,21 @@ struct ModelsManagerView: View {
 
     @ViewBuilder
     private func statChip(icon: String, title: String, value: String, detail: String, tint: Color, soft: Color) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: Space.s) {
             Image(systemName: icon)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(.subheadline, weight: .semibold))
                 .foregroundColor(tint)
-                .frame(width: 34, height: 34)
+                .frame(width: Size.tile, height: Size.tile)
                 .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                         .fill(soft)
                 )
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: Space.xxs) {
                 Text(value)
                     .font(T.display(20, .semibold))
                     .foregroundColor(T.ink)
                 Text(title)
                     .font(T.mono(13, .semibold))
-                    .tracking(0.6)
                     .foregroundColor(T.ink3)
                 Text(detail)
                     .font(T.mono(13))
@@ -835,14 +834,14 @@ struct ModelsManagerView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 14)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.m)
         .frame(maxWidth: .infinity)
         .background(
             ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                     .fill(T.surface.opacity(0.96))
-                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                     .fill(
                         LinearGradient(
                             colors: [
@@ -857,7 +856,7 @@ struct ModelsManagerView: View {
             }
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                 .stroke(T.glassBorder, lineWidth: 0.5)
         )
     }
@@ -917,7 +916,7 @@ struct ModelsManagerView: View {
         if isLibrary {
             downloadedOnlyContent
         } else {
-            VStack(spacing: 18) {
+            VStack(spacing: Space.m) {
                 if !isSearching {
                     Button(loc.t("Guided model setup")) { showingGuidedSetup = true }
                         .buttonStyle(.kSecondary)
@@ -982,7 +981,7 @@ struct ModelsManagerView: View {
                     KPrimaryButton(label: loc.t("Discover models"), systemImage: "sparkle.magnifyingglass") {
                         isLibrary = false
                     }
-                    .padding(.top, 12)
+                    .padding(.top, Space.s)
                     .accessibilityIdentifier("models.discover.open")
                     Button { showImportPicker = true } label: {
                         Text(loc.t("Import model"))
@@ -1024,7 +1023,7 @@ struct ModelsManagerView: View {
     @ViewBuilder
     private func categoryPage(for section: Section) -> some View {
         let category = section.category
-        LazyVStack(spacing: 18) {
+        LazyVStack(spacing: Space.m) {
             sectionLabel(loc.t(section.rawValue), glyph: section.glyph, tint: T.accent)
             // In-flight downloads for this category.
             let inFlight = inFlightModels(category)
@@ -1063,7 +1062,7 @@ struct ModelsManagerView: View {
     private func activeRoleHeader(for section: Section) -> some View {
         switch section {
         case .assistant:
-            VStack(spacing: 10) {
+            VStack(spacing: Space.s) {
                 categorySectionHeader(.assistant)
                 activeRow(
                     title: loc.t("assistant"),
@@ -1083,7 +1082,7 @@ struct ModelsManagerView: View {
                 )
             }
         case .lens:
-            VStack(spacing: 10) {
+            VStack(spacing: Space.s) {
                 categorySectionHeader(.vlm)
                 activeRow(
                     title: loc.t("vision"),
@@ -1098,7 +1097,7 @@ struct ModelsManagerView: View {
                 )
             }
         case .voice:
-            VStack(spacing: 10) {
+            VStack(spacing: Space.s) {
                 categorySectionHeader(.voice)
                 activeRow(
                     title: loc.t("voice"),
@@ -1288,10 +1287,10 @@ struct ModelsManagerView: View {
     private func voiceCatalogDetailRow(_ entry: VoiceCatalogEntry) -> some View {
         let model = entry.legacyDownloadID.flatMap { id in center.models.first { $0.id == id } }
         return modelCardShell(accent: T.accent, prominence: 0.09) {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 detailHeaderLayout {
                     categoryGlyph(.voice)
-                    VStack(alignment: .leading, spacing: 5) {
+                    VStack(alignment: .leading, spacing: Space.xs) {
                         KCaption(text: entry.task == .textToSpeech ? "TEXT TO SPEECH" : "SPEECH RECOGNITION", color: T.ink3)
                         Text(entry.name).font(T.display(18, .semibold)).foregroundColor(T.ink)
                         Text(LocalizedStringKey(entry.summary)).font(T.sans(14)).foregroundColor(T.ink3)
@@ -1352,19 +1351,19 @@ struct ModelsManagerView: View {
     /// risky model is ever shown or loadable.
     private var suggestedHeader: some View {
         let avail = MemoryAdvisor.availableMemoryForModel
-        return VStack(spacing: 9) {
-            HStack(spacing: 6) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 11))
-                    .foregroundColor(T.accent)
-                KCaption(text: loc.t("Suggested · best fit first").uppercased(), color: T.accent)
+        return VStack(spacing: Space.s) {
+            // A description of the list, not a second small-caps header: the
+            // category header right above already names the section.
+            HStack(spacing: Space.xs) {
+                Text(loc.t("Suggested · best fit first"))
                 Spacer(minLength: 0)
                 if avail > 0 {
                     Text("~\(avail.formattedBytes) " + loc.t("free"))
-                        .font(T.mono(13, .semibold))
-                        .foregroundColor(T.ink3)
+                        .monospacedDigit()
                 }
             }
+            .font(.caption)
+            .foregroundStyle(T.ink3)
             edgeToggle
         }
     }
@@ -1378,13 +1377,12 @@ struct ModelsManagerView: View {
             withAnimation(.snappy(duration: 0.2)) { settings.showEdgeModels.toggle() }
             HapticManager.impact(.light)
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 Image(systemName: on ? "hammer.fill" : "hammer")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(.caption2, weight: .semibold))
                 VStack(alignment: .leading, spacing: 1) {
                     Text(loc.t(on ? "Edge / developer mode — ON" : "Edge / developer mode"))
                         .font(T.mono(13, .semibold))
-                        .tracking(0.3)
                     Text(on
                          ? loc.t("Tight models shown — experimental, may be unstable")
                          : loc.t("Only models that safely fit this device are shown"))
@@ -1393,13 +1391,13 @@ struct ModelsManagerView: View {
                 }
                 Spacer(minLength: 0)
                 Image(systemName: on ? "circle.inset.filled" : "circle")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
             }
             .foregroundColor(on ? T.warn : T.ink2)
-            .padding(.horizontal, 12).padding(.vertical, 9)
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .padding(.horizontal, Space.s).padding(.vertical, Space.s)
+            .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .fill((on ? T.warn : T.ink3).opacity(on ? 0.12 : 0.06)))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .stroke(on ? T.warn.opacity(0.40) : T.glassBorder, lineWidth: 0.5))
         }
         .buttonStyle(.plain)
@@ -1410,9 +1408,9 @@ struct ModelsManagerView: View {
     @ViewBuilder
     private func edgeHiddenHint(_ count: Int) -> some View {
         if count > 0 && !settings.showEdgeModels {
-            HStack(alignment: .top, spacing: 6) {
+            HStack(alignment: .top, spacing: Space.xs) {
                 Image(systemName: "eye.slash")
-                    .font(.system(size: 10))
+                    .font(.system(.caption2))
                     .foregroundColor(T.ink3)
                 Text("\(count) " + loc.t("model(s) hidden that won't safely fit this device. Turn on Edge mode to try them."))
                     .font(T.mono(13))
@@ -1420,7 +1418,7 @@ struct ModelsManagerView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 4)
+            .padding(.horizontal, Space.xxs)
         }
     }
 
@@ -1454,21 +1452,21 @@ struct ModelsManagerView: View {
     /// each with an honest device-fit badge based on the heaviest single model
     /// — models load one at a time, so the largest pick is the binding limit.
     private var recommendedSetupsCard: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: Space.s) {
             Button {
                 withAnimation(.snappy(duration: 0.22)) { showRecommendedSetups.toggle() }
                 HapticManager.impact(.light)
             } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: Space.xs) {
                     Image(systemName: "square.stack.3d.up.fill")
-                        .font(.system(size: 11))
+                        .font(.system(.caption2))
                         .foregroundColor(T.accent)
                     KCaption(text: loc.t("Recommended setups").uppercased(), color: T.accent)
                         .fixedSize(horizontal: false, vertical: true)
                         .layoutPriority(1)
                     Rectangle().fill(T.rule).frame(height: 1)
                     Image(systemName: showRecommendedSetups ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(.caption2, weight: .semibold))
                         .foregroundColor(T.ink3)
                 }
                 .frame(minHeight: 44)
@@ -1492,23 +1490,23 @@ struct ModelsManagerView: View {
         let accent = comboAccent(combo.tier)
         let maxRAM = combo.picks.map(\.approxRAM).max() ?? 0
         let expanded = expandedComboID == combo.id
-        modelCardShell(accent: accent, prominence: expanded ? 0.14 : 0.09, padding: 14) {
-            VStack(alignment: .leading, spacing: expanded ? 12 : 0) {
+        modelCardShell(accent: accent, prominence: expanded ? 0.14 : 0.09, padding: Space.cardPadding) {
+            VStack(alignment: .leading, spacing: expanded ? Space.s : 0) {
                 Button {
                     withAnimation(.snappy(duration: 0.22)) {
                         expandedComboID = expanded ? nil : combo.id
                     }
                     HapticManager.impact(.light)
                 } label: {
-                    HStack(spacing: 12) {
+                    HStack(spacing: Space.s) {
                         Image(systemName: combo.glyph)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.system(.subheadline, weight: .semibold))
                             .foregroundColor(accent)
-                            .frame(width: 40, height: 40)
-                            .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
+                            .frame(width: Size.control, height: Size.control)
+                            .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                                 .fill(accent.opacity(0.14)))
-                        VStack(alignment: .leading, spacing: 3) {
-                            HStack(spacing: 6) {
+                        VStack(alignment: .leading, spacing: Space.xxs) {
+                            HStack(spacing: Space.xs) {
                                 Text(loc.t(combo.tier))
                                     .font(T.display(17, .semibold))
                                     .foregroundColor(T.ink)
@@ -1521,10 +1519,10 @@ struct ModelsManagerView: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                         Spacer(minLength: 0)
-                        VStack(alignment: .trailing, spacing: 5) {
+                        VStack(alignment: .trailing, spacing: Space.xs) {
                             metricBadge("↓ " + combo.totalDownload.formattedBytes)
                             Image(systemName: expanded ? "chevron.up" : "chevron.down")
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(.system(.caption2, weight: .semibold))
                                 .foregroundColor(T.ink3)
                         }
                     }
@@ -1532,34 +1530,21 @@ struct ModelsManagerView: View {
                 .buttonStyle(.plain)
 
                 if expanded {
-                    VStack(spacing: 8) {
+                    VStack(spacing: Space.s) {
                         ForEach(combo.picks) { pick in
                             comboPickRow(pick)
                         }
                     }
 
-                    Button {
+                    // The card's one main action: Apple's prominent glass in the
+                    // app accent, like every other primary button.
+                    KPrimaryButton(
+                        label: loc.t("Download all"),
+                        systemImage: "arrow.down.circle.fill",
+                        trailing: combo.totalDownload.formattedBytes
+                    ) {
                         startDownloads(for: combo)
-                    } label: {
-                        HStack(spacing: 7) {
-                            Image(systemName: "arrow.down.circle.fill")
-                            Text(loc.t("Download all"))
-                            Spacer(minLength: 0)
-                            Text(combo.totalDownload.formattedBytes)
-                                .font(T.mono(13, .semibold))
-                                .foregroundColor(.white.opacity(0.78))
-                        }
-                        .font(T.sans(14, .semibold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 14)
-                        .frame(height: 42)
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                                .fill(accent)
-                        )
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
@@ -1567,7 +1552,7 @@ struct ModelsManagerView: View {
 
     @ViewBuilder
     private func comboPickRow(_ pick: ComboPick) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             Button {
                 searchText = ""
                 withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) {
@@ -1576,9 +1561,9 @@ struct ModelsManagerView: View {
                 }
                 HapticManager.impact(.light)
             } label: {
-                HStack(spacing: 10) {
+                HStack(spacing: Space.s) {
                     categoryGlyph(pick.role)
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         Text(pick.name)
                             .font(T.mono(13, .semibold))
                             .foregroundColor(T.ink)
@@ -1599,11 +1584,11 @@ struct ModelsManagerView: View {
 
             comboDownloadControl(for: pick)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+        .padding(.horizontal, Space.s)
+        .padding(.vertical, Space.s)
+        .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
             .fill(T.surface2.opacity(0.6)))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+        .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
             .stroke(T.glassBorder, lineWidth: 0.5))
     }
 
@@ -1620,7 +1605,7 @@ struct ModelsManagerView: View {
                     tint: tint
                 )
             } else {
-                comboGetButton(
+                GlassGetButton(
                     label: imageGen.directDownloadErrors[model.id] == nil
                         ? loc.t("Get")
                         : loc.t("Retry"),
@@ -1646,7 +1631,7 @@ struct ModelsManagerView: View {
                 selectedSection = sectionFor(pick.role)
             } label: {
                 Image(systemName: "chevron.forward")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(.caption2, weight: .semibold))
                     .foregroundColor(T.ink3)
                     .frame(width: 34, height: 30)
             }
@@ -1686,28 +1671,8 @@ struct ModelsManagerView: View {
     }
 
     @ViewBuilder
-    private func comboGetButton(
-        label: String,
-        tint: Color,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button {
-            action()
-            HapticManager.impact(.medium)
-        } label: {
-            Text(label)
-                .font(T.sans(12, .semibold))
-                .foregroundColor(tint)
-                .padding(.horizontal, 12)
-                .frame(height: 30)
-                .background(Capsule().fill(tint.opacity(0.12)))
-        }
-        .buttonStyle(.plain)
-    }
-
-    @ViewBuilder
     private func comboProgressBadge(progress: Double, tint: Color) -> some View {
-        HStack(spacing: 5) {
+        HStack(spacing: Space.xs) {
             ProgressView(value: progress)
                 .tint(tint)
                 .frame(width: 28)
@@ -1721,7 +1686,7 @@ struct ModelsManagerView: View {
     @ViewBuilder
     private func comboReadyBadge(tint: Color) -> some View {
         Image(systemName: "checkmark.circle.fill")
-            .font(.system(size: 17, weight: .semibold))
+            .font(.system(.body, weight: .semibold))
             .foregroundColor(tint)
             .frame(width: 42, height: 30)
     }
@@ -1746,17 +1711,17 @@ struct ModelsManagerView: View {
     /// Image hero card + generator launcher (replaces the active-role row for
     /// the Image category, which has no persistent "active" selection).
     private var imageHeroCard: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Space.s) {
             categorySectionHeader(.imageGen)
             modelCardShell(accent: T.accent, prominence: 0.16) {
-                HStack(alignment: .center, spacing: 14) {
+                HStack(alignment: .center, spacing: Space.m) {
                     Image(systemName: "wand.and.stars")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(.system(.body, weight: .semibold))
                         .foregroundColor(T.accent)
-                        .frame(width: 44, height: 44)
-                        .background(RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .frame(width: Size.control, height: Size.control)
+                        .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                             .fill(T.accentSoft))
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         KCaption(text: loc.t("Text to image"), color: T.accent)
                         Text(loc.t("Generate images on-device"))
                             .font(T.display(18, .semibold))
@@ -1774,15 +1739,15 @@ struct ModelsManagerView: View {
                 showImageGen = true
                 HapticManager.impact(.medium)
             } label: {
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "sparkles")
                     Text(loc.t("Open generator"))
                 }
                 .font(T.display(16, .semibold))
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(T.roseHi))
+                .padding(.vertical, Space.m)
+                .background(RoundedRectangle(cornerRadius: Radius.card, style: .continuous).fill(T.roseHi))
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("modelsOpenImageGenerator")
@@ -1796,18 +1761,18 @@ struct ModelsManagerView: View {
         let results = search.results.filter { model in
             category.map { LocalModelRegistry.category(for: model) == $0 } ?? true
         }
-        VStack(spacing: 12) {
-            HStack(spacing: 6) {
+        VStack(spacing: Space.s) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 11))
+                    .font(.system(.caption2))
                     .foregroundColor(T.accent)
                 KCaption(text: loc.t("Hugging Face results").uppercased(), color: T.accent)
                 Rectangle().fill(T.rule).frame(height: 1)
             }
             if search.isSearching {
-                ProgressView().tint(T.accent).padding(.vertical, 20)
+                ProgressView().tint(T.accent).padding(.vertical, Space.m)
             } else if let error = search.lastError {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Space.s) {
                     Label(loc.t("Search unavailable"), systemImage: "wifi.exclamationmark")
                         .font(T.sans(15, .semibold))
                         .foregroundStyle(T.ink)
@@ -1836,9 +1801,9 @@ struct ModelsManagerView: View {
     /// Thin labelled divider used to head a block inside a category page.
     @ViewBuilder
     private func sectionLabel(_ title: String, glyph: String, tint: Color) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Space.xs) {
             Image(systemName: glyph)
-                .font(.system(size: 11))
+                .font(.system(.caption2))
                 .foregroundColor(tint)
             KCaption(text: title, color: tint)
             Rectangle().fill(T.rule).frame(height: 1)
@@ -1850,16 +1815,16 @@ struct ModelsManagerView: View {
     /// the load watchdog without leaving the Models hub.
     private var smartHandlingCard: some View {
         modelCardShell(accent: T.accent, prominence: 0.08) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.s) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "wand.and.stars.inverse")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(.caption, weight: .semibold))
                         .foregroundColor(T.accent)
                     KCaption(text: "Smart handling", color: T.accent)
                     Spacer(minLength: 0)
                 }
                 Toggle(isOn: $settings.strictMemoryGate) {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         Text(loc.t("Memory safety gate"))
                             .font(T.sans(14, .semibold))
                             .foregroundColor(T.ink)
@@ -1874,7 +1839,7 @@ struct ModelsManagerView: View {
                 Rectangle().fill(T.rule).frame(height: 0.5)
 
                 Toggle(isOn: $settings.largeModelLowMemoryEnabled) {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         Text(loc.t("MLX low-cache / GGUF paging"))
                             .font(T.sans(14, .semibold))
                             .foregroundColor(T.ink)
@@ -1888,8 +1853,8 @@ struct ModelsManagerView: View {
 
                 Rectangle().fill(T.rule).frame(height: 0.5)
 
-                HStack(alignment: .center, spacing: 10) {
-                    VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .center, spacing: Space.s) {
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         Text(loc.t("Load timeout"))
                             .font(T.sans(14, .semibold))
                             .foregroundColor(T.ink)
@@ -2283,17 +2248,17 @@ struct ModelsManagerView: View {
         // toast surfaces the full string without forcing a layout change.
         let fullName = "\(modelName)\n\(modelRepoID)"
         return modelCardShell(accent: accent, prominence: 0.16) {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: Space.m) {
+                HStack(alignment: .top, spacing: Space.s) {
                     Image(systemName: icon)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(.callout, weight: .semibold))
                         .foregroundColor(accent)
-                        .frame(width: 44, height: 44)
+                        .frame(width: Size.control, height: Size.control)
                         .background(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                                 .fill(accent.opacity(T.isDark ? 0.18 : 0.12))
                         )
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         KCaption(text: title, color: T.ink3)
                         Text(modelName)
                             .font(T.display(19, .semibold))
@@ -2358,13 +2323,13 @@ struct ModelsManagerView: View {
     ) -> some View {
         switch phase {
         case .unloaded:
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 cardButton(label: loc.t("Load"), kind: .primary, action: onLoad)
                 cardButton(label: loc.t("Swap"), kind: .ghost, action: onSwap)
                 Spacer(minLength: 0)
             }
         case .loading(let progress, let msg):
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 if let p = progress {
                     ProgressView(value: p)
                         .tint(T.accent)
@@ -2375,7 +2340,7 @@ struct ModelsManagerView: View {
                         .tint(T.accent)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                HStack(spacing: 6) {
+                HStack(spacing: Space.xs) {
                     if let p = progress {
                         Text("\(Int(p * 100))%")
                             .font(T.mono(13, .semibold))
@@ -2395,15 +2360,15 @@ struct ModelsManagerView: View {
                     // so it tucks beside the % readout without dominating
                     // the row.
                     Button(action: onCancel) {
-                        HStack(spacing: 4) {
+                        HStack(spacing: Space.xxs) {
                             Image(systemName: "stop.fill")
-                                .font(.system(size: 9, weight: .semibold))
+                                .font(.system(.caption2, weight: .semibold))
                             Text(loc.t("Stop"))
                                 .font(T.mono(13, .semibold))
                         }
                         .foregroundColor(T.bad)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, Space.s)
+                        .padding(.vertical, Space.xxs)
                         .background(
                             Capsule().fill(T.bad.opacity(0.10))
                         )
@@ -2416,18 +2381,18 @@ struct ModelsManagerView: View {
                 }
             }
         case .ready:
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 cardButton(label: loc.t("Unload"), kind: .secondary, action: onUnload)
                 cardButton(label: loc.t("Swap"),   kind: .ghost, action: onSwap)
                 Spacer(minLength: 0)
             }
         case .failed(let msg):
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 Text(msg)
                     .font(T.mono(13))
                     .foregroundColor(T.bad)
                     .lineLimit(3)
-                HStack(spacing: 6) {
+                HStack(spacing: Space.xs) {
                     cardButton(label: loc.t("Retry"), kind: .primary, action: onLoad)
                     cardButton(label: loc.t("Swap"),  kind: .ghost, action: onSwap)
                     Spacer(minLength: 0)
@@ -2442,7 +2407,7 @@ struct ModelsManagerView: View {
 
     private var installedSection: some View {
         let installed = center.models.filter { $0.isReady }
-        return VStack(spacing: 16) {
+        return VStack(spacing: Space.m) {
             if installed.isEmpty {
                 emptyState(
                     icon: "tray",
@@ -2456,7 +2421,7 @@ struct ModelsManagerView: View {
                 ForEach(Self.categoryOrder, id: \.self) { category in
                     let group = installed.filter { $0.category == category }
                     if !group.isEmpty {
-                        VStack(spacing: 10) {
+                        VStack(spacing: Space.s) {
                             categorySectionHeader(category)
                             ForEach(group) { model in
                                 if model.isRequired {
@@ -2531,17 +2496,17 @@ struct ModelsManagerView: View {
                 pendingCleanupBytes = orphanBytes
                 HapticManager.impact(.light)
             } label: {
-                modelCardShell(accent: T.warn, prominence: 0.08, padding: 14) {
-                    HStack(spacing: 12) {
+                modelCardShell(accent: T.warn, prominence: 0.08, padding: Space.cardPadding) {
+                    HStack(spacing: Space.s) {
                         Image(systemName: "trash.slash")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.system(.subheadline, weight: .semibold))
                             .foregroundColor(T.warn)
-                            .frame(width: 40, height: 40)
+                            .frame(width: Size.control, height: Size.control)
                             .background(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                                     .fill(T.warn.opacity(T.isDark ? 0.16 : 0.10))
                             )
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: Space.xxs) {
                             KCaption(text: "Reclaim space", color: T.warn)
                             Text("Clean up partial downloads")
                                 .font(T.sans(14, .semibold))
@@ -2571,22 +2536,22 @@ struct ModelsManagerView: View {
             showImportPicker = true
             HapticManager.impact(.light)
         } label: {
-            modelCardShell(accent: T.accent, prominence: 0.08, padding: 14) {
-                HStack(spacing: 12) {
+            modelCardShell(accent: T.accent, prominence: 0.08, padding: Space.cardPadding) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "folder.badge.plus")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .foregroundColor(T.accent)
-                        .frame(width: 40, height: 40)
+                        .frame(width: Size.control, height: Size.control)
                         .background(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                                 .fill(T.accentSoft)
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                                 .stroke(T.accent.opacity(0.35),
                                         style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
                         )
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         KCaption(text: "Import local model", color: T.accent)
                         Text("Import a model from Files")
                             .font(T.sans(14, .semibold))
@@ -2598,7 +2563,7 @@ struct ModelsManagerView: View {
                     }
                     Spacer(minLength: 0)
                     Image(systemName: "chevron.forward")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(.caption, weight: .semibold))
                         .foregroundColor(T.ink3)
                 }
             }
@@ -2664,12 +2629,12 @@ struct ModelsManagerView: View {
         let roleCategory = activationCategory ?? model.category
         let isActive = isActiveModel(model, as: roleCategory)
         modelCardShell(accent: accentColor(for: model), prominence: isActive ? 0.18 : 0.10) {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: Space.m) {
                 detailHeaderLayout {
                     categoryGlyph(roleCategory)
-                    VStack(alignment: .leading, spacing: 5) {
-                        HStack(alignment: .top, spacing: 6) {
-                            VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xs) {
+                        HStack(alignment: .top, spacing: Space.xs) {
+                            VStack(alignment: .leading, spacing: Space.xxs) {
                                 KCaption(text: categoryEyebrow(roleCategory), color: T.ink3)
                                 Text(model.displayName)
                                     .font(T.display(18, .semibold))
@@ -2699,7 +2664,7 @@ struct ModelsManagerView: View {
                             KCapabilityPillRow(capabilities: Array(model.capabilities), size: .compact)
                         }
                     }
-                    VStack(alignment: .trailing, spacing: 7) {
+                    VStack(alignment: .trailing, spacing: Space.xs) {
                         metricBadge(model.sizeLabel)
                         if roleCategory == .assistant {
                             cardIconButton(
@@ -2730,16 +2695,16 @@ struct ModelsManagerView: View {
                             Text(loc.t("Speech-to-text · ready"))
                                 .font(T.mono(13, .semibold))
                                 .foregroundColor(T.good)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 7)
+                                .padding(.horizontal, Space.s)
+                                .padding(.vertical, Space.xs)
                                 .background(Capsule().fill(T.good.opacity(0.12)))
                                 .overlay(Capsule().stroke(T.good.opacity(0.30), lineWidth: 0.5))
                         } else {
                             Text(loc.t("No in-app voice engine for this repo yet"))
                                 .font(T.mono(13, .semibold))
                                 .foregroundColor(T.warn)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 7)
+                                .padding(.horizontal, Space.s)
+                                .padding(.vertical, Space.xs)
                                 .background(Capsule().fill(T.warn.opacity(0.10)))
                                 .overlay(Capsule().stroke(T.warn.opacity(0.25), lineWidth: 0.5))
                         }
@@ -2902,16 +2867,16 @@ struct ModelsManagerView: View {
     // the full generator sheet.
 
     private var imagesSection: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Space.s) {
             modelCardShell(accent: T.accent, prominence: 0.16) {
-                HStack(alignment: .center, spacing: 14) {
+                HStack(alignment: .center, spacing: Space.m) {
                     Image(systemName: "wand.and.stars")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(.system(.body, weight: .semibold))
                         .foregroundColor(T.accent)
-                        .frame(width: 44, height: 44)
-                        .background(RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .frame(width: Size.control, height: Size.control)
+                        .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                             .fill(T.accentSoft))
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         KCaption(text: "Text to image", color: T.accent)
                         Text("Generate images on-device")
                             .font(T.display(18, .semibold))
@@ -2934,15 +2899,15 @@ struct ModelsManagerView: View {
                 showImageGen = true
                 HapticManager.impact(.medium)
             } label: {
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "sparkles")
                     Text(loc.t("Open generator"))
                 }
                 .font(T.display(16, .semibold))
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(T.roseHi))
+                .padding(.vertical, Space.m)
+                .background(RoundedRectangle(cornerRadius: Radius.card, style: .continuous).fill(T.roseHi))
             }
             .buttonStyle(.plain)
         }
@@ -2986,7 +2951,7 @@ struct ModelsManagerView: View {
         // VLM + voice vendors) with multiple variants each. Realising 30-50
         // catalogRow views eagerly on every parent re-render was a
         // measurable scroll-stutter source.
-        LazyVStack(spacing: 18) {
+        LazyVStack(spacing: Space.m) {
             if !featuredModels.isEmpty {
                 featuredBlock
             }
@@ -3084,15 +3049,15 @@ struct ModelsManagerView: View {
     // MARK: - Featured block
 
     private var featuredBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.s) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 11))
+                    .font(.system(.caption2))
                     .foregroundColor(T.accent)
                 KCaption(text: "FEATURED")
                 Rectangle().fill(T.rule).frame(height: 1)
             }
-            VStack(spacing: 10) {
+            VStack(spacing: Space.s) {
                 ForEach(featuredModels) { model in
                     catalogRow(model)
                 }
@@ -3104,9 +3069,9 @@ struct ModelsManagerView: View {
 
     @ViewBuilder
     private func familyBlock(_ group: FamilyGroup) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.s) {
             familyHeader(group)
-            VStack(spacing: 10) {
+            VStack(spacing: Space.s) {
                 ForEach(group.models) { model in
                     catalogRow(model)
                 }
@@ -3116,17 +3081,17 @@ struct ModelsManagerView: View {
 
     @ViewBuilder
     private func familyHeader(_ group: FamilyGroup) -> some View {
-        modelCardShell(accent: groupAccent(group), prominence: 0.11, padding: 14) {
-            HStack(alignment: .top, spacing: 14) {
+        modelCardShell(accent: groupAccent(group), prominence: 0.11, padding: Space.cardPadding) {
+            HStack(alignment: .top, spacing: Space.m) {
                 KVendorThumb(vendor: group.vendor, size: .card)
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: Space.xs) {
+                    HStack(spacing: Space.s) {
                         Text(group.displayName)
                             .font(T.display(18, .semibold))
                             .foregroundColor(T.ink)
                         if group.anyGated {
                             Image(systemName: "lock.fill")
-                                .font(.system(size: 9))
+                                .font(.system(.caption2))
                                 .foregroundColor(ModelCapability.gated.tint)
                         }
                         Spacer(minLength: 0)
@@ -3139,7 +3104,7 @@ struct ModelsManagerView: View {
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    HStack(spacing: 10) {
+                    HStack(spacing: Space.s) {
                         statusPill(
                             text: group.downloadedCount > 0
                                 ? "\(group.downloadedCount) downloaded"
@@ -3192,7 +3157,7 @@ struct ModelsManagerView: View {
         let active = isActiveModel(model, as: roleCategory)
         modelCardShell(accent: accentColor(for: model),
                        prominence: active ? 0.20 : (model.isReady ? 0.16 : 0.09)) {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: Space.m) {
             detailHeaderLayout {
                 // Unified category glyph (pink-soft tile) — matches the
                 // Active / Installed / Installing rows so every model
@@ -3200,9 +3165,9 @@ struct ModelsManagerView: View {
                 // on. Vendor identity still surfaces on the family
                 // header above the group.
                 categoryGlyph(roleCategory)
-                VStack(alignment: .leading, spacing: 5) {
+                VStack(alignment: .leading, spacing: Space.xs) {
                     KCaption(text: categoryEyebrow(roleCategory), color: T.ink3)
-                    HStack(alignment: .top, spacing: 6) {
+                    HStack(alignment: .top, spacing: Space.xs) {
                         Text(model.displayName)
                             .font(T.display(18, .semibold))
                             .foregroundColor(T.ink)
@@ -3222,9 +3187,8 @@ struct ModelsManagerView: View {
                         if model.isRequired {
                             Text("required")
                                 .font(T.mono(13, .semibold))
-                                .tracking(0.4)
                                 .foregroundColor(T.warn)
-                                .padding(.horizontal, 5).padding(.vertical, 1)
+                                .padding(.horizontal, Space.xs).padding(.vertical, 1)
                                 .background(RoundedRectangle(cornerRadius: 3).fill(T.warn.opacity(0.15)))
                         }
                     }
@@ -3245,11 +3209,11 @@ struct ModelsManagerView: View {
                             capabilities: Array(model.capabilities),
                             size: .compact
                         )
-                        .padding(.top, 2)
+                        .padding(.top, Space.hair)
                     }
                 }
                 Spacer(minLength: 0)
-                VStack(alignment: .trailing, spacing: 5) {
+                VStack(alignment: .trailing, spacing: Space.xs) {
                     metricBadge(model.sizeLabel)
                     if let compatibility = model.platformCompatibility {
                         platformCompatibilityBadge(compatibility)
@@ -3310,8 +3274,8 @@ struct ModelsManagerView: View {
                         Text("Stored only - runtime not implemented")
                             .font(T.mono(13, .semibold))
                             .foregroundColor(T.warn)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 7)
+                            .padding(.horizontal, Space.s)
+                            .padding(.vertical, Space.xs)
                             .background(Capsule().fill(T.warn.opacity(0.10)))
                             .overlay(Capsule().stroke(T.warn.opacity(0.25), lineWidth: 0.5))
                     }
@@ -3328,10 +3292,10 @@ struct ModelsManagerView: View {
                 // showing only Retry is misleading.
                 let authFail = model.lastFailureKind == .tokenRequired
                             || model.lastFailureKind == .tokenRejected
-                HStack(spacing: 6) {
+                HStack(spacing: Space.xs) {
                     if authFail {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 10))
+                            .font(.system(.caption2))
                             .foregroundColor(ModelCapability.gated.tint)
                     }
                     Text(msg)
@@ -3384,11 +3348,11 @@ struct ModelsManagerView: View {
 
     @ViewBuilder
     private func progressStrip(progress: Double, downloaded: Int64, total: Int64, file: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             ProgressView(value: progress)
                 .tint(T.accent)
                 .progressViewStyle(.linear)
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 Text("\(Int(progress * 100))%")
                     .font(T.mono(13, .semibold))
                     .foregroundColor(T.accent)
@@ -3467,7 +3431,7 @@ struct ModelsManagerView: View {
     private func modelCardShell<Content: View>(
         accent: Color,
         prominence: Double,
-        padding: CGFloat = 16,
+        padding: CGFloat = Space.cardPadding,
         @ViewBuilder content: () -> Content
     ) -> some View {
         // Native clear glass keeps large model lists airy while the restrained
@@ -3477,7 +3441,7 @@ struct ModelsManagerView: View {
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
             .kClearGlass(
-                in: RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous),
+                in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous),
                 tint: accent.opacity(min(0.10, prominence * 0.55)),
                 fallbackFill: T.surface,
                 fallbackStroke: T.rule
@@ -3486,7 +3450,7 @@ struct ModelsManagerView: View {
             // on touch — UIKit only resolves .lift for indirect pointers, so
             // it costs nothing on iPhone while keeping the iPad affordance.
             .hoverEffect(.lift)
-            .contentShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
     }
 
     @ViewBuilder
@@ -3494,8 +3458,8 @@ struct ModelsManagerView: View {
         Text(text)
             .font(T.mono(13, .semibold))
             .foregroundColor(T.ink2)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, Space.s)
+            .padding(.vertical, Space.xxs)
             .background(
                 Capsule()
                     .fill(T.surface2.opacity(0.95))
@@ -3519,15 +3483,14 @@ struct ModelsManagerView: View {
             case .over:  return (T.bad,  "xmark.circle.fill")
             }
         }()
-        HStack(spacing: 3) {
+        HStack(spacing: Space.xxs) {
             Image(systemName: glyph)
-                .font(.system(size: 8, weight: .semibold))
+                .font(.system(.caption2, weight: .semibold))
             Text(loc.t(fit.label))
                 .font(T.mono(13, .semibold))
-                .tracking(0.3)
         }
         .foregroundColor(color)
-        .padding(.horizontal, 7).padding(.vertical, 3)
+        .padding(.horizontal, Space.xs).padding(.vertical, Space.xxs)
         .background(Capsule().fill(color.opacity(0.12)))
         .overlay(Capsule().stroke(color.opacity(0.22), lineWidth: 0.5))
     }
@@ -3536,15 +3499,14 @@ struct ModelsManagerView: View {
     private func platformCompatibilityBadge(_ compatibility: ModelPlatformCompatibility) -> some View {
         let supported = compatibility.supportsCurrentPlatform
         let color = supported ? T.ink2 : T.bad
-        HStack(spacing: 3) {
+        HStack(spacing: Space.xxs) {
             Image(systemName: compatibility.symbol)
-                .font(.system(size: 8, weight: .semibold))
+                .font(.system(.caption2, weight: .semibold))
             Text(LocalizedStringKey(compatibility.label))
                 .font(T.mono(13, .semibold))
-                .tracking(0.2)
         }
         .foregroundColor(color)
-        .padding(.horizontal, 7).padding(.vertical, 3)
+        .padding(.horizontal, Space.xs).padding(.vertical, Space.xxs)
         .background(Capsule().fill(color.opacity(0.10)))
         .overlay(Capsule().stroke(color.opacity(0.22), lineWidth: 0.5))
         .accessibilityHint(Text(LocalizedStringKey(compatibility.detail)))
@@ -3591,30 +3553,30 @@ struct ModelsManagerView: View {
             Text(label)
                 .font(T.sans(14, .semibold))
                 .foregroundColor(fg)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
+                .padding(.horizontal, Space.s)
+                .padding(.vertical, Space.xs)
                 .frame(minWidth: 44, minHeight: 44)
                 .contentShape(Rectangle())
                 .background(
                     Group {
                         switch kind {
                         case .primary:
-                            RoundedRectangle(cornerRadius: 6)
+                            RoundedRectangle(cornerRadius: Radius.inner)
                                 .fill(T.ink)
                         case .destructive:
-                            RoundedRectangle(cornerRadius: 6)
+                            RoundedRectangle(cornerRadius: Radius.inner)
                                 .fill(T.bad.opacity(0.12))
                         case .ghost:
                             // No fill — borderless text affordance.
                             Color.clear
                         case .secondary:
-                            RoundedRectangle(cornerRadius: 6)
+                            RoundedRectangle(cornerRadius: Radius.inner)
                                 .fill(T.surface2)
                         }
                     }
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 6)
+                    RoundedRectangle(cornerRadius: Radius.inner)
                         .stroke({
                             switch kind {
                             case .primary:     return Color.clear
@@ -3639,16 +3601,16 @@ struct ModelsManagerView: View {
     ) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(.caption2, weight: .semibold))
                 .foregroundColor(T.ink2)
-                .frame(width: 44, height: 44)
+                .frame(width: Size.control, height: Size.control)
                 .contentShape(Rectangle())
                 .background(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    RoundedRectangle(cornerRadius: Radius.inner, style: .continuous)
                         .fill(T.surface2)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    RoundedRectangle(cornerRadius: Radius.inner, style: .continuous)
                         .stroke(T.rule, lineWidth: 0.5)
                 )
         }
@@ -3658,14 +3620,13 @@ struct ModelsManagerView: View {
 
     @ViewBuilder
     private func statusPill(text: String, color: Color) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: Space.xxs) {
             Circle().fill(color).frame(width: 5, height: 5)
             Text(text)
                 .font(T.mono(13, .semibold))
-                .tracking(0.3)
                 .foregroundColor(color)
         }
-        .padding(.horizontal, 8).padding(.vertical, 4)
+        .padding(.horizontal, Space.s).padding(.vertical, Space.xxs)
         .background(Capsule().fill(color.opacity(0.12)))
         .overlay(
             Capsule().stroke(color.opacity(0.16), lineWidth: 0.5)
@@ -3689,10 +3650,10 @@ struct ModelsManagerView: View {
             }
         }()
         Image(systemName: icon)
-            .font(.system(size: 15, weight: .semibold))
+            .font(.system(.subheadline, weight: .semibold))
             .foregroundColor(categoryTint(category))
-            .frame(width: 40, height: 40)
-            .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
+            .frame(width: Size.control, height: Size.control)
+            .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .fill(categoryTintSoft(category)))
     }
 
@@ -3729,9 +3690,9 @@ struct ModelsManagerView: View {
     @ViewBuilder
     private func categorySectionHeader(_ category: DownloadableModel.Category) -> some View {
         let (title, glyph, tint) = categoryHeaderMeta(category)
-        HStack(spacing: 6) {
+        HStack(spacing: Space.xs) {
             Image(systemName: glyph)
-                .font(.system(size: 11))
+                .font(.system(.caption2))
                 .foregroundColor(tint)
             KCaption(text: title, color: tint)
             Rectangle().fill(T.rule).frame(height: 1)
@@ -3740,10 +3701,10 @@ struct ModelsManagerView: View {
 
     @ViewBuilder
     private func emptyState(icon: String, title: String, subtitle: String) -> some View {
-        modelCardShell(accent: T.accent, prominence: 0.06, padding: 24) {
-            VStack(spacing: 10) {
+        modelCardShell(accent: T.accent, prominence: 0.06, padding: Space.l) {
+            VStack(spacing: Space.s) {
                 Image(systemName: icon)
-                    .font(.system(size: 28, weight: .light))
+                    .font(.system(.title, weight: .light))
                     .foregroundColor(T.ink3)
                 Text(loc.t(title))
                     .font(T.sans(14, .semibold))
@@ -3754,7 +3715,7 @@ struct ModelsManagerView: View {
                     .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 26)
+            .padding(.vertical, Space.l)
         }
     }
 }
@@ -3837,11 +3798,11 @@ private struct ModelsLibraryToolbar: View {
             title: localization.t("Models"),
             eyebrow: localization.t("Your model library")
         ) {
-            HStack(spacing: 4) {
+            HStack(spacing: Space.xxs) {
                 Button(action: onImport) {
                     Label(localization.t("Import"), systemImage: "square.and.arrow.down")
                         .font(.subheadline.weight(.medium))
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, Space.s)
                         .frame(minHeight: 44)
                         .kClearGlass(in: Capsule(), interactive: true)
                 }
@@ -3858,12 +3819,12 @@ private struct ModelsLibraryToolbar: View {
                     .accessibilityIdentifier("models.storage")
                 } label: {
                     Image(systemName: "ellipsis")
-                        .frame(width: 44, height: 44)
+                        .frame(width: Size.control, height: Size.control)
                         .kClearGlass(in: Circle(), interactive: true)
                         .overlay(alignment: .topTrailing) {
                             if downloadCount > 0 || needsAttention {
                                 Circle().fill(needsAttention ? theme.warn : theme.accent).frame(width: 7, height: 7)
-                                    .padding(4)
+                                    .padding(Space.xxs)
                             }
                         }
                 }
@@ -3878,9 +3839,9 @@ private struct ModelsLibraryToolbar: View {
             .foregroundStyle(theme.ink2)
         }
         .tint(theme.accent)
-        .padding(.horizontal, AppSpacing.large)
-        .padding(.top, AppSpacing.large)
-        .padding(.bottom, AppSpacing.medium)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.m)
+        .padding(.bottom, Space.s)
         .background(theme.bg)
     }
 }
@@ -3914,12 +3875,12 @@ private struct ModelsCategoryFilter: View {
 
     var body: some View {
         if textSize.isAccessibilitySize {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], alignment: .leading, spacing: 8) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: Space.s)], alignment: .leading, spacing: Space.s) {
                 filters
             }
         } else {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) { filters }
+                HStack(spacing: Space.s) { filters }
             }
         }
     }
@@ -3951,16 +3912,16 @@ struct ModelsCompactRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(alignment: .center, spacing: 12) {
-                VStack(alignment: .leading, spacing: 5) {
+            HStack(alignment: .center, spacing: Space.s) {
+                VStack(alignment: .leading, spacing: Space.xs) {
                     Text(name).font(.body.weight(.semibold)).foregroundStyle(theme.ink)
                     Text(LocalizedStringKey(subtitle)).font(.subheadline).foregroundStyle(theme.ink2)
                     ViewThatFits(in: .horizontal) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: Space.s) {
                             if let runtime { ModelRuntimeBadge(runtime: runtime) }
                             Text(LocalizedStringKey(status)).font(.subheadline).foregroundStyle(theme.ink2)
                         }
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: Space.xs) {
                             if let runtime { ModelRuntimeBadge(runtime: runtime) }
                             Text(LocalizedStringKey(status)).font(.subheadline).foregroundStyle(theme.ink2)
                         }
@@ -3970,8 +3931,8 @@ struct ModelsCompactRow: View {
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.forward").font(.caption.weight(.semibold)).foregroundStyle(theme.ink3).accessibilityHidden(true)
             }
-            .padding(.vertical, 18)
-            .padding(.horizontal, 4)
+            .padding(.vertical, Space.m)
+            .padding(.horizontal, Space.xxs)
             .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
             .contentShape(Rectangle())
             .overlay(alignment: .bottom) { Rectangle().fill(theme.rule).frame(height: 1) }
@@ -3997,7 +3958,7 @@ struct ModelRuntimeBadge: View {
             .font(.caption.weight(.semibold))
             .foregroundStyle(theme.accent)
             .fontDesign(.monospaced)
-            .padding(.vertical, 2)
+            .padding(.vertical, Space.hair)
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityLabel(localization.t("Runtime") + ": " + title)
     }

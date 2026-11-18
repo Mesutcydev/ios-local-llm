@@ -22,7 +22,7 @@ struct CodeModeView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: Space.cardGap) {
                     capturedImageSection
                     taskChipRow
                     extractedCodeSection
@@ -50,11 +50,11 @@ struct CodeModeView: View {
     @ViewBuilder
     private var capturedImageSection: some View {
         if let image = controller.capturedImage {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 Button {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { showImage.toggle() }
                 } label: {
-                    HStack(spacing: 6) {
+                    HStack(spacing: Space.xs) {
                         Image(systemName: showImage ? "chevron.down" : "chevron.forward")
                             .font(.caption2.weight(.bold))
                         Text("capture")
@@ -73,9 +73,9 @@ struct CodeModeView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(maxHeight: 220)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                                 .strokeBorder(T.rule2, lineWidth: 1)
                         )
                 }
@@ -86,15 +86,15 @@ struct CodeModeView: View {
     // MARK: - Task chips
 
     private var taskChipRow: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     ForEach(CodeTask.allCases) { task in
                         chip(task)
                     }
                 }
             }
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 Text(controller.selectedTask.hint)
                     .scaledFont(size: 11, design: .monospaced)
                     .foregroundStyle(T.ink3)
@@ -113,12 +113,12 @@ struct CodeModeView: View {
             HapticManager.impact(.light)
             controller.runTask(task)
         } label: {
-            HStack(spacing: 5) {
-                Image(systemName: task.systemImage).font(.system(size: 11, weight: .semibold))
+            HStack(spacing: Space.xs) {
+                Image(systemName: task.systemImage).font(.system(.caption2, weight: .semibold))
                 Text(task.label).scaledFont(size: 12, weight: .semibold, design: .monospaced)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
+            .padding(.horizontal, Space.s)
+            .padding(.vertical, Space.xs)
             .background(
                 Capsule().fill(selected ? T.accent : T.surface2)
             )
@@ -134,15 +134,15 @@ struct CodeModeView: View {
     // MARK: - Extracted code (editable)
 
     private var extractedCodeSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.xs) {
+            HStack(spacing: Space.s) {
                 Text("extracted")
                     .scaledFont(size: 12, weight: .semibold, design: .monospaced)
                     .foregroundStyle(T.ink3)
                 if let lang = controller.detectedLanguage {
                     Text(lang.lowercased())
                         .scaledFont(size: 11, weight: .medium, design: .monospaced)
-                        .padding(.horizontal, 7).padding(.vertical, 2)
+                        .padding(.horizontal, Space.xs).padding(.vertical, Space.hair)
                         .background(Capsule().fill(T.accentSoft))
                         .foregroundStyle(T.accent)
                 }
@@ -158,7 +158,7 @@ struct CodeModeView: View {
                 } label: {
                     Label(didCopy ? "copied" : "copy",
                           systemImage: didCopy ? "checkmark" : "doc.on.doc")
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .font(.system(.caption2, design: .monospaced, weight: .semibold))
                         .foregroundStyle(didCopy ? T.good : T.ink2)
                 }
                 .buttonStyle(.plain)
@@ -170,9 +170,9 @@ struct CodeModeView: View {
                 .foregroundStyle(T.ink)
                 .scrollContentBackground(.hidden)
                 .frame(minHeight: 120, maxHeight: 280)
-                .padding(10)
-                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(T.surface2))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(T.rule2, lineWidth: 1))
+                .padding(Space.s)
+                .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous).fill(T.surface2))
+                .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous).strokeBorder(T.rule2, lineWidth: 1))
 
             if controller.selectedTask.usesLLM {
                 Button {
@@ -180,7 +180,7 @@ struct CodeModeView: View {
                     controller.runTask(controller.selectedTask)
                 } label: {
                     Label("re-run on edited code", systemImage: "arrow.clockwise")
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .font(.system(.caption2, design: .monospaced, weight: .semibold))
                         .foregroundStyle(T.accent)
                 }
                 .buttonStyle(.plain)
@@ -201,10 +201,10 @@ struct CodeModeView: View {
             calloutCard(icon: "text.viewfinder", tint: T.ink3, text: "Reading the frame…")
         case .idle, .ready:
             if controller.selectedTask != .extract {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: Space.s) {
+                    HStack(spacing: Space.s) {
                         Image(systemName: controller.selectedTask.systemImage)
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(.caption, weight: .semibold))
                             .foregroundStyle(T.accent)
                         Text(controller.selectedTask.label)
                             .scaledFont(size: 12, weight: .semibold, design: .monospaced)
@@ -222,27 +222,27 @@ struct CodeModeView: View {
                         MarkdownTextView(markdown: controller.taskOutput)
                     }
                 }
-                .padding(12)
+                .padding(Space.s)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .kGlass(cornerRadius: 14, fallbackFill: T.surface)
+                .kGlass(cornerRadius: Radius.control, fallbackFill: T.surface)
             }
         }
     }
 
     private func calloutCard(icon: String, tint: Color, text: String) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             Image(systemName: icon).foregroundStyle(tint)
             Text(text).scaledFont(size: 13).foregroundStyle(T.ink2)
             Spacer()
         }
-        .padding(12)
-        .kGlass(cornerRadius: 12, fallbackFill: T.surface2)
+        .padding(Space.s)
+        .kGlass(cornerRadius: Radius.control, fallbackFill: T.surface2)
     }
 
     // MARK: - Bottom action bar
 
     private var actionBar: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             actionButton("Re-capture", systemImage: "camera.viewfinder") {
                 onRecapture()
                 dismiss()
@@ -265,7 +265,7 @@ struct CodeModeView: View {
             .disabled(controller.extractedCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
         .padding(.horizontal, T.pad)
-        .padding(.vertical, 10)
+        .padding(.vertical, Space.s)
         .kClearGlass(in: Rectangle())
     }
 
@@ -273,14 +273,14 @@ struct CodeModeView: View {
                               prominent: Bool = false,
                               action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 3) {
-                Image(systemName: systemImage).font(.system(size: 15, weight: .semibold))
+            VStack(spacing: Space.xxs) {
+                Image(systemName: systemImage).font(.system(.subheadline, weight: .semibold))
                 Text(title).scaledFont(size: 10, weight: .semibold)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 9)
+            .padding(.vertical, Space.s)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                     .fill(prominent ? T.accent : T.surface2)
             )
             .foregroundStyle(prominent ? Color.white : T.ink2)
@@ -304,22 +304,22 @@ struct CodeFramingGuide: View {
             let w = geo.size.width * 0.82
             let h = geo.size.height * 0.42
             ZStack {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                     .stroke(
                         Color.white.opacity(0.55),
                         style: StrokeStyle(lineWidth: 1.5, dash: [7, 6])
                     )
                     .frame(width: w, height: h)
 
-                VStack(spacing: 6) {
+                VStack(spacing: Space.xs) {
                     Image(systemName: busy ? "hourglass" : "chevron.left.forwardslash.chevron.right")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.system(.body, weight: .semibold))
                         .symbolEffect(.pulse, isActive: busy)
                     Text(busy ? "capturing…" : "frame code · tap to capture")
                         .scaledFont(size: 12, weight: .semibold, design: .monospaced)
                 }
                 .foregroundStyle(.white.opacity(0.85))
-                .padding(.horizontal, 14).padding(.vertical, 8)
+                .padding(.horizontal, Space.m).padding(.vertical, Space.s)
                 .background(Capsule().fill(.black.opacity(0.35)))
                 .offset(y: h / 2 + 26)
             }

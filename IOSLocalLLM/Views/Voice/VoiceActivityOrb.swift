@@ -39,7 +39,7 @@ struct VoiceStatusLabel: View {
     @Environment(\.koduTheme) private var theme
 
     var body: some View {
-        VStack(spacing: 3) {
+        VStack(spacing: Space.xxs) {
             KMono(
                 text: phase.statusLabel.lowercased(),
                 size: 12,

@@ -11,7 +11,7 @@ struct CoreAIDownloadControlsView: View {
     var body: some View {
         switch manager.state {
         case .enumerating, .downloading, .installing:
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 if manager.state == .enumerating {
                     ProgressView()
                         .controlSize(.small)
@@ -57,7 +57,7 @@ struct CoreAIDownloadControlsView: View {
             }
 
         case .failed(let message):
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 Text(message)
                     .font(T.sans(10.5))
                     .foregroundStyle(T.bad)

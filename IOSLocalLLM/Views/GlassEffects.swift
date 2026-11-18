@@ -7,11 +7,10 @@ enum GlassRole {
 
     var radius: CGFloat {
         switch self {
-        case .hero: 24
-        case .card, .listRow: 18
-        case .button: 16
+        case .hero: Radius.panel
+        case .card, .listRow: Radius.card
+        case .button, .icon, .toolbarButton: Radius.control
         case .capsule, .badge: 999
-        case .icon, .toolbarButton: 14
         case .tabBar: 30
         }
     }

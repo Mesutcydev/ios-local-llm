@@ -54,12 +54,12 @@ struct MicDictationButton: View {
             Image(systemName: dictation.isRecording ? "stop.fill" : "mic")
                 .font(.system(size: dictation.isRecording ? 16 : 20, weight: .medium))
                 .foregroundStyle(dictation.isRecording ? T.bad : T.ink2)
-                .frame(width: 44, height: 44)
+                .frame(width: Size.control, height: Size.control)
                 .background(dictation.isRecording ? T.bad.opacity(0.10) : .clear, in: Circle())
                 .contentShape(Circle())
         } else if dictation.isRecording {
             // Recording: red pulsing dot + level meter
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 Circle()
                     .fill(T.bad)
                     .frame(width: 8, height: 8)
@@ -74,20 +74,20 @@ struct MicDictationButton: View {
             .padding(.horizontal, compact ? 0 : 8)
             .frame(width: compact ? 36 : nil, height: 36)
             .background(
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: Radius.inner)
                     .fill(T.bad.opacity(0.12))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: Radius.inner)
                     .stroke(T.bad.opacity(0.4), lineWidth: 1)
             )
         } else {
             // Idle: standard mic icon button
             Image(systemName: "mic")
-                .font(.system(size: 14))
+                .font(.system(.subheadline))
                 .foregroundColor(T.ink2)
-                .frame(width: 36, height: 36)
-                .kGlass(cornerRadius: 6, fallbackFill: T.surface)
+                .frame(width: Size.control, height: Size.control)
+                .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
         }
     }
 

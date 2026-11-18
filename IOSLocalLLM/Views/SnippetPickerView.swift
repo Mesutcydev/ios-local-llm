@@ -22,7 +22,7 @@ struct SnippetPickerView: View {
                     list
                     createButton
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, Space.l)
             }
             .background(LiquidPinkBackdrop())
             .navigationBarTitleDisplayMode(.inline)
@@ -40,16 +40,16 @@ struct SnippetPickerView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             KCaption(text: "COMPOSER")
             KPageTitle(title: "snippets", size: 28)
             KMono(text: "tap to insert · long-press to edit",
                    size: 11, color: T.ink3)
-                .padding(.top, 2)
+                .padding(.top, Space.hair)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.xxs)
     }
 
     @ViewBuilder
@@ -76,11 +76,11 @@ struct SnippetPickerView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Space.s) {
             Image(systemName: "doc.text")
-                .font(.system(size: 36))
+                .font(.system(size: Space.xl))
                 .foregroundColor(T.ink3)
-            VStack(spacing: 4) {
+            VStack(spacing: Space.xxs) {
                 Text("no snippets yet")
                     .font(T.mono(13, .semibold))
                     .foregroundColor(T.ink2)
@@ -88,7 +88,7 @@ struct SnippetPickerView: View {
                     .font(T.sans(11))
                     .foregroundColor(T.ink3)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, Space.l)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Button {
@@ -96,18 +96,18 @@ struct SnippetPickerView: View {
                 showEditor = true
                 HapticManager.impact(.light)
             } label: {
-                HStack(spacing: 5) {
-                    Image(systemName: "plus").font(.system(size: 11))
+                HStack(spacing: Space.xs) {
+                    Image(systemName: "plus").font(.system(.caption2))
                     Text("create your first").font(T.mono(11, .semibold))
                 }
                 .foregroundColor(T.bg)
-                .padding(.horizontal, 14).padding(.vertical, 7)
-                .background(RoundedRectangle(cornerRadius: 6).fill(T.ink))
+                .padding(.horizontal, Space.m).padding(.vertical, Space.xs)
+                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
             }
             .buttonStyle(.plain)
-            .padding(.top, 4)
+            .padding(.top, Space.xxs)
         }
-        .padding(.vertical, 40)
+        .padding(.vertical, Space.xl)
         .frame(maxWidth: .infinity)
     }
 
@@ -119,7 +119,7 @@ struct SnippetPickerView: View {
             HapticManager.impact(.light)
             dismiss()
         } label: {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Space.xxs) {
                 Text(snippet.title)
                     .font(T.mono(13, .semibold))
                     .foregroundColor(T.ink)
@@ -128,8 +128,8 @@ struct SnippetPickerView: View {
                     .lineLimit(2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 11)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
         }
         .buttonStyle(.plain)
     }
@@ -139,22 +139,21 @@ struct SnippetPickerView: View {
             editing = nil
             showEditor = true
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: "plus")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.caption, weight: .semibold))
                 Text("new snippet")
                     .font(T.mono(12, .semibold))
-                    .tracking(0.3)
             }
             .foregroundColor(T.bg)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, Space.m)
             .frame(height: 44)
             .frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 8).fill(T.ink))
+            .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 16)
-        .padding(.top, 18)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.m)
     }
 }
 
@@ -179,10 +178,10 @@ struct SnippetEditorView: View {
                         TextField("snippet title", text: $title)
                             .font(T.sans(14))
                             .foregroundColor(T.ink)
-                            .padding(12)
+                            .padding(Space.s)
                     }
                     KSection(title: "body") {
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: Space.xs) {
                             TextEditor(text: $bodyText)
                                 .font(T.mono(12))
                                 .foregroundColor(T.ink)
@@ -192,10 +191,10 @@ struct SnippetEditorView: View {
                                    size: 10, color: T.ink3)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
-                        .padding(10)
+                        .padding(Space.s)
                     }
                 }
-                .padding(.bottom, 24)
+                .padding(.bottom, Space.l)
             }
             .background(LiquidPinkBackdrop())
             .navigationTitle(isNew ? "new snippet" : "edit snippet")

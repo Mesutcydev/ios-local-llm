@@ -75,8 +75,8 @@ struct OnboardingView: View {
                     }
                 }
                 .frame(minHeight: 44)   // same header height with or without skip
-                .padding(.horizontal, 22)
-                .padding(.top, 8)
+                .padding(.horizontal, Space.l)
+                .padding(.top, Space.s)
 
                 TabView(selection: $page) {
                     ForEach(Array(pages.enumerated()), id: \.offset) { idx, p in
@@ -98,8 +98,8 @@ struct OnboardingView: View {
             // Bottom: dots + continue (hidden on the picker page —
             // it brings its own primary CTA).
             if !onPickerPage {
-                VStack(spacing: 14) {
-                        HStack(spacing: 6) {
+                VStack(spacing: Space.m) {
+                        HStack(spacing: Space.xs) {
                             ForEach(0..<totalTabs, id: \.self) { i in
                                 Capsule()
                                     .fill(i == page ? T.ink : T.ink4)
@@ -114,17 +114,16 @@ struct OnboardingView: View {
                             HStack {
                                 Text("next")
                                     .font(T.mono(14, .semibold))
-                                    .tracking(0.3)
                                 Spacer()
                                 Text("→")
                                     .font(T.mono(11))
                                     .foregroundColor(T.ink4)
                             }
                             .foregroundColor(T.bg)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
+                            .padding(.horizontal, Space.m)
+                            .padding(.vertical, Space.s)
                             .frame(minHeight: 50)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(T.ink))
+                            .background(RoundedRectangle(cornerRadius: Radius.control).fill(T.ink))
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("onboarding.next")
@@ -133,12 +132,11 @@ struct OnboardingView: View {
                         if !dynamicTypeSize.isAccessibilitySize {
                         Text("local by default. network features are optional.")
                             .font(T.mono(9))
-                            .tracking(0.4)
                             .foregroundColor(T.ink3)
                         }
                     }
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 14)
+                    .padding(.horizontal, Space.l)
+                    .padding(.vertical, Space.m)
                     .background(T.bg)
                 .transition(.opacity)
             }
@@ -149,11 +147,11 @@ struct OnboardingView: View {
     @ViewBuilder
     private func pageView(_ p: OnboardingPage) -> some View {
         ScrollView {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: Space.m) {
             Spacer().frame(height: 12)
 
             // Hero
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 KCaption(text: p.caption, color: T.ink2)
                 Text(p.title)
                     .font(T.display(38, .semibold))
@@ -164,7 +162,7 @@ struct OnboardingView: View {
                 Text(p.body)
                     .font(T.sans(14))
                     .foregroundColor(T.ink2)
-                    .padding(.top, 4)
+                    .padding(.top, Space.xxs)
                     .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -182,15 +180,15 @@ struct OnboardingView: View {
                         KMono(text: row.1, size: 11, color: T.ink)
                         Spacer()
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 9)
+                    .padding(.horizontal, Space.s)
+                    .padding(.vertical, Space.s)
                 }
             }
-            .kGlass(cornerRadius: 8, fallbackFill: T.surface)
+            .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
 
             Spacer().frame(height: 16)   // room for bottom nav
         }
-        .padding(.horizontal, 22)
+        .padding(.horizontal, Space.l)
         }
     }
 }

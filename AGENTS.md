@@ -106,6 +106,10 @@ repository validator.
 - Treat `ThirdParty/llama.cpp` and `ThirdParty/whisper.cpp` as independent
   upstream repositories. Do not absorb incidental submodule changes into an
   iOS Local LLM commit.
+- Take spacing, radii, tile sizes, text sizes and caps tracking from the
+  `Space`, `Radius`, `Size` and `TextScale` tokens in
+  `IOSLocalLLM/Views/AppDesignSystem.swift`, never literals.
+  `scripts/audit_ui_metrics.py` (run by the validator) enforces this.
 - Preserve accessibility labels and identifiers. Validate visible UI changes
   with an iOS Simulator when available.
 

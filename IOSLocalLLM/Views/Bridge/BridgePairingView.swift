@@ -54,7 +54,7 @@ struct BridgePairingView: View {
         // still owns its scroll axis.
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: Space.cardGap) {
                     header
                     serverStatusRow
                     LocalAPIServerCard()
@@ -71,7 +71,7 @@ struct BridgePairingView: View {
                         argentRemoteRow
                     }
                 }
-                .padding(20)
+                .padding(Space.m)
             }
             .background(LiquidPinkBackdrop())
             // Start the iPhone's inference server as soon as the tab opens so it's
@@ -158,9 +158,9 @@ struct BridgePairingView: View {
             }
             HapticManager.impact(.light)
         } label: {
-            HStack(spacing: 14) {
+            HStack(spacing: Space.s) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [T.accent.opacity(0.22),
@@ -170,21 +170,21 @@ struct BridgePairingView: View {
                             )
                         )
                     Image(systemName: "book.closed.fill")
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(.system(.title2, weight: .semibold))
                         .foregroundColor(T.accent)
                 }
-                .frame(width: 48, height: 48)
+                .frame(width: Size.feature, height: Size.feature)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
+                    HStack(spacing: Space.xs) {
                         Text("Mac bridge integration")
                             .font(T.mono(13, .semibold))
                             .foregroundColor(T.ink)
                         Text("OPEN GUIDE")
                             .font(T.mono(9, .semibold))
                             .foregroundColor(T.ink3)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, Space.xs)
+                            .padding(.vertical, Space.hair)
                             .background(
                                 Capsule().fill(T.surface3)
                             )
@@ -199,12 +199,12 @@ struct BridgePairingView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 Image(systemName: "arrow.up.right.square")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .foregroundColor(T.ink3)
             }
-            .padding(16)
+            .padding(Space.m)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .kGlass(cornerRadius: 14, fallbackFill: T.surface)
+            .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Mac bridge integration guide")
@@ -224,12 +224,12 @@ struct BridgePairingView: View {
         NavigationLink {
             ArgentRemoteView()
         } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: Space.s) {
                 Image(systemName: "iphone.gen3.radiowaves.left.and.right")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .foregroundColor(T.accent)
                     .frame(width: 28)
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     Text("Argent Remote")
                         .font(T.mono(13, .semibold))
                         .foregroundColor(T.ink)
@@ -241,12 +241,12 @@ struct BridgePairingView: View {
                 }
                 Spacer()
                 Image(systemName: "chevron.forward")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(.caption2, weight: .semibold))
                     .foregroundColor(T.ink3)
             }
-            .padding(16)
+            .padding(Space.m)
             .frame(maxWidth: .infinity)
-            .kGlass(cornerRadius: 14, fallbackFill: T.surface)
+            .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
         }
         .buttonStyle(.plain)
     }
@@ -259,48 +259,48 @@ struct BridgePairingView: View {
     private var header: some View {
         let running: Bool = { if case .running = manager.serverState { return true } else { return false } }()
         return VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 Circle()
                     .fill(running ? T.good : Color.white.opacity(0.7))
                     .frame(width: 7, height: 7)
                     .shadow(color: running ? T.good.opacity(0.9) : .clear, radius: 4)
                 Text("MAC BRIDGE")
-                    .font(T.sans(12, .bold)).tracking(0.8)
+                    .font(T.sans(12, .bold)).tracking(TextScale.capsTracking)
                     .foregroundColor(.white)
                 Spacer()
                 Image(systemName: "desktopcomputer")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .foregroundColor(.white.opacity(0.92))
             }
             Text("Control from your Mac")
                 .font(T.display(23, .bold))
                 .foregroundColor(.white)
-                .padding(.top, 12)
+                .padding(.top, Space.s)
             Text("Pair a Mac to run its prompts on this iPhone — nothing leaves your devices.")
                 .font(T.sans(14))
                 .foregroundColor(.white.opacity(0.92))
-                .padding(.top, 3)
+                .padding(.top, Space.xxs)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(20)
+        .padding(Space.m)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             ZStack {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
                     .fill(LinearGradient(colors: [T.roseHi, T.accent, T.accentStrong],
                                          startPoint: .topLeading, endPoint: .bottomTrailing))
                 Circle().fill(Color.white.opacity(0.16))
                     .frame(width: 150, height: 150).blur(radius: 6)
                     .offset(x: 120, y: -70)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
         )
     }
 
     // MARK: - Server status row
 
     private var serverStatusRow: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             Circle()
                 .fill(statusColor)
                 .frame(width: 8, height: 8)
@@ -310,8 +310,8 @@ struct BridgePairingView: View {
                 .lineLimit(1)
             Spacer()
         }
-        .padding(12)
-        .kGlass(cornerRadius: 10, fallbackFill: T.surface)
+        .padding(Space.s)
+        .kGlass(cornerRadius: Radius.control, fallbackFill: T.surface)
     }
 
     private var statusColor: Color {
@@ -340,7 +340,7 @@ struct BridgePairingView: View {
 
     @ViewBuilder
     private var pairingCard: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: Space.m) {
             switch manager.pairingPhase {
 
             case .idle, .scanning:
@@ -357,19 +357,19 @@ struct BridgePairingView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(16)
-        .kGlass(cornerRadius: 14, fallbackFill: T.surface)
+        .padding(Space.m)
+        .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
     }
 
     // ── Idle: prompt to scan ──────────────────────────────────────────────
 
     private var idleContent: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: Space.m) {
             Image(systemName: "qrcode.viewfinder")
-                .font(.system(size: 52, weight: .thin))
+                .font(.system(size: Space.xl, weight: .thin))
                 .foregroundColor(T.ink3)
 
-            VStack(spacing: 6) {
+            VStack(spacing: Space.xs) {
                 Text("Pair with Mac")
                     .font(T.mono(15, .semibold))
                     .foregroundColor(T.ink)
@@ -402,15 +402,15 @@ struct BridgePairingView: View {
                     showScanner = true
                 }
             } label: {
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "camera")
                     Text("Scan Mac QR")
                 }
                 .font(T.mono(13, .semibold))
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(RoundedRectangle(cornerRadius: 10).fill(T.accent))
+                .padding(.vertical, Space.s)
+                .background(RoundedRectangle(cornerRadius: Radius.control).fill(T.accent))
             }
             .buttonStyle(.plain)
             .disabled(!BridgeQRScannerView.isAvailable)
@@ -420,7 +420,7 @@ struct BridgePairingView: View {
     // ── Pairing in progress ───────────────────────────────────────────────
 
     private var pairingContent: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Space.s) {
             ProgressView()
                 .progressViewStyle(.circular)
                 .tint(T.accent)
@@ -428,18 +428,18 @@ struct BridgePairingView: View {
                 .font(T.mono(13, .regular))
                 .foregroundColor(T.ink2)
         }
-        .padding(.vertical, 24)
+        .padding(.vertical, Space.l)
     }
 
     // ── Paired ───────────────────────────────────────────────────────────
 
     private func pairedContent(macName: String) -> some View {
-        VStack(spacing: 14) {
+        VStack(spacing: Space.m) {
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 44))
+                .font(.system(size: Space.xl))
                 .foregroundColor(T.good)
 
-            VStack(spacing: 4) {
+            VStack(spacing: Space.xxs) {
                 Text("Paired with \(macName)")
                     .font(T.mono(14, .semibold))
                     .foregroundColor(T.ink)
@@ -455,13 +455,13 @@ struct BridgePairingView: View {
             .font(T.mono(12, .regular))
             .foregroundColor(T.accent)
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, Space.s)
     }
 
     // ── Failed ────────────────────────────────────────────────────────────
 
     private func failedContent(msg: String) -> some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Space.s) {
             Image(systemName: "xmark.circle")
                 .font(.largeTitle)
                 .foregroundColor(T.bad)
@@ -477,14 +477,14 @@ struct BridgePairingView: View {
             .font(T.mono(13, .medium))
             .foregroundColor(T.accent)
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, Space.s)
     }
 
     // MARK: - Paired clients card
 
     @ViewBuilder
     private var pairedClientsCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Space.s) {
             HStack {
                 Text("PAIRED MACS")
                     .font(T.mono(11, .semibold))
@@ -503,10 +503,10 @@ struct BridgePairingView: View {
                     .foregroundColor(T.ink3)
             } else {
                 ForEach(manager.pairedClients, id: \.token) { client in
-                    HStack(spacing: 10) {
+                    HStack(spacing: Space.s) {
                         Image(systemName: "desktopcomputer")
                             .foregroundColor(T.accent)
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: Space.hair) {
                             Text(client.clientName)
                                 .font(T.mono(13, .medium))
                                 .foregroundColor(T.ink)
@@ -519,19 +519,19 @@ struct BridgePairingView: View {
                             pendingRevoke = client
                         } label: {
                             Image(systemName: "trash")
-                                .font(.system(size: 13))
+                                .font(.system(.footnote))
                                 .foregroundColor(T.bad)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Forget \(client.clientName)")
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, Space.xxs)
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .kGlass(cornerRadius: 14, fallbackFill: T.surface)
+        .padding(Space.m)
+        .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
     }
 }
 
@@ -547,13 +547,13 @@ private struct LocalAPIServerCard: View {
         NavigationLink {
             LocalAPIServerView()
         } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: Space.s) {
+                HStack(alignment: .top, spacing: Space.s) {
                     Image(systemName: "network")
-                        .font(.system(size: 22, weight: .medium))
+                        .font(.system(.title2, weight: .medium))
                         .foregroundStyle(theme.accent)
                         .frame(width: 36, height: 40)
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         Text("Local API Server")
                             .font(theme.sans(17, .semibold)).foregroundStyle(theme.ink)
                         Text("OpenAI · Anthropic · Ollama")
@@ -561,9 +561,9 @@ private struct LocalAPIServerCard: View {
                     }
                     Spacer(minLength: 0)
                     Image(systemName: "chevron.forward")
-                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(theme.ink3)
+                        .font(.system(.footnote, weight: .semibold)).foregroundStyle(theme.ink3)
                 }
-                HStack(spacing: 6) {
+                HStack(spacing: Space.xs) {
                     Circle().fill(statusColor).frame(width: 6, height: 6)
                     Text(status).font(theme.sans(12)).foregroundStyle(theme.ink2)
                 }
@@ -571,8 +571,8 @@ private struct LocalAPIServerCard: View {
                     .font(theme.sans(13)).foregroundStyle(theme.ink2)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-            .kGlass(cornerRadius: 16, fallbackFill: theme.surface)
+            .padding(Space.m).frame(maxWidth: .infinity, alignment: .leading)
+            .kGlass(cornerRadius: Radius.card, fallbackFill: theme.surface)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -637,12 +637,12 @@ private struct ScannerSheet: View {
                     manager.pairingPhase = .idle
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 28))
+                        .font(.system(.title))
                         .foregroundColor(.white.opacity(0.85))
                         .shadow(radius: 4)
                 }
                 .buttonStyle(.plain)
-                .padding(20)
+                .padding(Space.m)
             }
 
             // Instruction overlay
@@ -651,8 +651,8 @@ private struct ScannerSheet: View {
                 Text("Point at the QR code on your Mac")
                     .font(T.mono(13, .semibold))
                     .foregroundColor(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, Space.m)
+                    .padding(.vertical, Space.s)
                     .background(Color.black.opacity(0.55).clipShape(Capsule()))
                     .padding(.bottom, 60)
             }

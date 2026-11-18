@@ -136,24 +136,24 @@ struct CameraRootView: View {
     private var modelInputDebugOverlay: some View {
         let vision = MLXVisionService.shared
         if let img = vision.lastModelInput {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Space.xxs) {
                 Image(uiImage: img)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 96, height: 128)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-                    .overlay(RoundedRectangle(cornerRadius: 6)
+                    .clipShape(RoundedRectangle(cornerRadius: Radius.inner))
+                    .overlay(RoundedRectangle(cornerRadius: Radius.inner)
                         .stroke(.white.opacity(0.18), lineWidth: 1))
                 if let info = vision.lastModelInputInfo {
                     Text("\(info.inputWidth)×\(info.inputHeight)")
                         .font(T.mono(9, .semibold))
                         .foregroundColor(.white)
-                        .padding(.horizontal, 4).padding(.vertical, 1)
+                        .padding(.horizontal, Space.xxs).padding(.vertical, 1)
                         .background(RoundedRectangle(cornerRadius: 3).fill(.black.opacity(0.6)))
                     Text(info.requestID.uuidString.prefix(8).description)
                         .font(T.mono(8))
                         .foregroundColor(.white.opacity(0.7))
-                        .padding(.horizontal, 4).padding(.vertical, 1)
+                        .padding(.horizontal, Space.xxs).padding(.vertical, 1)
                         .background(RoundedRectangle(cornerRadius: 3).fill(.black.opacity(0.5)))
                 }
             }
@@ -171,7 +171,7 @@ struct CameraRootView: View {
         Menu {
             lensTopStripMenuContent
         } label: {
-            HStack(spacing: AppSpacing.small) {
+            HStack(spacing: Space.s) {
                 LensModelStatusIndicator(color: cameraModelStatusColor, isReady: activeVLMReady)
                 VStack(alignment: .leading, spacing: 1) {
                     Label {
@@ -192,12 +192,12 @@ struct CameraRootView: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.65))
             }
-            .padding(.horizontal, AppSpacing.medium)
+            .padding(.horizontal, Space.s)
             .frame(maxWidth: .infinity, minHeight: 44)
-            .glassSurface(.capsule, cornerRadius: 22)
+            .glassSurface(.capsule, cornerRadius: Radius.panel)
             .environment(\.colorScheme, .dark)
             .overlay {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
                     .stroke(.white.opacity(0.18), lineWidth: AppStroke.hairline)
             }
         }
@@ -337,14 +337,14 @@ struct CameraRootView: View {
             if camera.error == nil, let paused = camera.interruptionMessage {
                 Label(paused, systemImage: "pause.circle.fill")
                     .font(.subheadline.weight(.semibold))
-                    .padding(AppSpacing.large)
+                    .padding(Space.m)
                     .appPanel(cameraSafe: true)
-                    .padding(AppSpacing.xLarge)
+                    .padding(Space.l)
                     .accessibilityIdentifier("lens.camera.paused")
             }
 
             if let cameraError = camera.error {
-                VStack(spacing: AppSpacing.medium) {
+                VStack(spacing: Space.s) {
                     Image(systemName: "camera.fill")
                         .font(.largeTitle)
                     Text("Camera unavailable")
@@ -362,9 +362,9 @@ struct CameraRootView: View {
                         .controlSize(.large)
                     }
                 }
-                .padding(AppSpacing.xLarge)
+                .padding(Space.l)
                 .appPanel(cameraSafe: true)
-                .padding(AppSpacing.xLarge)
+                .padding(Space.l)
                 .accessibilityElement(children: .combine)
             }
 
@@ -453,9 +453,9 @@ struct CameraRootView: View {
             // over the role the old model picker pill played on the right.
             VStack {
                 lensTopBar
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Space.m)
                     .avoidingDisplayDivision()
-                    .padding(.top, 12)
+                    .padding(.top, Space.s)
                 Spacer()
             }
 
@@ -479,7 +479,7 @@ struct CameraRootView: View {
             // model is (thumb matches but caption is wrong).
             if settings.showModelInputDebug {
                 modelInputDebugOverlay
-                    .padding(.leading, 16)
+                    .padding(.leading, Space.m)
                     .padding(.top, 180)
                     .frame(maxWidth: .infinity, maxHeight: .infinity,
                            alignment: .topLeading)
@@ -498,9 +498,10 @@ struct CameraRootView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             lensBottomControls
-                .padding(.horizontal, AppSpacing.medium)
+                // Same edge as the Lens top bar.
+                .padding(.horizontal, Space.screenMargin)
                 .avoidingDisplayDivision()
-                .padding(.bottom, AppSpacing.small)
+                .padding(.bottom, Space.s)
         }
         .sheet(isPresented: $showAnalysisPanel, onDismiss: {
             // Reset detent so the next presentation starts at the comfy size
@@ -792,7 +793,7 @@ struct CameraRootView: View {
 
     @ViewBuilder
     private var lensBottomControls: some View {
-        VStack(spacing: AppSpacing.medium) {
+        VStack(spacing: Space.s) {
             if activeMode == .visual, liveMode {
                 liveCaptionCard
             } else if activeMode == .visual {
@@ -825,21 +826,21 @@ struct CameraRootView: View {
                     onExpand: { showAnalysisPanel = analysis.activeResult != nil }
                 )
             } else {
-                VStack(alignment: .leading, spacing: AppSpacing.small) {
+                VStack(alignment: .leading, spacing: Space.s) {
                     Text("CODE · ON-DEVICE")
                         .font(AppTypography.eyebrow)
                         .foregroundStyle(.secondary)
                     Text("Frame code and capture a still for OCR and review.")
                         .font(.headline)
                 }
-                .padding(AppSpacing.large)
+                .padding(Space.m)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .appPanel(cameraSafe: true)
             }
 
             if (lensPanelState == .collapsed && !liveMode) || activeMode == .code {
                 shutterRow
-                    .padding(.horizontal, AppSpacing.large)
+                    .padding(.horizontal, Space.m)
                     .transition(.opacity.combined(with: .scale(scale: 0.94)))
             }
         }
@@ -900,16 +901,15 @@ struct CameraRootView: View {
         let hasSelection = !LocalModelRegistry.isDefaultVisionSelection(
             LocalModelRegistry.storedVisionSelectionID(settings.cameraVisualModelID)
         )
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
+        return VStack(alignment: .leading, spacing: Space.s) {
+            HStack(spacing: Space.s) {
                 Image(systemName: "eye.slash")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(.footnote, weight: .medium))
                     .foregroundColor(.white.opacity(0.65))
                 Text(loc.t(hasSelection
                            ? "vision model not loaded"
                            : "no vision model loaded"))
                     .font(T.mono(11, .semibold))
-                    .tracking(0.4)
                     .foregroundColor(.white.opacity(0.92))
                 Spacer()
             }
@@ -923,17 +923,17 @@ struct CameraRootView: View {
                 HapticManager.impact(.medium)
                 handleMissingVisionModelAction(hasSelection: hasSelection)
             } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: Space.xs) {
                     Image(systemName: hasSelection
                           ? "arrow.triangle.2.circlepath"
                           : "arrow.down.circle")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(.caption, weight: .semibold))
                     Text(loc.t(missingVisionModelButtonLabel(hasSelection: hasSelection)))
                         .font(T.mono(11, .semibold))
                 }
                 .foregroundColor(.white)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 9)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
                 .background(
                     Capsule(style: .continuous)
                         .fill(T.accentStrong)
@@ -941,13 +941,13 @@ struct CameraRootView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.m)
         .background(Color.black.opacity(0.72))
         .environment(\.colorScheme, .dark)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .stroke(.white.opacity(0.16), lineWidth: 1)
         )
     }
@@ -1045,7 +1045,7 @@ struct CameraRootView: View {
 
     /// Top bar: × close · model/status pill · ⋯ more.
     private var lensTopBar: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             lensCircleButton("xmark") { onClose() }
             lensTopStrip
             if activeMode == .visual { liveModeButton }
@@ -1074,12 +1074,12 @@ struct CameraRootView: View {
             liveMode = true
         } label: {
             Image(systemName: "livephoto")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(.subheadline, weight: .semibold))
                 .foregroundColor(.white)
                 .symbolEffect(.pulse, isActive: liveMode)
-                .frame(width: 44, height: 44)
+                .frame(width: Size.control, height: Size.control)
                 .background(Circle().fill(liveMode ? Color.red : Color.clear))
-                .glassSurface(.toolbarButton, cornerRadius: 22)
+                .glassSurface(.toolbarButton, cornerRadius: Radius.panel)
                 .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
         }
         .buttonStyle(.plain)
@@ -1108,7 +1108,7 @@ struct CameraRootView: View {
     }
 
     private var liveCaptionCard: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.small) {
+        VStack(alignment: .leading, spacing: Space.s) {
             HStack {
                 Label("LIVE", systemImage: "circle.fill")
                     .font(AppTypography.eyebrow)
@@ -1134,7 +1134,7 @@ struct CameraRootView: View {
                 .accessibilityAddTraits(.updatesFrequently)
                 .accessibilityIdentifier("lens.live.caption")
         }
-        .padding(AppSpacing.large)
+        .padding(Space.m)
         .appPanel(cameraSafe: true)
     }
 
@@ -1143,10 +1143,10 @@ struct CameraRootView: View {
             HapticManager.impact(.light); action()
         } label: {
             Image(systemName: icon)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(.subheadline, weight: .semibold))
                 .foregroundColor(.white)
-                .frame(width: 44, height: 44)
-                .glassSurface(.toolbarButton, cornerRadius: 22)
+                .frame(width: Size.control, height: Size.control)
+                .glassSurface(.toolbarButton, cornerRadius: Radius.panel)
                 .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
         }
         .buttonStyle(.plain)
@@ -1205,10 +1205,10 @@ struct CameraRootView: View {
             }
         } label: {
             Image(systemName: "ellipsis")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(.subheadline, weight: .semibold))
                 .foregroundColor(.white)
-                .frame(width: 44, height: 44)
-                .glassSurface(.toolbarButton, cornerRadius: 22)
+                .frame(width: Size.control, height: Size.control)
+                .glassSurface(.toolbarButton, cornerRadius: Radius.panel)
                 .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
         }
         .menuStyle(.button)
@@ -1227,7 +1227,7 @@ struct CameraRootView: View {
                     Text(loc.t("Scanning…"))
                         .font(T.sans(12, .semibold))
                         .foregroundColor(.white)
-                        .padding(.horizontal, 12).padding(.vertical, 5)
+                        .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
                         .background(Capsule().fill(Color.black.opacity(0.72)))
                         .offset(y: -30)
                         .transition(.opacity)
@@ -1274,7 +1274,7 @@ struct CameraRootView: View {
     }
 
     private var modeSwitcher: some View {
-        HStack(spacing: 7) {
+        HStack(spacing: Space.xs) {
             ForEach(LensMode.allCases) { m in
                 let on = currentLensMode == m
                 Button { selectLensMode(m) } label: {
@@ -1282,7 +1282,7 @@ struct CameraRootView: View {
                         .font(T.sans(13, on ? .semibold : .medium))
                         .foregroundColor(.white.opacity(on ? 0.96 : 0.72))
                         .padding(.horizontal, on ? 18 : 15)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, Space.s)
                         .background(
                             ZStack {
                                 Capsule().fill(Color.black.opacity(on ? 0.78 : 0.44))
@@ -1314,16 +1314,16 @@ struct CameraRootView: View {
         }()
         let streaming = (result?.isStreaming ?? false)
         let capped = answer.count > Self.captionMaxChars ? String(answer.suffix(Self.captionMaxChars)) : answer
-        return VStack(alignment: .leading, spacing: 7) {
+        return VStack(alignment: .leading, spacing: Space.xs) {
             Text("\(loc.t(mode.label).uppercased()) · \(loc.t("ON-DEVICE"))")
-                .font(T.sans(11, .bold)).tracking(0.5)
+                .font(T.sans(11, .bold)).tracking(TextScale.capsTracking)
                 .foregroundColor(T.accentStrong)
             Text(settings.lensCustomPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                  ? loc.t(mode.question)
                  : settings.lensCustomPrompt)
                 .font(T.sans(17, .semibold)).foregroundColor(cardInk)
             if streaming && capped.isEmpty {
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     ProgressView().tint(T.accent).scaleEffect(0.8)
                     Text(loc.t("Looking…")).font(T.sans(14)).foregroundColor(cardInk2)
                 }
@@ -1337,10 +1337,10 @@ struct CameraRootView: View {
                 Text(loc.t("Point at something and tap the shutter."))
                     .font(T.sans(14)).foregroundColor(cardInk2)
             }
-            HStack(spacing: 8) {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
+            HStack(spacing: Space.s) {
+                RoundedRectangle(cornerRadius: Radius.inner, style: .continuous)
                     .fill(Color.black.opacity(0.10))
-                    .frame(width: 22, height: 22)
+                    .frame(width: Size.glyph, height: Size.glyph)
                 Text(streaming ? loc.t("Identifying on-device…") : loc.t("Identified on-device"))
                     .font(T.sans(12)).foregroundColor(cardInk2)
                 Spacer(minLength: 0)
@@ -1349,26 +1349,26 @@ struct CameraRootView: View {
                         UIPasteboard.general.string = capped; HapticManager.impact(.medium)
                     } label: {
                         Image(systemName: "doc.on.doc")
-                            .font(.system(size: 13, weight: .semibold)).foregroundColor(cardInk2)
-                            .frame(width: 30, height: 30)
+                            .font(.system(.footnote, weight: .semibold)).foregroundColor(cardInk2)
+                            .frame(width: Size.control, height: Size.control)
                             .background(Circle().fill(Color.black.opacity(0.06)))
                     }.buttonStyle(.plain)
                 }
             }
-            .padding(.top, 2)
+            .padding(.top, Space.hair)
         }
-        .padding(16)
+        .padding(Space.m)
         .frame(maxWidth: .infinity, alignment: .leading)
         // ponytail: opaque white card, not glass — clear glass renders the
         // dark ink text unreadable over the live camera feed. Matches the
         // `fallbackFill: .white` the design already asked for.
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .fill(Color.white)
                 .shadow(color: .black.opacity(0.18), radius: 12, y: 4)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .stroke(.black.opacity(streaming ? 0.20 : 0.08), lineWidth: 1)
         )
     }
@@ -1379,13 +1379,13 @@ struct CameraRootView: View {
         HStack {
             PhotosPicker(selection: $photoItem, matching: .images, photoLibrary: .shared()) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                         .fill(Color.black.opacity(0.72))
                     Image(systemName: "photo.on.rectangle")
-                        .font(.system(size: 16, weight: .semibold)).foregroundColor(.white)
+                        .font(.system(.callout, weight: .semibold)).foregroundColor(.white)
                 }
-                .frame(width: 40, height: 40)
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(.white.opacity(0.18), lineWidth: 1))
+                .frame(width: Size.control, height: Size.control)
+                .overlay(RoundedRectangle(cornerRadius: Radius.control).stroke(.white.opacity(0.18), lineWidth: 1))
             }
             .buttonStyle(.plain)
             .minimumInteractiveSize()
@@ -1452,7 +1452,7 @@ struct CameraRootView: View {
                 Image(systemName: missing
                       ? "exclamationmark.triangle.fill"
                       : (analysis.isAnalyzing ? "hourglass" : "camera.viewfinder"))
-                    .font(.system(size: 24, weight: .semibold))
+                    .font(.system(.title2, weight: .semibold))
                     .foregroundColor(missing ? .white : .black)
                     .contentTransition(.symbolEffect(.replace))
             }
@@ -1509,7 +1509,7 @@ private struct LensScanFrame: View {
                 LinearGradient(colors: [.clear, accent.opacity(0.5), .white.opacity(0.7), .clear], startPoint: .top, endPoint: .bottom)
                     .frame(height: 34)
                     .offset(y: beamPosition * 92)
-                    .mask(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .mask(RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
                     .transition(.opacity)
             }
         }
@@ -1548,9 +1548,9 @@ private struct LensPromptComposer: View {
     }
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             Image(systemName: "text.bubble")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(.footnote, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.72))
 
             TextField("Ask about what the camera sees…", text: $prompt, axis: .vertical)
@@ -1570,7 +1570,7 @@ private struct LensPromptComposer: View {
             if !trimmedPrompt.isEmpty {
                 Button(action: onClear) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.62))
                 }
                 .buttonStyle(.plain)
@@ -1583,14 +1583,14 @@ private struct LensPromptComposer: View {
                         .fill(trimmedPrompt.isEmpty || isBusy
                               ? Color.white.opacity(0.12)
                               : Color.white)
-                        .frame(width: 34, height: 34)
+                        .frame(width: Size.control, height: Size.control)
                     if isBusy {
                         ProgressView()
                             .controlSize(.small)
                             .tint(.white)
                     } else {
                         Image(systemName: "arrow.up")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.system(.footnote, weight: .bold))
                             .foregroundStyle(trimmedPrompt.isEmpty ? .white.opacity(0.45) : .black)
                     }
                 }
@@ -1599,12 +1599,12 @@ private struct LensPromptComposer: View {
             .disabled(trimmedPrompt.isEmpty || isBusy)
             .accessibilityLabel("Ask Lens")
         }
-        .padding(.leading, 14)
-        .padding(.trailing, 8)
-        .padding(.vertical, 8)
-        .background(.black.opacity(0.68), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.leading, Space.m)
+        .padding(.trailing, Space.s)
+        .padding(.vertical, Space.s)
+        .background(.black.opacity(0.68), in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                 .stroke(.white.opacity(isFocused ? 0.34 : 0.16), lineWidth: 1)
         }
         .animation(.easeOut(duration: 0.16), value: isFocused)
@@ -1782,7 +1782,7 @@ private struct CaptionSkeleton: View {
     @State private var phase: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             ForEach(0..<3, id: \.self) { i in
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
                     .fill(Color.white.opacity(0.10))

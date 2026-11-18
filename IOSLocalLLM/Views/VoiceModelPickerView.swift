@@ -44,12 +44,12 @@ struct VoiceModelPickerView: View {
                     header
                     KSearchField(placeholder: "Search voice models", text: $query)
                         .accessibilityIdentifier("voiceCatalogSearch")
-                        .padding(.horizontal, 16)
-                        .padding(.top, 16)
+                        .padding(.horizontal, Space.m)
+                        .padding(.top, Space.m)
                     catalogSections
                     hintCard
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, Space.l)
             }
             .background(LiquidPinkBackdrop())
             .navigationBarTitleDisplayMode(.inline)
@@ -92,18 +92,18 @@ struct VoiceModelPickerView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             KCaption(text: "VOICE")
             KPageTitle(title: "Voice engines", size: 28)
             Text(loc.t("Choose the voice that reads replies aloud. Downloaded voices run offline on this iPhone."))
                 .font(T.sans(13))
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 2)
+                .padding(.top, Space.hair)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.s)
     }
 
     private var visibleCatalogEntries: [VoiceCatalogEntry] {
@@ -114,10 +114,10 @@ struct VoiceModelPickerView: View {
     private var catalogSections: some View {
         switch catalog.loadState {
         case .idle, .loading:
-            ProgressView(loc.t("Loading…")).padding(30)
+            ProgressView(loc.t("Loading…")).padding(Space.l)
         case .loaded, .failed:
             if catalog.loadState == .failed, let error = catalog.loadError {
-                VStack(spacing: 8) {
+                VStack(spacing: Space.s) {
                     Text(error).font(T.sans(12)).foregroundColor(T.bad)
                     Button(loc.t("Retry")) { catalog.load() }.buttonStyle(.kSecondary)
                 }
@@ -137,7 +137,7 @@ struct VoiceModelPickerView: View {
                     ForEach(unavailable) { entry in
                         unavailableRow(entry)
                         if entry.id != unavailable.last?.id {
-                            Rectangle().fill(T.rule).frame(height: 1).padding(.leading, 15)
+                            Rectangle().fill(T.rule).frame(height: 1).padding(.leading, Space.m)
                         }
                     }
                 }
@@ -149,17 +149,17 @@ struct VoiceModelPickerView: View {
     private func catalogSection(title: String, entries: [VoiceCatalogEntry]) -> some View {
         Group {
             if !entries.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: Space.s) {
+                    HStack(spacing: Space.s) {
                         KCaption(text: title)
                         Rectangle().fill(T.rule).frame(height: 1)
                     }
-                    LazyVStack(spacing: 12) {
+                    LazyVStack(spacing: Space.s) {
                         ForEach(entries) { entry in catalogCard(entry) }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 22)
+                .padding(.horizontal, Space.m)
+                .padding(.top, Space.l)
             }
         }
     }
@@ -210,13 +210,13 @@ struct VoiceModelPickerView: View {
         let model = entry.legacyDownloadID.flatMap(downloadModel)
         let state = rowState(entry, model: model)
         let active = isActive(entry, model: model)
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
+        return VStack(alignment: .leading, spacing: Space.s) {
+            HStack(alignment: .top, spacing: Space.s) {
                 Button { cardTapped(entry, model: model, state: state) } label: {
-                    HStack(alignment: .top, spacing: 12) {
+                    HStack(alignment: .top, spacing: Space.s) {
                         engineTile(entry, active: active)
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(spacing: 6) {
+                        VStack(alignment: .leading, spacing: Space.xxs) {
+                            HStack(spacing: Space.xs) {
                                 Text(entry.name)
                                     .font(T.display(17, .semibold))
                                     .foregroundColor(T.ink)
@@ -236,7 +236,7 @@ struct VoiceModelPickerView: View {
                                         KTag(text: "Experimental", size: 9)
                                     }
                                 }
-                                .padding(.top, 4)
+                                .padding(.top, Space.xxs)
                             }
                         }
                         Spacer(minLength: 0)
@@ -250,7 +250,7 @@ struct VoiceModelPickerView: View {
                     Image(systemName: "info.circle")
                         .font(.body)
                         .foregroundStyle(T.ink3)
-                        .frame(width: 44, height: 44)
+                        .frame(width: Size.control, height: Size.control)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -269,7 +269,7 @@ struct VoiceModelPickerView: View {
                 }
                 .buttonStyle(.kPrimary)
             case .downloading(let progress):
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: Space.xs) {
                     ProgressView(value: progress).tint(T.accent)
                     Text(loc.t("Downloading \(progress.formatted(.percent.precision(.fractionLength(0))))"))
                         .font(T.mono(10))
@@ -282,11 +282,11 @@ struct VoiceModelPickerView: View {
                 EmptyView()
             }
         }
-        .padding(16)
+        .padding(Space.m)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .kGlass(cornerRadius: AppRadius.card)
+        .kGlass(cornerRadius: Radius.card)
         .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                 .stroke(active ? T.accent.opacity(0.35) : Color.clear, lineWidth: 1)
         )
         .accessibilityIdentifier("voiceCatalogCard.\(entry.id)")
@@ -294,12 +294,12 @@ struct VoiceModelPickerView: View {
 
     private func engineTile(_ entry: VoiceCatalogEntry, active: Bool) -> some View {
         Image(systemName: active ? "checkmark" : (entry.task == .textToSpeech ? "waveform" : "mic"))
-            .font(.system(size: 17, weight: .semibold))
+            .font(.system(.body, weight: .semibold))
             .foregroundStyle(active ? T.bg : T.accent)
-            .frame(width: 44, height: 44)
+            .frame(width: Size.control, height: Size.control)
             .background(
                 active ? T.accent : T.accentSoft,
-                in: RoundedRectangle(cornerRadius: AppRadius.control, style: .continuous)
+                in: RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
             )
             .accessibilityHidden(true)
     }
@@ -324,16 +324,16 @@ struct VoiceModelPickerView: View {
 
     private func unavailableRow(_ entry: VoiceCatalogEntry) -> some View {
         Button { selectedCatalogEntry = entry } label: {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: Space.s) {
+                VStack(alignment: .leading, spacing: Space.hair) {
                     Text(entry.name).font(T.sans(14, .semibold)).foregroundColor(T.ink)
                     Text(loc.t(entry.statusLabel)).font(T.sans(12)).foregroundColor(T.ink3)
                 }
                 Spacer(minLength: 8)
                 Image(systemName: "info.circle").foregroundStyle(T.ink3).accessibilityHidden(true)
             }
-            .padding(.horizontal, 15)
-            .padding(.vertical, 11)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
             .frame(minHeight: 44)
             .contentShape(Rectangle())
         }
@@ -471,21 +471,20 @@ struct VoiceModelPickerView: View {
     // MARK: - Hint
 
     private var hintCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             Text("tip")
                 .font(T.mono(9, .semibold))
-                .tracking(0.5)
                 .foregroundColor(T.ink3)
             Text("Apple System Voice ships with iOS premium voices and works offline out of the box — it's the most reliable choice. On-device neural voices (KittenTTS, Kokoro) are smaller English voices that some people prefer; if one ever fails its self-check, the app reads replies through System Voice automatically. Pick the specific voice and speed in Voice settings.")
                 .font(T.sans(11))
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(16)
+        .padding(Space.m)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .kGlass(cornerRadius: AppRadius.card)
-        .padding(.horizontal, 16)
-        .padding(.top, 22)
+        .kGlass(cornerRadius: Radius.card)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.l)
     }
 
 }
@@ -499,8 +498,8 @@ struct VoiceCatalogDetailView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Space.m) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         KCaption(text: "Model Details")
                         Text(entry.name)
                             .font(T.display(28, .semibold))
@@ -510,7 +509,7 @@ struct VoiceCatalogDetailView: View {
                             .font(T.sans(15))
                             .foregroundColor(T.ink2)
                             .fixedSize(horizontal: false, vertical: true)
-                            .padding(.top, 2)
+                            .padding(.top, Space.hair)
                     }
                     VStack(spacing: 0) {
                         detailRow("Task", entry.task == .textToSpeech ? "Text to Speech" : "Speech Recognition")
@@ -521,7 +520,7 @@ struct VoiceCatalogDetailView: View {
                             detailRow("Storage", size)
                         }
                     }
-                    .kGlass(cornerRadius: AppRadius.card)
+                    .kGlass(cornerRadius: Radius.card)
                     if let source = entry.sourceURL, let url = URL(string: source) {
                         Link(destination: url) {
                             Label(loc.t("Open Project"), systemImage: "arrow.up.right")
@@ -529,7 +528,7 @@ struct VoiceCatalogDetailView: View {
                         .buttonStyle(.kSecondary)
                     }
                 }
-                .padding(16)
+                .padding(Space.m)
             }
             .background(LiquidPinkBackdrop())
             .navigationBarTitleDisplayMode(.inline)
@@ -549,7 +548,7 @@ struct VoiceCatalogDetailView: View {
             Text(loc.t(value)).font(T.sans(14, .semibold)).foregroundColor(T.ink)
                 .multilineTextAlignment(.trailing)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, Space.m)
         .frame(minHeight: 48)
     }
 }

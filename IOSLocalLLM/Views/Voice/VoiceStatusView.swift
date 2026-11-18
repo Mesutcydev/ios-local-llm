@@ -20,17 +20,17 @@ struct VoiceStatusView: View {
             engineRow("kokoro (experimental)", state: voiceService.kokoroState,
                       note: kokoroNote)
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, Space.xs)
     }
 
     @ViewBuilder
     private func engineRow(_ label: String, state: VoiceModelState, note: String) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             Text(stateGlyph(state))
                 .font(T.mono(10))
                 .foregroundColor(stateColor(state))
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Space.hair) {
                 KMono(text: label, size: 12, color: T.ink)
                 KMono(text: note, size: 9, color: T.ink3)
             }
@@ -39,7 +39,7 @@ struct VoiceStatusView: View {
 
             KMono(text: state.statusLabel.lowercased(), size: 10, color: T.ink3)
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, Space.s)
     }
 
     private var kittenNote: String {

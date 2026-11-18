@@ -27,7 +27,7 @@ struct ImageGenerationView: View {
             ZStack {
                 LiquidPinkBackdrop()
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
+                    VStack(alignment: .leading, spacing: Space.cardGap) {
                         if parentalControls.canGenerate {
                             ImageGenerationSelectedModelCard {
                                 showModels = true
@@ -47,8 +47,8 @@ struct ImageGenerationView: View {
                                                    description: Text("A parent or guardian must enter the parental PIN to continue."))
                         }
                     }
-                    .padding(16)
-                    .padding(.bottom, 40)
+                    .padding(Space.m)
+                    .padding(.bottom, Space.xl)
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
@@ -84,20 +84,20 @@ struct ImageGenerationView: View {
 
     private var preview: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                 .fill(Color.clear)
                 .aspectRatio(1, contentMode: .fit)
-                .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface)
+                .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
 
             if let img = svc.image {
                 Image(uiImage: img)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
             } else {
-                VStack(spacing: 10) {
+                VStack(spacing: Space.s) {
                     Image(systemName: "photo.artframe")
-                        .font(.system(size: 34, weight: .light))
+                        .font(.system(.largeTitle, weight: .light))
                         .foregroundColor(T.ink4)
                     Text("Your generated image appears here")
                         .font(T.mono(10))
@@ -107,9 +107,9 @@ struct ImageGenerationView: View {
 
             // Progress overlay for download / load / generate.
             if let overlay = progressOverlay {
-                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                     .fill(T.bg.opacity(0.72))
-                VStack(spacing: 12) {
+                VStack(spacing: Space.s) {
                     if let frac = overlay.fraction {
                         ProgressView(value: frac).tint(T.accent)
                             .frame(width: 160)
@@ -123,7 +123,7 @@ struct ImageGenerationView: View {
                         .font(T.mono(10))
                         .foregroundColor(T.ink2)
                 }
-                .padding(20)
+                .padding(Space.m)
             }
         }
     }
@@ -143,10 +143,10 @@ struct ImageGenerationView: View {
     // MARK: - Prompt
 
     private var promptCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.s) {
             Text("PROMPT")
                 .font(T.mono(10, .semibold))
-                .tracking(0.6)
+                .tracking(TextScale.capsTracking)
                 .foregroundColor(T.ink3)
             TextField("a watercolor fox in a misty forest…",
                       text: $prompt, axis: .vertical)
@@ -155,14 +155,14 @@ struct ImageGenerationView: View {
                 .foregroundColor(T.ink)
                 .tint(T.accent)
                 .lineLimit(2...5)
-                .padding(12)
-                .background(RoundedRectangle(cornerRadius: 14).fill(T.surface))
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(T.rule, lineWidth: 0.5))
+                .padding(Space.s)
+                .background(RoundedRectangle(cornerRadius: Radius.control).fill(T.surface))
+                .overlay(RoundedRectangle(cornerRadius: Radius.control).stroke(T.rule, lineWidth: 0.5))
 
             Button { withAnimation { showAdvanced.toggle() } } label: {
-                HStack(spacing: 4) {
+                HStack(spacing: Space.xxs) {
                     Image(systemName: showAdvanced ? "chevron.down" : "chevron.forward")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(.system(.caption2, weight: .semibold))
                     Text(showAdvanced ? "Hide options" : "More options")
                         .font(T.mono(10, .semibold))
                 }
@@ -175,8 +175,8 @@ struct ImageGenerationView: View {
     }
 
     private var advancedCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.m) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 Text("NEGATIVE PROMPT")
                     .font(T.mono(9, .semibold)).foregroundColor(T.ink3)
                 TextField("things to avoid…", text: $negativePrompt, axis: .vertical)
@@ -184,11 +184,11 @@ struct ImageGenerationView: View {
                     .foregroundColor(T.ink)
                     .tint(T.accent)
                     .lineLimit(1...3)
-                    .padding(10)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(T.surface))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(T.rule, lineWidth: 0.5))
+                    .padding(Space.s)
+                    .background(RoundedRectangle(cornerRadius: Radius.control).fill(T.surface))
+                    .overlay(RoundedRectangle(cornerRadius: Radius.control).stroke(T.rule, lineWidth: 0.5))
             }
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 HStack {
                     Text("STEPS")
                         .font(T.mono(9, .semibold)).foregroundColor(T.ink3)
@@ -201,14 +201,14 @@ struct ImageGenerationView: View {
                     .font(T.mono(8.5)).foregroundColor(T.ink3)
             }
         }
-        .padding(14)
-        .kGlass(cornerRadius: 16, fallbackFill: T.surface.opacity(0.6))
+        .padding(Space.m)
+        .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface.opacity(0.6))
     }
 
     // MARK: - Generate
 
     private var generateStrip: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Space.s) {
             if svc.isBusy, let overlay = progressOverlay {
                 Text(overlay.label)
                     .font(.footnote)
@@ -230,7 +230,7 @@ struct ImageGenerationView: View {
                         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 }
             }
-            HStack(spacing: 10) {
+            HStack(spacing: Space.s) {
                 if svc.isBusy {
                     Button {
                         svc.cancel()
@@ -240,8 +240,8 @@ struct ImageGenerationView: View {
                             .font(T.display(16, .semibold))
                             .foregroundColor(T.bad)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(RoundedRectangle(cornerRadius: 16).fill(T.bad.opacity(0.12)))
+                            .padding(.vertical, Space.m)
+                            .background(RoundedRectangle(cornerRadius: Radius.card).fill(T.bad.opacity(0.12)))
                     }
                     .buttonStyle(.plain)
                 } else {
@@ -253,16 +253,16 @@ struct ImageGenerationView: View {
                                      steps: s)
                         HapticManager.impact(.medium)
                     } label: {
-                        HStack(spacing: 8) {
+                        HStack(spacing: Space.s) {
                             Image(systemName: "sparkles")
                             Text(svc.isInstalled(model) ? "Generate" : "Download & Generate")
                         }
                         .font(T.display(16, .semibold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                        .padding(.vertical, Space.m)
                         .background(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                                 .fill(prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || svc.isDownloading(model)
                                       ? T.ink4 : T.roseHi)
                         )
@@ -284,12 +284,12 @@ private struct ImageGenerationSelectedModelCard: View {
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Space.s) {
             Button(action: onChangeModel) {
-                HStack(spacing: 12) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "photo.stack")
                         .foregroundStyle(T.accent)
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         Text("Image model")
                             .font(.caption)
                             .foregroundStyle(T.ink3)
@@ -320,9 +320,9 @@ private struct ImageGenerationSelectedModelCard: View {
             }
             ImageModelDownloadControl(model: service.selectedModel)
         }
-        .padding(14)
-        .background(RoundedRectangle(cornerRadius: 16).fill(T.surface))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(T.rule, lineWidth: 0.5))
+        .padding(Space.m)
+        .background(RoundedRectangle(cornerRadius: Radius.card).fill(T.surface))
+        .overlay(RoundedRectangle(cornerRadius: Radius.card).stroke(T.rule, lineWidth: 0.5))
     }
 }
 
@@ -335,7 +335,7 @@ struct ImageGenerationModelsView: View {
             ZStack {
                 LiquidPinkBackdrop()
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 14) {
+                    LazyVStack(alignment: .leading, spacing: Space.cardGap) {
                         Text("Choose a model and download it before writing a prompt. These models are also available in Models → Image.")
                             .font(.subheadline)
                             .foregroundStyle(T.ink2)
@@ -346,7 +346,7 @@ struct ImageGenerationModelsView: View {
                             .font(.footnote)
                             .foregroundStyle(T.ink3)
                     }
-                    .padding(16)
+                    .padding(Space.m)
                 }
             }
             .navigationTitle("Image Models")
@@ -371,15 +371,15 @@ struct ImageGenerationModelRow: View {
     var body: some View {
         let selected = model.id == service.selectedModelID
         let installed = service.isInstalled(model)
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Space.s) {
             Button {
                 service.select(model.id)
                 HapticManager.impact(.light)
             } label: {
-                HStack(alignment: .top, spacing: 12) {
+                HStack(alignment: .top, spacing: Space.s) {
                     Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                         .foregroundStyle(selected ? T.accent : T.ink3)
-                    VStack(alignment: .leading, spacing: 5) {
+                    VStack(alignment: .leading, spacing: Space.xs) {
                         Text(model.displayName)
                             .font(.headline)
                             .foregroundStyle(T.ink)
@@ -419,9 +419,9 @@ struct ImageGenerationModelRow: View {
                 }
             }
         }
-        .padding(14)
-        .background(RoundedRectangle(cornerRadius: 16).fill(selected ? T.accentSoft : T.surface))
-        .overlay(RoundedRectangle(cornerRadius: 16)
+        .padding(Space.m)
+        .background(RoundedRectangle(cornerRadius: Radius.card).fill(selected ? T.accentSoft : T.surface))
+        .overlay(RoundedRectangle(cornerRadius: Radius.card)
             .stroke(selected ? T.accent.opacity(0.4) : T.rule, lineWidth: selected ? 1 : 0.5))
         .confirmationDialog("Delete \(model.displayName)?", isPresented: $confirmDeletion, titleVisibility: .visible) {
             Button("Delete", role: .destructive) { service.deleteModel(model) }
@@ -455,7 +455,7 @@ struct ImageModelDownloadControl: View {
 
     var body: some View {
         if service.isDownloading(model) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 ProgressView(value: service.downloadProgress(for: model))
                     .tint(T.accent)
                     .accessibilityLabel("Downloading \(model.displayName)")
@@ -479,7 +479,7 @@ struct ImageModelDownloadControl: View {
                 .foregroundStyle(T.good)
                 .accessibilityIdentifier("imageModelInstalled-\(model.id)")
         } else {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 if let error = service.directDownloadErrors[model.id] {
                     Text(error)
                         .font(.footnote)
@@ -490,7 +490,7 @@ struct ImageModelDownloadControl: View {
                     service.startDownload(model)
                     HapticManager.impact(.light)
                 } label: {
-                    HStack(spacing: 8) {
+                    HStack(spacing: Space.s) {
                         Image(systemName: "arrow.down.circle")
                         if service.directDownloadErrors[model.id] != nil {
                             Text("Retry download · \(model.sizeLabel)")

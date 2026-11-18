@@ -49,9 +49,9 @@ struct LegalDocumentView: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         MarkdownTextView(markdown: markdown, isDocument: true)
-                            .padding(.horizontal, 18)
-                            .padding(.top, 12)
-                            .padding(.bottom, 32)
+                            .padding(.horizontal, Space.m)
+                            .padding(.top, Space.s)
+                            .padding(.bottom, Space.l)
                         // Bottom sentinel. `onAppear` also fires for rows a lazy
                         // stack prepares just below the viewport, which let a
                         // two-page document count as read at the top, so the gate
@@ -67,8 +67,8 @@ struct LegalDocumentView: View {
                 if primaryAction != nil || secondaryAction != nil || onReadConfirmed != nil {
                     Rectangle().fill(T.rule).frame(height: 1)
                     actionBar
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 12)
+                        .padding(.horizontal, Space.m)
+                        .padding(.vertical, Space.s)
                         .kClearGlass(in: Rectangle(), fallbackFill: T.surface)
                 }
             }
@@ -118,7 +118,7 @@ struct LegalDocumentView: View {
 
     @ViewBuilder
     private var actionBar: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Space.s) {
             if let confirm = onReadConfirmed {
                 Button {
                     HapticManager.impact(.medium)
@@ -130,8 +130,8 @@ struct LegalDocumentView: View {
                         .font(T.mono(13, .semibold))
                         .foregroundColor(scrolledToEnd ? T.bg : T.ink3)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(RoundedRectangle(cornerRadius: 8)
+                        .padding(.vertical, Space.s)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner)
                             .fill(scrolledToEnd ? T.ink : T.surface2))
                 }
                 .buttonStyle(.plain)
@@ -146,8 +146,8 @@ struct LegalDocumentView: View {
                         .font(T.mono(13, .semibold))
                         .foregroundColor(T.bad)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(T.bad.opacity(0.10)))
+                        .padding(.vertical, Space.s)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.bad.opacity(0.10)))
                 }
                 .buttonStyle(.plain)
             }
@@ -160,8 +160,8 @@ struct LegalDocumentView: View {
                         .font(T.mono(13, .semibold))
                         .foregroundColor(T.bg)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(T.ink))
+                        .padding(.vertical, Space.s)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
                 }
                 .buttonStyle(.plain)
             }

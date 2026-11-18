@@ -56,14 +56,13 @@ struct VoiceStatusPill: View {
             HapticManager.impact(.light)
             showVoiceSettings = true
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: "speaker.wave.2.fill")
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.system(.caption2, weight: .semibold))
                     .foregroundColor(T.accent)
 
                 Text(modelName)
                     .font(T.mono(10, .semibold))
-                    .tracking(0.3)
                     .foregroundColor(T.ink)
                     .lineLimit(1)
                     .truncationMode(.tail)
@@ -75,7 +74,7 @@ struct VoiceStatusPill: View {
                         .accessibilityLabel(audioQueue.currentLanguage ?? "")
                 }
             }
-            .padding(.horizontal, 9).padding(.vertical, 4)
+            .padding(.horizontal, Space.s).padding(.vertical, Space.xxs)
             .kGlassCapsule(fallbackFill: T.surface)
             .contentShape(Capsule())
         }

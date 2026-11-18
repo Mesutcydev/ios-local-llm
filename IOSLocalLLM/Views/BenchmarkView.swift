@@ -28,7 +28,7 @@ struct BenchmarkView: View {
                     }
                     historyCard
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, Space.l)
             }
             .background(LiquidPinkBackdrop())
             .navigationBarTitleDisplayMode(.inline)
@@ -58,13 +58,13 @@ struct BenchmarkView: View {
                 showQualityEval = true
                 HapticManager.impact(.light)
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: Space.s) {
                     Image(systemName: "checklist")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(.subheadline, weight: .medium))
                         .foregroundColor(T.accent)
-                        .frame(width: 32, height: 32)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(T.accent.opacity(0.12)))
-                    VStack(alignment: .leading, spacing: 2) {
+                        .frame(width: Size.tile, height: Size.tile)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.accent.opacity(0.12)))
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         Text("run quality eval")
                             .font(T.mono(13, .semibold))
                             .foregroundColor(T.ink)
@@ -74,11 +74,11 @@ struct BenchmarkView: View {
                     }
                     Spacer()
                     Image(systemName: "chevron.forward")
-                        .font(.system(size: 10))
+                        .font(.system(.caption2))
                         .foregroundColor(T.ink3)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -88,16 +88,16 @@ struct BenchmarkView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             KCaption(text: "PERFORMANCE")
             KPageTitle(title: "benchmark", size: 28)
             KMono(text: "measure how the active model runs on your device",
                   size: 11, color: T.ink3)
-                .padding(.top, 2)
+                .padding(.top, Space.hair)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.xxs)
     }
 
     // MARK: - Device card
@@ -110,7 +110,7 @@ struct BenchmarkView: View {
                 ("device ram",   MemoryAdvisor.deviceTotalRAM.formattedBytes),
                 ("thermal",      thermalLabel(safety.thermalState)),
             ], keyWidth: 100)
-            .padding(14)
+            .padding(Space.m)
         }
     }
 
@@ -118,7 +118,7 @@ struct BenchmarkView: View {
 
     private var runCard: some View {
         KSection(title: "run") {
-            VStack(spacing: 12) {
+            VStack(spacing: Space.s) {
                 switch service.phase {
                 case .idle, .finished, .failed:
                     runButton
@@ -138,8 +138,8 @@ struct BenchmarkView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .lineLimit(4)
                             .truncationMode(.head)
-                            .padding(8)
-                            .background(RoundedRectangle(cornerRadius: 6).fill(T.surface2))
+                            .padding(Space.s)
+                            .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface2))
                     }
                 }
                 if case .failed(let msg) = service.phase {
@@ -147,11 +147,11 @@ struct BenchmarkView: View {
                         .font(T.mono(11))
                         .foregroundColor(T.bad)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(8)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(T.bad.opacity(0.10)))
+                        .padding(Space.s)
+                        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.bad.opacity(0.10)))
                 }
             }
-            .padding(14)
+            .padding(Space.m)
         }
     }
 
@@ -160,13 +160,13 @@ struct BenchmarkView: View {
             Task { await service.run() }
             HapticManager.impact(.medium)
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "play.fill").font(.system(size: 11))
+            HStack(spacing: Space.xs) {
+                Image(systemName: "play.fill").font(.system(.caption2))
                 Text("run benchmark").font(T.mono(12, .semibold))
             }
             .foregroundColor(T.bg)
-            .padding(.horizontal, 14).padding(.vertical, 8)
-            .background(RoundedRectangle(cornerRadius: 6).fill(T.ink))
+            .padding(.horizontal, Space.m).padding(.vertical, Space.s)
+            .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
         }
         .buttonStyle(.plain)
         .disabled(!isReadyToRun)
@@ -182,15 +182,15 @@ struct BenchmarkView: View {
             HapticManager.impact(.rigid)
             ToastCenter.shared.info("Benchmark stopped")
         } label: {
-            HStack(spacing: 5) {
-                Image(systemName: "stop.fill").font(.system(size: 11))
+            HStack(spacing: Space.xs) {
+                Image(systemName: "stop.fill").font(.system(.caption2))
                 Text("stop").font(T.mono(12, .semibold))
             }
             .foregroundColor(T.bad)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-            .background(RoundedRectangle(cornerRadius: 6).fill(T.bad.opacity(0.10)))
-            .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.bad.opacity(0.4), lineWidth: 1))
+            .padding(.vertical, Space.s)
+            .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.bad.opacity(0.10)))
+            .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.bad.opacity(0.4), lineWidth: 1))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Stop benchmark")
@@ -210,9 +210,9 @@ struct BenchmarkView: View {
 
     @ViewBuilder
     private func progressRow(title: String, subtitle: String) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             ProgressView().tint(T.accent).scaleEffect(0.8)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Space.hair) {
                 Text(title)
                     .font(T.mono(12, .semibold))
                     .foregroundColor(T.ink)
@@ -229,7 +229,7 @@ struct BenchmarkView: View {
     @ViewBuilder
     private func resultsCard(_ result: BenchmarkService.BenchmarkResult, isCurrent: Bool) -> some View {
         KSection(title: isCurrent ? "result · current run" : "result") {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 // Aggregates
                 KSpecTable(rows: [
                     ("avg ttft",      String(format: "%.0f ms", result.avgTTFT)),
@@ -245,30 +245,30 @@ struct BenchmarkView: View {
                     perRunRow(run)
                 }
             }
-            .padding(14)
+            .padding(Space.m)
         }
     }
 
     @ViewBuilder
     private func perRunRow(_ r: BenchmarkService.PromptRun) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             HStack {
                 Text(r.label.uppercased())
                     .font(T.mono(10, .semibold))
-                    .tracking(0.5)
+                    .tracking(TextScale.capsTracking)
                     .foregroundColor(T.accent)
                 Spacer()
                 Text("\(r.outputTokens) tok")
                     .font(T.mono(10))
                     .foregroundColor(T.ink3)
             }
-            HStack(spacing: 14) {
+            HStack(spacing: Space.m) {
                 metric("ttft",   String(format: "%.0f ms", r.ttftMs))
                 metric("decode", String(format: "%.1f t/s", r.decodeTokensPerSec))
                 metric("total",  String(format: "%.1f s", r.totalWallMs / 1000))
             }
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, Space.xs)
     }
 
     @ViewBuilder
@@ -302,7 +302,7 @@ struct BenchmarkView: View {
                             .font(T.mono(11, .semibold))
                             .foregroundColor(T.bad)
                             .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.vertical, 10)
+                            .padding(.vertical, Space.s)
                     }
                     .buttonStyle(.plain)
                 }
@@ -312,7 +312,7 @@ struct BenchmarkView: View {
 
     @ViewBuilder
     private func historyRow(_ h: BenchmarkService.BenchmarkResult) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             HStack {
                 Text(h.modelDisplayName)
                     .font(T.mono(12, .semibold))
@@ -322,14 +322,14 @@ struct BenchmarkView: View {
                     .font(T.mono(9))
                     .foregroundColor(T.ink3)
             }
-            HStack(spacing: 14) {
+            HStack(spacing: Space.m) {
                 metric("ttft",   String(format: "%.0f ms", h.avgTTFT))
                 metric("decode", String(format: "%.1f t/s", h.avgDecode))
                 metric("peak",   h.peakRSS.formattedBytes)
             }
             KMono(text: "\(h.deviceModel) · \(h.osVersion)", size: 9, color: T.ink3)
         }
-        .padding(12)
+        .padding(Space.s)
         .contextMenu {
             Button(role: .destructive) {
                 service.delete(h)
@@ -353,7 +353,7 @@ struct BenchmarkView: View {
 
     @ViewBuilder
     private func warningCard(_ msg: String) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             Image(systemName: "thermometer.medium")
                 .foregroundColor(T.warn)
             Text(msg)
@@ -362,11 +362,11 @@ struct BenchmarkView: View {
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
         }
-        .padding(10)
-        .background(RoundedRectangle(cornerRadius: 6).fill(T.warn.opacity(0.10)))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.warn.opacity(0.4), lineWidth: 1))
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .padding(Space.s)
+        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.warn.opacity(0.10)))
+        .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.warn.opacity(0.4), lineWidth: 1))
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.s)
     }
 
     private func thermalLabel(_ s: ProcessInfo.ThermalState) -> String {

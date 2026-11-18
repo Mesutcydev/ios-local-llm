@@ -31,7 +31,7 @@ struct LensPromptPresetSheet: View {
                     }
                     hintBox
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, Space.l)
             }
             .background(LiquidPinkBackdrop())
             .navigationBarTitleDisplayMode(.inline)
@@ -48,16 +48,16 @@ struct LensPromptPresetSheet: View {
     // MARK: - Sections
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             KCaption(text: "LENS")
             KPageTitle(title: "ask", size: 28)
             KMono(text: "pick the question the camera asks the model",
                   size: 11, color: T.ink3)
-                .padding(.top, 2)
+                .padding(.top, Space.hair)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.xxs)
     }
 
     @ViewBuilder
@@ -69,10 +69,10 @@ struct LensPromptPresetSheet: View {
             // Auto-dismiss on selection — fewer taps to get back to camera.
             dismiss()
         } label: {
-            HStack(alignment: .top, spacing: 10) {
-                radio(selected: isSelected).padding(.top, 2)
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
+            HStack(alignment: .top, spacing: Space.s) {
+                radio(selected: isSelected).padding(.top, Space.hair)
+                VStack(alignment: .leading, spacing: Space.xxs) {
+                    HStack(spacing: Space.xs) {
                         Text(preset.label)
                             .font(T.mono(13, .semibold))
                             .foregroundColor(T.ink)
@@ -84,8 +84,8 @@ struct LensPromptPresetSheet: View {
                 }
                 Spacer()
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -96,7 +96,7 @@ struct LensPromptPresetSheet: View {
         ZStack {
             Circle()
                 .stroke(selected ? T.accent : T.rule2, lineWidth: 1.5)
-                .frame(width: 16, height: 16)
+                .frame(width: Size.glyph, height: Size.glyph)
             if selected {
                 Circle().fill(T.accent).frame(width: 9, height: 9)
             }
@@ -104,20 +104,19 @@ struct LensPromptPresetSheet: View {
     }
 
     private var hintBox: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             Text("tip")
                 .font(T.mono(9, .semibold))
-                .tracking(0.5)
                 .foregroundColor(T.ink3)
             Text("Preset is applied on the next analysis. Switch back to “describe” for the classic short live-caption feel.")
                 .font(T.sans(11))
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(12)
+        .padding(Space.s)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .kGlass(cornerRadius: 8, fallbackFill: T.surface)
-        .padding(.horizontal, 16)
-        .padding(.top, 12)
+        .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.s)
     }
 }

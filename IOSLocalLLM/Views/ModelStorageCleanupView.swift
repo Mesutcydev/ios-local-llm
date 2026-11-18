@@ -30,7 +30,7 @@ struct ModelStorageCleanupView: View {
             ZStack {
                 LiquidPinkBackdrop()
                 ScrollView {
-                    LazyVStack(spacing: 14) {
+                    LazyVStack(spacing: Space.cardGap) {
                         ModelStorageCleanupHeader(
                             installedCount: items.count,
                             selectedCount: keepIDs.count,
@@ -65,8 +65,8 @@ struct ModelStorageCleanupView: View {
 
                         Color.clear.frame(height: 96)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
+                    .padding(.horizontal, Space.m)
+                    .padding(.top, Space.s)
                 }
             }
             .navigationTitle("Storage Cleanup")
@@ -84,8 +84,8 @@ struct ModelStorageCleanupView: View {
                         || (removePartialDownloads && center.orphanedDownloadBytes > 0),
                     onRemove: { showRemovalConfirmation = true }
                 )
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
                 .background(.ultraThinMaterial)
             }
             .confirmationDialog(
@@ -208,7 +208,7 @@ private struct ModelStorageCleanupHeader: View {
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.s) {
             KCaption(text: "KEEP WHAT YOU USE", color: T.accent)
             Text("Models are stored separately from the app")
                 .font(T.display(24, .semibold))
@@ -218,7 +218,7 @@ private struct ModelStorageCleanupHeader: View {
                 .font(T.sans(13))
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 Label("\(selectedCount) kept", systemImage: "checkmark.circle.fill")
                 Spacer()
                 Text("\(installedCount) installed · \(storageUsed.formattedBytes)")
@@ -226,8 +226,8 @@ private struct ModelStorageCleanupHeader: View {
             .font(T.mono(10, .semibold))
             .foregroundColor(T.ink3)
         }
-        .padding(16)
-        .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
+        .padding(Space.m)
+        .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
     }
 }
 
@@ -239,7 +239,7 @@ private struct ModelStorageCleanupSelectionBar: View {
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Space.s) {
             Text("Keep")
                 .font(T.sans(13, .semibold))
                 .foregroundColor(T.ink)
@@ -250,7 +250,7 @@ private struct ModelStorageCleanupSelectionBar: View {
         }
         .font(T.sans(12, .semibold))
         .foregroundColor(T.accent)
-        .padding(.horizontal, 4)
+        .padding(.horizontal, Space.xxs)
     }
 }
 
@@ -263,15 +263,15 @@ private struct ModelStorageCleanupRow: View {
 
     var body: some View {
         Button(action: onToggle) {
-            HStack(spacing: 12) {
+            HStack(spacing: Space.s) {
                 Image(systemName: categoryGlyph)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .foregroundColor(isKept ? T.accent : T.ink3)
-                    .frame(width: 42, height: 42)
-                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .frame(width: Size.control, height: Size.control)
+                    .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                         .fill((isKept ? T.accent : T.ink3).opacity(0.10)))
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
+                    HStack(spacing: Space.xs) {
                         Text(item.displayName)
                             .font(T.sans(14, .semibold))
                             .foregroundColor(T.ink)
@@ -295,13 +295,13 @@ private struct ModelStorageCleanupRow: View {
                         .foregroundColor(T.warn)
                 } else {
                     Image(systemName: isKept ? "checkmark.circle.fill" : "circle")
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(.system(.title2, weight: .semibold))
                         .foregroundColor(isKept ? T.accent : T.ink3)
                 }
             }
-            .padding(14)
+            .padding(Space.m)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
+            .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
         }
         .buttonStyle(.plain)
         .disabled(item.isRequired)
@@ -327,14 +327,14 @@ private struct ModelPartialDownloadCleanupRow: View {
 
     var body: some View {
         Button(action: onToggle) {
-            HStack(spacing: 12) {
+            HStack(spacing: Space.s) {
                 Image(systemName: "arrow.down.circle.dotted")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .foregroundColor(T.warn)
-                    .frame(width: 42, height: 42)
-                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .frame(width: Size.control, height: Size.control)
+                    .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                         .fill(T.warn.opacity(0.10)))
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     Text("Partial downloads")
                         .font(T.sans(14, .semibold))
                         .foregroundColor(T.ink)
@@ -345,11 +345,11 @@ private struct ModelPartialDownloadCleanupRow: View {
                 }
                 Spacer()
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(.system(.title2, weight: .semibold))
                     .foregroundColor(isSelected ? T.warn : T.ink3)
             }
-            .padding(14)
-            .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
+            .padding(Space.m)
+            .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
         }
         .buttonStyle(.plain)
     }
@@ -371,7 +371,7 @@ private struct ModelStorageCleanupActionBar: View {
             }
             .font(.headline)
             .foregroundStyle(.white)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, Space.m)
             .frame(maxWidth: .infinity, minHeight: 50)
             .background(enabled ? Color.accentColor : Color.secondary, in: Capsule())
         }
@@ -387,6 +387,6 @@ private struct ModelStorageCleanupEmptyState: View {
             systemImage: "externaldrive",
             description: Text("Downloaded models will appear here when there is storage to manage.")
         )
-        .padding(.vertical, 36)
+        .padding(.vertical, Space.xl)
     }
 }

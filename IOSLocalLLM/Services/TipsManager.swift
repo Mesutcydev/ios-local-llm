@@ -59,14 +59,14 @@ struct TipBubble: View {
 
     var body: some View {
         if !tips.isDismissed(tip) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 if arrow == .top { arrowShape }
 
-                HStack(alignment: .top, spacing: 8) {
+                HStack(alignment: .top, spacing: Space.s) {
                     Image(systemName: "lightbulb.fill")
-                        .font(.system(size: 11))
+                        .font(.system(.caption2))
                         .foregroundColor(T.warn)
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Space.hair) {
                         Text(title)
                             .font(T.mono(11, .semibold))
                             .foregroundColor(T.ink)
@@ -81,15 +81,15 @@ struct TipBubble: View {
                         HapticManager.impact(.light)
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 9, weight: .semibold))
+                            .font(.system(.caption2, weight: .semibold))
                             .foregroundColor(T.ink3)
-                            .frame(width: 18, height: 18)
+                            .frame(width: Size.control, height: Size.control)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Dismiss tip")
                 }
-                .padding(10)
-                .kGlass(cornerRadius: 8, fallbackFill: T.surface)
+                .padding(Space.s)
+                .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
 
                 if arrow == .bottom { arrowShape }
             }

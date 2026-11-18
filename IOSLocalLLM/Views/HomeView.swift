@@ -40,13 +40,13 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: Space.m) {
                 header
                 LazyVGrid(columns: [GridItem(.adaptive(
                     minimum: dynamicTypeSize.isAccessibilitySize ? 440 : 300
-                ), spacing: 16)], alignment: .leading, spacing: 16) {
+                ), spacing: Space.cardGap)], alignment: .leading, spacing: Space.cardGap) {
                     heroCard
-                    VStack(spacing: 16) {
+                    VStack(spacing: Space.cardGap) {
                         quickActions
                         imageGenerationCard
                     }
@@ -54,9 +54,9 @@ struct HomeView: View {
                     privacyCard
                 }
             }
-            .padding(.horizontal, 18)
-            .padding(.top, AppSpacing.large)
-            .padding(.bottom, 28)
+            .padding(.horizontal, Space.m)
+            .padding(.top, Space.m)
+            .padding(.bottom, Space.l)
             .frame(maxWidth: AppLayout.dashboardWidth)
             .frame(maxWidth: .infinity)
         }
@@ -70,9 +70,9 @@ struct HomeView: View {
         KScreenHeader(title: loc.t("Studio"), eyebrow: greeting) {
             Button(action: { HapticManager.impact(.light); onOpenSettings() }) {
                 Image(systemName: "gearshape")
-                    .font(.system(size: 18, weight: .medium))
+                    .font(.system(.body, weight: .medium))
                     .foregroundStyle(T.ink2)
-                    .frame(width: 44, height: 44)
+                    .frame(width: Size.control, height: Size.control)
                     .kClearGlass(in: Circle(), interactive: true)
             }
             .buttonStyle(KTactileButtonStyle())
@@ -143,28 +143,28 @@ struct HomeView: View {
     private var heroCard: some View {
         let state = heroState
         return VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 Circle().fill(state.dot)
                     .frame(width: 7, height: 7)
                 Text(loc.t("Your local AI studio"))
-                    .font(T.sans(12, .bold)).tracking(0)
+                    .font(T.sans(12, .bold))
                     .foregroundColor(T.ink3)
                 Spacer()
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.caption, weight: .semibold))
                     .foregroundColor(T.ink3)
             }
             Text(state.title)
                 .font(T.display(22, .semibold))
                 .foregroundColor(T.ink)
-                .padding(.top, 13)
+                .padding(.top, Space.m)
             Text(heroSubtitle)
                 .font(T.sans(14))
                 .foregroundColor(T.ink2)
-                .padding(.top, 3)
+                .padding(.top, Space.xxs)
                 .fixedSize(horizontal: false, vertical: true)
 
-            HStack(spacing: 10) {
+            HStack(spacing: Space.s) {
                 KPrimaryButton(
                     label: loc.t(needsModelSetup ? "Choose a model" : "New chat"),
                     systemImage: "square.and.pencil"
@@ -175,24 +175,18 @@ struct HomeView: View {
                 .accessibilityIdentifier("home.assistant.start")
                 Button(action: { HapticManager.impact(.light); onOpenVoice() }) {
                     Image(systemName: "mic.fill")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(T.ink)
-                        .frame(width: 48, height: 46)
-                        .kClearGlass(
-                            in: RoundedRectangle(cornerRadius: 12, style: .continuous),
-                            interactive: true,
-                            fallbackFill: T.surface2,
-                            fallbackStroke: T.rule
-                        )
+                        .font(.body.weight(.semibold))
                 }
-                .buttonStyle(.plain)
+                .glassButton()
+                .buttonBorderShape(.circle)
+                .controlSize(.large)
                 .accessibilityLabel(loc.t("Voice"))
             }
-            .padding(.top, 18)
+            .padding(.top, Space.m)
             .avoidingDisplayDivision()
         }
-        .padding(20)
-        .background(card(20))
+        .padding(Space.m)
+        .background(card(Radius.card))
     }
 
     // MARK: Quick actions
@@ -200,7 +194,7 @@ struct HomeView: View {
     private var quickActions: some View {
         LazyVGrid(columns: [GridItem(.adaptive(
             minimum: dynamicTypeSize.isAccessibilitySize ? 150 : 88
-        ), spacing: 12)], spacing: 12) {
+        ), spacing: Space.s)], spacing: Space.s) {
             quickAction(icon: "camera.viewfinder", label: loc.t("Lens"), action: onOpenLens)
             quickAction(icon: "waveform", label: loc.t("Voice"), action: onOpenVoice)
             quickAction(icon: "server.rack", label: loc.t("Local API Server"), action: onOpenLocalAPIServer)
@@ -212,24 +206,24 @@ struct HomeView: View {
 
     private func quickAction(icon: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: { HapticManager.impact(.light); action() }) {
-            VStack(spacing: 9) {
+            VStack(spacing: Space.s) {
                 ZStack {
                     Image(systemName: icon)
-                        .font(.system(size: 20, weight: .regular))
+                        .font(.system(.title3, weight: .regular))
                         .foregroundColor(T.ink2)
                 }
-                .frame(width: 40, height: 40)
-                .kGlass(cornerRadius: 8, fallbackFill: T.surface2)
+                .frame(width: Size.control, height: Size.control)
+                .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface2)
                 Text(label)
                     .font(T.sans(12.5, .semibold))
                     .foregroundColor(T.ink)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.horizontal, 6)
+            .padding(.horizontal, Space.xs)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.vertical, 14)
-            .background(card(18))
+            .padding(.vertical, Space.m)
+            .background(card(Radius.card))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
@@ -240,14 +234,14 @@ struct HomeView: View {
             HapticManager.impact(.medium)
             onGenerateImage()
         } label: {
-            HStack(spacing: 13) {
+            HStack(spacing: Space.s) {
                 Image(systemName: "wand.and.stars")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                     .foregroundStyle(.white)
-                    .frame(width: 42, height: 42)
-                    .background(T.accentStrong, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .frame(width: Size.control, height: Size.control)
+                    .background(T.accentStrong, in: RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Space.hair) {
                     Text("Generate an Image")
                         .font(.headline)
                         .foregroundStyle(T.ink)
@@ -263,9 +257,9 @@ struct HomeView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(T.ink3)
             }
-            .padding(15)
+            .padding(Space.m)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(card(20))
+            .background(card(Radius.card))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -278,17 +272,18 @@ struct HomeView: View {
         let recent = Array(convos.conversations
             .sorted { $0.updatedAt > $1.updatedAt }
             .prefix(3))
-        return VStack(alignment: .leading, spacing: 9) {
+        return VStack(alignment: .leading, spacing: Space.s) {
                 Text(loc.t("Recent").uppercased())
-                .font(T.sans(13, .semibold)).tracking(0)
+                .font(T.sans(13, .semibold)).tracking(TextScale.capsTracking)
                 .foregroundColor(T.ink2)
-                .padding(.leading, 4)
-                .padding(.top, 4)
+                .padding(.leading, Space.xxs)
+                // Section break: card gap + m = l above the header, s below.
+                .padding(.top, Space.m)
 
             if recent.isEmpty {
-                HStack(spacing: 12) {
+                HStack(spacing: Space.s) {
                     iconTile("message", tint: T.accent)
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         Text(loc.t("No recent activity yet"))
                             .font(T.sans(15, .medium)).foregroundStyle(T.ink)
                         Text(loc.t("Your conversations will appear here."))
@@ -296,8 +291,8 @@ struct HomeView: View {
                     }
                     Spacer()
                 }
-                .padding(14)
-                .background(card(20))
+                .padding(Space.m)
+                .background(card(Radius.card))
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(recent.enumerated()), id: \.element.id) { idx, convo in
@@ -307,13 +302,13 @@ struct HomeView: View {
                         .buttonStyle(.plain)
                     }
                 }
-                .background(card(20))
+                .background(card(Radius.card))
             }
         }
     }
 
     private func recentRow(_ convo: StoredConversation, isLast: Bool) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Space.s) {
             iconTile("message", tint: T.accent)
             VStack(alignment: .leading, spacing: 1) {
                 Text(convo.title.isEmpty ? loc.t("Untitled chat") : convo.title)
@@ -324,11 +319,11 @@ struct HomeView: View {
             }
             Spacer(minLength: 6)
             Image(systemName: "chevron.forward")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(.caption, weight: .semibold))
                 .foregroundColor(T.ink4)
         }
-        .padding(.horizontal, 15)
-        .padding(.vertical, 12)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
         .overlay(alignment: .bottom) {
             if !isLast { Rectangle().fill(T.rule).frame(height: 0.5).padding(.leading, 59) }
         }
@@ -339,7 +334,7 @@ struct HomeView: View {
 
     private var privacyCard: some View {
         let readyCount = center.models.filter { $0.isReady }.count
-        return HStack(spacing: 13) {
+        return HStack(spacing: Space.s) {
             iconTile("lock.fill", tint: T.accent, filledTile: true)
             VStack(alignment: .leading, spacing: 1) {
                 Text(loc.t("Private by design"))
@@ -351,7 +346,7 @@ struct HomeView: View {
             Button(action: { HapticManager.impact(.light); onOpenModels() }) {
                 Text(loc.t("Manage"))
                     .font(T.sans(13, .semibold)).foregroundColor(T.ink)
-                    .padding(.horizontal, 13).padding(.vertical, 7)
+                    .padding(.horizontal, Space.m).padding(.vertical, Space.xs)
                     .frame(minWidth: 44, minHeight: 44)
                     .contentShape(Capsule())
                     .kClearGlass(
@@ -363,15 +358,15 @@ struct HomeView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(15)
-        .background(card(20))
+        .padding(Space.m)
+        .background(card(Radius.card))
     }
 
     // MARK: Reusable bits
 
     private func iconTile(_ symbol: String, tint: Color, filledTile: Bool = false) -> some View {
         ZStack {
-            RoundedRectangle(cornerRadius: filledTile ? 11 : 9, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .fill(filledTile ? AnyShapeStyle(T.accentStrong) : AnyShapeStyle(T.surface2))
             Image(systemName: symbol)
                 .font(.system(size: filledTile ? 18 : 16, weight: .regular))

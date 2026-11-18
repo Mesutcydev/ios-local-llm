@@ -94,7 +94,7 @@ struct VisualModelPickerView: View {
                     hintCard
                     statusCard
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, Space.l)
                 // NB: previous shape was `.id(downloadTick)` on this VStack
                 // to force a full subtree rebuild when a download finished.
                 // That worked but tore the picker apart on every tick —
@@ -149,13 +149,13 @@ struct VisualModelPickerView: View {
             HapticManager.impact(.light)
             showComparison = true
         } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: Space.s) {
                 Image(systemName: "rectangle.split.2x1.fill")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .foregroundColor(T.accent)
-                    .frame(width: 32, height: 32)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(T.accentSoft))
-                VStack(alignment: .leading, spacing: 2) {
+                    .frame(width: Size.tile, height: Size.tile)
+                    .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.accentSoft))
+                VStack(alignment: .leading, spacing: Space.hair) {
                     Text(loc.t("compare models"))
                         .font(T.mono(12, .semibold))
                         .foregroundColor(T.ink)
@@ -165,30 +165,30 @@ struct VisualModelPickerView: View {
                 }
                 Spacer()
                 Image(systemName: "chevron.forward")
-                    .font(.system(size: 10))
+                    .font(.system(.caption2))
                     .foregroundColor(T.ink3)
             }
-            .padding(12)
+            .padding(Space.s)
         }
         .buttonStyle(.plain)
-        .kGlass(cornerRadius: 8, fallbackFill: T.surface)
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.s)
     }
 
     // MARK: - Sections
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             KCaption(text: loc.t("CAMERA"))
             KPageTitle(title: loc.t("vision model"), size: 28)
             KMono(text: loc.t("tap a row to switch instantly"),
                   size: 11, color: T.ink3)
-                .padding(.top, 2)
+                .padding(.top, Space.hair)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.xxs)
     }
 
     private var defaultRow: some View {
@@ -196,17 +196,17 @@ struct VisualModelPickerView: View {
             Button {
                 Task { await applySelectionAndDismiss(LocalModelRegistry.defaultVisionSelectionID) }
             } label: {
-                HStack(spacing: 10) {
+                HStack(spacing: Space.s) {
                     radio(selected: LocalModelRegistry.isDefaultVisionSelection(selectedID))
                     Image(systemName: "text.viewfinder")
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         Text("Text recognition (OCR)").font(T.mono(13, .semibold))
                         Text("No download. Choose a vision model below for image descriptions.")
                             .font(T.mono(10)).foregroundStyle(T.ink3)
                     }
                     Spacer()
                 }
-                .padding(14)
+                .padding(Space.m)
             }
             .buttonStyle(.plain)
             .disabled(isApplyingSelection)
@@ -225,7 +225,7 @@ struct VisualModelPickerView: View {
         verdict: MemoryAdvisor.Verdict,
         tokensPerSecond: Double?
     ) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Space.xs) {
             formatPill(text: formatLabel)
             KCapabilityPill(capability: .vision, size: .compact)
             if ramBytes > 0 {
@@ -243,16 +243,15 @@ struct VisualModelPickerView: View {
     @ViewBuilder
     private func perfPill(tokensPerSecond: Double) -> some View {
         let label = String(format: "%.0f tok/s", tokensPerSecond)
-        HStack(spacing: 4) {
+        HStack(spacing: Space.xxs) {
             Image(systemName: "bolt.fill")
-                .font(.system(size: 8, weight: .bold))
+                .font(.system(.caption2, weight: .bold))
             Text(label)
                 .font(T.mono(8.5, .semibold))
-                .tracking(0.4)
         }
         .foregroundColor(T.accent)
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2.5)
+        .padding(.horizontal, Space.xs)
+        .padding(.vertical, Space.hair)
         .background(Capsule().fill(T.accent.opacity(0.10)))
         .overlay(Capsule().stroke(T.accent.opacity(0.32), lineWidth: 0.5))
         .fixedSize(horizontal: true, vertical: false)
@@ -265,10 +264,10 @@ struct VisualModelPickerView: View {
     private func formatPill(text: String) -> some View {
         Text(text.uppercased())
             .font(T.mono(8.5, .semibold))
-            .tracking(0.6)
+            .tracking(TextScale.capsTracking)
             .foregroundColor(T.ink2)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2.5)
+            .padding(.horizontal, Space.xs)
+            .padding(.vertical, Space.hair)
             .background(
                 Capsule().fill(T.ink2.opacity(0.10))
             )
@@ -289,15 +288,14 @@ struct VisualModelPickerView: View {
             case .wontFit:         return T.bad
             }
         }()
-        HStack(spacing: 4) {
+        HStack(spacing: Space.xxs) {
             Circle().fill(color).frame(width: 6, height: 6)
             Text(bytes.formattedBytes)
                 .font(T.mono(8.5, .semibold))
-                .tracking(0.4)
                 .foregroundColor(T.ink2)
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2.5)
+        .padding(.horizontal, Space.xs)
+        .padding(.vertical, Space.hair)
         .background(Capsule().fill(color.opacity(0.10)))
         .overlay(Capsule().stroke(color.opacity(0.32), lineWidth: 0.5))
         .fixedSize(horizontal: true, vertical: false)
@@ -315,10 +313,9 @@ struct VisualModelPickerView: View {
     private func statusBadge(text: String, warning: Bool) -> some View {
         Text(text)
             .font(T.mono(9, .semibold))
-            .tracking(0.3)
             .foregroundColor(warning ? T.bad : T.ink2)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
+            .padding(.horizontal, Space.xs)
+            .padding(.vertical, Space.hair)
             .background(
                 RoundedRectangle(cornerRadius: 4)
                     .fill((warning ? T.bad : T.ink2).opacity(0.10))
@@ -333,10 +330,9 @@ struct VisualModelPickerView: View {
     /// (e.g. deleted from Models tab). Explains why the picker appears parked
     /// on FastVLM and offers a one-tap clear.
     private var staleSelectionCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             Text(loc.t("previous selection unavailable"))
                 .font(T.mono(9, .semibold))
-                .tracking(0.5)
                 .foregroundColor(T.bad)
             Text(loc.t("The VLM you previously picked was deleted or moved. Pick a model below, or re-download it from the Model Center."))
                 .font(T.sans(11))
@@ -346,33 +342,32 @@ struct VisualModelPickerView: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
-        .padding(12)
+        .padding(Space.s)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 8).fill(T.bad.opacity(0.08)))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(T.bad.opacity(0.4), lineWidth: 1))
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.bad.opacity(0.08)))
+        .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.bad.opacity(0.4), lineWidth: 1))
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.s)
     }
 
     /// Footer card pointing users at the Download Center to add more visual
     /// models. Direct deep-link is intentionally avoided here so the sheet
     /// stays single-purpose — it just hints; tap the path in the Models tab.
     private var browseMoreCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             Text(loc.t("want more models?"))
                 .font(T.mono(9, .semibold))
-                .tracking(0.5)
                 .foregroundColor(T.ink3)
             Text(loc.t("Browse Qwen3-VL, Gemma 3 Vision, SmolVLM2 and more in Models → Download Center. The picker updates automatically when a download finishes."))
                 .font(T.sans(11))
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(12)
+        .padding(Space.s)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .kGlass(cornerRadius: 8, fallbackFill: T.surface)
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.s)
     }
 
     private var downloadedSection: some View {
@@ -411,16 +406,16 @@ struct VisualModelPickerView: View {
             m.start()
             HapticManager.impact(.medium)
         } label: {
-            HStack(alignment: .top, spacing: 10) {
+            HStack(alignment: .top, spacing: Space.s) {
                 // Download glyph in the radio's slot — nothing to select until
                 // the files are on disk.
                 Image(systemName: downloading ? "arrow.down.circle.fill" : "arrow.down.circle")
-                    .font(.system(size: 16))
+                    .font(.system(.callout))
                     .foregroundColor(T.accent)
-                    .frame(width: 16, height: 16)
-                    .padding(.top, 2)
+                    .frame(width: Size.glyph, height: Size.glyph)
+                    .padding(.top, Space.hair)
                 KVendorThumb(vendor: vendor, size: .row)
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     KModelName(m.displayName,
                                font: T.mono(13, .semibold),
                                color: T.ink)
@@ -434,7 +429,7 @@ struct VisualModelPickerView: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                     if downloading {
-                        HStack(spacing: 6) {
+                        HStack(spacing: Space.xs) {
                             ProgressView().tint(T.accent).scaleEffect(0.6)
                             KMono(text: m.state == .enumerating
                                     ? loc.t("preparing…")
@@ -448,8 +443,8 @@ struct VisualModelPickerView: View {
                 }
                 Spacer()
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -466,11 +461,11 @@ struct VisualModelPickerView: View {
         Button {
             Task { await applySelectionAndDismiss(m.sourceRepoID) }
         } label: {
-            HStack(alignment: .top, spacing: 10) {
-                radio(selected: isSelected).padding(.top, 2)
+            HStack(alignment: .top, spacing: Space.s) {
+                radio(selected: isSelected).padding(.top, Space.hair)
                 KVendorThumb(vendor: vendor, size: .row)
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
+                    HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
                         // KModelName: soft-break + scale + 2-line wrap.
                         // VLM names tend to be the longest in the catalog
                         // (e.g. "ggml-org/SmolVLM2-500M-Video-Instruct-GGUF")
@@ -504,8 +499,8 @@ struct VisualModelPickerView: View {
                 }
                 Spacer()
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
         }
         .buttonStyle(.plain)
         .disabled(isApplyingSelection)
@@ -516,7 +511,7 @@ struct VisualModelPickerView: View {
         ZStack {
             Circle()
                 .stroke(selected ? T.accent : T.rule2, lineWidth: 1.5)
-                .frame(width: 16, height: 16)
+                .frame(width: Size.glyph, height: Size.glyph)
             if selected {
                 Circle().fill(T.accent).frame(width: 9, height: 9)
             }
@@ -526,10 +521,9 @@ struct VisualModelPickerView: View {
     // MARK: - Hint + status
 
     private var hintCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             Text(loc.t("tip"))
                 .font(T.mono(9, .semibold))
-                .tracking(0.5)
                 .foregroundColor(T.ink3)
             Text(loc.t("Apple Vision OCR recognizes text without a download. Choose a compatible vision model for image descriptions if your device has enough memory."))
                 .font(T.sans(11))
@@ -540,35 +534,35 @@ struct VisualModelPickerView: View {
                 .foregroundColor(T.ink3)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(12)
+        .padding(Space.s)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .kGlass(cornerRadius: 8, fallbackFill: T.surface)
-        .padding(.horizontal, 16)
-        .padding(.top, 12)
+        .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.s)
     }
 
     @ViewBuilder
     private var statusCard: some View {
         switch vision.state {
         case .loading(let msg):
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 ProgressView().tint(T.accent).scaleEffect(0.7)
                 Text(msg).font(T.mono(11)).foregroundColor(T.ink2)
             }
-            .padding(10)
+            .padding(Space.s)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 6).fill(T.accentSoft))
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
+            .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.accentSoft))
+            .padding(.horizontal, Space.m)
+            .padding(.top, Space.s)
         case .failed(let msg):
             Text(msg)
                 .font(T.mono(11))
                 .foregroundColor(T.bad)
-                .padding(10)
+                .padding(Space.s)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 6).fill(T.bad.opacity(0.10)))
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.bad.opacity(0.10)))
+                .padding(.horizontal, Space.m)
+                .padding(.top, Space.s)
         default:
             EmptyView()
         }

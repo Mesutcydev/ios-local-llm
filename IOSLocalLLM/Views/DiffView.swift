@@ -30,23 +30,22 @@ struct DiffView: View {
             HStack {
                 Text("diff")
                     .font(T.mono(9, .semibold))
-                    .tracking(0.4)
                     .foregroundColor(T.ink2)
                 Spacer()
                 Button {
                     UIPasteboard.general.string = diffText
                     ToastCenter.shared.info("Copied diff")
                 } label: {
-                    HStack(spacing: 3) {
+                    HStack(spacing: Space.xxs) {
                         Image(systemName: "doc.on.doc")
-                            .font(.system(size: 9))
+                            .font(.system(.caption2))
                         Text("copy").font(T.mono(9))
                     }
                     .foregroundColor(T.ink2)
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 10).padding(.vertical, 5)
+            .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
             .background(T.surface2)
             .overlay(alignment: .bottom) {
                 Rectangle().fill(T.rule).frame(height: 1)
@@ -58,12 +57,12 @@ struct DiffView: View {
                         diffLine(line.0, kind: line.1)
                     }
                 }
-                .padding(.vertical, 8)
+                .padding(.vertical, Space.s)
             }
         }
         .background(T.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.rule, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.inner))
+        .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.rule, lineWidth: 1))
     }
 
     @ViewBuilder
@@ -76,7 +75,7 @@ struct DiffView: View {
             Text(text.isEmpty ? " " : text)
                 .font(T.mono(11))
                 .foregroundColor(textColor(kind))
-                .padding(.horizontal, 8)
+                .padding(.horizontal, Space.s)
                 .padding(.vertical, 1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

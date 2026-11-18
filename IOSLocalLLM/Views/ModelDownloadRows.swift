@@ -21,7 +21,7 @@ struct ComboModelDownloadControl: View {
             switch downloader.state {
             case .ready:
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                     .foregroundColor(tint)
                     .frame(width: 42, height: 30)
                     .accessibilityLabel(readyLabel)
@@ -33,7 +33,7 @@ struct ComboModelDownloadControl: View {
                     .frame(width: 42, height: 30)
 
             case .downloading:
-                HStack(spacing: 5) {
+                HStack(spacing: Space.xs) {
                     ProgressView(value: downloader.progress)
                         .tint(tint)
                         .frame(width: 26)
@@ -54,18 +54,28 @@ struct ComboModelDownloadControl: View {
     }
 
     private func actionButton(_ label: String) -> some View {
+        GlassGetButton(label: label, tint: tint, action: start)
+    }
+}
+
+/// App Store-style Get pill: Apple's glass capsule at its natural width, so a
+/// neighbour with layout priority can't squeeze it.
+struct GlassGetButton: View {
+    let label: String
+    let tint: Color
+    let action: () -> Void
+
+    var body: some View {
         Button {
-            start()
+            action()
             HapticManager.impact(.medium)
         } label: {
-            Text(label)
-                .font(T.sans(12, .semibold))
-                .foregroundColor(tint)
-                .padding(.horizontal, 12)
-                .frame(height: 30)
-                .background(Capsule().fill(tint.opacity(0.12)))
+            Text(label).font(.subheadline.weight(.semibold))
         }
-        .buttonStyle(.plain)
+        .glassButton()
+        .controlSize(.small)
+        .tint(tint)
+        .fixedSize()
     }
 }
 
@@ -93,13 +103,13 @@ struct CompletedDownloadRow: View {
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Space.s) {
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 18, weight: .semibold))
+                .font(.system(.body, weight: .semibold))
                 .foregroundColor(T.good)
-                .frame(width: 42, height: 42)
+                .frame(width: Size.control, height: Size.control)
                 .background(Circle().fill(T.good.opacity(0.12)))
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: Space.xxs) {
                 Text(model.displayName)
                     .font(T.sans(14, .semibold))
                     .foregroundColor(T.ink)
@@ -112,8 +122,8 @@ struct CompletedDownloadRow: View {
                 .font(T.mono(11, .bold))
                 .foregroundColor(T.good)
         }
-        .padding(14)
-        .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
+        .padding(Space.m)
+        .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
     }
 }
 
@@ -158,15 +168,15 @@ struct InstallingRow: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.s) {
             header
             progressBlock
             footer
         }
-        .padding(16)
+        .padding(Space.m)
         .frame(maxWidth: .infinity, alignment: .leading)
         .kClearGlass(
-            in: RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous),
+            in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous),
             tint: accent.opacity(0.13),
             fallbackFill: T.surface,
             fallbackStroke: accent.opacity(0.26)
@@ -184,16 +194,16 @@ struct InstallingRow: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: Space.s) {
             // Match the unified pink-soft glyph tile used across every
             // other model card. Accent flips to warn/bad while a
             // download is in flight (see `accent`) so the row signals
             // its state without losing the design language.
             Image(systemName: categoryGlyph)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(.subheadline, weight: .semibold))
                 .foregroundColor(accent)
-                .frame(width: 40, height: 40)
-                .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .frame(width: Size.control, height: Size.control)
+                .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                     .fill(accent.opacity(0.12)))
                 // Iterative variable-color pulses through the glyph while the
                 // download is actively transferring bytes. Doesn't fire on
@@ -205,7 +215,7 @@ struct InstallingRow: View {
                     isActive: downloader.state.isActive && !isIndeterminate
                 )
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: Space.xxs) {
                 KCaption(text: categoryEyebrow, color: T.ink3)
                 Text(model.displayName)
                     .font(T.display(17, .semibold))
@@ -253,11 +263,11 @@ struct InstallingRow: View {
     // MARK: - Footer (bytes + file count + current file + buttons)
 
     private var footer: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             // Bytes + file count line. Hidden during .enumerating since
             // those numbers are 0 / 0 and the rendering would mislead.
             if !isIndeterminate {
-                HStack(spacing: 6) {
+                HStack(spacing: Space.xs) {
                     Text(bytesLine)
                         .font(T.mono(10))
                         .foregroundColor(T.ink2)
@@ -301,7 +311,7 @@ struct InstallingRow: View {
             //   downloading / enumerating → Pause + Cancel download
             //   paused                     → Resume + Cancel download
             //   failed                     → Retry + Cancel download
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 if downloader.state.isActive {
                     actionButton("Pause") { downloader.pause(); HapticManager.impact(.light) }
                     actionButton("Cancel download") { confirmingCancel = true }
@@ -310,8 +320,8 @@ struct InstallingRow: View {
                         Text(loc.t(downloader.isPaused ? "Resume" : "Retry"))
                             .font(T.mono(11, .semibold))
                             .foregroundColor(T.bg)
-                            .padding(.horizontal, 10).padding(.vertical, 6)
-                            .background(RoundedRectangle(cornerRadius: 6).fill(T.ink))
+                            .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                            .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
                     }
                     .buttonStyle(.plain)
                     // Paused or failed: let the row be dismissed and its
@@ -323,8 +333,8 @@ struct InstallingRow: View {
                         Text(loc.t("Open on HuggingFace"))
                             .font(T.mono(11, .semibold))
                             .foregroundColor(T.ink2)
-                            .padding(.horizontal, 10).padding(.vertical, 6)
-                            .background(RoundedRectangle(cornerRadius: 6).fill(T.surface2))
+                            .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                            .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface2))
                     }
                     .buttonStyle(.plain)
                 }
@@ -340,8 +350,8 @@ struct InstallingRow: View {
             Text(loc.t(title))
                 .font(T.mono(11, .semibold))
                 .foregroundColor(T.ink2)
-                .padding(.horizontal, 10).padding(.vertical, 6)
-                .background(RoundedRectangle(cornerRadius: 6).fill(T.surface2))
+                .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
+                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface2))
         }
         .buttonStyle(.plain)
     }
@@ -518,9 +528,9 @@ struct SwipeToDeleteContainer<Content: View>: View {
         Button {
             performDelete()
         } label: {
-            VStack(spacing: 4) {
+            VStack(spacing: Space.xxs) {
                 Image(systemName: "trash.fill")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                 Text("Delete")
                     .scaledFont(size: 11, weight: .semibold)
             }
@@ -528,10 +538,10 @@ struct SwipeToDeleteContainer<Content: View>: View {
             .frame(width: revealWidth)
             .frame(maxHeight: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                     .fill(T.bad)
             )
-            .padding(.vertical, 2)
+            .padding(.vertical, Space.hair)
         }
         .buttonStyle(.plain)
         .allowsHitTesting(isOpen)

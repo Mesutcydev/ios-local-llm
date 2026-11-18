@@ -72,7 +72,7 @@ struct CompareView: View {
                     if resultA != nil && resultB != nil { votingCard }
                     ArenaLeaderboardCard(lane: .text)
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, Space.l)
             }
             .background(LiquidPinkBackdrop())
             .navigationBarTitleDisplayMode(.inline)
@@ -125,16 +125,16 @@ struct CompareView: View {
     // MARK: - Sections
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             KCaption(text: "COMPARE")
             KPageTitle(title: "a/b models", size: 28)
             KMono(text: "one prompt · two models · pick a winner · build a leaderboard",
                   size: 11, color: T.ink3)
-                .padding(.top, 2)
+                .padding(.top, Space.hair)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.xxs)
     }
 
     private var promptCard: some View {
@@ -142,20 +142,20 @@ struct CompareView: View {
             TextEditor(text: $prompt)
                 .font(T.mono(12))
                 .frame(minHeight: 80, maxHeight: 180)
-                .padding(8)
-                .background(RoundedRectangle(cornerRadius: 6).fill(T.surface2))
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.rule, lineWidth: 1))
-                .padding(12)
+                .padding(Space.s)
+                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface2))
+                .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.rule, lineWidth: 1))
+                .padding(Space.s)
         }
     }
 
     private var pickerCard: some View {
         KSection(title: "contestants") {
-            VStack(spacing: 8) {
+            VStack(spacing: Space.s) {
                 modelPickerRow(label: "model a", binding: $modelAID)
                 modelPickerRow(label: "model b", binding: $modelBID)
             }
-            .padding(12)
+            .padding(Space.s)
         }
     }
 
@@ -177,12 +177,12 @@ struct CompareView: View {
                         .truncationMode(.middle)
                     Spacer()
                     Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 9))
+                        .font(.system(.caption2))
                         .foregroundColor(T.ink3)
                 }
-                .padding(.horizontal, 10).padding(.vertical, 8)
-                .background(RoundedRectangle(cornerRadius: 6).fill(T.surface2))
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.rule, lineWidth: 1))
+                .padding(.horizontal, Space.s).padding(.vertical, Space.s)
+                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface2))
+                .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.rule, lineWidth: 1))
             }
         }
     }
@@ -194,7 +194,7 @@ struct CompareView: View {
     private var optionsCard: some View {
         KSection(title: "options") {
             Toggle(isOn: $blindMode) {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Space.hair) {
                     Text("blind mode")
                         .font(T.mono(12, .semibold))
                         .foregroundColor(T.ink)
@@ -204,28 +204,28 @@ struct CompareView: View {
                 }
             }
             .tint(T.accent)
-            .padding(12)
+            .padding(Space.s)
         }
     }
 
     private var runButton: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Space.s) {
             Button {
                 Task { await runCompare() }
                 HapticManager.impact(.medium)
             } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: Space.xs) {
                     if isRunning {
                         ProgressView().tint(T.bg).scaleEffect(0.7)
                     } else {
-                        Image(systemName: "play.fill").font(.system(size: 11))
+                        Image(systemName: "play.fill").font(.system(.caption2))
                     }
                     Text(isRunning ? "running \(runLabel)…" : "run both")
                         .font(T.mono(12, .semibold))
                 }
                 .foregroundColor(T.bg)
-                .padding(.horizontal, 14).padding(.vertical, 8)
-                .background(RoundedRectangle(cornerRadius: 6).fill(T.ink))
+                .padding(.horizontal, Space.m).padding(.vertical, Space.s)
+                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
             }
             .buttonStyle(.plain)
             .disabled(!canRun)
@@ -234,8 +234,8 @@ struct CompareView: View {
                 Text("pick two different models to compare").font(T.mono(10)).foregroundColor(T.warn)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.xxs)
     }
 
     private var canRun: Bool {
@@ -253,7 +253,7 @@ struct CompareView: View {
                     }
                     if let b = resultB { resultPanel(b, slot: "B") }
                 }
-                .padding(12)
+                .padding(Space.s)
             }
         }
     }
@@ -263,7 +263,7 @@ struct CompareView: View {
         // While blind and unrevealed, show the neutral slot label; otherwise
         // the real model name + its quant/runtime metadata.
         let hideIdentity = blindMode && !revealed
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             HStack(alignment: .firstTextBaseline) {
                 Text(hideIdentity ? "Model \(slot)" : r.modelName)
                     .font(T.mono(12, .semibold))
@@ -273,20 +273,19 @@ struct CompareView: View {
                 if !hideIdentity {
                     Text(r.runtimeLabel)
                         .font(T.mono(8, .semibold))
-                        .tracking(0.5)
                         .foregroundColor(T.ink2)
-                        .padding(.horizontal, 5).padding(.vertical, 2)
+                        .padding(.horizontal, Space.xs).padding(.vertical, Space.hair)
                         .background(Capsule().fill(T.ink2.opacity(0.10)))
                 }
                 if votedOutcome != nil, isWinnerSlot(slot) {
                     Text("WINNER")
-                        .font(T.mono(8, .bold)).tracking(0.6)
+                        .font(T.mono(8, .bold)).tracking(TextScale.capsTracking)
                         .foregroundColor(T.accent)
-                        .padding(.horizontal, 5).padding(.vertical, 2)
+                        .padding(.horizontal, Space.xs).padding(.vertical, Space.hair)
                         .background(Capsule().fill(T.accent.opacity(0.14)))
                 }
                 Spacer()
-                HStack(spacing: 12) {
+                HStack(spacing: Space.s) {
                     KMono(text: String(format: "%.0f ms", r.ttftMs), size: 10, color: T.accent)
                     KMono(text: String(format: "%.1f t/s", r.tokensPerSec), size: 10, color: T.accent)
                 }
@@ -300,7 +299,7 @@ struct CompareView: View {
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, Space.s)
     }
 
     /// True when `slot` ("A"/"B") corresponds to the model the user voted for.
@@ -317,9 +316,9 @@ struct CompareView: View {
     @ViewBuilder
     private var votingCard: some View {
         KSection(title: "verdict") {
-            VStack(spacing: 10) {
+            VStack(spacing: Space.s) {
                 if let outcome = votedOutcome {
-                    HStack(spacing: 6) {
+                    HStack(spacing: Space.xs) {
                         Image(systemName: "checkmark.seal.fill").foregroundColor(T.accent)
                         Text(verdictLabel(outcome))
                             .font(T.mono(11, .semibold))
@@ -331,14 +330,14 @@ struct CompareView: View {
                                           : "which model answered better?",
                           size: 10, color: T.ink3)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    HStack(spacing: 8) {
+                    HStack(spacing: Space.s) {
                         voteButton(title: blindMode ? "A wins" : "← A wins", outcome: .aWins)
                         voteButton(title: "tie", outcome: .tie)
                         voteButton(title: blindMode ? "B wins" : "B wins →", outcome: .bWins)
                     }
                 }
             }
-            .padding(12)
+            .padding(Space.s)
         }
     }
 
@@ -352,9 +351,9 @@ struct CompareView: View {
                 .font(T.mono(11, .semibold))
                 .foregroundColor(T.ink)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 9)
-                .background(RoundedRectangle(cornerRadius: 6).fill(T.surface2))
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.rule, lineWidth: 1))
+                .padding(.vertical, Space.s)
+                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface2))
+                .overlay(RoundedRectangle(cornerRadius: Radius.inner).stroke(T.rule, lineWidth: 1))
         }
         .buttonStyle(.plain)
     }

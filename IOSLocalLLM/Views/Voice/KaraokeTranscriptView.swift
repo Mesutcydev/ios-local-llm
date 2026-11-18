@@ -35,7 +35,7 @@ struct KaraokeTranscriptView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             header
             ScrollViewReader { proxy in
                 ScrollView {
@@ -82,7 +82,7 @@ struct KaraokeTranscriptView: View {
             }
 
             if isExpanded {
-                HStack(spacing: 16) {
+                HStack(spacing: Space.m) {
                     if let onCopy {
                         Button(action: onCopy) {
                             Label("Copy", systemImage: "doc.on.doc")
@@ -103,9 +103,9 @@ struct KaraokeTranscriptView: View {
                 }
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .kGlass(cornerRadius: 16, fallbackFill: T.surface)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
+        .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
         .onAppear {
             rebuildPrepared(text: text)
         }
@@ -121,7 +121,7 @@ struct KaraokeTranscriptView: View {
         HStack {
             Text("ASSISTANT")
                 .font(T.mono(9, .semibold))
-                .tracking(0.6)
+                .tracking(TextScale.capsTracking)
                 .foregroundStyle(T.accent)
             Spacer()
             if showFollowButton && !followSpeech {
@@ -251,10 +251,10 @@ struct VoiceUserTranscriptBubble: View {
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: 3) {
+        VStack(alignment: .trailing, spacing: Space.xxs) {
             Text("YOU")
                 .font(T.mono(9, .semibold))
-                .tracking(0.6)
+                .tracking(TextScale.capsTracking)
                 .foregroundStyle(T.ink2)
             Text(text)
                 .font(T.sans(17))
@@ -262,9 +262,9 @@ struct VoiceUserTranscriptBubble: View {
                 .multilineTextAlignment(.trailing)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .kGlass(cornerRadius: 16, fallbackFill: T.surface)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
+        .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
         .frame(maxWidth: .infinity, alignment: .trailing)
         .accessibilityLabel("You said: \(text)")
     }

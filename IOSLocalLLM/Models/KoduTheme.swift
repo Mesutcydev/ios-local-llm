@@ -53,11 +53,6 @@ struct KoduTheme {
     /// the page stays true #000000.
     var isOLED: Bool = false
 
-    /// Supplied by the theme modifier's ScaledMetric. Using a real SwiftUI
-    /// system font avoids looking up UIKit's private SF font names as custom
-    /// fonts, which can silently resolve to a serif face on newer OS releases.
-    var systemFontScale: CGFloat = 1
-
     // Brand-accent anchors. Stored (not computed) so `KoduTheme.make(appearance:accent:)`
     // can swap the whole brand-accent family per selected palette while leaving
     // backgrounds, ink, the sage `accent2`, and semantic good/warn/bad intact.
@@ -343,92 +338,23 @@ struct KoduTheme {
     }
 
     // MARK: - Typography helpers
-    // Falls back to system fonts when Geist isn't installed.
-    //
-    // Keep each nominal design size at the default text setting. Bundled
-    // fonts use Font.custom scaling; native fallbacks use the theme modifier's
-    // body-relative ScaledMetric so both paths support Dynamic Type.
+    // Every size snaps to Apple's text-style ramp (see `TextScale`), so text
+    // follows Dynamic Type per style and no half-point sizes remain. The
+    // `size` argument is the legacy design size; it only picks the style.
 
-    /// Display / sans body. Uses Geist when the font is bundled, otherwise
-    /// falls back to the system default. The Kodu prototype targets Geist
-    /// specifically; this respects that intent without crashing on devices
-    /// that don't have the file.
     func display(_ size: CGFloat, _ weight: Font.Weight = .semibold) -> Font {
-        Self.named("Geist", size: size, weight: weight)
-            ?? .system(size: size * systemFontScale, weight: weight)
+        .system(TextScale.style(for: size), weight: weight)
     }
 
     /// Shared reading size for prompts, live responses, and completed transcripts.
-    /// Both the bundled font and system fallback follow Dynamic Type.
-    var conversationBody: Font {
-        Self.named("Geist", size: 17, weight: .regular) ?? .body
-    }
-
-    /// Smallest design size at the default text setting. Captions authored at
-    /// 8–9.5 pt were well under legibility guidance; they still scale with
-    /// Dynamic Type from here.
-    static let minimumTextSize: CGFloat = 10
+    var conversationBody: Font { .body }
 
     func sans(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
-        let size = max(size, Self.minimumTextSize)
-        return Self.named("Geist", size: size, weight: weight)
-            ?? .system(size: size * systemFontScale, weight: weight)
+        .system(TextScale.style(for: size), weight: weight)
     }
 
-    /// Monospaced — pervasive in this design language. Prefers Geist Mono,
-    /// falls back to the system monospaced face.
     func mono(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
-        let size = max(size, Self.minimumTextSize)
-        return Self.named("Geist Mono", size: size, weight: weight)
-            ?? .system(size: size * systemFontScale, weight: weight, design: .monospaced)
-    }
-
-    /// Returns nil when the family isn't registered with UIFont — the caller
-    /// then falls back to a system font. Cached per (family,weight) since
-    /// CTFontManager lookups aren't free.
-    private static func named(_ family: String, size: CGFloat, weight: Font.Weight) -> Font? {
-        let key = "\(family)|\(weight.weightString)"
-        if let cached = fontCache[key] {
-            return cached.map { Font.custom($0, size: size).weight(weight) }
-        }
-        // Probe UIFont — cheap miss is fine, we'll cache the negative result.
-        let candidate = uiFontName(family: family, weight: weight)
-        if UIFont(name: candidate, size: size) != nil {
-            fontCache[key] = candidate
-            return Font.custom(candidate, size: size).weight(weight)
-        }
-        fontCache[key] = .some(nil)   // negative cache
-        return nil
-    }
-
-    /// Font lookups happen on the main thread only (SwiftUI body evaluation).
-    /// Marking nonisolated(unsafe) is honest about the contract and silences
-    /// the Swift 6 strict-concurrency warning without forcing an actor hop.
-    nonisolated(unsafe) private static var fontCache: [String: String?] = [:]
-
-    /// Maps "Geist" + .semibold etc → "Geist-SemiBold" / "GeistMono-Regular".
-    /// Foundries register weighted variants this way; an exact name avoids
-    /// CoreText synthetic-bolding the regular face.
-    private static func uiFontName(family: String, weight: Font.Weight) -> String {
-        let base = family.replacingOccurrences(of: " ", with: "")
-        return "\(base)-\(weight.weightString)"
-    }
-}
-
-private extension Font.Weight {
-    var weightString: String {
-        switch self {
-        case .ultraLight: return "UltraLight"
-        case .thin:       return "Thin"
-        case .light:      return "Light"
-        case .regular:    return "Regular"
-        case .medium:     return "Medium"
-        case .semibold:   return "SemiBold"
-        case .bold:       return "Bold"
-        case .heavy:      return "Heavy"
-        case .black:      return "Black"
-        default:          return "Regular"
-        }
+        .system(TextScale.style(for: size), design: .monospaced, weight: weight)
     }
 }
 
@@ -464,11 +390,8 @@ extension View {
 
 private struct KoduThemeModifier: ViewModifier {
     let theme: KoduTheme
-    @ScaledMetric(relativeTo: .body) private var fontScale: CGFloat = 1
 
     func body(content: Content) -> some View {
-        var scaledTheme = theme
-        scaledTheme.systemFontScale = fontScale
-        return content.environment(\.koduTheme, scaledTheme)
+        content.environment(\.koduTheme, theme)
     }
 }

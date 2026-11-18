@@ -61,7 +61,7 @@ struct DiagnosticsView: View {
 
     private func crashSection(_ c: CrashReporter.CrashInfo) -> some View {
         Section {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 Label("Previous session ended in a \(c.kind)", systemImage: "exclamationmark.triangle.fill")
                     .font(.headline)
                     .foregroundStyle(.red)
@@ -89,7 +89,7 @@ struct DiagnosticsView: View {
     private var analysisSection: some View {
         Section {
             if analyzer.running {
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     ProgressView()
                     Text(analyzer.output.isEmpty ? "Analyzing on-device…" : "Analyzing…")
                         .font(.footnote).foregroundStyle(.secondary)
@@ -150,8 +150,8 @@ struct DiagnosticsView: View {
                     .font(.footnote).foregroundStyle(.secondary)
             } else {
                 ForEach(entries) { e in
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 6) {
+                    VStack(alignment: .leading, spacing: Space.hair) {
+                        HStack(spacing: Space.xs) {
                             Text(e.level.label)
                                 .scaledFont(size: 9, weight: .bold, design: .monospaced)
                                 .foregroundStyle(color(for: e.level))
@@ -170,7 +170,7 @@ struct DiagnosticsView: View {
     private var metricSection: some View {
         Section {
             ForEach(metric.entries) { e in
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Space.hair) {
                     Text(e.kind.uppercased())
                         .scaledFont(size: 9, weight: .bold, design: .monospaced)
                         .foregroundStyle(e.kind == "crash" ? .red : .secondary)

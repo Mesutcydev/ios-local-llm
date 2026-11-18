@@ -59,8 +59,8 @@ struct LiquidGlassPill<Content: View>: View {
 
     var body: some View {
         content
-            .padding(.horizontal, 14)
-            .padding(.vertical, 7)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.xs)
             .kClearGlass(
                 in: Capsule(),
                 tint: active ? T.accentStrong : nil,
@@ -107,13 +107,12 @@ struct KActivePinkBadge: View {
     init(_ text: String = "ACTIVE") { self.text = text }
 
     var body: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: Space.xxs) {
             Text(text)
-                .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                .tracking(0)
+                .font(.system(.caption2, design: .monospaced, weight: .semibold))
         }
         .foregroundColor(T.ink)
-        .padding(.horizontal, 6).padding(.vertical, 2)
+        .padding(.horizontal, Space.xs).padding(.vertical, Space.hair)
         .kClearGlass(
             in: RoundedRectangle(cornerRadius: 4),
             fallbackFill: T.surface2,

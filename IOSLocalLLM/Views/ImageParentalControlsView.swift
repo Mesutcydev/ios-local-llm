@@ -7,7 +7,7 @@ struct ImageParentalControlsView: View {
     @State private var confirmation = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Space.s) {
             Label("Image generation parental controls".tr, systemImage: "lock.shield")
                 .font(.headline)
             Text("A parent or guardian can restrict image generation with a separate PIN. Keep this PIN private. Access locks again when the app backgrounds.".tr)

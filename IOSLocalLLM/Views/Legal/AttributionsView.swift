@@ -26,19 +26,19 @@ struct AttributionsView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     // Header
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         KCaption(text: "OPEN_SOURCE")
                         KPageTitle(title: "attributions", size: 28)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 4)
+                    .padding(.horizontal, Space.m)
+                    .padding(.top, Space.xxs)
 
                     headerSection
 
                     if let licenses = Bundle.main.url(forResource: "ThirdPartyLicenses", withExtension: "txt") {
                         ShareLink("Full licenses and notices", item: licenses)
-                            .padding(14)
+                            .padding(Space.m)
                             .accessibilityIdentifier("thirdPartyLicenseNotices")
                     }
 
@@ -47,14 +47,14 @@ struct AttributionsView: View {
                                     .replacingOccurrences(of: " ", with: "_")) {
                             ForEach(Array(group.items.enumerated()), id: \.offset) { i, item in
                                 if i > 0 { Rectangle().fill(T.rule).frame(height: 1) }
-                                AttributionCard(item: item).padding(14)
+                                AttributionCard(item: item).padding(Space.m)
                             }
                         }
                     }
 
                     disclosureSection
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, Space.l)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
@@ -68,10 +68,10 @@ struct AttributionsView: View {
     }
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
+            HStack(spacing: Space.xs) {
                 Image(systemName: "heart.fill")
-                    .font(.system(size: 11))
+                    .font(.system(.caption2))
                     .foregroundColor(T.bad)
                 KMono(text: "thank you to the open-source community",
                        size: 12, weight: .semibold, color: T.ink)
@@ -81,22 +81,22 @@ struct AttributionsView: View {
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(14)
+        .padding(Space.m)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .kGlass(cornerRadius: 8, fallbackFill: T.surface)
-        .padding(.horizontal, 16)
-        .padding(.top, 14)
+        .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.m)
     }
 
     private var disclosureSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 KCaption(text: "important_license_notes")
                 Rectangle().fill(T.rule).frame(height: 1)
             }
-            .padding(.bottom, 8)
+            .padding(.bottom, Space.s)
 
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 noteRow(glyph: "●", color: T.accent,
                         title: "apple ml research models",
                         body: "The Apple Sample Code License covers the adapted source code. FastVLM research weights and derived encoders are unavailable in the consumer app.")
@@ -105,17 +105,17 @@ struct AttributionsView: View {
                         title: "downloaded model licenses",
                         body: "Licenses vary by model and version, including within the Qwen family. Read the license at the exact download source before use or redistribution.")
             }
-            .padding(14)
-            .kGlass(cornerRadius: 8, fallbackFill: T.surface)
+            .padding(Space.m)
+            .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 18)
+        .padding(.horizontal, Space.m)
+        .padding(.top, Space.m)
     }
 
     @ViewBuilder
     private func noteRow(glyph: String, color: Color, title: String, body: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 5) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
+            HStack(spacing: Space.xs) {
                 Text(glyph)
                     .font(T.mono(10))
                     .foregroundColor(color)
@@ -136,7 +136,7 @@ struct AttributionCard: View {
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             HStack {
                 Text(item.name)
                     .font(T.mono(13, .semibold))
@@ -145,7 +145,7 @@ struct AttributionCard: View {
                 Text(item.license)
                     .font(T.mono(9, .medium))
                     .foregroundColor(licenseColor(item.license))
-                    .padding(.horizontal, 5).padding(.vertical, 2)
+                    .padding(.horizontal, Space.xs).padding(.vertical, Space.hair)
                     .background(RoundedRectangle(cornerRadius: 3)
                         .fill(licenseColor(item.license).opacity(0.12)))
             }
@@ -156,39 +156,39 @@ struct AttributionCard: View {
                 .font(T.sans(11.5))
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 2)
+                .padding(.top, Space.hair)
 
-            HStack(spacing: 10) {
+            HStack(spacing: Space.s) {
                 if let s = item.sourceURL, let url = URL(string: s) {
                     Link(destination: url) {
-                        HStack(spacing: 3) {
+                        HStack(spacing: Space.xxs) {
                             Image(systemName: "link")
-                                .font(.system(size: 9))
+                                .font(.system(.caption2))
                             Text("source").font(T.mono(10))
                         }
                     }
                 }
                 if let l = item.licenseURL, let url = URL(string: l) {
                     Link(destination: url) {
-                        HStack(spacing: 3) {
+                        HStack(spacing: Space.xxs) {
                             Image(systemName: "doc.text")
-                                .font(.system(size: 9))
+                                .font(.system(.caption2))
                             Text("license").font(T.mono(10))
                         }
                     }
                 }
                 if let p = item.paperURL, let url = URL(string: p) {
                     Link(destination: url) {
-                        HStack(spacing: 3) {
+                        HStack(spacing: Space.xxs) {
                             Image(systemName: "doc.richtext")
-                                .font(.system(size: 9))
+                                .font(.system(.caption2))
                             Text("paper").font(T.mono(10))
                         }
                     }
                 }
             }
             .foregroundColor(T.accent)
-            .padding(.top, 4)
+            .padding(.top, Space.xxs)
         }
     }
 

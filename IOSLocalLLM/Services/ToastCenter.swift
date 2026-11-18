@@ -104,7 +104,7 @@ struct ToastOverlayView: View {
         VStack {
             if let toast = center.current {
                 ToastBanner(toast: toast)
-                    .padding(.horizontal, 14)
+                    .padding(.horizontal, Space.m)
                     // The overlay is mounted at the window root, above every
                     // NavigationStack. The safe area clears the status bar but
                     // not the navigation bar, so an 8-point inset placed the
@@ -142,14 +142,14 @@ struct ToastBanner: View {
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .top, spacing: Space.s) {
             // SF Symbol with kind-specific symbolEffect. Errors wiggle on
             // appear (calls attention without the alarm-bell feel of a red
             // banner), successes bounce, info pulses gently.
             symbolView
                 .padding(.top, 1)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Space.hair) {
                 Text(localization.t(toast.title))
                     .font(T.mono(12, .semibold))
                     .foregroundColor(T.ink)
@@ -166,25 +166,25 @@ struct ToastBanner: View {
             Spacer(minLength: 6)
 
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.horizontal, Space.s)
+        .padding(.vertical, Space.s)
         // Liquid Glass is deliberately translucent, but dense status rows
         // immediately beneath an error banner become readable through it and
         // visually collide with the toast copy. Give the notification its own
         // opaque reading surface before applying the glass treatment. The
         // light theme's `surface` is 26% white, so it can't be used here.
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .fill(T.isDark ? T.surface : Color(uiColor: .systemBackground))
         )
-        .kGlass(cornerRadius: 10, fallbackFill: T.surface, fallbackStroke: T.rule)
+        .kGlass(cornerRadius: Radius.control, fallbackFill: T.surface, fallbackStroke: T.rule)
         .shadow(color: .black.opacity(0.10), radius: 14, y: 4)
         .overlay(alignment: .leading) {
             Rectangle()
                 .fill(glyphColor)
                 .frame(width: 2)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.control))
         .allowsHitTesting(false)
     }
 
@@ -203,7 +203,7 @@ struct ToastBanner: View {
     @ViewBuilder
     private var symbolView: some View {
         let base = Image(systemName: symbolName)
-            .font(.system(size: 14, weight: .semibold))
+            .font(.system(.subheadline, weight: .semibold))
             .foregroundColor(glyphColor)
         switch toast.kind {
         case .error:

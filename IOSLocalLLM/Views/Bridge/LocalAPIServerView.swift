@@ -53,9 +53,9 @@ struct LocalAPIServerView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: 5) {
+                VStack(alignment: .leading, spacing: Space.xs) {
                     Text("DEVELOPER TOOLS")
-                        .font(theme.mono(10, .semibold)).tracking(1)
+                        .font(theme.mono(10, .semibold)).tracking(TextScale.capsTracking)
                         .foregroundStyle(theme.accent)
                     Text("Local API Server")
                         .font(theme.display(30, .bold)).foregroundStyle(theme.ink)
@@ -63,7 +63,7 @@ struct LocalAPIServerView: View {
                         .font(theme.sans(14)).foregroundStyle(theme.ink2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 20).padding(.top, 8)
+                .padding(.horizontal, Space.m).padding(.top, Space.s)
 
                 KSection(title: "server") {
                     LocalAPIServerControls(
@@ -101,11 +101,11 @@ struct LocalAPIServerView: View {
                 Label("HTTPS encrypts traffic. Verify this device’s public-key pin before connecting. SDKs must trust the certificate or support pinning. The server stops when the app backgrounds.",
                       systemImage: "lock.shield")
                     .font(theme.sans(12)).foregroundStyle(theme.ink2)
-                    .padding(20)
+                    .padding(Space.m)
             }
             .frame(maxWidth: 760)
             .frame(maxWidth: .infinity)
-            .padding(.bottom, 24)
+            .padding(.bottom, Space.l)
         }
         .background(LiquidPinkBackdrop())
         .navigationTitle("Local API")
@@ -174,10 +174,10 @@ private struct LocalAPIServerControls: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top, spacing: 14) {
+        VStack(alignment: .leading, spacing: Space.m) {
+            HStack(alignment: .top, spacing: Space.m) {
                 LocalAPIActivityIndicator(activity: activity)
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     Text(title).font(theme.sans(19, .semibold)).foregroundStyle(theme.ink)
                         .accessibilityIdentifier("api.server.status")
                     Text(detail).font(theme.sans(13)).foregroundStyle(theme.ink2)
@@ -185,11 +185,11 @@ private struct LocalAPIServerControls: View {
                 }
             }
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: 10) { actions }
-                VStack(spacing: 10) { actions }
+                HStack(spacing: Space.s) { actions }
+                VStack(spacing: Space.s) { actions }
             }
         }
-        .padding(16)
+        .padding(Space.m)
     }
 
     @ViewBuilder private var actions: some View {
@@ -260,7 +260,7 @@ private struct LocalAPIActivityIndicator: View {
             ZStack {
                 Circle().stroke(theme.rule, lineWidth: 1)
                 Image(systemName: activity == .ready ? "checkmark" : "network")
-                    .font(.system(size: 20, weight: .medium)).foregroundStyle(color)
+                    .font(.system(.title3, weight: .medium)).foregroundStyle(color)
                 if activity.isWorking {
                     Circle().trim(from: 0, to: 0.24)
                         .stroke(color, style: StrokeStyle(lineWidth: 2, lineCap: .round))
@@ -268,7 +268,7 @@ private struct LocalAPIActivityIndicator: View {
                 }
             }
         }
-        .frame(width: 48, height: 48)
+        .frame(width: Size.feature, height: Size.feature)
         .accessibilityHidden(true)
     }
 }
@@ -291,7 +291,7 @@ private struct LocalAPIModelSection: View {
 
     var body: some View {
         KSection(title: "local model") {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 Text(assistant.activeDisplayName).font(theme.sans(16, .semibold)).foregroundStyle(theme.ink)
                 if isLocal {
                     LocalAPICopyValue(label: "Model ID", value: assistant.activeModel.id,
@@ -302,15 +302,15 @@ private struct LocalAPIModelSection: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("api.model.status")
                 ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 10) { modelActions }
-                    VStack(spacing: 10) { modelActions }
+                    HStack(spacing: Space.s) { modelActions }
+                    VStack(spacing: Space.s) { modelActions }
                 }
                 LocalAPIActionButton(title: "Choose installed model", symbol: "square.stack.3d.up",
                                      disabled: busy, action: { choosesModel = true })
                     .accessibilityIdentifier("api.model.choose")
                 Text("Uses the shared chat runtime. Memory and thermal limits still apply.")
                     .font(theme.sans(12)).foregroundStyle(theme.ink3)
-            }.padding(16)
+            }.padding(Space.m)
         }
         .sheet(isPresented: $choosesModel) {
             AssistantModelPickerView(downloadedOnly: true, allowsApplePrivateCloud: false)
@@ -395,7 +395,7 @@ private struct LocalAPIConnectionSection: View {
     @Environment(\.koduTheme) private var theme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Space.s) {
             Picker("Client format", selection: $format) {
                 ForEach(LocalAPIClientSetup.Format.allCases) { format in
                     Text(format.rawValue).tag(format)
@@ -425,7 +425,7 @@ private struct LocalAPIConnectionSection: View {
                 .font(theme.sans(13, .medium)).tint(theme.accent)
                 .frame(minHeight: 44)
                 .accessibilityIdentifier("api.connection.refresh")
-        }.padding(16)
+        }.padding(Space.m)
     }
 }
 
@@ -436,7 +436,7 @@ private struct LocalAPIKeySection: View {
     @Environment(\.koduTheme) private var theme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             Text(revealsKey ? key : "•••• •••• •••• ••••")
                 .font(theme.mono(13)).foregroundStyle(theme.ink)
                 .textSelection(.enabled)
@@ -444,12 +444,12 @@ private struct LocalAPIKeySection: View {
                 .privacySensitive().accessibilityIdentifier("api.key.value")
                 .accessibilityLabel(revealsKey ? "API key revealed" : "API key hidden")
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: 10) { controls }
-                VStack(spacing: 10) { controls }
+                HStack(spacing: Space.s) { controls }
+                VStack(spacing: Space.s) { controls }
             }
             Text("Key copies stay on this device’s clipboard. Revealed keys hide when you leave this page.")
                 .font(theme.sans(12)).foregroundStyle(theme.ink3)
-        }.padding(16)
+        }.padding(Space.m)
     }
 
     @ViewBuilder private var controls: some View {
@@ -473,7 +473,7 @@ private struct LocalAPIQuickStartSection: View {
     @Environment(\.koduTheme) private var theme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Space.s) {
             Text("1. Start the server and load an installed model.\n2. Verify the TLS pin through a trusted channel.\n3. Run these commands on your client.")
                 .font(theme.sans(13)).foregroundStyle(theme.ink2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -481,9 +481,9 @@ private struct LocalAPIQuickStartSection: View {
                 .font(theme.mono(11)).foregroundStyle(theme.ink)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(12)
+                .padding(Space.s)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(theme.surface2, in: RoundedRectangle(cornerRadius: 10))
+                .background(theme.surface2, in: RoundedRectangle(cornerRadius: Radius.control))
                 .privacySensitive().accessibilityIdentifier("api.setup.commands")
                 .accessibilityLabel(revealsKey
                     ? "Setup commands include your API key. Use Copy setup commands."
@@ -493,7 +493,7 @@ private struct LocalAPIQuickStartSection: View {
             }.accessibilityIdentifier("api.setup.copy")
             Text("Copied commands include your API key. Keep both --insecure and --pinnedpubkey together; the pin verifies this device’s certificate.")
                 .font(theme.sans(12)).foregroundStyle(theme.ink3)
-        }.padding(16)
+        }.padding(Space.m)
     }
 }
 
@@ -509,10 +509,10 @@ private struct LocalAPISettingsSection: View {
     private var controlsBusy: Bool { changingServer || manager.state == .starting }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Space.s) {
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: 12) { portControls }
-                VStack(alignment: .leading, spacing: 8) { portControls }
+                HStack(spacing: Space.s) { portControls }
+                VStack(alignment: .leading, spacing: Space.s) { portControls }
             }
             if let portError {
                 Text(portError).font(theme.sans(12)).foregroundStyle(theme.bad)
@@ -538,7 +538,7 @@ private struct LocalAPISettingsSection: View {
             Text("Off by default. Peer-to-peer / AWDL can accept nearby devices outside your network. Authentication is still required.")
                 .font(theme.sans(12)).foregroundStyle(theme.ink3)
         }
-        .font(theme.sans(14)).tint(theme.accent).padding(16)
+        .font(theme.sans(14)).tint(theme.accent).padding(Space.m)
         .onChange(of: settings.localAPIPort) { _, value in
             if !editingPort { portText = String(value) }
         }
@@ -556,7 +556,7 @@ private struct LocalAPISettingsSection: View {
         Text("Port").font(theme.sans(14, .medium)).foregroundStyle(theme.ink)
         TextField("11434", text: $portText)
             .font(theme.mono(14)).keyboardType(.numberPad)
-            .padding(10).background(theme.surface2, in: RoundedRectangle(cornerRadius: 8))
+            .padding(Space.s).background(theme.surface2, in: RoundedRectangle(cornerRadius: Radius.inner))
             .frame(minWidth: 90).focused($editingPort)
             .disabled(controlsBusy).accessibilityIdentifier("api.settings.port")
         Button("Apply", action: applyPort)
@@ -597,9 +597,9 @@ private struct LocalAPIEndpointsSection: View {
 
     var body: some View {
         DisclosureGroup(isExpanded: $expanded) {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: Space.m) {
                 ForEach(LocalAPIClientSetup.routes) { route in
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         Text(route.method + " " + route.path)
                             .font(theme.mono(12, .medium)).foregroundStyle(theme.ink)
                             .textSelection(.enabled)
@@ -608,13 +608,13 @@ private struct LocalAPIEndpointsSection: View {
                 }
                 Text("All routes require an API key. Responses supports text only. Compatibility is scoped; unsupported options return an error.")
                     .font(theme.sans(12)).foregroundStyle(theme.ink3)
-            }.padding(.top, 14)
+            }.padding(.top, Space.m)
         } label: {
             Text("8 endpoints · OpenAI, Anthropic, Ollama")
                 .font(theme.sans(14, .medium)).foregroundStyle(theme.ink)
                 .accessibilityIdentifier("api.endpoints.toggle")
         }
-        .tint(theme.accent).padding(16)
+        .tint(theme.accent).padding(Space.m)
     }
 }
 
@@ -629,17 +629,17 @@ private struct LocalAPICopyValue: View {
         Button {
             LocalAPIClipboard.copy(value, message: "\(label) copied")
         } label: {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 HStack {
                     Text(LocalizedStringKey(label)).font(theme.mono(10, .semibold)).foregroundStyle(theme.ink2)
                     Spacer()
-                    Image(systemName: "doc.on.doc").font(.system(size: 12)).foregroundStyle(theme.accent)
+                    Image(systemName: "doc.on.doc").font(.system(.caption)).foregroundStyle(theme.accent)
                 }
                 Text(value).font(theme.mono(12)).foregroundStyle(theme.ink)
                     .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
             }
-            .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-            .background(theme.surface2, in: RoundedRectangle(cornerRadius: 10))
+            .padding(Space.s).frame(maxWidth: .infinity, alignment: .leading)
+            .background(theme.surface2, in: RoundedRectangle(cornerRadius: Radius.control))
         }
         .buttonStyle(.plain).disabled(!copyEnabled).accessibilityIdentifier(identifier)
         .accessibilityLabel("Copy \(label)").accessibilityValue(value)
@@ -659,14 +659,14 @@ private struct LocalAPIActionButton: View {
             Label(LocalizedStringKey(title), systemImage: symbol)
                 .font(theme.sans(14, .semibold))
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 12).padding(.vertical, 12)
+                .padding(.horizontal, Space.s).padding(.vertical, Space.s)
                 .frame(maxWidth: .infinity, minHeight: 46)
                 // Neutral ink/contrast pairing matches the app's Onyx action
                 // language in both appearances, including its OLED theme.
                 .foregroundStyle(primary ? theme.bg : theme.ink)
                 .background(primary ? theme.ink : theme.surface2,
-                            in: RoundedRectangle(cornerRadius: 10))
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(primary ? .clear : theme.rule, lineWidth: 1))
+                            in: RoundedRectangle(cornerRadius: Radius.control))
+                .overlay(RoundedRectangle(cornerRadius: Radius.control).stroke(primary ? .clear : theme.rule, lineWidth: 1))
                 .opacity(disabled ? 0.45 : 1)
         }.buttonStyle(KTactileButtonStyle()).disabled(disabled)
     }

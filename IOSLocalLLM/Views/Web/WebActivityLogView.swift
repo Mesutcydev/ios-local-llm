@@ -20,7 +20,7 @@ struct WebActivityLogView: View {
                         }
                     }
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, Space.l)
             }
             .background(LiquidPinkBackdrop())
             .navigationTitle("Web Activity")
@@ -44,8 +44,8 @@ struct WebActivityLogView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "tray").font(.system(size: 28)).foregroundColor(T.ink3)
+        VStack(spacing: Space.s) {
+            Image(systemName: "tray").font(.system(.title)).foregroundColor(T.ink3)
             KMono(text: "no web activity yet", size: 12, color: T.ink2)
             KMono(text: "every request the Web Tool makes lands here", size: 10, color: T.ink3)
         }
@@ -71,11 +71,11 @@ struct WebActivityLogView: View {
             case .error: return "error"
             }
         }()
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             HStack {
                 Text(label.uppercased())
                     .font(T.mono(9, .semibold))
-                    .tracking(0.5)
+                    .tracking(TextScale.capsTracking)
                     .foregroundColor(color)
                 if let p = e.provider {
                     Text("· \(p.rawValue)")
@@ -97,7 +97,7 @@ struct WebActivityLogView: View {
                 .foregroundColor(T.ink)
                 .lineLimit(2)
                 .truncationMode(.middle)
-            HStack(spacing: 10) {
+            HStack(spacing: Space.s) {
                 if let s = e.statusCode { KMono(text: "\(s)", size: 9, color: T.ink3) }
                 if let b = e.bytesIn { KMono(text: "\(b)B", size: 9, color: T.ink3) }
                 if let d = e.durationMs { KMono(text: "\(d)ms", size: 9, color: T.ink3) }
@@ -109,7 +109,7 @@ struct WebActivityLogView: View {
                     .lineLimit(2)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
     }
 }

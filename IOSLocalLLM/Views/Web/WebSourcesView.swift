@@ -18,14 +18,13 @@ struct WebSourcesView: View {
             EmptyView()
         } else {
             VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 6) {
-                    Image(systemName: "globe").font(.system(size: 10))
+                HStack(spacing: Space.xs) {
+                    Image(systemName: "globe").font(.system(.caption2))
                     Text(AssistantActivity.citationTitle(visibleCount: visible.count))
                         .font(T.mono(10, .semibold))
-                        .tracking(0.3)
                 }
                 .foregroundColor(T.ink3)
-                .padding(.bottom, 6)
+                .padding(.bottom, Space.xs)
 
                 ForEach(visible) { c in
                     WebSourceRowView(citation: c)
@@ -35,7 +34,7 @@ struct WebSourcesView: View {
                 }
 
                 if onRetryWithWeb != nil || onAnswerOffline != nil {
-                    HStack(spacing: 10) {
+                    HStack(spacing: Space.s) {
                         if let retry = onRetryWithWeb {
                             Button {
                                 retry()
@@ -60,11 +59,11 @@ struct WebSourcesView: View {
                         }
                         Spacer()
                     }
-                    .padding(.top, 8)
+                    .padding(.top, Space.s)
                 }
             }
-            .padding(10)
-            .kGlass(cornerRadius: 8, fallbackFill: T.surface)
+            .padding(Space.s)
+            .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface)
         }
     }
 }
@@ -75,17 +74,17 @@ struct WebSourceRowView: View {
 
     var body: some View {
         Link(destination: citation.url) {
-            HStack(alignment: .top, spacing: 8) {
+            HStack(alignment: .top, spacing: Space.s) {
                 Text("[\(citation.index)]")
                     .font(T.mono(11, .semibold))
                     .foregroundColor(T.accent)
                     .frame(width: 22, alignment: .leading)
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Space.hair) {
                     Text(citation.title)
                         .font(T.mono(12, .semibold))
                         .foregroundColor(T.ink)
                         .lineLimit(2)
-                    HStack(spacing: 6) {
+                    HStack(spacing: Space.xs) {
                         Text(citation.siteName)
                             .font(T.mono(10))
                             .foregroundColor(T.ink3)
@@ -99,10 +98,10 @@ struct WebSourceRowView: View {
                 }
                 Spacer()
                 Image(systemName: "arrow.up.right")
-                    .font(.system(size: 9))
+                    .font(.system(.caption2))
                     .foregroundColor(T.ink3)
             }
-            .padding(.vertical, 6)
+            .padding(.vertical, Space.xs)
         }
         .accessibilityLabel("Source \(citation.index): \(citation.title), from \(citation.siteName)")
     }

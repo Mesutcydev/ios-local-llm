@@ -16,14 +16,14 @@ struct SystemStatusView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     // Page header
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
                         KCaption(text: "DIAGNOSTICS")
                         KPageTitle(title: "status", size: 28)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 4)
-                    .padding(.bottom, 4)
+                    .padding(.horizontal, Space.m)
+                    .padding(.top, Space.xxs)
+                    .padding(.bottom, Space.xxs)
 
                     memorySection
                     computeSection
@@ -31,7 +31,7 @@ struct SystemStatusView: View {
                     modelsSection
                     usageHistorySection
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, Space.l)
             }
             .background(LiquidPinkBackdrop())
             .navigationBarTitleDisplayMode(.inline)
@@ -59,7 +59,7 @@ struct SystemStatusView: View {
             VStack(spacing: 0) {
                 // Memory pressure bar
                 memoryBar
-                    .padding(14)
+                    .padding(Space.m)
                 Rectangle().fill(T.rule).frame(height: 1)
                 spec(rows: [
                     ("total ram",     status.snapshot.totalRAM.formattedBytes),
@@ -76,7 +76,7 @@ struct SystemStatusView: View {
         let used = Double(status.snapshot.usedByApp)
         let total = Double(max(status.snapshot.totalRAM, 1))
         let pct = min(1.0, used / total)
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             HStack {
                 KCaption(text: "app footprint")
                 Spacer()
@@ -156,7 +156,7 @@ struct SystemStatusView: View {
 
     @ViewBuilder
     private func statusRow(label: String, ready: Bool, extra: String?) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.s) {
             Text(ready ? "●" : "○")
                 .font(T.mono(11))
                 .foregroundColor(ready ? T.good : T.ink3)
@@ -168,8 +168,8 @@ struct SystemStatusView: View {
             KMono(text: ready ? "ready" : "idle",
                    size: 10, color: ready ? T.good : T.ink3)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 11)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
     }
 
     // MARK: - Usage history
@@ -182,14 +182,14 @@ struct SystemStatusView: View {
                 VStack(spacing: 0) {
                     ForEach(Array(entries.enumerated()), id: \.offset) { i, entry in
                         if i > 0 { Rectangle().fill(T.rule).frame(height: 1) }
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: Space.xxs) {
                             HStack {
                                 KMono(text: entry.id, size: 12, weight: .semibold, color: T.ink)
                                 Spacer()
                                 KMono(text: entry.stat.lastUsedAt.relativeShort,
                                        size: 10, color: T.ink3)
                             }
-                            HStack(spacing: 12) {
+                            HStack(spacing: Space.s) {
                                 statChip("runs", "\(entry.stat.runCount)")
                                 statChip("avg",
                                          String(format: "%.1f t/s", entry.stat.avgTPS))
@@ -201,8 +201,8 @@ struct SystemStatusView: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
+                        .padding(.horizontal, Space.m)
+                        .padding(.vertical, Space.s)
                     }
                 }
             }
@@ -215,17 +215,17 @@ struct SystemStatusView: View {
                 Text("clear usage history")
                     .font(T.mono(11))
                     .foregroundColor(T.bad)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, Space.m)
                     .frame(maxWidth: .infinity)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
+            .padding(.horizontal, Space.m)
+            .padding(.top, Space.s)
         }
     }
 
     @ViewBuilder
     private func statChip(_ label: String, _ value: String) -> some View {
-        HStack(spacing: 3) {
+        HStack(spacing: Space.xxs) {
             KCaption(text: label)
             KMono(text: value, size: 10, weight: .semibold, color: T.ink)
         }
@@ -246,8 +246,8 @@ struct SystemStatusView: View {
                         .truncationMode(.middle)
                     Spacer()
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, Space.s)
+                .padding(.vertical, Space.s)
             }
         }
     }
