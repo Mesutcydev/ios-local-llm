@@ -4,6 +4,7 @@ struct PlumDuskSplashView: View {
     let onFinished: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @State private var startDate = Date.now
 
     var body: some View {
@@ -11,13 +12,14 @@ struct PlumDuskSplashView: View {
             SplashFrame(
                 time: reduceMotion
                     ? 6.0
-                    : min(7.0, context.date.timeIntervalSince(startDate))
+                    : min(7.0, context.date.timeIntervalSince(startDate) * 4)
             )
         }
         .ignoresSafeArea()
         .allowsHitTesting(true)
+        .onTapGesture(perform: onFinished)
         .task(id: reduceMotion) {
-            let duration = reduceMotion ? 1.2 : 7.0
+            let duration = voiceOverEnabled ? 0.0 : (reduceMotion ? 0.25 : 1.8)
             try? await Task.sleep(for: .seconds(duration))
             guard !Task.isCancelled else { return }
             onFinished()
@@ -74,7 +76,7 @@ private struct SplashFrame: View {
                     .scaleEffect(logoScale, anchor: .top)
                     .position(x: size.width * 0.5, y: logoTop + eyeHeight * 0.5)
 
-                Text("Ondevice LLM")
+                Text("OnDevice LLM")
                     .font(.system(size: size.width * (96.0 / 1080.0), weight: .semibold))
                     .tracking(-0.7)
                     .foregroundStyle(SplashPalette.ink)
@@ -90,7 +92,7 @@ private struct SplashFrame: View {
                     .offset(y: CGFloat((1.0 - subtitleIn) * 9.0))
                     .position(x: size.width * 0.5, y: size.height * (1250.0 / 1920.0))
 
-                Text("Private. No account. No cloud.")
+                Text("Local AI. Optional connected features.")
                     .font(.system(size: size.width * (30.0 / 1080.0), weight: .regular, design: .monospaced))
                     .foregroundStyle(SplashPalette.ink.opacity(0.68))
                     .opacity(taglineIn)

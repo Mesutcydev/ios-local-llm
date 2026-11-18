@@ -13,7 +13,7 @@ public final class WebActivityLogger: ObservableObject {
     @Published public private(set) var entries: [WebActivityLogEntry] = []
 
     private let maxEntries = 500
-    private let storageKey = "ioslocalllm.webtool.activity.v1"
+    private let storageKey = "codelens.webtool.activity.v1"
 
     private init() { load() }
 

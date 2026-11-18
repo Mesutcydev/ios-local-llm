@@ -24,6 +24,9 @@ final class CameraService: NSObject, ObservableObject {
     @Published private(set) var torchOn: Bool = false
     @Published private(set) var torchAvailable: Bool = false
     @Published private(set) var focusIndicator: CGPoint? = nil   // normalized 0–1 device coords
+    /// Non-nil while the system has paused the session (thermal pressure,
+    /// another app, multitasking). Frames stop, so the last buffer is stale.
+    @Published private(set) var interruptionMessage: String?
 
     weak var delegate: CameraServiceDelegate?
 
@@ -46,8 +49,11 @@ final class CameraService: NSObject, ObservableObject {
     private var bgObserver: NSObjectProtocol?
     private var fgObserver: NSObjectProtocol?
     private var thermalObserver: NSObjectProtocol?
+    private var sessionObservers: [NSObjectProtocol] = []
     /// True if we suspended on background and need to resume on foreground.
     private var resumeOnForeground = false
+    /// Whether the Lens wants frames. Read/written on processingQueue only.
+    private var wantsRunning = false
 
     // MARK: - Init / Deinit
 
@@ -81,6 +87,7 @@ final class CameraService: NSObject, ObservableObject {
         if let o = bgObserver { NotificationCenter.default.removeObserver(o) }
         if let o = fgObserver { NotificationCenter.default.removeObserver(o) }
         if let o = thermalObserver { NotificationCenter.default.removeObserver(o) }
+        sessionObservers.forEach { NotificationCenter.default.removeObserver($0) }
         if captureSession.isRunning { captureSession.stopRunning() }
     }
 
@@ -114,6 +121,61 @@ final class CameraService: NSObject, ObservableObject {
             object: nil, queue: .main
         ) { [weak self] _ in
             self?.applyThermalFrameRate()
+        }
+        installSessionObservers()
+    }
+
+    /// A media-services reset (cameracaptured/mediaserverd restarted, e.g.
+    /// under the memory spike of a multi-GB model load) stops the session for
+    /// good: the preview goes black while capture keeps reusing the last
+    /// frame. Restart it, and surface system interruptions instead of
+    /// silently freezing.
+    private func installSessionObservers() {
+        let center = NotificationCenter.default
+        sessionObservers = [
+            center.addObserver(forName: AVCaptureSession.runtimeErrorNotification,
+                               object: captureSession, queue: nil) { [weak self] note in
+                guard let self else { return }
+                let code = (note.userInfo?[AVCaptureSessionErrorKey] as? AVError)?.code
+                print("[CameraService] runtime error: \(String(describing: code))")
+                // Only a media-services reset is known to recover; retrying
+                // other errors could loop on a session that keeps failing.
+                guard code == .mediaServicesWereReset else {
+                    DispatchQueue.main.async { self.isRunning = false }
+                    return
+                }
+                self.processingQueue.async {
+                    guard self.wantsRunning, !self.captureSession.isRunning else { return }
+                    self.captureSession.startRunning()
+                    let running = self.captureSession.isRunning
+                    DispatchQueue.main.async { self.isRunning = running }
+                }
+            },
+            center.addObserver(forName: AVCaptureSession.wasInterruptedNotification,
+                               object: captureSession, queue: .main) { [weak self] note in
+                let raw = note.userInfo?[AVCaptureSessionInterruptionReasonKey] as? Int
+                let reason = raw.flatMap(AVCaptureSession.InterruptionReason.init(rawValue:))
+                // Backgrounding already stops the session (installLifecycleObservers).
+                guard reason != .videoDeviceNotAvailableInBackground else { return }
+                self?.interruptionMessage = Self.interruptionMessage(reason)
+            },
+            center.addObserver(forName: AVCaptureSession.interruptionEndedNotification,
+                               object: captureSession, queue: .main) { [weak self] _ in
+                self?.interruptionMessage = nil
+            },
+        ]
+    }
+
+    static func interruptionMessage(_ reason: AVCaptureSession.InterruptionReason?) -> String {
+        switch reason {
+        case .videoDeviceNotAvailableDueToSystemPressure:
+            return "Camera paused while the device cools down."
+        case .videoDeviceInUseByAnotherClient:
+            return "Camera is in use by another app."
+        case .videoDeviceNotAvailableWithMultipleForegroundApps:
+            return "Camera is unavailable while multitasking."
+        default:
+            return "Camera paused by the system."
         }
     }
 
@@ -154,6 +216,11 @@ final class CameraService: NSObject, ObservableObject {
         // below 1080p anyway) — running the sensor + ISP at 4K was pure
         // thermal/battery cost with zero caption-quality benefit.
         captureSession.sessionPreset = .hd1920x1080
+        // The app is no longer full-screen-only, so Split View / multi-window
+        // would otherwise interrupt the camera on every side-by-side layout.
+        if captureSession.isMultitaskingCameraAccessSupported {
+            captureSession.isMultitaskingCameraAccessEnabled = true
+        }
 
         if captureSession.canAddInput(input) {
             captureSession.addInput(input)
@@ -301,7 +368,9 @@ final class CameraService: NSObject, ObservableObject {
         // the serial queue makes the start/stop pair reconcile in dispatch
         // order against the session's true state.
         processingQueue.async { [weak self] in
-            guard let self, !self.captureSession.isRunning else { return }
+            guard let self else { return }
+            self.wantsRunning = true
+            guard !self.captureSession.isRunning else { return }
             self.captureSession.startRunning()
             DispatchQueue.main.async { self.isRunning = true }
         }
@@ -309,7 +378,12 @@ final class CameraService: NSObject, ObservableObject {
 
     func stop() {
         processingQueue.async { [weak self] in
-            guard let self, self.captureSession.isRunning else { return }
+            guard let self else { return }
+            self.wantsRunning = false
+            // A stopped session may never post interruptionEnded; a restart
+            // re-posts wasInterrupted if the camera is still unavailable.
+            DispatchQueue.main.async { self.interruptionMessage = nil }
+            guard self.captureSession.isRunning else { return }
             self.captureSession.stopRunning()
             DispatchQueue.main.async { self.isRunning = false }
         }

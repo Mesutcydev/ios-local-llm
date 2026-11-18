@@ -125,34 +125,15 @@ enum KaraokePhraseBuilder {
         var phrases: [KaraokePhrase] = []
         var batch: [SpeechWordTiming] = []
 
-        func flush(force: Bool) {
+        func flush() {
             guard let firstWord = batch.first, let lastWord = batch.last else { return }
-            let start = firstWord.startTime
-            let end = lastWord.endTime
-            let dur = end - start
-            let count = batch.count
-            let lastChar = lastWord.word.last
-            let punctClose = lastChar.map { ".,!?;:".contains($0) } ?? false
-
-            let longEnough = dur >= targetMinDuration || count >= minWords || punctClose || force
-            let tooLong = dur >= targetMaxDuration || count >= maxWords
-            guard longEnough || tooLong || force else { return }
-
-            // Avoid tiny phrases unless final flush.
-            if !force && dur < minPhraseDuration && count < minWords && !punctClose {
-                return
-            }
-
-            let first = firstWord.utf16Range
-            let last = lastWord.utf16Range
-            let loc = first.location
-            let len = max(0, (last.location + last.length) - loc)
-            let text = batch.map(\.word).joined(separator: " ")
+            let loc = firstWord.utf16Range.location
+            let len = max(0, (lastWord.utf16Range.location + lastWord.utf16Range.length) - loc)
             phrases.append(
                 KaraokePhrase(
-                    text: text,
-                    startTime: start,
-                    endTime: max(end, start + (force ? 0 : 0)),
+                    text: batch.map(\.word).joined(separator: " "),
+                    startTime: firstWord.startTime,
+                    endTime: lastWord.endTime,
                     utf16Range: NSRange(location: loc, length: len)
                 )
             )
@@ -161,35 +142,14 @@ enum KaraokePhraseBuilder {
 
         for word in words {
             batch.append(word)
-            guard let start = batch.first?.startTime else { continue }
-            let dur = word.endTime - start
+            let dur = word.endTime - (batch.first?.startTime ?? word.startTime)
             let punctClose = word.word.last.map { ".,!?;:".contains($0) } ?? false
-            if punctClose || batch.count >= maxWords || dur >= targetMaxDuration {
-                flush(force: punctClose || batch.count >= maxWords || dur >= targetMaxDuration)
-            } else if batch.count >= minWords && dur >= targetMinDuration {
-                flush(force: false)
-                // flush may no-op if still short; force when conditions met
-                if let firstWord = batch.first,
-                   let lastWord = batch.last,
-                   batch.count >= minWords,
-                   (lastWord.endTime - firstWord.startTime) >= targetMinDuration {
-                    let first = firstWord.utf16Range
-                    let last = lastWord.utf16Range
-                    let loc = first.location
-                    let len = max(0, (last.location + last.length) - loc)
-                    phrases.append(
-                        KaraokePhrase(
-                            text: batch.map(\.word).joined(separator: " "),
-                            startTime: firstWord.startTime,
-                            endTime: lastWord.endTime,
-                            utf16Range: NSRange(location: loc, length: len)
-                        )
-                    )
-                    batch.removeAll(keepingCapacity: true)
-                }
+            if punctClose || batch.count >= maxWords || dur >= targetMaxDuration
+                || (batch.count >= minWords && dur >= targetMinDuration) {
+                flush()
             }
         }
-        flush(force: true)
+        flush()
 
         // Merge accidental sub-250ms phrases into neighbors (except last).
         phrases = mergeShortPhrases(phrases)

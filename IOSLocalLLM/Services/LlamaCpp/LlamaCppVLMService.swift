@@ -19,6 +19,24 @@ struct LlamaCppVLMExecutionProfile: Equatable, Sendable {
 
     static func resolve(repoID: String) -> Self {
         let id = repoID.lowercased()
+        if id.contains("lfm3-vl") || id.contains("lfm3_vl") || id.contains("lfm3vl") {
+            // LFM3 VL at 4K keeps one image plus the Lens prompt bounded.
+            // It is a single-residency model: never stack it with chat.
+            return .init(
+                contextSize: 4_096,
+                maxOutputTokens: 256,
+                requiresSingleResidency: true
+            )
+        }
+        if id.contains("lfm3-omni") {
+            // Matches the Assistant's audio window (30 s of audio ≈ 4.5K
+            // tokens) so either tab can load the instance the other borrows.
+            return .init(
+                contextSize: 8_192,
+                maxOutputTokens: nil,
+                requiresSingleResidency: false
+            )
+        }
         if id.contains("gemma-3") || id.contains("gemma3") {
             // Gemma 3 expands one image to 256 soft tokens. A 1K context still
             // leaves ample room for the Lens prompt + answer while
@@ -133,15 +151,57 @@ final class LlamaCppVLMService: ObservableObject {
     // ggml-org's convention is `mmproj-*` for the projector. We
     // resolve the pair via filename prefix.
 
+    /// Imported models are copied to HFModels/local_<name> with a `.repoID`
+    /// sidecar. Some imports were historically registered under the wrong
+    /// category, so a catalog-only lookup missed a valid GGUF vision pair.
+    /// Scan the model roots directly and return every directory that holds a
+    /// complete `<model>.gguf` + `mmproj-*.gguf` pair.
+    nonisolated static func discoveredGGUFVLMDirectories() -> [(repoID: String, directory: URL)] {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let roots = [
+            docs.appendingPathComponent("HFModels", isDirectory: true),
+            docs.appendingPathComponent("GGUFModels", isDirectory: true),
+        ]
+        var result: [(repoID: String, directory: URL)] = []
+        for root in roots {
+            guard let entries = try? FileManager.default.contentsOfDirectory(
+                at: root,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]
+            ) else { continue }
+            for directory in entries {
+                var isDir: ObjCBool = false
+                guard FileManager.default.fileExists(atPath: directory.path, isDirectory: &isDir),
+                      isDir.boolValue,
+                      LocalModelFileValidator.hasCompleteGGUFVLMPair(in: directory) else { continue }
+                let sidecar = directory.appendingPathComponent(".repoID")
+                let stored = (try? String(contentsOf: sidecar, encoding: .utf8))?
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                let repoID = (stored?.isEmpty == false ? stored! : "local/\(directory.lastPathComponent)")
+                if !result.contains(where: { $0.repoID == repoID }) {
+                    result.append((repoID: repoID, directory: directory))
+                }
+            }
+        }
+        return result
+    }
+
     /// Returns the on-disk directory for `repoID` if both the LLM
     /// and mmproj files exist. nil if not staged yet.
     nonisolated static func stagedDirectory(for repoID: String) -> URL? {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let flattened = repoID.replacingOccurrences(of: "/", with: "_")
+        let tail = repoID.split(separator: "/").last.map(String.init) ?? repoID
         let candidates: [URL] = [
             docs.appendingPathComponent("HFModels").appendingPathComponent(repoID),
             docs.appendingPathComponent("HFModels").appendingPathComponent(flattened),
+            // Files-app imports use repoID "local/local_<name>" but copy into
+            // HFModels/local_<name>. Probe the tail directly so an imported
+            // GGUF VLM pair is recognized instead of asking for a download.
+            docs.appendingPathComponent("HFModels").appendingPathComponent(tail),
             docs.appendingPathComponent("GGUFModels").appendingPathComponent(flattened),
+            docs.appendingPathComponent("GGUFModels").appendingPathComponent(tail),
+            docs.appendingPathComponent("LLMModels").appendingPathComponent(tail),
         ]
         for dir in candidates {
             if hasGGUFPair(in: dir) { return dir }
@@ -205,6 +265,10 @@ final class LlamaCppVLMService: ObservableObject {
     /// first. Concurrent calls on the same repoID are guarded via
     /// `loadingRepoID` (same pattern as LensInferenceLoop.switchTo).
     func switchTo(repoID: String) async {
+        guard ConsumerModelPolicy.allows(repoID: repoID) else {
+            ToastCenter.shared.error("Model unavailable", detail: "Research-only FastVLM weights are unavailable in this app.")
+            return
+        }
         // Claim the transition before the first await. A same- or different-
         // repo request arriving during native teardown/load must not enter a
         // second constructor and stack two GGUF models in memory.
@@ -225,6 +289,17 @@ final class LlamaCppVLMService: ObservableObject {
             }
         }
 
+        if activeRepoID != repoID,
+           DualRoleModelPolicy.sharesGGUFRuntime(repoID: repoID),
+           let shared = CodingAssistantService.shared.residentGGUF(for: repoID) {
+            await unloadForModelSwitch()
+            guard loadingTransitionID == transitionID else { return }
+            MLXVisionService.shared.unload()
+            FastVLMService.shared.unload()
+            attach(shared, repoID: repoID)
+            return
+        }
+
         if activeRepoID == repoID, vlm != nil {
             // A resident Lens model still owns the device exclusively. Returning
             // to it from Assistant must drain the chat/MLX runtimes first.
@@ -232,6 +307,9 @@ final class LlamaCppVLMService: ObservableObject {
             MLXVisionService.shared.unload()
             FastVLMService.shared.unload()
             await MLXGenerationGate.shared.clearCacheWhenIdle()
+            // A cancelled describe may still be in prefill; `.ready` now
+            // would let the retry decode the same context concurrently.
+            await drainInference()
             guard loadingTransitionID == transitionID,
                   activeRepoID == repoID,
                   vlm != nil else { return }
@@ -303,7 +381,8 @@ final class LlamaCppVLMService: ObservableObject {
                 try LlamaCppVLM(
                     llmPath: llmPath,
                     mmprojPath: mmprojPath,
-                    contextSize: profile.contextSize
+                    contextSize: profile.contextSize,
+                    enableAudio: repoID.lowercased().contains("lfm3-omni")
                 )
             }
             loadingTask = task
@@ -400,6 +479,43 @@ final class LlamaCppVLMService: ObservableObject {
         if let load { _ = try? await load.value }
         _ = await inference?.value
         autoreleasepool { }
+    }
+
+    // MARK: - Shared LFM3 Omni runtime
+
+    /// The resident instance when it is `repoID` and not mid-transition.
+    func residentModel(for repoID: String) -> LlamaCppVLM? {
+        guard loadingRepoID == nil,
+              activeRepoID?.caseInsensitiveCompare(repoID) == .orderedSame else { return nil }
+        return vlm
+    }
+
+    /// Synchronous so a tab or mode switch can take the Assistant's Omni
+    /// before that side releases it. No-op unless both roles select it.
+    func adoptAssistantRuntime() {
+        let repoID = LocalModelRegistry.storedVisionSelectionID(AppSettings.shared.cameraVisualModelID)
+        guard loadingRepoID == nil,
+              DualRoleModelPolicy.sharesGGUFRuntime(repoID: repoID),
+              let shared = CodingAssistantService.shared.residentGGUF(for: repoID),
+              vlm !== shared else { return }
+        // Dropping a different model frees memory; adopting allocates none.
+        if vlm != nil { unload() }
+        attach(shared, repoID: repoID)
+    }
+
+    /// Cancel and wait, so a borrower never overlaps a cancelled decode.
+    func drainInference() async {
+        let task = inferenceTask
+        cancelCurrentInference()
+        _ = await task?.value
+    }
+
+    private func attach(_ model: LlamaCppVLM, repoID: String) {
+        vlm = model
+        activeRepoID = repoID
+        modelDisplayName = repoID.split(separator: "/").last.map(String.init) ?? repoID
+        state = .ready
+        Diagnostics.shared.breadcrumb("GGUF VLM shared with Assistant · \(modelDisplayName)", category: "lens")
     }
 
     /// Cancel any in-flight inference without unloading.

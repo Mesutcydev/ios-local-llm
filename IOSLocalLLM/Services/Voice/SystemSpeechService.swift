@@ -28,7 +28,7 @@ final class SystemSpeechService: NSObject, LocalVoiceEngine, ObservableObject {
     /// Enhanced/Premium voice downloaded — the unfixable-looking "synthetic
     /// robotic voice for everything" report. Personal Voices are excluded too:
     /// without authorization they render silence.
-    static func isRoboticSynth(_ voice: AVSpeechSynthesisVoice) -> Bool {
+    nonisolated static func isRoboticSynth(_ voice: AVSpeechSynthesisVoice) -> Bool {
         if voice.voiceTraits.contains(.isNoveltyVoice) { return true }
         if voice.voiceTraits.contains(.isPersonalVoice) { return true }
         let id = voice.identifier.lowercased()
@@ -37,8 +37,22 @@ final class SystemSpeechService: NSObject, LocalVoiceEngine, ObservableObject {
     }
 
     /// Every system voice worth offering — novelty/Eloquence/personal filtered.
-    private var usableAVVoices: [AVSpeechSynthesisVoice] {
-        AVSpeechSynthesisVoice.speechVoices().filter { !Self.isRoboticSynth($0) }
+    /// A snapshot, never enumerated on the main thread: on iOS 27.2
+    /// `speechVoices()` blocks in a TextToSpeech forced-sync, and a SwiftUI
+    /// picker binding reading it got the app watchdog-killed (0x8BADF00D).
+    private var usableAVVoices: [AVSpeechSynthesisVoice] = []
+    private var systemPickID: String?
+
+    /// Re-enumerates voices off the main thread. Runs at init and whenever
+    /// iOS reports an installed/removed voice.
+    func refreshVoices() async {
+        let (voices, pick) = await Task.detached(priority: .userInitiated) {
+            (AVSpeechSynthesisVoice.speechVoices().filter { !Self.isRoboticSynth($0) },
+             AVSpeechSynthesisVoice(language: AVSpeechSynthesisVoice.currentLanguageCode())?.identifier)
+        }.value
+        objectWillChange.send()
+        usableAVVoices = voices
+        systemPickID = pick
     }
 
     var availableVoices: [VoiceOption] {
@@ -51,8 +65,6 @@ final class SystemSpeechService: NSObject, LocalVoiceEngine, ObservableObject {
         let deviceLang = Locale.current.language.languageCode?.identifier ?? "en"
         // Within a language+quality bucket, the system's own pick for the
         // language (e.g. Samantha for en-US) beats alphabetical order.
-        let systemPickID = AVSpeechSynthesisVoice(
-            language: AVSpeechSynthesisVoice.currentLanguageCode())?.identifier
         let avVoices = usableAVVoices
             .sorted { a, b in
                 let aScore = qualityScore(a)
@@ -148,6 +160,14 @@ final class SystemSpeechService: NSObject, LocalVoiceEngine, ObservableObject {
 
     override init() {
         super.init()
+        Task { await refreshVoices() }
+        NotificationCenter.default.addObserver(
+            forName: AVSpeechSynthesizer.availableVoicesDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { await self?.refreshVoices() }
+        }
     }
 
     // MARK: - LocalVoiceEngine — load / unload (no-op)

@@ -143,6 +143,13 @@ final class DownloadableModel: ObservableObject, Identifiable {
     var totalBytes: Int64 { downloader?.totalBytes ?? 0 }
     var currentFile: String { downloader?.currentFile ?? "" }
     var isReady: Bool { state == .ready }
+    var isPaused: Bool { downloader?.isPaused ?? false }
+    /// Belongs in the Downloads lists: transferring, paused, or failed.
+    var hasUnfinishedDownload: Bool {
+        if state.isActive || isPaused { return true }
+        if case .failed = state { return true }
+        return false
+    }
     var lastFailureKind: HFModelDownloadManager.FailureKind {
         downloader?.lastFailureKind ?? .none
     }
@@ -168,8 +175,8 @@ final class DownloadableModel: ObservableObject, Identifiable {
         downloader?.start()
     }
     func cancel() { downloader?.cancel() }
+    func pause() { downloader?.pause() }
     func delete() async throws { try await downloader?.delete() }
-    func redownload() { downloader?.redownload() }
     func checkIfReady() { downloader?.checkIfReady() }
 }
 
@@ -189,6 +196,44 @@ final class ModelDownloadCenter: ObservableObject {
     // loads + generates and existing models (Qwen3-VL, Gemma 3) still work.
     // See the curated-VLM list in `buildCatalog()` for the gated entry.
     static let gemma4CatalogEnabled = false
+
+    // ── Pinned catalog revisions ──────────────────────────────────────────
+    // Commit each curated repository was at when it was last reviewed
+    // (2026-11-10). Downloads fetch exactly these files, so an upstream
+    // re-upload can't silently change what a catalog entry installs. When a
+    // commit disappears upstream the downloader falls back to "main".
+    // Entries that pin their own revision (the LFM3 GGUFs) are not listed.
+    static let pinnedRevisions: [String: String] = [
+        "mlx-community/Qwen3-4B-Instruct-2507-4bit": "50d427756c6b1b2fe0c0a10f67fbda1fc8e82c1b",
+        "mlx-community/Qwen3-4B-Thinking-2507-4bit": "627b019c66f22d4de0a641d289b41497651a55c9",
+        "mlx-community/Qwen3-4B-Instruct-2507-8bit": "0e42af58449718de7931ee04f28191fbe6c43a56",
+        "mlx-community/Qwen3-4B-4bit": "4dcb3d101c2a062e5c1d4bb173588c54ea6c4d25",
+        "mlx-community/Qwen3-1.7B-4bit": "3b1b1768f8f8cf8351c712464f906e86c2b8269e",
+        "mlx-community/Qwen3-8B-4bit": "545dc4251c05440727734bcd94334791f6ab0192",
+        "mlx-community/Ornith-1.0-9B-4bit": "1e980b9742a9e554a4d57e90b4c597811fb2fc4e",
+        "prism-ml/Bonsai-27B-mlx-1bit": "ef22f239c670078e1507f9769bcaa66657332b96",
+        "prism-ml/Ternary-Bonsai-27B-mlx-2bit": "70f75f3ad081ab840a42f3304c02c27e7f89bfb7",
+        "prism-ml/Ternary-Bonsai-8B-mlx-2bit": "9260b24298e4211e804663e9f519962cf59f34be",
+        "prism-ml/Bonsai-8B-mlx-1bit": "019934f87a61a654e3960ea22f53688e0d2c49ba",
+        "prism-ml/Ternary-Bonsai-4B-mlx-2bit": "e1374ad6bf9b1b56afd743936b8faa33c409a75f",
+        "prism-ml/Bonsai-4B-mlx-1bit": "3d25c52f7fa171affb188e27796be61be3df52db",
+        "prism-ml/Ternary-Bonsai-1.7B-mlx-2bit": "5f3e306330f636cfc6c6241b4850fae6711c5985",
+        "prism-ml/Bonsai-1.7B-mlx-1bit": "fac480d016cf265838ad087f9f3f2abac4a2c1a5",
+        "mlx-community/Qwen2.5-Coder-1.5B-Instruct-4bit": "b3252a2f97102b1fb1571fec2c9b27219a8536be",
+        "mlx-community/Qwen3-0.6B-4bit": "73e3e38d981303bc594367cd910ea6eb48349da8",
+        "mlx-community/Qwen2.5-0.5B-Instruct-4bit": "a5339a4131f135d0fdc6a5c8b5bbed2753bbe0f3",
+        "mlx-community/Qwen2.5-1.5B-Instruct-4bit": "8b403126fc14f14cfc99bb4cfa72ecbc129ea677",
+        "mlx-community/Qwen2.5-7B-Instruct-4bit": "c26a38f6a37d0a51b4e9a1eb3026530fa35d9fed",
+        "mlx-community/Llama-3.2-3B-Instruct-4bit": "7f0dc925e0d0afb0322d96f9255cfddf2ba5636e",
+        "mlx-community/Llama-3.2-1B-Instruct-4bit": "08231374eeacb049a0eade7922910865b8fce912",
+        "mlx-community/Phi-3.5-mini-instruct-4bit": "7b2052fd882fe017300d4d42a4eb06a27b816af4",
+        "mlx-community/gemma-2-2b-it-4bit": "2c715097ff9c081a6ac1e5cd239e2ac756b5bd99",
+        "mlx-community/Qwen3-VL-2B-Instruct-4bit": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+        "mlx-community/Qwen3-VL-4B-Instruct-4bit": "2fd8dacbdb8f1e54b8c005f081ec5bf79c56376b",
+        "ggml-org/gemma-3-4b-it-GGUF": "d0976223747697cb51e056d85c532013931fe52e",
+        "ggml-org/SmolVLM2-500M-Video-Instruct-GGUF": "ccd7aae53bcb1997355c2f094959e72b3642ce17",
+        "mlx-community/gemma-4-12B-it-4bit": "73bcf09092aa277861d5a191b989b666f7f32e8f",
+    ]
 
     // All registered downloadable models in display order.
     @Published private(set) var models: [DownloadableModel] = [] {
@@ -221,7 +266,6 @@ final class ModelDownloadCenter: ObservableObject {
 
     private init() {
         migrateBackupExclusion()
-        migrateStaleSettings()
         buildCatalog()
         // Defer the custom-download scan (+ role repair + state refresh) off
         // the synchronous launch path: its per-folder allocatedSizeOfDirectory
@@ -235,6 +279,7 @@ final class ModelDownloadCenter: ObservableObject {
             self.reconcileInstalledRegistry()
             self.repairInvalidRoleAssignments()
             self.refreshAllStates()
+            self.resumeInterruptedDownloads()
         }
         // Keep the cached storage stats fresh when any download completes.
         // Also reconcile the installed-model registry so freshly-downloaded
@@ -251,45 +296,20 @@ final class ModelDownloadCenter: ObservableObject {
                 }
             }
             .store(in: &cancellables)
-        // Best-effort: figure out which FastVLM mirror is alive today and
-        // rebuild the catalog if it differs from the saved value. Runs once,
-        // off the main thread, no UI blocking.
-        Task { @MainActor in
-            let before = AppSettings.shared.fastVLMRepoID
-            if let resolved = await FastVLMRepoAutoDiscovery.shared.discover(),
-               resolved != before {
-                self.rebuildFastVLMEntry(with: resolved)
-            }
-        }
+
     }
 
-    /// Replaces the existing FastVLM catalog entry when auto-discovery finds
-    /// a different working repo.
-    private func rebuildFastVLMEntry(with repoID: String) {
-        guard let idx = models.firstIndex(where: { $0.id == FastVLMService.modelID }) else { return }
-        // Don't yank a download out from under the user. If the current FastVLM
-        // entry is mid-download, replacing it with a new downloader would orphan
-        // the in-flight task (its bytes still land in the same FastVLMModels dir
-        // but nothing tracks them). Skip the swap while active — discovery
-        // re-runs on the next launch when it's idle.
-        if models[idx].downloader?.state.isActive == true { return }
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let dest = docs
-            .appendingPathComponent("FastVLMModels")
-            .appendingPathComponent(FastVLMConfig.mlxModelDirectory)
-        let new = DownloadableModel(
-            id: FastVLMService.modelID,
-            displayName: "FastVLM MLX Weights",
-            subtitle: repoID,
-            sizeLabel: "~400 MB",
-            category: .vlm,
-            isRequired: true,
-            docURL: "https://huggingface.co/\(repoID)",
-            downloader: HFModelDownloadManager(repoID: repoID, destination: dest)
-        )
-        new.checkIfReady()
-        models[idx] = new
-        ToastCenter.shared.info("FastVLM repo updated", detail: repoID)
+    /// Restarts downloads that were transferring when the app was last
+    /// terminated. Finished files are skipped, so this only fetches the rest.
+    private func resumeInterruptedDownloads() {
+        let interrupted = HFModelDownloadManager.inFlightKeys()
+        guard !interrupted.isEmpty else { return }
+        for model in models {
+            guard let downloader = model.downloader,
+                  interrupted.contains(downloader.resumeKey),
+                  downloader.state == .idle else { continue }
+            downloader.start()
+        }
     }
 
     /// One-time migration: mark every model-storage root as excluded from
@@ -309,29 +329,6 @@ final class ModelDownloadCenter: ObservableObject {
             FileManager.excludeFromBackup(root)
         }
         UserDefaults.standard.set(true, forKey: key)
-    }
-
-    /// One-shot migration that clears settings carrying values from older
-    /// builds where the default repo ID was broken (private/gated).
-    private func migrateStaleSettings() {
-        let s = AppSettings.shared
-        // Old default that 401'd:
-        let brokenFastVLM = "mlx-community/llava-fastvithd_0.5b_stage3_llm.fp16"
-        if s.fastVLMRepoID == brokenFastVLM {
-            s.fastVLMRepoID = "apple/FastVLM-0.5B-MLX"
-            print("[ModelDownloadCenter] Migrated stale FastVLM repo ID")
-        }
-        // REMOVED: a previous version of this code reset
-        // assistantModelID from "qwen3-4b" to "qwen2.5-coder-1.5b" on
-        // every singleton init, because of a key-layout mismatch
-        // between Qwen3 weights and the old mlx-swift-examples Qwen3
-        // model class. mlx-swift-examples now ships Qwen3.swift and
-        // Qwen3MoE.swift with the correct layout — the migration is
-        // stale and was actively reverting users' explicit picks of
-        // Qwen3-4B, including reverting them back to Qwen2.5-Coder-1.5B
-        // on every cold launch. If a future model-id ever needs a
-        // similar migration, gate it on `hasPickedAssistantModel ==
-        // false` so explicit user choices aren't clobbered.
     }
 
     /// Older builds could let a voice repo masquerade as the active camera
@@ -380,6 +377,7 @@ final class ModelDownloadCenter: ObservableObject {
         downloader: HFModelDownloadManager,
         runtime: ModelRuntime? = nil
     ) {
+        guard ConsumerModelPolicy.allows(repoID: repoID) else { return }
         // Avoid duplicates — by repoID AND by on-disk destination. Two ids can
         // point at the same directory (e.g. a curated catalog VLM whose slash
         // form and a custom scan's underscore form both resolve to the same
@@ -446,7 +444,9 @@ final class ModelDownloadCenter: ObservableObject {
         var updated = models
         var changed = false
 
-        for record in records where record.validationState.isActivatable {
+        for storedRecord in records {
+            guard let record = InstalledModelRegistry.reanchoredRecord(storedRecord),
+                  record.validationState.isActivatable else { continue }
             let existingIndex = updated.firstIndex {
                 $0.sourceRepoID.caseInsensitiveCompare(record.repoID) == .orderedSame
                     || $0.id.caseInsensitiveCompare(record.repoID) == .orderedSame
@@ -545,18 +545,24 @@ final class ModelDownloadCenter: ObservableObject {
         // encoding is `author/name → author_name`, which is lossy whenever
         // either side already contains an underscore.
         let repoID = recoverRepoID(from: folderName, in: directory)
+        guard ConsumerModelPolicy.allows(repoID: repoID) else { return false }
 
         let downloader = HFModelDownloadManager(repoID: repoID, destination: directory)
         downloader.checkIfReady()
-        guard downloader.state == .ready else { return false }
+        // A search download that was interrupted by app termination is not
+        // ready yet, but it must be listed so it can resume.
+        guard downloader.state == .ready
+                || HFModelDownloadManager.inFlightKeys().contains(downloader.resumeKey)
+        else { return false }
 
         if models.contains(where: { $0.id == repoID }) { return true }
 
         let dirSize = (try? FileManager.default
             .allocatedSizeOfDirectory(at: directory)) ?? 0
-        let runtime: ModelRuntime? = LocalModelFileValidator.hasValidGGUFTextModel(in: directory)
-            ? .llamaCpp
-            : nil
+        let runtime: ModelRuntime? = (
+            LocalModelFileValidator.hasValidGGUFTextModel(in: directory)
+                || LocalModelFileValidator.hasCompleteGGUFVLMPair(in: directory)
+        ) ? .llamaCpp : nil
         let model = DownloadableModel(
             id: repoID,
             displayName: repoID.split(separator: "/").last.map(String.init) ?? repoID,
@@ -648,7 +654,10 @@ final class ModelDownloadCenter: ObservableObject {
                 docURL: "https://huggingface.co/\(preset.repoID)",
                 downloader: HFModelDownloadManager(
                     repoID: preset.repoID,
-                    destination: dest
+                    destination: dest,
+                    branch: preset.downloadRevision
+                        ?? Self.pinnedRevisions[preset.repoID] ?? "main",
+                    fileAllowlist: preset.downloadFiles
                 ),
                 repoID: preset.repoID,
                 capabilities: preset.capabilities,
@@ -658,31 +667,6 @@ final class ModelDownloadCenter: ObservableObject {
                 platformCompatibility: preset.platformCompatibility
             ))
         }
-
-        // ── 2. FastVLM MLX weights (Qwen2-0.5B + projector) ──────────────────
-        // Apple's official public FastVLM weights on HuggingFace.
-        // The repo ID is read from AppSettings so users can swap to a
-        // different mirror (apple/*, mlx-community/*, or their own) if the
-        // default ever changes.
-        let fastVLMRepo = AppSettings.shared.fastVLMRepoID
-        let fastVLMDest = docs
-            .appendingPathComponent("FastVLMModels")
-            .appendingPathComponent(FastVLMConfig.mlxModelDirectory)
-
-        models.append(DownloadableModel(
-            id: FastVLMService.modelID,
-            displayName: "FastVLM MLX Weights",
-            subtitle: "On-device vision encoder · required for Lens",
-            sizeLabel: "~400 MB",
-            category: .vlm,
-            isRequired: true,
-            docURL: "https://huggingface.co/\(fastVLMRepo)",
-            downloader: HFModelDownloadManager(
-                repoID: fastVLMRepo,
-                destination: fastVLMDest
-            ),
-            approxRAMBytes: MemoryAdvisor.estimatedFootprint(for: FastVLMService.modelID)
-        ))
 
         // ── 2b. Curated VLM catalog ──────────────────────────────────────────
         // These appear in the Models tab → Catalog section so users can
@@ -713,6 +697,7 @@ final class ModelDownloadCenter: ObservableObject {
             /// Execution backend is part of the curated compatibility contract;
             /// do not infer it from a repository naming convention.
             var runtime: ModelRuntime = .mlx
+            var revision: String = "main"
         }
         var curatedVLMs: [CuratedVLM] = [
             // Qwen3-VL family — Qwen3VL.swift in mlx-swift-examples.
@@ -772,7 +757,26 @@ final class ModelDownloadCenter: ObservableObject {
                 approxRAMBytes: 850_000_000,
                 capabilities: [.recommended],
                 longDescription: "Tiny but capable VLM by Hugging Face, running through llama.cpp + mtmd. Fast on every device tier — great default for screen reading and OCR.",
+                fileAllowlist: [
+                    "SmolVLM2-500M-Video-Instruct-Q8_0.gguf",
+                    "mmproj-SmolVLM2-500M-Video-Instruct-Q8_0.gguf",
+                ],
                 runtime: .llamaCpp
+            ),
+            CuratedVLM(
+                repoID: "LiquidAI/LFM3-VL-2B-GGUF",
+                displayName: "LFM3 VL 2B (QAD 4-bit GGUF)",
+                sizeLabel: "~1.25 GB",
+                approxRAMBytes: 1_800_000_000,
+                capabilities: [.newRelease, .thinking],
+                longDescription: "Liquid AI's LFM3 vision model for images and Lens. Uses a bounded 4K context. LFM Open License v1.0; commercial use is subject to its revenue terms.",
+                fileAllowlist: [
+                    "LFM3-VL-2B-QAD-Q4_0.gguf",
+                    "mmproj-LFM3-VL-2B-Q8_0.gguf",
+                    "LICENSE",
+                ],
+                runtime: .llamaCpp,
+                revision: "7c3b4a43c9023e80bf234fec5e826a3365c8dda8"
             ),
         ]
         // Gemma 4 12B (4-bit) — Google's unified encoder-free multimodal
@@ -812,6 +816,9 @@ final class ModelDownloadCenter: ObservableObject {
                 downloader: HFModelDownloadManager(
                     repoID: vlm.repoID,
                     destination: dest,
+                    branch: vlm.revision == "main"
+                        ? Self.pinnedRevisions[vlm.repoID] ?? "main"
+                        : vlm.revision,
                     fileAllowlist: vlm.fileAllowlist
                 ),
                 repoID: vlm.repoID,
@@ -893,6 +900,9 @@ final class ModelDownloadCenter: ObservableObject {
             downloader: HFModelDownloadManager(
                 repoID: "aufklarer/Kokoro-82M-CoreML",
                 destination: kokoroDest,
+                // Pinned: upstream re-exported kokoro_5s on 2026-10-23; this is
+                // the revision KokoroTTSService was validated against.
+                branch: "f8ff771e4cab0bb3368e8af3a090a7e847485401",
                 fileAllowlist: [
                     "kokoro_5s.mlmodelc/",
                     "G2PEncoder.mlmodelc/",
@@ -906,6 +916,40 @@ final class ModelDownloadCenter: ObservableObject {
             ),
             approxRAMBytes: 400_000_000,
             supportedVoiceEngine: .kokoro
+        ))
+
+        // ── 5b. Paradee-8M / Supertonic 3 — ONNX voices, pinned revisions ────
+        models.append(DownloadableModel(
+            id: "paradee-8m",
+            displayName: "Paradee-8M",
+            subtitle: "sahilmahendrakar/Paradee-8M-v1.2 · 4 English voices · Apache-2.0",
+            sizeLabel: "~9 MB",
+            category: .voice,
+            docURL: "https://huggingface.co/sahilmahendrakar/Paradee-8M-v1.2",
+            downloader: HFModelDownloadManager(
+                repoID: "sahilmahendrakar/Paradee-8M-v1.2",
+                destination: docs.appendingPathComponent("VoiceModels/Paradee"),
+                branch: "ed2934d4df8a4fd891e29584c5e1104649409765",
+                fileAllowlist: ["onnx/paradee_int8.onnx", "config.json", "LICENSE"]
+            ),
+            approxRAMBytes: 60_000_000,
+            supportedVoiceEngine: .paradee
+        ))
+        models.append(DownloadableModel(
+            id: "supertonic-3",
+            displayName: "Supertonic 3",
+            subtitle: "Supertone/supertonic-3 · 31 languages incl. Turkish · OpenRAIL-M",
+            sizeLabel: "~400 MB",
+            category: .voice,
+            docURL: "https://huggingface.co/Supertone/supertonic-3",
+            downloader: HFModelDownloadManager(
+                repoID: "Supertone/supertonic-3",
+                destination: docs.appendingPathComponent("VoiceModels/Supertonic"),
+                branch: "3cadd1ee6394adea1bd021217a0e650ede09a323",
+                fileAllowlist: ["onnx/", "voice_styles/", "LICENSE"]
+            ),
+            approxRAMBytes: 900_000_000,
+            supportedVoiceEngine: .supertonic
         ))
 
         // ── 6. Whisper.cpp base.en — on-device English STT ────────────────────
@@ -947,6 +991,38 @@ final class ModelDownloadCenter: ObservableObject {
                 destination: whisperDest,
                 fileAllowlist: ["ggml-base.bin"]
             )
+        ))
+
+        // ── 6. Whisper.cpp small / large-v3-turbo (multilingual, quantized) ───
+        // Opt-in accuracy upgrades on the same runtime. WhisperModelCatalog
+        // prefers them over base only while memory headroom allows.
+        models.append(DownloadableModel(
+            id: "whisper-small-multi",
+            displayName: "Whisper small (multilingual)",
+            subtitle: "ggerganov/whisper.cpp · q5_1 · 99 languages, on-device",
+            sizeLabel: "~190 MB",
+            category: .voice,
+            docURL: "https://huggingface.co/ggerganov/whisper.cpp",
+            downloader: HFModelDownloadManager(
+                repoID: "ggerganov/whisper.cpp",
+                destination: whisperDest,
+                fileAllowlist: [WhisperModelCatalog.smallMultiFilename]
+            ),
+            approxRAMBytes: 400_000_000
+        ))
+        models.append(DownloadableModel(
+            id: "whisper-large-v3-turbo",
+            displayName: "Whisper large-v3-turbo",
+            subtitle: "ggerganov/whisper.cpp · q5_0 · 99 languages, most accurate",
+            sizeLabel: "~574 MB",
+            category: .voice,
+            docURL: "https://huggingface.co/ggerganov/whisper.cpp",
+            downloader: HFModelDownloadManager(
+                repoID: "ggerganov/whisper.cpp",
+                destination: whisperDest,
+                fileAllowlist: [WhisperModelCatalog.turboFilename]
+            ),
+            approxRAMBytes: 1_100_000_000
         ))
     }
 
@@ -1008,6 +1084,7 @@ final class ModelDownloadCenter: ObservableObject {
                 FastVLMService.shared.unload()
             } else {
                 MLXVisionService.shared.unload()
+                LlamaCppVLMService.shared.unload()   // GGUF (e.g. LFM3 Omni)
             }
             settings.cameraVisualModelID = ""        // default = FastVLM
             settings.hasPickedCameraVisualModel = false
@@ -1052,6 +1129,40 @@ final class ModelDownloadCenter: ObservableObject {
     @Published private(set) var totalStorageUsed: Int64 = 0
     @Published private(set) var orphanedDownloadBytes: Int64 = 0
 
+    private struct StorageInputs: Sendable {
+        let readyDirs: Set<String>
+        let hubCache: URL
+        let orphans: [URL]
+    }
+
+    private struct StorageTotals: Sendable {
+        let total: Int64
+        let orphanBytes: Int64
+    }
+
+    private lazy var storageRefresh = CoalescingRefresh<StorageInputs, StorageTotals>(
+        collect: { inputs in
+            let fm = FileManager.default
+            var total: Int64 = 0
+            for path in inputs.readyDirs {
+                total += (try? fm.allocatedSizeOfDirectory(
+                    at: URL(fileURLWithPath: path, isDirectory: true))) ?? 0
+            }
+            total += (try? fm.allocatedSizeOfDirectory(at: inputs.hubCache)) ?? 0
+            let orphanBytes = inputs.orphans.reduce(Int64(0)) { sum, url in
+                sum + ((try? fm.allocatedSizeOfDirectory(at: url)) ?? 0)
+            } + BackgroundDownloadCoordinator.staleResumeDataBytes()
+            return StorageTotals(total: total, orphanBytes: orphanBytes)
+        },
+        publish: { [weak self] totals in
+            guard let self else { return }
+            if self.totalStorageUsed != totals.total { self.totalStorageUsed = totals.total }
+            if self.orphanedDownloadBytes != totals.orphanBytes {
+                self.orphanedDownloadBytes = totals.orphanBytes
+            }
+        }
+    )
+
     /// Recomputes `totalStorageUsed` and `orphanedDownloadBytes` off the
     /// main actor and publishes the results.
     func refreshStorageStats() {
@@ -1063,6 +1174,10 @@ final class ModelDownloadCenter: ObservableObject {
             guard let d = m.downloader, d.state == .ready else { continue }
             readyDirs.insert(d.destination.standardizedFileURL.path)
         }
+        // Core AI packs live outside the Hub and MLX/GGUF roots. Include
+        // their allocated storage in the same background scan.
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        readyDirs.insert(support.appendingPathComponent("CoreAIModels", isDirectory: true).standardizedFileURL.path)
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         // The HubApi cache (assistant lazy-downloads + image-gen models)
         // is real model storage too — it was invisible to this number.
@@ -1070,22 +1185,7 @@ final class ModelDownloadCenter: ObservableObject {
         let hubCache = docs.appendingPathComponent("huggingface", isDirectory: true)
         let orphans = orphanedDownloadDirectories()
 
-        Task.detached(priority: .utility) { [readyDirs, orphans] in
-            let fm = FileManager.default
-            var total: Int64 = 0
-            for path in readyDirs {
-                total += (try? fm.allocatedSizeOfDirectory(
-                    at: URL(fileURLWithPath: path, isDirectory: true))) ?? 0
-            }
-            total += (try? fm.allocatedSizeOfDirectory(at: hubCache)) ?? 0
-            let orphanBytes = orphans.reduce(Int64(0)) { sum, url in
-                sum + ((try? fm.allocatedSizeOfDirectory(at: url)) ?? 0)
-            } + BackgroundDownloadCoordinator.staleResumeDataBytes()
-            await MainActor.run { [total, orphanBytes] in
-                self.totalStorageUsed = total
-                self.orphanedDownloadBytes = orphanBytes
-            }
-        }
+        storageRefresh.request(StorageInputs(readyDirs: readyDirs, hubCache: hubCache, orphans: orphans))
     }
 
     // MARK: - Orphaned / partial download cleanup
@@ -1113,7 +1213,8 @@ final class ModelDownloadCenter: ObservableObject {
         var protected = Set<String>()
         for m in models {
             guard let d = m.downloader else { continue }
-            let keep = m.isReady || d.state.isActive || m.isRequired || d.isCleaningUp
+            // A paused download is not a leftover: the user means to resume it.
+            let keep = m.isReady || d.state.isActive || d.isPaused || m.isRequired || d.isCleaningUp
             if keep {
                 protected.insert(d.destination.standardizedFileURL.path)
             }
@@ -1242,7 +1343,11 @@ final class ModelDownloadCenter: ObservableObject {
     @discardableResult
     func cleanupOrphanedDownloads() -> Int64 {
         let fm = FileManager.default
-        var freed = BackgroundDownloadCoordinator.clearAllResumeData()
+        // ponytail: resume sidecars are keyed by URL hash, not by repo, so
+        // while anything is paused they are all kept. Key them by repo if
+        // stale sidecars ever pile up next to a long-lived pause.
+        let anyPaused = models.contains { $0.downloader?.isPaused == true }
+        var freed = anyPaused ? 0 : BackgroundDownloadCoordinator.clearAllResumeData()
         for url in orphanedDownloadDirectories() {
             let size = (try? fm.allocatedSizeOfDirectory(at: url)) ?? 0
             do {

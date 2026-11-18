@@ -10,55 +10,60 @@ struct ContentView: View {
     @ObservedObject private var settings = AppSettings.shared
     @ObservedObject private var legal = LegalAcceptanceManager.shared
     @ObservedObject private var loc = LocalizationService.shared
+    @Environment(\.scenePhase) private var scenePhase
 
-    @StateObject private var camera: CameraService
-    @StateObject private var analysis: AnalysisService
-    @StateObject private var reviewPrompt = ReviewPromptService.shared
+    // StateObject creates this pair once for the view's lifetime. Constructing
+    // CameraService before StateObject's autoclosure recreated observers and
+    // subscriptions whenever SwiftUI rebuilt ContentView.
+    @StateObject private var lensServices = LensServices()
+    private var camera: CameraService { lensServices.camera }
+    private var analysis: AnalysisService { lensServices.analysis }
 
     @State private var showSettings = false
-    // Mac/Bridge is reached from a Home button now (Models took its tab slot).
-    // Presented as a sheet. AppBridge.requestTab(.mac) (index 3) also opens it.
+    // Preserve the paired Mac sheet for AppBridge.requestTab(.mac) (index 3).
     @State private var showMac = false
+    @State private var showLocalAPIServer = false
     @State private var showImageGeneration = false
-    // Bottom tabs: Home · Assistant · Lens · Voice · Models.
+    // System tabs adapt to the available display without replacing their state.
     enum Tab: CaseIterable, Hashable {
         case home, assistant, camera, voice, models
     }
 
-    init() {
-        let cam = CameraService()
-        _camera = StateObject(wrappedValue: cam)
-        _analysis = StateObject(wrappedValue: AnalysisService(camera: cam))
-    }
-
     var body: some View {
-        // Native tab bar only — it renders Apple's Liquid Glass on iOS 26.
         TabView(selection: $selectedTab) {
             // Order: home → assistant → lens → voice → models. Home is the
             // landing dashboard (on-device status, recents, gateway to Settings
-            // + Mac). Assistant and Lens are the two most-used surfaces. Voice
-            // keeps hands-free conversation first-class. Models (the management
-            // hub) sits at the right edge; Mac/Bridge moved to a Home button.
-            homeTab
-                .tag(Tab.home)
-                .tabItem { Label("Home", systemImage: "house") }
+            // + Local API). Assistant and Lens are the two most-used surfaces. Voice
+            // keeps hands-free conversation first-class. The system keeps this
+            // order when tabs move between a horizontal bar, vertical bar, and sidebar.
+            SwiftUI.Tab("Home", systemImage: "house", value: Tab.home) {
+                AdaptiveTabNavigation {
+                    homeTab
+                }
+            }
 
-            assistantTab
-                .tag(Tab.assistant)
-                .tabItem { Label("Assistant", systemImage: "brain") }
+            SwiftUI.Tab("Assistant", systemImage: "brain", value: Tab.assistant) {
+                assistantTab
+            }
 
-            cameraTab
-                .tag(Tab.camera)
-                .tabItem { Label("Lens", systemImage: "camera.viewfinder") }
+            SwiftUI.Tab("Lens", systemImage: "camera.viewfinder", value: Tab.camera) {
+                cameraTab
+            }
 
-            VoiceLibraryView(isActive: selectedTab == .voice)
-                .tag(Tab.voice)
-                .tabItem { Label("Voice", systemImage: "waveform") }
+            SwiftUI.Tab("Voice", systemImage: "waveform", value: Tab.voice) {
+                AdaptiveTabNavigation {
+                    VoiceLibraryView(isActive: selectedTab == .voice)
+                }
+            }
 
-            ModelsManagerView(isActive: selectedTab == .models)
-                .tag(Tab.models)
-                .tabItem { Label("Models", systemImage: "cube.box") }
+            SwiftUI.Tab("Models", systemImage: "cube.box", value: Tab.models) {
+                AdaptiveTabNavigation {
+                    ModelsManagerView(isActive: selectedTab == .models)
+                }
+            }
         }
+        .tabViewStyle(.sidebarAdaptable)
+        .modifier(AdaptiveTabPlacement())
         .tint(T.accent)
         // Re-probe every model's on-disk state whenever the user lands on
         // either tab. Catches the common case where a download finished while
@@ -82,7 +87,12 @@ struct ContentView: View {
             // a double-fire is benign — the generators dedupe at the
             // Core Haptics layer when triggered within a few ms.
             HapticManager.tabSwitch()
-            ModelDownloadCenter.shared.refreshAllStates()
+            // Home and Models list what is installed. The other tabs get the
+            // same information from the downloaders, the foreground refresh
+            // below and their own pickers, so they skip this main-thread scan.
+            if newTab == .models || newTab == .home {
+                ModelDownloadCenter.shared.refreshAllStates()
+            }
 
             // Tab-leave cleanup. iOS 18+ `TabView` does NOT reliably fire
             // `.onDisappear` on tab swap (the view stays alive in memory),
@@ -102,6 +112,9 @@ struct ContentView: View {
                 // + ISP running (and draining battery / making heat) behind
                 // every other tab. `start()`/`stop()` are idempotent.
                 camera.stop()
+                // LFM3 Omni: hand the Lens's instance back before the vision
+                // unloads below release it.
+                CodingAssistantService.shared.adoptLensRuntime()
             case .assistant, .home, .models:
                 break
             }
@@ -116,7 +129,9 @@ struct ContentView: View {
                 && LensInferenceLoop.shared.sharedContainer(for: sharedRepo) != nil
             switch newTab {
             case .camera:
-                // Headed to the Lens — always drop the Assistant LLM.
+                // Headed to the Lens — always drop the Assistant LLM, after
+                // the Lens takes a shared LFM3 Omni instance (if any).
+                LlamaCppVLMService.shared.adoptAssistantRuntime()
                 CodingAssistantService.shared.unload()
                 // Resume the capture session stopped on tab-leave above.
                 // Safe on first entry too: start() guards on isRunning,
@@ -228,14 +243,32 @@ struct ContentView: View {
         .onChange(of: bridge.requestedTab) { _, newTab in
             applyRequestedTab(newTab)
         }
+        .task(id: canReceiveSavedShare) {
+            bridge.receiveSavedShare(afterSetup: canReceiveSavedShare)
+            if canReceiveSavedShare { applyRequestedTab(bridge.requestedTab) }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { bridge.receiveSavedShare(afterSetup: canReceiveSavedShare) }
+            if phase == .background { bridge.beginNextShareVisit() }
+        }
         // Settings sheet
         .sheet(isPresented: $showSettings) {
             SettingsView(assistant: CodingAssistantService.shared)
                 // FastVLM status is now observed live inside SettingsView via FastVLMService.shared
         }
-        // Mac / Bridge sheet — reached from the Home "Mac" button (it's no
-        // longer a bottom tab). BridgePairingView owns its own NavigationStack;
-        // the drag indicator makes swipe-to-dismiss discoverable.
+        .sheet(isPresented: $showLocalAPIServer) {
+            NavigationStack {
+                LocalAPIServerView()
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done", systemImage: "checkmark") { showLocalAPIServer = false }
+                                .accessibilityIdentifier("api.workspace.close")
+                        }
+                    }
+            }
+            .presentationDragIndicator(.visible)
+        }
+        // BridgePairingView owns its own NavigationStack.
         .sheet(isPresented: $showMac) {
             BridgePairingView()
                 .presentationDragIndicator(.visible)
@@ -259,21 +292,11 @@ struct ContentView: View {
         )) {
             OnboardingView()
         }
-        // Rate-the-app pre-prompt — service decides when (≥5 turns,
-        // ≥3 days installed, ≥30 days cooldown). Mounted at the root so
-        // it surfaces regardless of which tab is active when the
-        // threshold is hit. Suppressed during onboarding/legal so we
-        // never stack sheets.
-        .sheet(isPresented: Binding(
-            get: { reviewPrompt.shouldShowPrompt
-                    && !legal.needsAnyAcceptance
-                    && settings.hasSeenOnboarding },
-            set: { newValue in
-                if !newValue { reviewPrompt.userDeferred() }
-            }
-        )) {
-            ReviewPromptSheet()
-        }
+
+    }
+
+    private var canReceiveSavedShare: Bool {
+        !legal.needsAnyAcceptance && settings.hasSeenOnboarding
     }
 
     /// Applies a tab navigation request (from the camera bridge, share
@@ -282,7 +305,7 @@ struct ContentView: View {
     /// mounts — a spring here used to keep both resident and bleed the
     /// assistant's cream background onto the lens.
     private func applyRequestedTab(_ newTab: Int?) {
-        guard let tab = newTab else { return }
+        guard canReceiveSavedShare, let tab = newTab else { return }
         // 0 = camera, 1 = assistant, 2 = models, 3 = mac, 4 = voice.
         // Mac is no longer a tab — index 3 presents the Mac sheet instead
         // (keeps every existing `requestTab(.mac)` call site working).
@@ -347,7 +370,7 @@ struct ContentView: View {
             onOpenLens: { selectedTab = .camera },
             onOpenVoice: { selectedTab = .voice },
             onOpenModels: { selectedTab = .models },
-            onOpenMac: { showMac = true },
+            onOpenLocalAPIServer: { showLocalAPIServer = true },
             onGenerateImage: { showImageGeneration = true },
             onOpenSettings: { showSettings = true },
             onOpenConversation: { AppBridge.shared.openConversation(id: $0.id) }
@@ -355,4 +378,18 @@ struct ContentView: View {
     }
 
     @Environment(\.koduTheme) private var T
+}
+
+/// Owns the paired services without forwarding camera/FPS updates through the
+/// whole tab shell. CameraRootView observes each service where it is displayed.
+@MainActor
+private final class LensServices: ObservableObject {
+    let camera: CameraService
+    let analysis: AnalysisService
+
+    init() {
+        let camera = CameraService()
+        self.camera = camera
+        self.analysis = AnalysisService(camera: camera)
+    }
 }

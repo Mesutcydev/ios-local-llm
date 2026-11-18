@@ -58,7 +58,7 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 1
 fi
 
-blocked_pattern='(^|/)(Pods|vendor|DerivedData|XcodePublisher_Logs|xcuserdata|BundledVLM|BundledVoiceModels|FastVLM-0\.5B-fp16)(/|$)|\.(p8|p12|mobileprovision|ipa|xcarchive|pkg|gguf|safetensors|onnx|npz)$|(^|/)(ExportOptions\.plist|MEMORY\.md|CLAUDE\.rtf)$'
+blocked_pattern='(^|/)(Pods|vendor|DerivedData|XcodePublisher_Logs|xcuserdata|BundledVLM|BundledVoiceModels|BundledSafety|FastVLM-0\.5B-fp16)(/|$)|\.(p8|p12|mobileprovision|ipa|xcarchive|pkg|gguf|safetensors|onnx|npz|mlmodel)$|(^|/)(ExportOptions\.plist|MEMORY\.md|CLAUDE\.rtf)$'
 blocked_files="$(git ls-files | grep -E "$blocked_pattern" || true)"
 if [[ -n "$blocked_files" ]]; then
   echo "error: publish-unsafe files are tracked:" >&2
@@ -161,7 +161,18 @@ retired_brand_matches="$(
     ':!ThirdParty/**' \
     ':!Pods/**' \
     ':!scripts/validate_open_source.sh' \
-    ':!*.pbxproj' || true
+    ':!*.pbxproj' |
+    python3 -c '
+import re, sys
+# The existing App Store identity is immutable. Allow its exact bundle IDs,
+# while still rejecting retired branding in product copy on the same line.
+pattern = re.compile(r"CodeLens|code lens|CODELENS|LOCAL AI STUDIO|Local AI Studio|LOCAL_AI_STUDIO")
+for line in sys.stdin:
+    content = line.split(":", 2)[-1]
+    content = re.sub(r"com\.codelens\.CodeLens(?:UITests|Tests|\.share)?\b", "", content)
+    if pattern.search(content):
+        print(line, end="")
+' || true
 )"
 if [[ -n "$retired_brand_matches" ]]; then
   echo "error: retired project branding remains in tracked source:" >&2
@@ -179,5 +190,7 @@ for executable_script in \
   fi
   bash -n "$executable_script"
 done
+
+python3 scripts/audit_localizations.py
 
 echo "Repository hygiene checks passed."

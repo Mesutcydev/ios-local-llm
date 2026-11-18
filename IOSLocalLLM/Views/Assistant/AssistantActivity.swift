@@ -48,6 +48,8 @@ enum AssistantActivity {
         if lower.contains("vision") || lower.contains("image") { return "eye" }
         if lower.contains("memory") || lower.contains("knowledge") { return "brain.head.profile" }
         if lower.contains("calc") { return "function" }
+        if lower.contains("calendar") || lower.contains("event") { return "calendar" }
+        if lower.contains("reminder") { return "checklist" }
         if lower.contains("date") || lower.contains("time") { return "clock" }
         return "wrench.and.screwdriver"
     }
@@ -73,11 +75,11 @@ enum AssistantActivity {
 
     static func statusTitle(_ status: Status) -> String {
         switch status {
-        case .generating: return "Generating"
-        case .reasoning: return "Thinking"
-        case .preparingTool(let name): return "Preparing \(displayName(forTool: name))"
-        case .runningTool(let name): return "Running \(displayName(forTool: name))"
-        case .awaitingApproval(let name): return "Needs approval · \(displayName(forTool: name))"
+        case .generating: return LocalizationService.shared.t("Generating")
+        case .reasoning: return LocalizationService.shared.t("Thinking")
+        case .preparingTool(let name): return LocalizationService.shared.t("Preparing \(displayName(forTool: name))")
+        case .runningTool(let name): return LocalizationService.shared.t("Running \(displayName(forTool: name))")
+        case .awaitingApproval(let name): return LocalizationService.shared.t("Needs approval · \(displayName(forTool: name))")
         }
     }
 
@@ -134,7 +136,20 @@ enum AssistantActivity {
             if firstLine.isEmpty { return "Read a local file" }
             return "File · \(firstLine)"
         case .web:
-            return firstLine.isEmpty ? "Web search finished" : String(firstLine.prefix(80))
+            // The result is the model's WEB CONTEXT block; its first line is
+            // an internal marker, so summarize the sources instead.
+            let siteLines = trimmed.split(separator: "\n").filter { $0.hasPrefix("Site: ") }
+            if !siteLines.isEmpty {
+                var names: [String] = []
+                for line in siteLines {
+                    let site = line.dropFirst(6).trimmingCharacters(in: .whitespaces)
+                    if !site.isEmpty, !names.contains(site) { names.append(site) }
+                }
+                let label = siteLines.count == 1 ? "1 source" : "\(siteLines.count) sources"
+                return names.isEmpty ? label : "\(label) · \(names.prefix(3).joined(separator: ", "))"
+            }
+            if firstLine.isEmpty || firstLine.hasPrefix("WEB CONTEXT") { return "Web search finished" }
+            return String(firstLine.prefix(80))
         case .image:
             return "Image generated on device"
         case .datetime:
@@ -146,6 +161,69 @@ enum AssistantActivity {
         }
     }
 
+    /// True once the user declined or cancelled a tool since their last
+    /// message. The rest of that turn answers without tools: offered them
+    /// again, small models asked for another one (a declined image, then a
+    /// web search) instead of answering.
+    static func userDeclinedToolThisTurn(_ messages: [ChatMessage]) -> Bool {
+        for message in messages.reversed() where message.role == .user {
+            guard let result = parseToolResult(message.content)?.result
+                .trimmingCharacters(in: .whitespacesAndNewlines).lowercased() else { return false }
+            if result.hasPrefix("the user cancelled") || result.hasPrefix("the user declined")
+                || result.hasPrefix(skippedToolResult.lowercased()) { return true }
+        }
+        return false
+    }
+
+    /// Tool result for a web_search or generate_image the app skipped; counts
+    /// as a decline. Its card is hidden. The wording keeps small models from
+    /// opening with "I don't have an image tool, but…".
+    static let skippedToolResult = "Not needed for this request. Reply directly with the finished answer and do not mention tools."
+
+    /// Streaming text up to a tool call the model is still writing. The call
+    /// only parses once complete; until then its raw markup showed in the bubble.
+    static func hidingToolCallMarkup(_ text: String) -> String {
+        guard let start = text.range(of: #"<tool_call|```tool(?![A-Za-z0-9_])"#,
+                                     options: .regularExpression) else { return text }
+        return String(text[..<start.lowerBound])
+    }
+
+    /// The user's own latest message, skipping tool-result turns.
+    static func latestUserRequest(_ messages: [ChatMessage]) -> String? {
+        messages.last { $0.role == .user && parseToolResult($0.content) == nil }?.content
+    }
+
+    /// True for a "write / build me X" request that asks for no live data.
+    /// Small models still call web_search for "write a website html"; the
+    /// chat skips that search.
+    /// ponytail: keyword heuristic. A miss only lets the search run, as before.
+    static func isOfflineAuthoringRequest(_ text: String) -> Bool {
+        let lower = text.lowercased()
+        if lower.contains("http://") || lower.contains("https://") || lower.contains("www.")
+            || lower.contains("look up") { return false }
+        let words = Set(lower.split { !$0.isLetter }.map(String.init))
+        let authoring: Set<String> = ["write", "create", "build", "make", "code", "design",
+                                      "draft", "implement", "compose", "generate"]
+        let liveData: Set<String> = ["search", "google", "lookup", "latest", "news", "today",
+                                     "tonight", "current", "currently", "recent", "price",
+                                     "prices", "weather"]
+        return !words.isDisjoint(with: authoring) && words.isDisjoint(with: liveData)
+    }
+
+    /// True for a code request that never asks for a picture. Small models
+    /// still call generate_image for "an HTML page with a pastel background";
+    /// the chat skips that image.
+    /// ponytail: keyword heuristic. A miss only lets the image run, as before.
+    static func isCodeRequestWithoutImage(_ text: String) -> Bool {
+        let words = Set(text.lowercased().split { !$0.isLetter }.map(String.init))
+        let code: Set<String> = ["html", "css", "javascript", "code", "website", "webpage",
+                                 "script", "swift", "python", "function", "json", "sql", "svg"]
+        let picture: Set<String> = ["image", "images", "picture", "pictures", "photo", "photos",
+                                    "draw", "drawing", "paint", "painting", "illustration",
+                                    "sketch", "wallpaper"]
+        return !words.isDisjoint(with: code) && words.isDisjoint(with: picture)
+    }
+
     static func citationTitle(visibleCount: Int) -> String {
         visibleCount == 1 ? "Used 1 web source" : "Used \(visibleCount) web sources"
     }
@@ -154,19 +232,22 @@ enum AssistantActivity {
         case downloading(Double)
         case loading
         case generating(Double)
+        case checking
         case failed(String)
     }
 
     static func imageGenerationSubtitle(_ status: ImageStatus) -> String {
         switch status {
         case .downloading(let p):
-            return "Downloading · \(Int((p * 100).rounded()))%"
+            return LocalizationService.shared.t("Downloading · \(Int((p * 100).rounded()))%")
         case .loading:
-            return "Loading image model"
+            return LocalizationService.shared.t("Loading image model")
         case .generating(let p):
-            return "Generating · \(Int((p * 100).rounded()))%"
+            return LocalizationService.shared.t("Generating · \(Int((p * 100).rounded()))%")
+        case .checking:
+            return LocalizationService.shared.t("Checking image locally")
         case .failed:
-            return "Image generation failed"
+            return LocalizationService.shared.t("Image generation failed")
         }
     }
 }

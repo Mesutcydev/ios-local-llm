@@ -20,13 +20,13 @@ public struct WebToolDecisionEngine: Sendable {
 
     public func decide(message: String, settings: WebToolSettings, locale: Locale = .current) -> WebToolDecision {
         // 1. Mode gating — `off` wins early.
-        if settings.mode == .off {
+        if settings.effectiveAccessMode == .off {
             return .noWebNeeded(reason: "Web Access is off in Settings.")
         }
 
         // 2. Direct URL in the message? Always treat as direct fetch intent.
         if let url = Self.firstHTTPURL(in: message) {
-            switch settings.mode {
+            switch settings.effectiveAccessMode {
             case .askEveryTime:
                 return .requiresPermission(
                     reason: "This message contains a URL to fetch.",
@@ -51,7 +51,7 @@ public struct WebToolDecisionEngine: Sendable {
 
         // 4. Build the search query and branch on mode.
         let query = queryBuilder.buildQuery(from: message, locale: locale)
-        switch settings.mode {
+        switch settings.effectiveAccessMode {
         case .askEveryTime:
             return .requiresPermission(reason: reason, payload: .query(query))
         case .alwaysAllow:

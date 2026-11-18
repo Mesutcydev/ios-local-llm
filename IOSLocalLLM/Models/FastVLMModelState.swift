@@ -14,10 +14,10 @@ enum FastVLMModelState: Equatable {
 
     var statusLabel: String {
         switch self {
-        case .unloaded:        return "Not loaded"
-        case .loading:         return "Loading…"
-        case .ready:           return "Ready"
-        case .failed(let msg): return "Error: \(msg)"
+        case .unloaded:        return LocalizationService.shared.t("Not loaded")
+        case .loading:         return LocalizationService.shared.t("Loading…")
+        case .ready:           return LocalizationService.shared.t("Ready")
+        case .failed(let msg): return LocalizationService.shared.t("Error: \(msg)")
         }
     }
 }

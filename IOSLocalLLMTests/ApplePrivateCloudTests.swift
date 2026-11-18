@@ -200,9 +200,10 @@ final class ApplePrivateCloudTests: XCTestCase {
     // MARK: facade is inert on a GA build
 
     func test_facade_buildAndRuntimeGatesStayConsistent() {
-        if ApplePrivateCloud.isCompiledIn {
-            // An iOS 27 SDK build may still run on iOS 18–26, where the
-            // stricter runtime gate remains false.
+        if ApplePrivateCloud.isSupportedOnCurrentOS {
+            XCTAssertEqual(ApplePrivateCloud.unavailableError,
+                           ApplePrivateCloud.isProvisionedForCurrentBuild ? .unsupportedOS : .notProvisioned)
+        } else if ApplePrivateCloud.isCompiledIn {
             XCTAssertEqual(ApplePrivateCloud.unavailableError, .unsupportedOS)
         } else {
             XCTAssertFalse(ApplePrivateCloud.isSupportedOnCurrentOS)

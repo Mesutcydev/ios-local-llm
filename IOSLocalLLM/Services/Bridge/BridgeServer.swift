@@ -14,6 +14,7 @@ import UIKit
 actor BridgeServer {
 
     private var listener: NWListener?
+    private var connections: [UUID: NWConnection] = [:]
 
     /// Brute-force guard on `/v1/pair` — counts failed nonce attempts per
     /// remote endpoint, so an unauthenticated prober cannot lock pairing out
@@ -56,6 +57,8 @@ actor BridgeServer {
     }
 
     func stop() {
+        for connection in connections.values { connection.cancel() }
+        connections.removeAll()
         listener?.cancel()
         listener = nil
     }
@@ -63,6 +66,10 @@ actor BridgeServer {
     // MARK: - Connection
 
     private func handle(_ conn: NWConnection) async {
+        guard listener != nil else { conn.cancel(); return }
+        let id = UUID()
+        connections[id] = conn
+        defer { connections[id] = nil; conn.cancel() }
         conn.start(queue: .global(qos: .userInitiated))
         do {
             let req = try await readRequest(conn)

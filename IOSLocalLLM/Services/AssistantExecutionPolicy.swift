@@ -28,17 +28,29 @@ struct MLXAssistantExecutionProfile: Equatable, Sendable {
         deviceContextCap: Int,
         requestedOutputTokens: Int
     ) -> Int {
-        let contextLimit = min(
-            modelContextWindowTokens,
-            min(deviceContextCap, maxContextTokens)
+        let contextLimit = contextLimit(
+            modelContextWindowTokens: modelContextWindowTokens,
+            deviceContextCap: deviceContextCap
         )
         if maxKVSize != nil, maxOutputTokens == nil {
             return max(512, contextLimit - 512)
         }
-        let safeOutput = maxOutputTokens.map {
+        let safeOutput = outputCap(contextLimit: contextLimit).map {
             min(requestedOutputTokens, $0)
         } ?? requestedOutputTokens
         return max(512, contextLimit - safeOutput - 256)
+    }
+
+    func contextLimit(modelContextWindowTokens: Int, deviceContextCap: Int) -> Int {
+        min(modelContextWindowTokens, min(deviceContextCap, maxContextTokens))
+    }
+
+    /// Reply tokens the window allows. A rotating window doesn't grow with the
+    /// reply; a growing cache must hold prompt + reply, so the reply gets at
+    /// most half the window (an 8K "Full" reply can't overflow a 4K window).
+    func outputCap(contextLimit: Int) -> Int? {
+        if let maxOutputTokens { return maxOutputTokens }
+        return maxKVSize == nil ? max(256, contextLimit / 2) : nil
     }
 
     static func resolve(repoID: String, architecture: String? = nil) -> Self {
@@ -114,6 +126,90 @@ struct MLXAssistantExecutionProfile: Equatable, Sendable {
     }
 }
 
+// MARK: - Memory-sized context
+
+/// Per-token KV-cache shape of a decoder, read from its config.json. Only
+/// attention layers keep a KV cache; linear-attention / conv layers of hybrid
+/// models (Qwen 3.5, LFM) hold a fixed state instead.
+struct KVCacheShape: Equatable, Sendable {
+    let attentionLayers: Int
+    let kvHeads: Int
+    let headDim: Int
+
+    init(attentionLayers: Int, kvHeads: Int, headDim: Int) {
+        self.attentionLayers = attentionLayers
+        self.kvHeads = kvHeads
+        self.headDim = headDim
+    }
+
+    init?(modelDirectory: URL) {
+        guard let data = try? Data(contentsOf: modelDirectory.appendingPathComponent("config.json")),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        self.init(config: json)
+    }
+
+    init?(config root: [String: Any]) {
+        let c = root["text_config"] as? [String: Any] ?? root
+        func int(_ key: String) -> Int? { c[key] as? Int ?? root[key] as? Int }
+        guard let layers = int("num_hidden_layers"), layers > 0,
+              let heads = int("num_attention_heads"), heads > 0 else { return nil }
+        let kvHeads = int("num_key_value_heads") ?? heads
+        guard let headDim = int("head_dim") ?? int("hidden_size").map({ $0 / heads }),
+              headDim > 0, kvHeads > 0 else { return nil }
+        var attention = layers
+        if let types = c["layer_types"] as? [String], !types.isEmpty {
+            // Sliding-window layers are counted as full: conservative.
+            attention = types.filter {
+                let t = $0.lowercased()
+                return t.contains("attention") && !t.contains("linear")
+            }.count
+        } else if let interval = int("full_attention_interval"), interval > 1 {
+            attention = (layers + interval - 1) / interval
+        }
+        guard attention > 0 else { return nil }
+        self.init(attentionLayers: attention, kvHeads: kvHeads, headDim: headDim)
+    }
+
+    /// K+V bytes per token. Quantized MLX caches add an fp16 scale and bias
+    /// per 64-element group.
+    func bytesPerToken(kvBits: Int?) -> Int {
+        let perElement = kvBits.map { Double($0) / 8 + 4.0 / 64 } ?? 2
+        return Int((Double(attentionLayers * kvHeads * headDim * 2) * perElement).rounded(.up))
+    }
+}
+
+extension MLXAssistantExecutionProfile {
+    /// Sizes the context window to the memory left after the model loaded,
+    /// instead of fixed per-tier numbers: never larger than `contextCap`,
+    /// never smaller than the profile's own window (or 2K). Drops to 4-bit KV
+    /// only when 8-bit can't reach the cap. Without a known KV shape the
+    /// profile is returned unchanged.
+    func sized(shape: KVCacheShape?, headroomBytes: Int64, contextCap: Int) -> Self {
+        guard let shape, contextCap > 0 else { return self }
+        // Rotating profiles' windows are memory bounds, so they may grow too.
+        let ceiling = maxKVSize == nil ? min(contextCap, maxContextTokens) : contextCap
+        let floor = min(maxKVSize ?? 2_048, ceiling)
+        func tokens(_ bits: Int) -> Int {
+            Int(max(0, headroomBytes) / Int64(max(1, shape.bytesPerToken(kvBits: bits)))) / 256 * 256
+        }
+        var bits = kvBits
+        var fitting = tokens(bits)
+        if fitting < ceiling, bits > 4 {
+            bits = 4
+            fitting = tokens(bits)
+        }
+        let window = max(floor, min(ceiling, fitting))
+        return .init(
+            maxContextTokens: window,
+            maxOutputTokens: maxOutputTokens,
+            maxKVSize: maxKVSize == nil ? nil : window,
+            kvBits: bits,
+            prefillStepSize: prefillStepSize,
+            cacheLimitBytes: cacheLimitBytes
+        )
+    }
+}
+
 /// TokenAI-style allocator policy for large MLX models. This is deliberately
 /// separate from GGUF paging: MLX still loads every weight, but its allocator
 /// is prevented from retaining a large reusable cache or exceeding the
@@ -156,6 +252,11 @@ struct GGUFLoadPolicy: Equatable, Sendable {
     /// The full GGUF size is deliberately excluded in storage-backed mode:
     /// clean mmap pages are reclaimable and do not need to remain resident.
     static let storageBackedHeadroom: Int64 = 1_500_000_000
+
+    /// Zero headroom is a refusal, including when a memory query failed.
+    func admits(availableBytes: Int64) -> Bool {
+        availableBytes > 0 && availableBytes >= minimumAvailableBytes
+    }
 
     static func resolve(fileBytes: Int64, pagingEnabled: Bool) -> Self {
         if pagingEnabled {
@@ -246,8 +347,11 @@ enum GGUFGenerationProfile: Equatable, Sendable {
     case standard  // every other imported GGUF
 
     static let compactContextTokens = 512
-    static let compactMaxOutputTokens = 128
-    static let compactInputBudget = 320
+    // The 512 context is the stability bound; the reply isn't. The bridge
+    // reserves half the window for the reply and lets a short prompt's slack
+    // go to it too, so replies run 256–448 tokens instead of stopping at 128.
+    static let compactMaxOutputTokens = 448
+    static let compactInputBudget = 240
     /// Bounded window for standard imports: large enough for real
     /// conversations, small enough to keep the KV cache modest on iOS.
     static let standardContextTokens = 4_096
@@ -282,13 +386,15 @@ enum GGUFGenerationProfile: Equatable, Sendable {
 
     /// Prompt budget for message-level trimming. The bridge re-clamps with
     /// exact tokenizer counts, so this estimate only steers trimming.
-    func inputBudget(requestedOutputTokens: Int) -> Int {
+    func inputBudget(requestedOutputTokens: Int, contextTokens: Int? = nil) -> Int {
         switch self {
         case .compact:
             return Self.compactInputBudget
         case .standard:
-            let outputReserve = min(requestedOutputTokens, Self.standardContextTokens / 2)
-            return max(256, Self.standardContextTokens - outputReserve - 16)
+            // The loaded runtime may have a memory-sized window above 4K.
+            let context = max(Self.standardContextTokens, contextTokens ?? 0)
+            let outputReserve = min(requestedOutputTokens, context / 2)
+            return max(256, context - outputReserve - 16)
         }
     }
 
@@ -362,8 +468,8 @@ enum GGUFGenerationProfile: Equatable, Sendable {
                 .map { "\($0.role.rawValue): \($0.contentForModel)" }
                 .joined(separator: "\n\n")
             let grounded = body.isEmpty
-                ? CodingAssistantService.compactGroundingPrompt
-                : CodingAssistantService.compactGroundingPrompt + "\n\n" + body
+                ? ConsumerContentPolicy.safetyInstructions + "\n\n" + CodingAssistantService.compactGroundingPrompt
+                : ConsumerContentPolicy.safetyInstructions + "\n\n" + CodingAssistantService.compactGroundingPrompt + "\n\n" + body
             if leaveLastAssistantOpen, messages.last?.role == .assistant {
                 return grounded
             }

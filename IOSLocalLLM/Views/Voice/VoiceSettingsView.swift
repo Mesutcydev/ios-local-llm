@@ -10,6 +10,7 @@ struct VoiceSettingsView: View {
     @ObservedObject private var voiceService = VoiceService.shared
     @ObservedObject private var assistant = CodingAssistantService.shared
     @State private var showEnginePicker = false
+    @State private var showChatModelPicker = false
     @State private var showPerModelOverrides = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.koduTheme) private var T
@@ -59,13 +60,16 @@ struct VoiceSettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }.foregroundColor(T.ink)
+                    Button("Done", systemImage: "checkmark") { dismiss() }.foregroundColor(T.ink)
                 }
             }
             .toolbarBackground(.hidden, for: .navigationBar)
             .background(LiquidPinkBackdrop())
             .sheet(isPresented: $showEnginePicker) {
                 VoiceModelPickerView()
+            }
+            .sheet(isPresented: $showChatModelPicker) {
+                AssistantModelPickerView()
             }
         }
     }
@@ -94,7 +98,7 @@ struct VoiceSettingsView: View {
                     } else {
                         engineStateBadge(vm.selectedEngineState)
                     }
-                    Image(systemName: "chevron.right")
+                    Image(systemName: "chevron.forward")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(T.ink3)
                 }
@@ -103,6 +107,32 @@ struct VoiceSettingsView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            Rectangle().fill(T.rule).frame(height: 1)
+
+            // LFM3 Audio / Omni are chat models that hear and speak natively,
+            // so they live in the chat model picker, not the TTS engine list.
+            Button {
+                showChatModelPicker = true
+            } label: {
+                HStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        KMono(text: "speech-native chat model", size: 11.5, color: T.ink)
+                        KMono(text: assistant.activeModel.supportsNativeAudio
+                                ? assistant.activeModel.displayName.lowercased()
+                                : "lfm3 audio / omni · pick in chat models",
+                              size: 10, color: T.ink3)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.forward")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(T.ink3)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("voiceSettings.speechNativeChatModel")
         }
     }
 
@@ -251,14 +281,17 @@ struct VoiceSettingsView: View {
                     .padding(14)
             }
             Rectangle().fill(T.rule).frame(height: 1)
-            KRow(label: "echo cancellation (barge-in)", trailing: {
+            KRow(label: "echo cancellation", trailing: {
                 KToggle(isOn: $voiceProcessingEnabled)
             }, last: true)
             Rectangle().fill(T.rule).frame(height: 1)
             KMono(
                 text: voiceProcessingEnabled
-                    ? "mic ignores the assistant's own voice — you can interrupt by speaking."
-                    : "off for clean tts on routes that distort voice processing. barge-in is disabled.",
+                    // Speaking turns the mic off (see VoiceConversationService
+                    // .applyConversationSession), so voice barge-in isn't a
+                    // thing — don't promise it. Interrupt is the dock button.
+                    ? "cleans up echo and background noise while you talk. tap interrupt to cut a reply short."
+                    : "turn this off if replies sound distorted on your headset or car audio.",
                 size: 10, color: T.ink3
             )
             .padding(14)
@@ -271,7 +304,7 @@ struct VoiceSettingsView: View {
     // For users who DO want per-model tuning, this is where they set
     // a slower rate for a deliberate coder model or a pinned engine
     // for a model whose locale they know better than the router
-    // does. Overrides persist under `com.mesutcydev.ioslocalllm.voice.profile.
+    // does. Overrides persist under `com.codelens.voice.profile.
     // <modelId>.<field>` and are applied on top of the built-in
     // profile by `VoiceProfileRegistry`.
     //
@@ -295,7 +328,7 @@ struct VoiceSettingsView: View {
                 }
             } label: {
                 HStack(spacing: 8) {
-                    Image(systemName: showPerModelOverrides ? "chevron.down" : "chevron.right")
+                    Image(systemName: showPerModelOverrides ? "chevron.down" : "chevron.forward")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(T.ink3)
                     VStack(alignment: .leading, spacing: 2) {
@@ -468,7 +501,7 @@ struct VoiceSettingsView: View {
     // MARK: - Model status
 
     private var modelsSection: some View {
-        KSection(title: "engine_status") {
+        KSection(title: "engine status") {
             VoiceStatusView().padding(.horizontal, 14)
         }
     }

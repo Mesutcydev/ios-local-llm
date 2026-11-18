@@ -1,0 +1,21 @@
+// Original app interface translations. Copyright 2026 Mesut and contributors; MIT.
+// Preserve interpolation tokens. Regenerate from the reviewed interface catalog.
+"App Group container missing. Configure entitlements." = "Uygulama Grubu kapsayıcısı eksik. Yetkileri yapılandırın.";
+"Couldn't decode image" = "Resmin kodu çözülemedi";
+"Couldn't encode image" = "Resim kodlanamadı";
+"Couldn't prepare image" = "Resim hazırlanamadı";
+"Couldn't read URL" = "URL okunamadı";
+"Couldn't read image" = "Resim okunamadı";
+"Couldn't read text" = "Metin okunamadı";
+"Couldn't resize image" = "Resim yeniden boyutlandırılamadı";
+"Couldn't save share" = "Paylaşım kaydedilemedi";
+"Couldn't save the shared link" = "Paylaşılan bağlantı kaydedilemedi";
+"Done" = "Tamam";
+"Empty text" = "Boş metin";
+"No content to share" = "Paylaşılacak içerik yok";
+"Open OnDevice LLM to use your shared content. It is saved on this device." = "Paylaşılan içeriğinizi kullanmak için OnDevice LLM'yi açın. Bu cihaza kaydedildi.";
+"Saved to OnDevice LLM" = "OnDevice LLM'ye kaydedildi";
+"Shared storage is unavailable. Try opening OnDevice LLM first." = "Paylaşılan depolama alanı kullanılamıyor. Önce OnDevice LLM'yi açmayı deneyin.";
+"Unsupported content type" = "Desteklenmeyen içerik türü";
+"Your content could not be saved." = "İçeriğiniz kaydedilemedi.";
+"Your content could not be saved. Try sharing it again." = "İçeriğiniz kaydedilemedi. Tekrar paylaşmayı deneyin.";

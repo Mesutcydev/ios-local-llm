@@ -28,7 +28,7 @@ struct PersonaPickerView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
+                    Button("Done", systemImage: "checkmark") { dismiss() }
                         .foregroundColor(T.ink)
                 }
             }
@@ -199,10 +199,10 @@ struct PersonaEditorView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }.foregroundColor(T.ink2)
+                    Button("Cancel", systemImage: "xmark") { dismiss() }.foregroundColor(T.ink2)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save") { save() }
+                    Button("Save", systemImage: "checkmark") { save() }
                         .foregroundColor(canSave ? T.accent : T.ink3)
                         .disabled(!canSave)
                 }

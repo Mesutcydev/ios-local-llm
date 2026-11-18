@@ -35,7 +35,7 @@ struct UserGuideView: View {
                     Spacer()
                 }
                 .padding(14)
-                .kGlass(cornerRadius: 18, fallbackFill: T.surface)
+                .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface)
                 .padding(.horizontal, 16)
 
                 // 1. Assistant View Section

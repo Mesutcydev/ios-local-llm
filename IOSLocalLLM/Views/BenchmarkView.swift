@@ -35,7 +35,7 @@ struct BenchmarkView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }.foregroundColor(T.ink)
+                    Button("Done", systemImage: "checkmark") { dismiss() }.foregroundColor(T.ink)
                 }
             }
             .confirmationDialog("Clear all benchmark history?", isPresented: $showClearConfirm) {
@@ -73,7 +73,7 @@ struct BenchmarkView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer()
-                    Image(systemName: "chevron.right")
+                    Image(systemName: "chevron.forward")
                         .font(.system(size: 10))
                         .foregroundColor(T.ink3)
                 }
@@ -371,10 +371,10 @@ struct BenchmarkView: View {
 
     private func thermalLabel(_ s: ProcessInfo.ThermalState) -> String {
         switch s {
-        case .nominal:  return "nominal"
-        case .fair:     return "fair"
-        case .serious:  return "serious"
-        case .critical: return "critical"
+        case .nominal:  return LocalizationService.shared.t("nominal")
+        case .fair:     return LocalizationService.shared.t("fair")
+        case .serious:  return LocalizationService.shared.t("serious")
+        case .critical: return LocalizationService.shared.t("critical")
         @unknown default: return "?"
         }
     }

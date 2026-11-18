@@ -11,7 +11,8 @@ final class AppBridge: ObservableObject {
     static let shared = AppBridge()
 
     /// App Group identifier — must match the share extension.
-    static let appGroupID = "group.com.mesutcydev.ioslocalllm.shared"
+    static let appGroupID = "group.com.codelens.shared"
+    private var receivedShareThisVisit = false
 
     // Set by AnalysisPanelView; consumed once by CodingAssistantView
     @Published var pendingCode: PendingCode? = nil
@@ -138,7 +139,7 @@ final class AppBridge: ObservableObject {
     /// The text/URL paths land in `pendingSharedText` and switch to the
     /// assistant tab so CodingAssistantView can prefill the composer.
     func handleIncomingURL(_ url: URL) {
-        guard url.scheme == "ios-local-llm", url.host == "share" else { return }
+        guard SharedContentInbox.isShareURL(url) else { return }
         guard let comps = URLComponents(url: url, resolvingAgainstBaseURL: false),
               let items = comps.queryItems
         else { return }
@@ -164,6 +165,19 @@ final class AppBridge: ObservableObject {
             return
         }
     }
+
+    /// Share extensions cannot launch their containing app. Pick up saved
+    /// content when the user opens or returns to the app instead.
+    func receiveSavedShare(afterSetup isReady: Bool, from container: URL? = nil) {
+        guard isReady, !receivedShareThisVisit, pendingSharedText == nil, pendingSharedImage == nil,
+              let container = container ?? FileManager.default.containerURL(
+                forSecurityApplicationGroupIdentifier: Self.appGroupID),
+              let url = SharedContentInbox.takeNext(in: container) else { return }
+        receivedShareThisVisit = true
+        handleIncomingURL(url)
+    }
+
+    func beginNextShareVisit() { receivedShareThisVisit = false }
 
     /// `ios-local-llm://share?file=…` is a PUBLIC custom URL scheme — any app or web
     /// page can invoke it. The filename must be a single safe path component so

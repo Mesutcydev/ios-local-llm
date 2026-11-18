@@ -35,7 +35,7 @@ struct WebSettingsView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }.foregroundColor(T.ink)
+                    Button("Done", systemImage: "checkmark") { dismiss() }.foregroundColor(T.ink)
                 }
             }
             .sheet(isPresented: $showActivity) { WebActivityLogView() }
@@ -93,16 +93,16 @@ struct WebSettingsView: View {
 
     private func label(for mode: WebAccessMode) -> String {
         switch mode {
-        case .off: return "Off"
-        case .askEveryTime: return "Ask Every Time"
-        case .alwaysAllow: return "Always Allow"
+        case .off: return LocalizationService.shared.t("Off")
+        case .askEveryTime: return LocalizationService.shared.t("Ask Every Time")
+        case .alwaysAllow: return LocalizationService.shared.t("Always Allow")
         }
     }
     private func subtitle(for mode: WebAccessMode) -> String {
         switch mode {
-        case .off: return "no network requests, ever"
-        case .askEveryTime: return "approval prompt per request"
-        case .alwaysAllow: return "fetch automatically when triggered"
+        case .off: return LocalizationService.shared.t("no network requests, ever")
+        case .askEveryTime: return LocalizationService.shared.t("approval prompt per request")
+        case .alwaysAllow: return LocalizationService.shared.t("fetch automatically when triggered")
         }
     }
 
@@ -344,7 +344,7 @@ struct WebSettingsView: View {
                         Text("\(log.entries.count)")
                             .font(T.mono(10))
                             .foregroundColor(T.ink3)
-                        Image(systemName: "chevron.right")
+                        Image(systemName: "chevron.forward")
                             .font(.system(size: 10))
                             .foregroundColor(T.ink3)
                     }

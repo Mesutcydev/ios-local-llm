@@ -3,8 +3,8 @@ import Network
 
 // MARK: - WebPageFetchService
 // Fetches a single public URL safely. Hard ceilings:
-//   • 2 MB body (8 MB absolute hard cap)
-//   • 5 redirects, every hop validated for SSRF
+//   • 2 MB response body, enforced while bytes arrive
+//   • Every redirect hop validated for SSRF
 //   • 15 s request timeout / 20 s resource timeout
 //   • Accept allowlist: html / text / json / markdown / xhtml
 //
@@ -16,7 +16,7 @@ public actor WebPageFetchService {
     private let limiter: WebRateLimiter
     private let extractor: WebContentExtractor
     private let session: URLSession
-    private let delegate: RedirectGuard
+    private let delegate: WebRedirectGuard
 
     public init(validator: URLSafetyValidator, limiter: WebRateLimiter, extractor: WebContentExtractor) {
         self.validator = validator
@@ -33,7 +33,7 @@ public actor WebPageFetchService {
         cfg.httpMaximumConnectionsPerHost = 2
         cfg.waitsForConnectivity = false
 
-        let guardDelegate = RedirectGuard(validator: validator)
+        let guardDelegate = WebRedirectGuard(validator: validator)
         self.delegate = guardDelegate
         self.session = URLSession(configuration: cfg, delegate: guardDelegate, delegateQueue: nil)
     }
@@ -55,18 +55,8 @@ public actor WebPageFetchService {
         var req = URLRequest(url: url)
         req.httpMethod = "GET"
 
-        let started = Date()
-        delegate.reset()
-        let data: Data
-        let response: URLResponse
-        do {
-            (data, response) = try await session.data(for: req)
-        } catch {
-            if delegate.exceededSizeLimit {
-                throw WebToolError.tooLarge(bytes: delegate.bytesReceived)
-            }
-            throw error
-        }
+        let (bytes, response) = try await session.bytes(for: req)
+        defer { bytes.task.cancel() }
 
         guard let http = response as? HTTPURLResponse else {
             throw WebToolError.parsingFailed(reason: "non-HTTP response")
@@ -88,17 +78,18 @@ public actor WebPageFetchService {
             throw WebToolError.unsupportedContentType(ctRaw.isEmpty ? "unknown" : ctRaw)
         }
 
-        // 5. Size cap.
-        if data.count > 2 * 1024 * 1024 {
-            throw WebToolError.tooLarge(bytes: data.count)
+        // Bound the decoded response while receiving, including chunked bodies.
+        let maximumBytes = 2 * 1024 * 1024
+        if response.expectedContentLength > Int64(maximumBytes) {
+            throw WebToolError.tooLarge(bytes: Int(clamping: response.expectedContentLength))
         }
+        let data = try await Self.collectBounded(bytes, maximumBytes: maximumBytes)
 
         let finalURL = http.url ?? url
         let finalVerdict = await validator.validateStable(finalURL)
         if !finalVerdict.isSafe {
             throw WebToolError.blockedByURLValidator(reason: "final URL blocked: \(finalVerdict.reason)")
         }
-        let _ = Int(Date().timeIntervalSince(started) * 1000)
 
         // 6. Extract.
         let extracted = await extractor.extract(
@@ -108,70 +99,44 @@ public actor WebPageFetchService {
         )
         return extracted
     }
+
+    static func collectBounded<Bytes: AsyncSequence>(
+        _ bytes: Bytes, maximumBytes: Int
+    ) async throws -> Data where Bytes.Element == UInt8 {
+        try Task.checkCancellation()
+        var data = Data()
+        data.reserveCapacity(min(max(0, maximumBytes), 64 * 1024))
+        for try await byte in bytes {
+            if data.count.isMultiple(of: 16_384) { try Task.checkCancellation() }
+            guard data.count < maximumBytes else {
+                throw WebToolError.tooLarge(bytes: data.count + 1)
+            }
+            data.append(byte)
+        }
+        try Task.checkCancellation()
+        return data
+    }
+
 }
 
-// MARK: - RedirectGuard
-// Intercepts EVERY 3xx hop so a malicious server can't 302 us into a private
-// network. Implements `URLSessionTaskDelegate.willPerformHTTPRedirection`.
-
-private final class RedirectGuard: NSObject, URLSessionDataDelegate {
-
+// Adapted from the reference project's streaming fetch and redirect guard.
+// Kept shared so search providers receive the same redirect validation.
+final class WebRedirectGuard: NSObject, URLSessionTaskDelegate {
     private let validator: URLSafetyValidator
-    private let lock = NSLock()
-    private var bytes = 0
-    private var exceeded = false
 
-    /// Abort the response once more than this has arrived. The previous
-    /// code buffered the entire body before checking size, so a huge
-    /// (or endless) response could exhaust memory.
-    static let maxBodyBytes = 2 * 1024 * 1024
-
-    init(validator: URLSafetyValidator) {
-        self.validator = validator
-    }
-
-    func reset() {
-        lock.lock()
-        bytes = 0
-        exceeded = false
-        lock.unlock()
-    }
-
-    var exceededSizeLimit: Bool {
-        lock.lock(); defer { lock.unlock() }
-        return exceeded
-    }
-
-    var bytesReceived: Int {
-        lock.lock(); defer { lock.unlock() }
-        return bytes
-    }
-
-    func urlSession(_ session: URLSession,
-                    dataTask: URLSessionDataTask,
-                    didReceive data: Data) {
-        lock.lock()
-        bytes += data.count
-        let over = bytes > Self.maxBodyBytes
-        if over { exceeded = true }
-        lock.unlock()
-        if over { dataTask.cancel() }
-    }
+    init(validator: URLSafetyValidator) { self.validator = validator }
 
     func urlSession(_ session: URLSession,
                     task: URLSessionTask,
                     willPerformHTTPRedirection response: HTTPURLResponse,
                     newRequest request: URLRequest,
                     completionHandler: @escaping (URLRequest?) -> Void) {
-        guard let nextURL = request.url else {
-            completionHandler(nil)
-            return
-        }
-        // Synchronously block until validator says yes/no — we're already on
-        // a URLSession delegate queue.
-        Task {
-            let verdict = await validator.validateStable(nextURL)
-            completionHandler(verdict.isSafe ? request : nil)
-        }
+        Task { completionHandler(await validatedRedirectRequest(request)) }
+    }
+
+    func validatedRedirectRequest(_ request: URLRequest) async -> URLRequest? {
+        guard let url = request.url else { return nil }
+        let verdict = await validator.validateStable(url)
+        return verdict.isSafe ? request : nil
     }
 }

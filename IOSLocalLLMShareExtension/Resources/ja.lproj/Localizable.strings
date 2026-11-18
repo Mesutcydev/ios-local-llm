@@ -1,0 +1,21 @@
+// Original app interface translations. Copyright 2026 Mesut and contributors; MIT.
+// Preserve interpolation tokens. Regenerate from the reviewed interface catalog.
+"App Group container missing. Configure entitlements." = "アプリグループコンテナが見つかりません。権限を構成します。";
+"Couldn't decode image" = "画像をデコードできませんでした";
+"Couldn't encode image" = "画像をエンコードできませんでした";
+"Couldn't prepare image" = "画像を準備できませんでした";
+"Couldn't read URL" = "URLを読み取れませんでした";
+"Couldn't read image" = "画像を読み取れませんでした";
+"Couldn't read text" = "テキストを読めませんでした";
+"Couldn't resize image" = "画像のサイズを変更できませんでした";
+"Couldn't save share" = "共有を保存できませんでした";
+"Couldn't save the shared link" = "共有リンクを保存できませんでした";
+"Done" = "完了";
+"Empty text" = "空のテキスト";
+"No content to share" = "共有するコンテンツがありません";
+"Open OnDevice LLM to use your shared content. It is saved on this device." = "OnDevice LLM を開いて共有コンテンツを使用します。このデバイスに保存されます。";
+"Saved to OnDevice LLM" = "OnDevice LLM に保存されました";
+"Shared storage is unavailable. Try opening OnDevice LLM first." = "共有ストレージは利用できません。まず OnDevice LLM を開いてみてください。";
+"Unsupported content type" = "サポートされていないコンテンツ タイプ";
+"Your content could not be saved." = "コンテンツを保存できませんでした。";
+"Your content could not be saved. Try sharing it again." = "コンテンツを保存できませんでした。もう一度共有してみてください。";

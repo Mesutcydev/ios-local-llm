@@ -42,13 +42,11 @@ final class SpeechPlaybackCoordinator: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var karaokeTimeline: KaraokeTimeline = .empty
     private var cueTrack: KaraokeCueTrack = .empty
-    private var activeCueID: Int?
-    private var activePhraseIndex: Int?
+    /// Backward-jump guard + change detection. Compared by text position and
+    /// phrase identity — cue indexes shift on every timeline rebuild.
+    private var activeCue: KaraokeCue?
     private var refinementTasks: [UUID: Task<Void, Never>] = [:]
     private var lastPublishedLevel: Float = -1
-    private var lastKaraokeTextPublish = Date.distantPast
-    private var pendingKaraokeAppend = ""
-    private var karaokeAppendWorkItem: DispatchWorkItem?
     private var highWaterSpokenEnd = 0
     private var didPublishFirstHighlight = false
     private var routeObserver: NSObjectProtocol?
@@ -56,6 +54,13 @@ final class SpeechPlaybackCoordinator: ObservableObject {
     /// karaokeText from here forward — searching from 0 matched the FIRST
     /// occurrence of repeated text and highlighted the wrong span.
     private var utf16SearchCursor = 0
+    /// Chunk start (render samples) → UTF-16 end of its text. `karaoke.text`
+    /// shows the transcript only up to the chunk being spoken, so the text
+    /// streams in with the voice and its bottom stays next to the lit phrase.
+    // ponytail: reveals per chunk (≤250 chars ≈ 7 lines, fits the collapsed
+    // box); reveal per sentence if chunks ever grow past that.
+    private var revealMarks: [(startSample: Int64, utf16End: Int)] = []
+    private var revealedUTF16End = 0
     /// utf16Range → stable phrase identity. KaraokePhraseBuilder mints fresh
     /// UUIDs on every rebuild, which churned activePhraseID (and therefore
     /// highlight/auto-scroll invalidation) on each chunk + refinement.
@@ -73,8 +78,6 @@ final class SpeechPlaybackCoordinator: ObservableObject {
     /// Hysteresis for silent-meter synthetic energy — flipping every frame
     /// at the 0.02 threshold made the orb flutter.
     private var meterFallbackArmed = false
-    /// Last spoken-end publish time (throttle highlight polling churn).
-    private var lastSpokenPublishMediaTime: CFTimeInterval = 0
 
     private init() {
         orb.renderingMode = VoiceSettingsStore.shared.renderingMode
@@ -155,17 +158,24 @@ final class SpeechPlaybackCoordinator: ObservableObject {
         snapshot = snap
     }
 
-    func beginUtterance(karaokeSeed: String = "") {
+    /// `chunks`: the text to be spoken when it is known up front (replay,
+    /// read-aloud), already split the way it will be synthesized. Streamed
+    /// replies pass nothing: the transcript is then built from each chunk as
+    /// it is registered, so it always matches what is actually spoken. Feeding
+    /// it raw model tokens duplicated every sentence the chunker normalized.
+    func beginUtterance(chunks: [String] = []) {
         playbackGeneration = UUID()
         playback.beginUtteranceTimeline()
         cancelRefinements()
-        karaokeAppendWorkItem?.cancel()
-        pendingKaraokeAppend = ""
         segments = []
         karaokeTimeline = .empty
         cueTrack = .empty
-        karaokeText = karaokeSeed
-        karaoke.text = karaokeSeed
+        karaokeText = chunks.joined(separator: " ")
+        revealMarks = []
+        revealedUTF16End = 0
+        // First chunk up immediately so a replay never blanks the transcript
+        // while it synthesizes.
+        reveal(upTo: ((chunks.first ?? "") as NSString).length)
         karaoke.activePhraseID = nil
         karaoke.activePhraseUTF16Range = nil
         karaoke.setSpokenUTF16End(0)
@@ -173,8 +183,7 @@ final class SpeechPlaybackCoordinator: ObservableObject {
         completedDuration = 0
         chunkEnvelope = []
         chunkDuration = 0
-        activeCueID = nil
-        activePhraseIndex = nil
+        activeCue = nil
         highWaterSpokenEnd = 0
         didPublishFirstHighlight = false
         karaokeWallStartMediaTime = nil
@@ -183,7 +192,6 @@ final class SpeechPlaybackCoordinator: ObservableObject {
         utf16SearchCursor = 0
         phraseIDCache.removeAll()
         meterFallbackArmed = false
-        lastSpokenPublishMediaTime = 0
         // Reset playback energy only — keep mic level so speechDetected →
         // thinking doesn't snap the orb to a dead static core mid-transition.
         smoother.reset()
@@ -200,26 +208,16 @@ final class SpeechPlaybackCoordinator: ObservableObject {
         publishCompatSnapshot(level: 0)
     }
 
-    /// Append speakable text — batched so token storms don't republish UI.
-    func appendKaraokeText(_ text: String) {
-        guard !text.isEmpty else { return }
-        pendingKaraokeAppend += text
-        karaokeAppendWorkItem?.cancel()
-        let item = DispatchWorkItem { [weak self] in
-            self?.flushKaraokeAppend()
-        }
-        karaokeAppendWorkItem = item
-        // ~12 Hz max while streaming.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08, execute: item)
-    }
-
-    func setKaraokeText(_ text: String) {
-        karaokeAppendWorkItem?.cancel()
-        pendingKaraokeAppend = ""
-        karaokeText = text
-        karaoke.text = text
-        utf16SearchCursor = 0
-        phraseIDCache.removeAll()
+    /// Natural end of speech: the whole transcript is visible and reads as
+    /// spoken, with nothing left lit. `activeCue` stays set so a late display
+    /// tick can't re-light the last phrase.
+    func finishUtterance() {
+        let length = (karaokeText as NSString).length
+        reveal(upTo: length)
+        highWaterSpokenEnd = length
+        karaoke.setSpokenUTF16End(length)
+        karaoke.activePhraseID = nil
+        karaoke.activePhraseUTF16Range = nil
         publishCompatSnapshot(level: orb.publishedLevel)
     }
 
@@ -246,14 +244,18 @@ final class SpeechPlaybackCoordinator: ObservableObject {
             return
         }
 
-        flushKaraokeAppend()
-        let (baseOffset, resolvedText) = resolveUTF16Base(for: text)
+        let resolvedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let baseOffset = Self.placeChunk(resolvedText, in: &karaokeText, cursor: &utf16SearchCursor)
         if let timelineOffsetOverride {
             // Never move the timeline backward — the monotonic cue guard has
             // already passed anything earlier.
             timelineCursor = max(timelineCursor, timelineOffsetOverride)
         }
         let offset = timelineCursor
+        revealMarks.append((
+            startSample: Int64((offset * utteranceSampleRate).rounded()),
+            utf16End: baseOffset + (resolvedText as NSString).length
+        ))
 
         // 1) Engine-derived (Kitten pred_dur) — use immediately.
         if let engineAlignment,
@@ -369,23 +371,22 @@ final class SpeechPlaybackCoordinator: ObservableObject {
         #endif
     }
 
-    /// Adopt refined future timings only — never move karaoke backward.
+    /// Swap a queued chunk's provisional timing for the refined one. A chunk
+    /// that is already audible keeps the timing it has: the old segment-level
+    /// splice dropped the playing chunk's only segment and adopted nothing,
+    /// which froze the highlight for the rest of that chunk.
     private func adoptRefinedAlignment(
         _ result: SpeechAlignmentResult,
         chunkStart: TimeInterval,
         chunkEnd: TimeInterval
     ) {
-        let now = currentPlaybackTime()
-        // Keep segments that already started; replace only future ones in this chunk.
-        var kept = segments.filter { $0.endTime <= now + 0.02 || $0.startTime < chunkStart - 0.001 || $0.startTime >= chunkEnd - 0.001 }
-        let future = result.segments.filter { $0.startTime >= now - 0.02 }
-        // Drop old chunk segments in [now, chunkEnd) that we're replacing.
-        kept.removeAll { seg in
-            seg.startTime >= now - 0.02 && seg.startTime < chunkEnd && seg.startTime >= chunkStart
-        }
-        kept.append(contentsOf: future)
-        kept.sort { $0.startTime < $1.startTime }
-        segments = kept
+        // ponytail: no mid-chunk splice — re-timing words under the playhead
+        // makes the fill jump. Splice per word if the first sentence of a
+        // reply ever needs refined timing.
+        guard currentPlaybackTime() < chunkStart else { return }
+        segments.removeAll { $0.startTime >= chunkStart - 0.001 && $0.startTime < chunkEnd - 0.001 }
+        segments.append(contentsOf: result.segments)
+        segments.sort { $0.startTime < $1.startTime }
         if Self.accuracyRank(result.accuracy) >= Self.accuracyRank(timingSource) {
             timingSource = result.accuracy
             alignmentDetail = (result.diagnosticDetail ?? "") + " (refined)"
@@ -393,8 +394,6 @@ final class SpeechPlaybackCoordinator: ObservableObject {
             karaoke.alignmentDetail = alignmentDetail
         }
         rebuildTimeline()
-        // Re-resolve phrase without going backward.
-        publishPhraseIfNeeded(at: now, force: false)
     }
 
     private func prepareMetering(buffer: AVAudioPCMBuffer, duration: TimeInterval) {
@@ -419,7 +418,7 @@ final class SpeechPlaybackCoordinator: ObservableObject {
             snapshot: snap,
             targetHostTime: snap.renderHostTime
         )
-        publishCueIfNeeded(at: nowSample, force: activeCueID == nil)
+        publishCueIfNeeded(at: nowSample, force: activeCue == nil)
     }
 
     private func rebuildTimeline() {
@@ -446,7 +445,8 @@ final class SpeechPlaybackCoordinator: ObservableObject {
         cueTrack = KaraokeCueTrack.from(
             phrases: karaokeTimeline.phrases,
             sampleRate: utteranceSampleRate > 0 ? utteranceSampleRate : 24_000,
-            timingSource: timingSource
+            timingSource: timingSource,
+            words: segments.flatMap(\.words)
         )
     }
 
@@ -462,8 +462,8 @@ final class SpeechPlaybackCoordinator: ObservableObject {
         playbackGeneration = UUID()
         playback.beginUtteranceTimeline()
         cancelRefinements()
-        karaokeAppendWorkItem?.cancel()
-        pendingKaraokeAppend = ""
+        // Show everything that was queued; the unspoken tail stays dim.
+        reveal(upTo: (karaokeText as NSString).length)
         displayLink.stop()
         chunkEnvelope = []
         chunkDuration = 0
@@ -475,8 +475,7 @@ final class SpeechPlaybackCoordinator: ObservableObject {
             controls.phase = .interrupted
             VoiceVisualLevelStore.shared.phaseCode = Self.phaseCode(.interrupted)
         }
-        activeCueID = nil
-        activePhraseIndex = nil
+        activeCue = nil
         karaoke.activePhraseID = nil
         karaoke.activePhraseUTF16Range = nil
         karaoke.setSpokenUTF16End(highWaterSpokenEnd)
@@ -501,12 +500,12 @@ final class SpeechPlaybackCoordinator: ObservableObject {
         playback.beginUtteranceTimeline()
         cancelRefinements()
         displayLink.stop()
-        karaokeAppendWorkItem?.cancel()
-        pendingKaraokeAppend = ""
         segments = []
         karaokeTimeline = .empty
         cueTrack = .empty
         karaokeText = ""
+        revealMarks = []
+        revealedUTF16End = 0
         karaoke.text = ""
         karaoke.activePhraseID = nil
         karaoke.activePhraseUTF16Range = nil
@@ -515,8 +514,7 @@ final class SpeechPlaybackCoordinator: ObservableObject {
         completedDuration = 0
         chunkEnvelope = []
         chunkDuration = 0
-        activeCueID = nil
-        activePhraseIndex = nil
+        activeCue = nil
         highWaterSpokenEnd = 0
         utf16SearchCursor = 0
         phraseIDCache.removeAll()
@@ -539,57 +537,43 @@ final class SpeechPlaybackCoordinator: ObservableObject {
 
     // MARK: - Private
 
-    private func flushKaraokeAppend() {
-        guard !pendingKaraokeAppend.isEmpty else { return }
-        karaokeText += pendingKaraokeAppend
-        pendingKaraokeAppend = ""
-        karaoke.text = karaokeText
-        lastKaraokeTextPublish = Date()
-    }
-
     private func cancelRefinements() {
         for (_, task) in refinementTasks { task.cancel() }
         refinementTasks.removeAll()
     }
 
-    private func resolveUTF16Base(for chunk: String) -> (Int, String) {
-        let trimmed = chunk.trimmingCharacters(in: .whitespacesAndNewlines)
-        let ns = karaokeText as NSString
-        if !trimmed.isEmpty {
-            // Search from the stream cursor first — repeated phrases must map
-            // to the CURRENT occurrence, not the first one in the transcript.
-            let cursor = min(utf16SearchCursor, ns.length)
-            let forwardRange = NSRange(location: cursor, length: ns.length - cursor)
-            let found = ns.range(of: trimmed, options: [], range: forwardRange)
-            if found.location != NSNotFound {
-                utf16SearchCursor = found.location + found.length
-                return (found.location, trimmed)
-            }
-            let compact = trimmed.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-            let found2 = ns.range(of: compact, options: [], range: forwardRange)
-            if found2.location != NSNotFound {
-                utf16SearchCursor = found2.location + found2.length
-                return (found2.location, compact)
-            }
-            // Fallback: out-of-order / edited transcript — scan the whole
-            // string without moving the cursor backward.
-            let fullRange = NSRange(location: 0, length: ns.length)
-            let foundAny = ns.range(of: trimmed, options: [], range: fullRange)
-            if foundAny.location != NSNotFound {
-                return (foundAny.location, trimmed)
-            }
-            let foundAny2 = ns.range(of: compact, options: [], range: fullRange)
-            if foundAny2.location != NSNotFound {
-                return (foundAny2.location, compact)
-            }
+    /// UTF-16 location of `chunk` in the transcript: its next occurrence at
+    /// or after `cursor` when the text was seeded up front, otherwise the
+    /// chunk is appended. Never searches backward — a sentence that is said
+    /// twice must map to its own occurrence, not the first one.
+    nonisolated static func placeChunk(_ chunk: String, in transcript: inout String, cursor: inout Int) -> Int {
+        let ns = transcript as NSString
+        let from = min(cursor, ns.length)
+        let found = ns.range(of: chunk, options: [], range: NSRange(location: from, length: ns.length - from))
+        if found.location != NSNotFound {
+            cursor = found.location + found.length
+            return found.location
         }
-        let separator = karaokeText.isEmpty || karaokeText.hasSuffix(" ") || karaokeText.hasSuffix("\n")
-            ? "" : " "
-        let base = (karaokeText as NSString).length + (separator as NSString).length
-        karaokeText += separator + trimmed
-        karaoke.text = karaokeText
-        utf16SearchCursor = base + (trimmed as NSString).length
-        return (base, trimmed)
+        let separator = transcript.isEmpty || transcript.hasSuffix(" ") || transcript.hasSuffix("\n") ? "" : " "
+        let base = ns.length + (separator as NSString).length
+        transcript += separator + chunk
+        cursor = base + (chunk as NSString).length
+        return base
+    }
+
+    /// Publish the transcript up to `utf16End`. Only ever grows.
+    private func reveal(upTo utf16End: Int) {
+        let ns = karaokeText as NSString
+        revealedUTF16End = min(max(utf16End, revealedUTF16End), ns.length)
+        let visible = ns.substring(to: revealedUTF16End)
+        if karaoke.text != visible { karaoke.text = visible }
+    }
+
+    /// Reveal every chunk the playhead has entered.
+    private func updateReveal(at sample: Int64) {
+        guard let end = revealMarks.last(where: { $0.startSample <= sample })?.utf16End,
+              end > revealedUTF16End else { return }
+        reveal(upTo: end)
     }
 
     private func beginDisplayLink() {
@@ -620,7 +604,11 @@ final class SpeechPlaybackCoordinator: ObservableObject {
         // estimate continuous so we never jump backward when the real clock
         // reappears (that freeze/jump was a karaoke + orb flutter source).
         if snap.isPlaying {
-            let playerValid = sample > 0
+            // Judge the RAW player clock. The latency-compensated `sample` sits
+            // at 0 for the first `outputLatency` of every utterance; treating
+            // that as "invalid" ran the wall clock ahead of the audio and then
+            // stalled the highlight (visible on Bluetooth).
+            let playerValid = snap.currentPlayerSample > 0
             if !playerValid {
                 if karaokeWallStartMediaTime == nil {
                     karaokeWallStartMediaTime = CACurrentMediaTime()
@@ -683,7 +671,7 @@ final class SpeechPlaybackCoordinator: ObservableObject {
         VoiceVisualLevelStore.shared.playbackLevel = visual
         lastPublishedLevel = visual
 
-        publishCueIfNeeded(at: sample, force: activeCueID == nil && snap.isPlaying)
+        publishCueIfNeeded(at: sample, force: activeCue == nil && snap.isPlaying)
 
         #if DEBUG
         if ProcessInfo.processInfo.environment["VOICE_TIMING_DEBUG"] == "1" {
@@ -696,6 +684,8 @@ final class SpeechPlaybackCoordinator: ObservableObject {
     }
 
     private func publishCueIfNeeded(at sample: Int64, force: Bool = false) {
+        // Text first, so the phrase published below is always inside it.
+        updateReveal(at: sample)
         guard let cue = cueTrack.cue(at: sample) else {
             if force {
                 karaoke.activePhraseID = nil
@@ -703,32 +693,25 @@ final class SpeechPlaybackCoordinator: ObservableObject {
             }
             return
         }
-        if let prev = activeCueID, cue.id < prev, !force { return }
+        // Never step back to earlier text.
+        if let prev = activeCue, cue.textRange.location < prev.textRange.location, !force { return }
 
         let utf16Len = (karaokeText as NSString).length
-        var spoken = cueTrack.spokenUTF16End(at: sample, transcriptLength: utf16Len)
-        spoken = max(spoken, highWaterSpokenEnd)
+        let spoken = max(highWaterSpokenEnd, cueTrack.spokenUTF16End(at: sample, transcriptLength: utf16Len))
         let spokenAdvanced = spoken > highWaterSpokenEnd
         highWaterSpokenEnd = spoken
 
-        let phraseChanged = force || cue.id != activeCueID
-        // Phrase changes publish immediately (Observable). Spoken-end is polled
-        // by KaraokeTranscriptContainer — throttle writes to ~15 Hz so the
-        // attributed-string path isn't rewriting every vsync.
-        let now = CACurrentMediaTime()
-        let spokenDue = spokenAdvanced && (now - lastSpokenPublishMediaTime) >= (1.0 / 15.0)
-        guard phraseChanged || spokenDue || (force && karaoke.spokenUTF16End != spoken) else { return }
+        // The spoken end steps once per word, so both publish as they change —
+        // no polling, no throttle.
+        let phraseChanged = force || cue.phraseID != activeCue?.phraseID
+        guard phraseChanged || spokenAdvanced else { return }
 
         if phraseChanged {
-            activeCueID = cue.id
-            activePhraseIndex = cue.id
+            activeCue = cue
             karaoke.activePhraseID = cue.phraseID
             karaoke.activePhraseUTF16Range = cue.textRange
         }
-        if phraseChanged || spokenDue || force {
-            karaoke.setSpokenUTF16End(spoken)
-            lastSpokenPublishMediaTime = now
-        }
+        karaoke.setSpokenUTF16End(spoken)
         VoicePerformanceMonitor.shared.noteProgressPublish()
         let seconds = Double(sample) / max(1, cueTrack.sampleRate)
         if !didPublishFirstHighlight {
@@ -738,11 +721,6 @@ final class SpeechPlaybackCoordinator: ObservableObject {
         if phraseChanged {
             publishCompatSnapshot(level: lastPublishedLevel, current: seconds)
         }
-    }
-
-    private func publishPhraseIfNeeded(at time: TimeInterval, force: Bool) {
-        let sr = max(1, utteranceSampleRate)
-        publishCueIfNeeded(at: Int64((time * sr).rounded()), force: force)
     }
 
     private func publishOrbLevel(_ level: Float, force: Bool) {
@@ -800,8 +778,11 @@ final class SpeechPlaybackCoordinator: ObservableObject {
     ) -> SpeechAlignmentResult? {
         guard let first = result.segments.first else { return nil }
         let deltaT = timelineOffset - first.startTime
-        let localBase = first.words.first?.utf16Range.location ?? 0
-        let deltaUTF = utf16BaseOffset - localBase
+        // Engine alignments are chunk-local (0 = the chunk's first character),
+        // so the shift is just the chunk's position. Subtracting the first
+        // word's own offset slid every highlight left whenever a chunk opened
+        // with a quote or bracket.
+        let deltaUTF = utf16BaseOffset
         let segments = result.segments.map { seg in
             SpeechSegment(
                 id: seg.id,

@@ -67,12 +67,12 @@ struct HFTokenSheet: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel", systemImage: "xmark") { dismiss() }
                         .font(T.sans(15))
                         .foregroundColor(T.ink2)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save") { save() }
+                    Button("Save", systemImage: "checkmark") { save() }
                         .font(T.sans(15, .semibold))
                         .foregroundColor(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                                          ? T.ink4 : T.accent)

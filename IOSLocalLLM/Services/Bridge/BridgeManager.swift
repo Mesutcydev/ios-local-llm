@@ -184,12 +184,9 @@ final class BridgeManager: ObservableObject {
             return
         }
 
-        // Refuse to send the nonce + bearer in cleartext to a Mac that didn't
-        // advertise a TLS cert fingerprint, unless the user explicitly opted
-        // into insecure pairing. Without TLS + cert pinning a LAN attacker
-        // could sniff the bearer mid-handshake and impersonate the Mac.
-        if payload.macCertFingerprint == nil && !AppSettings.shared.allowInsecureBridgePairing {
-            pairingPhase = .failed("This Mac doesn't support encrypted pairing. Update the iOS Local LLM Mac app, or enable “Allow insecure pairing” in Settings → Mac to continue over your local network.")
+        guard let fingerprint = payload.macCertFingerprint,
+              BridgePinningDelegate.isValidFingerprint(fingerprint) else {
+            pairingPhase = .failed("Encrypted pairing requires a valid Mac certificate. Update the Mac app and scan its new QR code.")
             return
         }
 
@@ -214,12 +211,8 @@ final class BridgeManager: ObservableObject {
             "iphoneCertFingerprint": BridgeIdentity.shared.fingerprint,
             "bearerToken":          token
         ]
-        // TLS when the Mac advertised a cert fingerprint in its QR;
-        // pin that leaf so a LAN MITM can't intercept the nonce/bearer.
-        // Legacy plaintext Macs (no fingerprint) still pair over http.
-        let scheme = payload.macCertFingerprint != nil ? "https" : "http"
         guard let bodyData = try? JSONSerialization.data(withJSONObject: body),
-              let url = URL(string: "\(scheme)://\(payload.macHost):\(payload.pairingPort)/v1/pair") else {
+              let url = URL(string: "https://\(payload.macHost):\(payload.pairingPort)/v1/pair") else {
             pairingPhase = .failed("Invalid Mac address in QR.")
             return
         }
@@ -229,15 +222,9 @@ final class BridgeManager: ObservableObject {
         req.httpBody   = bodyData
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        // Pinned session for TLS Macs; the shared session for legacy http.
-        let pinDelegate = payload.macCertFingerprint.map { BridgePinningDelegate(expectedFingerprint: $0) }
-        let session: URLSession = pinDelegate.map {
-            URLSession(configuration: .ephemeral, delegate: $0, delegateQueue: nil)
-        } ?? .shared
-        // Don't leak a pinned session/delegate per pairing attempt.
-        defer {
-            if pinDelegate != nil { session.finishTasksAndInvalidate() }
-        }
+        let pinDelegate = BridgePinningDelegate(expectedFingerprint: fingerprint)
+        let session = URLSession(configuration: .ephemeral, delegate: pinDelegate, delegateQueue: nil)
+        defer { session.finishTasksAndInvalidate() }
 
         do {
             let (data, resp) = try await session.data(for: req)
@@ -302,7 +289,7 @@ private struct MacQRPayload: Decodable {
     let macName: String
     /// SHA-256 of the Mac's self-signed TLS leaf cert. Present on Macs
     /// that serve the pairing/agent channel over TLS; absent on legacy
-    /// plaintext Macs (we fall back to http for those).
+    /// plaintext Macs (which must update and re-pair).
     let macCertFingerprint: String?
 }
 
@@ -322,7 +309,9 @@ extension BridgeManager {
               let payload = try? JSONDecoder().decode(MacQRPayload.self, from: data),
               payload.v == 1,
               Self.isValidMacHost(payload.macHost),
-              payload.pairingPort >= 1024 else { return nil }
+              payload.pairingPort >= 1024,
+              let fingerprint = payload.macCertFingerprint,
+              BridgePinningDelegate.isValidFingerprint(fingerprint) else { return nil }
         return PendingPairing(
             qrJSON: qrJSON,
             macName: payload.macName,

@@ -72,7 +72,7 @@ struct DiagnosticsView: View {
                     DisclosureGroup("Breadcrumb trail (\(c.trail.count))") {
                         ForEach(Array(c.trail.enumerated()), id: \.offset) { _, line in
                             Text(line)
-                                .font(.system(size: 10, design: .monospaced))
+                                .scaledFont(size: 10, design: .monospaced)
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -107,7 +107,7 @@ struct DiagnosticsView: View {
             }
             if !analyzer.output.isEmpty {
                 Text(analyzer.output)
-                    .font(.system(size: 13))
+                    .scaledFont(size: 13)
                     .textSelection(.enabled)
             }
             if let err = analyzer.error {
@@ -130,7 +130,7 @@ struct DiagnosticsView: View {
     private var snapshotSection: some View {
         Section {
             Text(snapshot)
-                .font(.system(size: 11, design: .monospaced))
+                .scaledFont(size: 11, design: .monospaced)
                 .textSelection(.enabled)
         } header: { Text("System") }
     }
@@ -153,14 +153,14 @@ struct DiagnosticsView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {
                             Text(e.level.label)
-                                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                .scaledFont(size: 9, weight: .bold, design: .monospaced)
                                 .foregroundStyle(color(for: e.level))
                             Text(e.category)
-                                .font(.system(size: 9, design: .monospaced))
+                                .scaledFont(size: 9, design: .monospaced)
                                 .foregroundStyle(.tertiary)
                         }
                         Text(e.message)
-                            .font(.system(size: 11, design: .monospaced))
+                            .scaledFont(size: 11, design: .monospaced)
                     }
                 }
             }
@@ -172,10 +172,10 @@ struct DiagnosticsView: View {
             ForEach(metric.entries) { e in
                 VStack(alignment: .leading, spacing: 2) {
                     Text(e.kind.uppercased())
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .scaledFont(size: 9, weight: .bold, design: .monospaced)
                         .foregroundStyle(e.kind == "crash" ? .red : .secondary)
                     Text(e.summary)
-                        .font(.system(size: 11, design: .monospaced))
+                        .scaledFont(size: 11, design: .monospaced)
                 }
             }
         } header: { Text("MetricKit reports") }

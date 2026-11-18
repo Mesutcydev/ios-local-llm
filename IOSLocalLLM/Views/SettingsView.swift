@@ -1,3 +1,4 @@
+import Speech
 import SwiftUI
 
 // MARK: - SettingsView
@@ -13,6 +14,7 @@ struct SettingsView: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.koduTheme) private var T
 
+    @State private var settingsSearch = ""
     @State private var showingHFTokenSheet: Bool = false
     #if !targetEnvironment(macCatalyst)
     /// nil = default "Silver" icon; "AppIconClassic" = previous pink mark.
@@ -40,25 +42,6 @@ struct SettingsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 0) {
-                    // Page header
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(loc.t("Preferences").uppercased())
-                            .font(T.sans(13, .semibold)).tracking(0.7)
-                            .foregroundColor(T.accent)
-                        Text(loc.t("Settings"))
-                            .font(T.display(32, .bold)).foregroundColor(T.ink)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                    .padding(.bottom, 12)
-
-                    // Privacy hero (design screen 06) — leads Settings with the
-                    // on-device, no-account promise.
-                    privacyHero
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 14)
-
                     // Top-level category index. Replaces the previous flat
                     // 13-section scroll, which dumped every preference,
                     // status panel, and diagnostic on the same screen and
@@ -66,33 +49,38 @@ struct SettingsView: View {
                     // focused sub-screen that still hosts the original
                     // KSection bodies — same content, less noise.
                     VStack(spacing: 8) {
-                        ForEach(SettingsCategory.allCases) { cat in
+                        ForEach(filteredCategories) { cat in
                             NavigationLink {
                                 categoryDestination(cat)
                             } label: {
-                                categoryRow(cat)
+                                SettingsNavigationRow(title: loc.t(cat.title), subtitle: loc.t(cat.subtitle), icon: cat.icon)
+                                    .accessibilityIdentifier("settings.category.\(cat.rawValue)")
                             }
                             .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal, 12)
 
-                    imageStudioBanner
-                        .padding(.horizontal, 16)
-                        .padding(.top, 16)
-
-                    aboutSection
+                    if filteredCategories.isEmpty {
+                        ContentUnavailableView.search(text: settingsSearch)
+                    }
                 }
+                .padding(.top, 12)
                 .padding(.bottom, 32)
+                .frame(maxWidth: AppLayout.readingWidth)
+                .frame(maxWidth: .infinity)
             }
             .background(LiquidPinkBackdrop())
+            .searchable(text: $settingsSearch, placement: .navigationBarDrawer(displayMode: .always), prompt: loc.t("Search settings"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         dismiss()
                     } label: {
-                        Text(loc.t("Done")).font(T.sans(15, .medium)).foregroundColor(T.accent)
+                        Label(loc.t("Done"), systemImage: "checkmark")
+                            .font(T.sans(15, .medium)).foregroundColor(T.accent)
+                            .accessibilityIdentifier("settings.close")
                     }
                 }
                 ToolbarItem(placement: .principal) {
@@ -124,7 +112,7 @@ struct SettingsView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button("Close") { showingModelPickerSheet = false }
+                        Button("Close", systemImage: "xmark") { showingModelPickerSheet = false }
                             .font(T.sans(15))
                             .foregroundColor(T.ink2)
                     }
@@ -144,37 +132,40 @@ struct SettingsView: View {
     // bodies inline, so no content was lost — only the firehose.
 
     enum SettingsCategory: String, CaseIterable, Identifiable {
-        case userGuide
-        case capture
-        case modelsAI
-        case voice
         case appearance
+        case modelsAI
+        case capture
+        case voice
         case system
         case privacyLegal
+        case userGuide
+        case about
 
         var id: String { rawValue }
 
         var title: String {
             switch self {
-            case .userGuide:    return "user guide"
-            case .capture:      return "capture & lens"
-            case .modelsAI:     return "models & ai"
-            case .voice:        return "voice"
-            case .appearance:   return "appearance"
-            case .system:       return "system & diagnostics"
-            case .privacyLegal: return "privacy & legal"
+            case .userGuide:    return LocalizationService.shared.t("Help")
+            case .capture:      return LocalizationService.shared.t("Capture & Lens")
+            case .modelsAI:     return LocalizationService.shared.t("Models & Assistant")
+            case .voice:        return LocalizationService.shared.t("Voice")
+            case .appearance:   return LocalizationService.shared.t("Appearance & Language")
+            case .system:       return LocalizationService.shared.t("Advanced & Diagnostics")
+            case .privacyLegal: return LocalizationService.shared.t("Privacy & Data")
+            case .about: return LocalizationService.shared.t("About")
             }
         }
 
         var subtitle: String {
             switch self {
-            case .userGuide:    return "learn how to use ioslocalllm & local models"
-            case .capture:      return "analysis mode, camera, detection"
-            case .modelsAI:     return "assistant, api keys, fastvlm pipeline"
-            case .voice:        return "engine, voice, audio, behavior"
-            case .appearance:   return "theme, language, interface"
-            case .system:       return "status, thermal, developer tools"
-            case .privacyLegal: return "data, reset, legal notices"
+            case .userGuide:    return LocalizationService.shared.t("User guide and getting started")
+            case .capture:      return LocalizationService.shared.t("analysis mode, camera, detection")
+            case .modelsAI:     return LocalizationService.shared.t("assistant, api keys, models")
+            case .voice:        return LocalizationService.shared.t("engine, voice, audio, behavior")
+            case .appearance:   return LocalizationService.shared.t("theme, language, interface")
+            case .system:       return LocalizationService.shared.t("status, thermal, developer tools")
+            case .privacyLegal: return LocalizationService.shared.t("Cloud sync, parental controls, reset and legal notices")
+            case .about: return LocalizationService.shared.t("App information, website and source code")
             }
         }
 
@@ -187,7 +178,27 @@ struct SettingsView: View {
             case .appearance:   return "paintpalette"
             case .system:       return "gauge.with.dots.needle.bottom.50percent"
             case .privacyLegal: return "lock.shield"
+            case .about: return "info.circle"
             }
+        }
+    }
+
+    private var filteredCategories: [SettingsCategory] {
+        let words = settingsSearch.split(whereSeparator: \.isWhitespace)
+        return SettingsCategory.allCases.filter { category in
+            let keywords: String
+            switch category {
+            case .appearance: keywords = "theme dark light OLED haptics icon language"
+            case .modelsAI: keywords = "download Hugging Face token Wi-Fi sampling temperature knowledge documents API"
+            case .voice: keywords = "speech microphone audio TTS STT transcription"
+            case .capture: keywords = "camera vision OCR detection"
+            case .system: keywords = "memory RAM thermal safety timeout FPS diagnostics"
+            case .privacyLegal: keywords = "privacy sync iCloud parental children delete wipe data licenses"
+            case .userGuide: keywords = "help guide setup"
+            case .about: keywords = "website GitHub version source repository"
+            }
+            let text = [loc.t(category.title), loc.t(category.subtitle), keywords].joined(separator: " ")
+            return words.allSatisfy { text.localizedCaseInsensitiveContains(String($0)) }
         }
     }
 
@@ -213,33 +224,7 @@ struct SettingsView: View {
             Spacer(minLength: 0)
         }
         .padding(16)
-        .kGlass(cornerRadius: 22, fallbackFill: T.surface, fallbackStroke: T.rule)
-    }
-
-    private func categoryRow(_ cat: SettingsCategory) -> some View {
-        HStack(spacing: 13) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 11, style: .continuous).fill(T.accentSoft)
-                Image(systemName: cat.icon)
-                    .font(.system(size: 17, weight: .regular))
-                    .foregroundColor(T.accent)
-            }
-            .frame(width: 38, height: 38)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(cat.title.capitalized)
-                    .font(T.sans(16, .semibold)).foregroundColor(T.ink)
-                Text(cat.subtitle)
-                    .font(T.sans(12.5)).foregroundColor(T.ink3).lineLimit(1)
-            }
-            Spacer(minLength: 8)
-            Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(T.ink4)
-        }
-        .padding(.horizontal, 15)
-        .padding(.vertical, 13)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .kGlass(cornerRadius: 18, fallbackFill: T.surface, fallbackStroke: T.rule)
+        .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
     }
 
     @ViewBuilder
@@ -264,7 +249,6 @@ struct SettingsView: View {
                     modelsSection
                     assistantSection
                     apiSettingsSection
-                    fastvlmPipelineSection
                 case .voice:
                     voiceSection
                 case .appearance:
@@ -273,8 +257,13 @@ struct SettingsView: View {
                     systemStatusSection
                     thermalProtectionSection
                     developerSection
+                case .about:
+                    aboutSection
+                    imageStudioBanner.padding(16)
                 case .privacyLegal:
+                    privacyHero.padding(16)
                     CloudSyncSettingsSection()
+                    ImageParentalControlsView()
                     privacyResetSection
                     legalSection
                 }
@@ -284,6 +273,12 @@ struct SettingsView: View {
         .background(LiquidPinkBackdrop())
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button(loc.t("Done"), systemImage: "checkmark") { dismiss() }
+                    .accessibilityIdentifier("settings.close")
+            }
+        }
     }
 
     // MARK: - Sections
@@ -314,9 +309,10 @@ struct SettingsView: View {
 
     private var modelsSection: some View {
         KSection(title: "models") {
-            // Download center link — primary entry point
-            NavigationLink {
-                ModelDownloadCenterView()
+            // Downloads are managed in the Models tab.
+            Button {
+                dismiss()
+                AppBridge.shared.requestTab(.models)
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "arrow.down.circle")
@@ -328,16 +324,17 @@ struct SettingsView: View {
                         Text("Download models")
                             .font(T.sans(13, .semibold))
                             .foregroundColor(T.ink)
-                        KMono(text: "FastVLM · Qwen3 · KittenTTS", size: 10, color: T.ink3, mono: false)
+                        KMono(text: "Local language, vision and voice models", size: 10, color: T.ink3, mono: false)
                     }
                     Spacer()
                     downloadStatusBadge
-                    Image(systemName: "chevron.right")
+                    Image(systemName: "chevron.forward")
                         .font(.system(size: 10))
                         .foregroundColor(T.ink3)
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
@@ -364,7 +361,7 @@ struct SettingsView: View {
                         KMono(text: "Open the guided model picker", size: 10, color: T.ink3, mono: false)
                     }
                     Spacer()
-                    Image(systemName: "chevron.right")
+                    Image(systemName: "chevron.forward")
                         .font(.system(size: 10))
                         .foregroundColor(T.ink3)
                 }
@@ -465,6 +462,7 @@ struct SettingsView: View {
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 11)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
@@ -576,9 +574,11 @@ struct SettingsView: View {
     private var voiceModelDisplayName: String {
         let kind = VoiceEngineKind(rawValue: settings.voiceEngine) ?? .appleSystem
         switch kind {
-        case .appleSystem: return "Apple System Voice"
-        case .kittenTTS:   return "KittenTTS (neural)"
-        case .kokoro:      return "Kokoro (neural)"
+        case .appleSystem: return LocalizationService.shared.t("Apple System Voice")
+        case .kittenTTS:   return LocalizationService.shared.t("KittenTTS (neural)")
+        case .kokoro:      return LocalizationService.shared.t("Kokoro (neural)")
+        case .paradee:     return LocalizationService.shared.t("Paradee (neural)")
+        case .supertonic:  return LocalizationService.shared.t("Supertonic (neural)")
         }
     }
 
@@ -599,8 +599,9 @@ struct SettingsView: View {
             case .failed:   KStatusBadge(glyph: .remote, label: "error", color: T.bad)
             case .unloaded: KStatusBadge(glyph: .remote, label: "off", color: T.ink3)
             }
-        case .kokoro:
-            switch voiceServiceObs.kokoroState {
+        case .kokoro, .paradee, .supertonic:
+            switch kind == .kokoro ? voiceServiceObs.kokoroState
+                : kind == .paradee ? voiceServiceObs.paradeeState : voiceServiceObs.supertonicState {
             case .ready:    KStatusBadge(glyph: .ready, label: "ready", color: T.good)
             case .loading:  KStatusBadge(glyph: .streaming, label: "loading", color: T.warn)
             case .failed:   KStatusBadge(glyph: .remote, label: "error", color: T.bad)
@@ -628,7 +629,6 @@ struct SettingsView: View {
     // MARK: - System Status Section
 
     @State private var showSystemStatus = false
-    @State private var showDownloadCenter = false
     @State private var showAssistantModelPicker = false
     @State private var showVoiceModelPicker = false
     @State private var showPersonaPicker = false
@@ -664,7 +664,7 @@ struct SettingsView: View {
                             .foregroundColor(T.accent)
                         KMono(text: "Open full diagnostics", size: 11.5, color: T.accent, mono: false)
                         Spacer()
-                        Image(systemName: "chevron.right")
+                        Image(systemName: "chevron.forward")
                             .font(.system(size: 10))
                             .foregroundColor(T.ink3)
                     }
@@ -868,7 +868,6 @@ struct SettingsView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .sheet(isPresented: $showDownloadCenter) { ModelDownloadCenterView() }
     }
 
     // MARK: - Developer Section
@@ -889,7 +888,7 @@ struct SettingsView: View {
                         .foregroundColor(T.ink)
                     KMono(text: "Diagnostics & crash log", size: 11.5, color: T.ink, mono: false)
                     Spacer()
-                    Image(systemName: "chevron.right")
+                    Image(systemName: "chevron.forward")
                         .font(.system(size: 10))
                         .foregroundColor(T.ink3)
                 }
@@ -900,36 +899,6 @@ struct SettingsView: View {
 
             Rectangle().fill(T.rule).frame(height: 1)
 
-            // Editable FastVLM repo ID — lets users switch to a working
-            // mirror if the default 404/401s.
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    KMono(text: "FastVLM repo", size: 11, color: T.ink3, mono: false)
-                    Spacer()
-                    Button {
-                        settings.fastVLMRepoID = "apple/FastVLM-0.5B-MLX"
-                        HapticManager.impact(.light)
-                    } label: {
-                        Text("Reset")
-                            .font(T.sans(10))
-                            .foregroundColor(T.accent)
-                    }
-                }
-                TextField("author/repo", text: $settings.fastVLMRepoID)
-                    .font(T.mono(11))
-                    .foregroundColor(T.ink)
-                    .padding(8)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(T.surface2))
-                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(T.rule, lineWidth: 1))
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                KMono(text: "Hugging Face repo for the VLM weights. Takes effect on next app launch.",
-                       size: 9, color: T.ink3, mono: false)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-
-            Rectangle().fill(T.rule).frame(height: 1)
             KRow(label: "Show debug model shapes", trailing: {
                 KToggle(isOn: $settings.showDebugModelShapes)
             })
@@ -961,7 +930,7 @@ struct SettingsView: View {
             // thumbnail of the exact image MLX received last (post-
             // orientation, post-resize, post-everything). Lets you
             // diagnose accuracy issues at a glance.
-            KRow(label: "show model input debug", trailing: {
+            KRow(label: "Show model input debug", trailing: {
                 KToggle(isOn: $settings.showModelInputDebug)
             }, last: !settings.showModelInputDebug)
 
@@ -1023,7 +992,7 @@ struct SettingsView: View {
 
     private var assistantSection: some View {
         KSection(title: "assistant") {
-            KRow(label: "thinking mode", trailing: {
+            KRow(label: "Thinking mode", trailing: {
                 KToggle(isOn: $settings.assistantThinking)
             })
 
@@ -1033,7 +1002,7 @@ struct SettingsView: View {
             // them executed on-device. Off → the system prompt drops
             // the tool addendum, so the model never mentions tools at
             // all. Defaults on.
-            KRow(label: "let model call tools", trailing: {
+            KRow(label: "Let model call tools", trailing: {
                 KToggle(isOn: $settings.toolsEnabled)
             })
 
@@ -1088,7 +1057,7 @@ struct SettingsView: View {
                             ? "off"
                             : "\(knowledgeBase.documents.count) docs · \(knowledgeBase.isEnabled ? "on" : "off")",
                            size: 10, color: T.ink3)
-                    Image(systemName: "chevron.right")
+                    Image(systemName: "chevron.forward")
                         .font(.system(size: 10))
                         .foregroundColor(T.ink3)
                 }
@@ -1106,24 +1075,28 @@ struct SettingsView: View {
             NavigationLink {
                 VoiceSettingsView()
             } label: {
-                HStack {
+                // Same type and height as the KRow toggles below, and the
+                // whole row is the target (it used to be just the text).
+                HStack(spacing: 10) {
                     Image(systemName: "speaker.wave.2")
-                        .font(.system(size: 13))
+                        .font(.system(size: 15))
                         .foregroundColor(T.ink)
-                    KMono(text: "Voice settings", size: 11.5, color: T.ink, mono: false)
-                    Spacer()
-                    KMono(text: currentEngineLabel.lowercased(), size: 10, color: T.ink3, mono: false)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 10))
+                    Text(loc.t("Voice settings")).font(T.sans(15)).foregroundColor(T.ink)
+                    Spacer(minLength: 8)
+                    Text(loc.t(currentEngineLabel).lowercased(with: loc.resolvedLocale)).font(T.sans(13)).foregroundColor(T.ink3)
+                    Image(systemName: "chevron.forward")
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(T.ink3)
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             Rectangle().fill(T.rule).frame(height: 1)
 
-            KRow(label: "auto-read results", trailing: {
+            KRow(label: "Auto-read results", trailing: {
                 KToggle(isOn: $settings.voiceAutoRead)
             })
 
@@ -1239,12 +1212,13 @@ struct SettingsView: View {
                     }
                 }
                 .pickerStyle(.menu)
+                .accessibilityIdentifier("settings.language")
                 .tint(T.ink)
             })
             KRow(label: loc.t("haptic feedback"), trailing: {
                 KToggle(isOn: $settings.hapticsEnabled)
             })
-            KRow(label: "show fps counter", trailing: {
+            KRow(label: "Show FPS counter", trailing: {
                 KToggle(isOn: $settings.showFPSCounter)
             })
             Rectangle().fill(T.rule).frame(height: 1)
@@ -1337,7 +1311,7 @@ struct SettingsView: View {
                             .foregroundColor(T.accent)
                         KMono(text: "Clear current warning", size: 11.5, color: T.accent, mono: false)
                         Spacer()
-                        Image(systemName: "chevron.right")
+                        Image(systemName: "chevron.forward")
                             .font(.system(size: 10))
                             .foregroundColor(T.ink3)
                     }
@@ -1351,10 +1325,10 @@ struct SettingsView: View {
 
     private func label(for s: ProcessInfo.ThermalState) -> String {
         switch s {
-        case .nominal:  return "nominal"
-        case .fair:     return "fair"
-        case .serious:  return "serious"
-        case .critical: return "critical"
+        case .nominal:  return LocalizationService.shared.t("nominal")
+        case .fair:     return LocalizationService.shared.t("fair")
+        case .serious:  return LocalizationService.shared.t("serious")
+        case .critical: return LocalizationService.shared.t("critical")
         @unknown default: return "?"
         }
     }
@@ -1377,7 +1351,7 @@ struct SettingsView: View {
                             .foregroundColor(T.bad)
                         KMono(text: "Wipe all on-device data", size: 11.5, color: T.bad, mono: false)
                         Spacer()
-                        Image(systemName: "chevron.right")
+                        Image(systemName: "chevron.forward")
                             .font(.system(size: 10))
                             .foregroundColor(T.ink3)
                     }
@@ -1405,15 +1379,21 @@ struct SettingsView: View {
             titleVisibility: .visible
         ) {
             Button("Wipe everything", role: .destructive) {
-                lastWipeReceipt = WipeAllDataService.wipeAll()
-                ToastCenter.shared.success(
-                    "Wiped",
-                    detail: "Restart the app for a completely fresh state."
-                )
+                Task {
+                    lastWipeReceipt = await WipeAllDataService.wipeAll()
+                    if let failure = lastWipeReceipt?.failures.first {
+                        ToastCenter.shared.error("Reset incomplete", detail: failure)
+                        return
+                    }
+                    ToastCenter.shared.success(
+                        "Wiped",
+                        detail: "iCloud sync is off. Restart the app before using models again."
+                    )
+                }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Deletes downloaded models, conversations, snippets, memories, saved API keys, Mac Bridge pairings, cache, and resets onboarding. Cannot be undone.")
+            Text("Deletes downloaded models, conversations, snippets, memories, saved API keys, Mac Bridge pairings, cache, and resets settings. iCloud sync is disabled; existing iCloud copies and the parental PIN are not deleted. Restart afterward. Cannot be undone.")
         }
     }
 
@@ -1430,7 +1410,7 @@ struct SettingsView: View {
         KSection(title: "legal") {
             legalRow(icon: "lock.shield", label: "privacy policy") { showPrivacy = true }
             legalRow(icon: "doc.text", label: "open-source license & safety") { showEULA = true }
-            legalRow(icon: "exclamationmark.triangle", label: "ai output disclaimer") { showDisclaimer = true }
+            legalRow(icon: "exclamationmark.triangle", label: "AI output disclaimer") { showDisclaimer = true }
             legalRow(icon: "thermometer.medium", label: "device safety notice") { showDeviceSafety = true }
             legalRow(icon: "heart.text.square", label: "open-source & attributions",
                      last: URL(string: LegalDocuments.supportURL) == nil) {
@@ -1498,7 +1478,7 @@ struct SettingsView: View {
                     .foregroundColor(T.ink)
                 KMono(text: label, size: 11.5, color: T.ink, mono: false)
                 Spacer()
-                Image(systemName: "chevron.right")
+                Image(systemName: "chevron.forward")
                     .font(.system(size: 10))
                     .foregroundColor(T.ink3)
             }
@@ -1573,7 +1553,7 @@ struct SettingsView: View {
                         Text("Website")
                             .font(T.mono(11, .semibold))
                             .lineLimit(1)
-                        Image(systemName: "chevron.right")
+                        Image(systemName: "chevron.forward")
                             .font(.system(size: 9, weight: .bold))
                     }
                     .foregroundColor(T.ink)
@@ -1585,7 +1565,7 @@ struct SettingsView: View {
             }
             .padding(15)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .kGlass(cornerRadius: 20, fallbackFill: T.surface, fallbackStroke: T.rule)
+            .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
         }
         .buttonStyle(KTactileButtonStyle())
         .accessibilityLabel("Open the OnDevice AI Image Studio preview website. App Store release coming soon.")
@@ -1679,7 +1659,7 @@ private enum ResponseLength: String, CaseIterable, Hashable {
     case full     = "Full"
 
     var maxTokens: Int {
-        switch self { case .short: 512; case .normal: 1024; case .detailed: 2048; case .full: 4096 }
+        switch self { case .short: 512; case .normal: 1024; case .detailed: 2048; case .full: 8192 }
     }
 
     var hint: String {
@@ -1692,9 +1672,10 @@ private enum ResponseLength: String, CaseIterable, Hashable {
     }
 
     static func nearest(_ tokens: Int) -> Self {
-        if tokens <= 512  { return .short }
-        if tokens <= 768  { return .normal }
-        if tokens <= 1280 { return .detailed }
+        // Midpoints between presets, so each stored value shows its own segment.
+        if tokens <= 768  { return .short }
+        if tokens <= 1_536 { return .normal }
+        if tokens <= 5_120 { return .detailed }
         return .full
     }
 }
@@ -1751,7 +1732,18 @@ private struct WhisperSTTBlock: View {
     var body: some View {
         let speaking = voiceServiceObs.isPlaying
         VStack(spacing: 0) {
-            KRow(label: "speech-to-text", trailing: {
+            if #available(iOS 26, *), SpeechTranscriber.isAvailable {
+                KRow(label: "Apple SpeechAnalyzer", trailing: {
+                    Toggle("", isOn: Binding(
+                        get: { settings.sttProvider == "appleSpeech" },
+                        set: { settings.sttProvider = $0 ? "appleSpeech" : "system" }
+                    ))
+                    .labelsHidden()
+                    .accessibilityIdentifier("settings.appleSpeechAnalyzer")
+                })
+                Rectangle().fill(T.rule).frame(height: 1)
+            }
+            KRow(label: "Speech-to-text", trailing: {
                 Picker("", selection: $settings.sttProvider) {
                     Text("system").tag("system")
                     Text("whisper").tag("whisper")
@@ -1896,5 +1888,32 @@ private struct CloudSyncSettingsSection: View {
             }
             .padding(14)
         }
+    }
+}
+
+struct SettingsNavigationRow: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    @Environment(\.koduTheme) private var theme
+
+    var body: some View {
+        HStack(spacing: 13) {
+            Image(systemName: icon)
+                .font(.system(size: 20))
+                .foregroundStyle(theme.accent)
+                .frame(width: 38, height: 38)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.headline).foregroundStyle(theme.ink)
+                Text(subtitle).font(.subheadline).foregroundStyle(theme.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.forward").foregroundStyle(theme.ink2)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .background(theme.surface, in: RoundedRectangle(cornerRadius: 16))
+        .accessibilityElement(children: .combine)
     }
 }

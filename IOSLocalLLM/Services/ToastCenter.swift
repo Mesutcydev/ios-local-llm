@@ -137,6 +137,7 @@ struct ToastOverlayView: View {
 // MARK: - ToastBanner
 
 struct ToastBanner: View {
+    @ObservedObject private var localization = LocalizationService.shared
     let toast: Toast
     @Environment(\.koduTheme) private var T
 
@@ -149,12 +150,12 @@ struct ToastBanner: View {
                 .padding(.top, 1)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(toast.title)
+                Text(localization.t(toast.title))
                     .font(T.mono(12, .semibold))
                     .foregroundColor(T.ink)
                     .lineLimit(2)
                 if let detail = toast.detail, !detail.isEmpty {
-                    Text(detail)
+                    Text(localization.t(detail))
                         .font(T.sans(11))
                         .foregroundColor(T.ink2)
                         .lineLimit(4)

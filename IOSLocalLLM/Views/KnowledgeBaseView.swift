@@ -39,7 +39,7 @@ struct KnowledgeBaseView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
+                    Button("Done", systemImage: "checkmark") { dismiss() }
                 }
                 if !kb.documents.isEmpty {
                     ToolbarItem(placement: .primaryAction) {
@@ -227,7 +227,7 @@ struct KnowledgeBaseView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { showPaste = false }
+                    Button("Cancel", systemImage: "xmark") { showPaste = false }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {

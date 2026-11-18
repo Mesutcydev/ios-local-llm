@@ -26,6 +26,13 @@ final class BridgePinningDelegate: NSObject, URLSessionDelegate {
         self.expectedFingerprint = expectedFingerprint
     }
 
+    static func isValidFingerprint(_ value: String) -> Bool {
+        guard value.hasPrefix("sha256:"), value.utf8.count == 71 else { return false }
+        return value.dropFirst(7).utf8.allSatisfy {
+            (48...57).contains($0) || (97...102).contains($0)
+        }
+    }
+
     func urlSession(_ session: URLSession,
                     didReceive challenge: URLAuthenticationChallenge,
                     completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {

@@ -209,7 +209,7 @@ final class VoiceSoakHarness: ObservableObject {
 
     private static func mockSpeak(text: String, duration: TimeInterval) async {
         let coordinator = SpeechPlaybackCoordinator.shared
-        coordinator.beginUtterance(karaokeSeed: text)
+        coordinator.beginUtterance(chunks: [text])
         coordinator.bindSessionPhase(.speaking)
         let rate = 24_000.0
         let frames = AVAudioFrameCount(rate * duration)

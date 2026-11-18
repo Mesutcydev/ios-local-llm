@@ -16,6 +16,10 @@ struct KaraokeCue: Sendable, Equatable {
 struct KaraokeCueTrack: Sendable, Equatable {
     let cues: [KaraokeCue]
     let sampleRate: Double
+    /// Word onsets (sorted) and the UTF-16 end of the text spoken once each
+    /// word has started. Empty = no word timings; interpolate inside the phrase.
+    var wordOnsets: [Int64] = []
+    var wordEnds: [Int] = []
 
     static let empty = KaraokeCueTrack(cues: [], sampleRate: 24_000)
 
@@ -46,6 +50,17 @@ struct KaraokeCueTrack: Sendable, Equatable {
     }
 
     func spokenUTF16End(at sample: Int64, transcriptLength: Int) -> Int {
+        if !wordOnsets.isEmpty {
+            // A word counts as spoken from the moment it starts, so the fill
+            // steps word by word and never splits one.
+            var lo = 0
+            var hi = wordOnsets.count   // → first onset after `sample`
+            while lo < hi {
+                let mid = (lo + hi) / 2
+                if wordOnsets[mid] <= sample { lo = mid + 1 } else { hi = mid }
+            }
+            return lo == 0 ? 0 : min(transcriptLength, wordEnds[lo - 1])
+        }
         guard let idx = cueIndex(at: sample) else { return 0 }
         let cue = cues[idx]
         let start = cue.textRange.location
@@ -64,13 +79,22 @@ struct KaraokeCueTrack: Sendable, Equatable {
         return min(transcriptLength, max(start, spoken))
     }
 
-    /// Build from phrase timeline + utterance sample rate.
+    /// Build from phrase timeline + utterance sample rate. Pass the aligned
+    /// `words` to get word-stepped progress instead of interpolation.
     static func from(
         phrases: [KaraokePhrase],
         sampleRate: Double,
-        timingSource: SpeechAlignmentAccuracy
+        timingSource: SpeechAlignmentAccuracy,
+        words: [SpeechWordTiming] = []
     ) -> KaraokeCueTrack {
         let sr = max(1, sampleRate)
+        var onsets: [Int64] = []
+        var ends: [Int] = []
+        for word in words.sorted(by: { $0.startTime < $1.startTime }) {
+            onsets.append(Int64((word.startTime * sr).rounded()))
+            // Running max keeps the spoken end monotonic even if ranges overlap.
+            ends.append(max(ends.last ?? 0, word.utf16Range.location + word.utf16Range.length))
+        }
         let cues: [KaraokeCue] = phrases.enumerated().map { index, phrase in
             KaraokeCue(
                 id: index,
@@ -82,6 +106,6 @@ struct KaraokeCueTrack: Sendable, Equatable {
                 timingSource: timingSource
             )
         }
-        return KaraokeCueTrack(cues: cues, sampleRate: sr)
+        return KaraokeCueTrack(cues: cues, sampleRate: sr, wordOnsets: onsets, wordEnds: ends)
     }
 }

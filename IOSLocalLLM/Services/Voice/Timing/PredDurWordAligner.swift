@@ -187,7 +187,10 @@ enum PredDurWordAligner {
     static func extractSourceWords(from text: String) -> [SourceWord] {
         let ns = text as NSString
         let full = NSRange(location: 0, length: ns.length)
-        guard let regex = try? NSRegularExpression(pattern: #"[\p{L}\p{N}'’]+|[^\s\p{L}\p{N}]"#, options: []) else {
+        // A word keeps the punctuation attached to its end ("friend." not
+        // "friend"): the phrase builder closes phrases on it, and without it
+        // aligned timings grouped straight across sentence ends.
+        guard let regex = try? NSRegularExpression(pattern: #"[\p{L}\p{N}'’]+[^\s\p{L}\p{N}'’]*|[^\s\p{L}\p{N}]"#, options: []) else {
             return []
         }
         return regex.matches(in: text, options: [], range: full).compactMap { match in

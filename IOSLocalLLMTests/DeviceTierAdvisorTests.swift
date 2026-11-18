@@ -9,6 +9,26 @@ import XCTest
 // tier-specific outputs for each known tier.
 
 final class DeviceTierAdvisorTests: XCTestCase {
+    func testSyntheticMemoryCeilingRequiresEntitlementAndNormalPowerMode() {
+        for entitled in [false, true] {
+            for lowPower in [false, true] {
+                let ceiling = MemoryAdvisor.resolvedProcessCeilingCandidate(
+                    kernelCeiling: 4_000_000_000, entitlementCeiling: 8_000_000_000,
+                    hasIncreasedMemoryEntitlement: entitled, lowPowerMode: lowPower
+                )
+                XCTAssertEqual(ceiling, 4_000_000_000, "a reported kernel limit always wins")
+                let unreported = MemoryAdvisor.resolvedProcessCeilingCandidate(
+                    kernelCeiling: 0, entitlementCeiling: 8_000_000_000,
+                    hasIncreasedMemoryEntitlement: entitled, lowPowerMode: lowPower
+                )
+                XCTAssertEqual(unreported, entitled && !lowPower ? 8_000_000_000 : 0)
+            }
+        }
+        XCTAssertEqual(MemoryAdvisor.resolvedProcessCeilingCandidate(
+            kernelCeiling: 0, entitlementCeiling: 8_000_000_000,
+            hasIncreasedMemoryEntitlement: false, lowPowerMode: false), 0)
+    }
+
 
     // MARK: - Tier labels
 
@@ -528,14 +548,32 @@ final class DeviceTierAdvisorTests: XCTestCase {
         )
     }
 
-    @MainActor
-    func test_userConfirmedUnsafeLoadBypassesCapacityAdmission() {
-        XCTAssertNil(
-            MemoryAdvisor.safetyBlocker(
-                for: "qwen3-8b",
-                runtime: .mlx,
-                allowUnsafeMemoryLoad: true
-            )
+    func test_tightFitKeepsPositiveReserveAndRejectsOversizedFootprint() {
+        let available: Int64 = 4_000_000_000
+        XCTAssertGreaterThan(MemoryAdvisor.edgeHeadroomReserve, 0)
+        XCTAssertLessThan(MemoryAdvisor.edgeHeadroomReserve, MemoryAdvisor.loadHeadroomReserve)
+        XCTAssertGreaterThan(
+            MemoryAdvisor.requiredLoadMemory(footprint: available + 1, reserve: MemoryAdvisor.edgeHeadroomReserve),
+            available
+        )
+        XCTAssertLessThanOrEqual(
+            MemoryAdvisor.requiredLoadMemory(footprint: 3_800_000_000, reserve: MemoryAdvisor.edgeHeadroomReserve),
+            available
+        )
+        XCTAssertGreaterThan(
+            MemoryAdvisor.requiredLoadMemory(footprint: 3_800_000_000, reserve: MemoryAdvisor.loadHeadroomReserve),
+            available
+        )
+    }
+
+    func test_unknownAndOverflowingFootprintsCannotBypassAdmission() {
+        XCTAssertEqual(
+            MemoryAdvisor.requiredLoadMemory(footprint: 0, reserve: MemoryAdvisor.edgeHeadroomReserve),
+            MemoryAdvisor.unknownFootprintFloor + MemoryAdvisor.edgeHeadroomReserve
+        )
+        XCTAssertEqual(
+            MemoryAdvisor.requiredLoadMemory(footprint: Int64.max, reserve: MemoryAdvisor.edgeHeadroomReserve),
+            Int64.max
         )
     }
 
@@ -683,5 +721,108 @@ final class DeviceTierAdvisorTests: XCTestCase {
             policy.minimumAvailableBytes,
             GGUFLoadPolicy.storageBackedHeadroom
         )
+    }
+}
+
+// MARK: - Model limit maximization (measured peaks, memory-sized context)
+
+final class ModelLimitSizingTests: XCTestCase {
+    func test_measuredPeak_exactReplacesEstimateBoundOnlyLowersIt() {
+        // Lifetime peak rose during the run → exact peak (raises or lowers).
+        let exact = MemoryAdvisor.updatedMeasurement(
+            [:], baseline: 500, peakBefore: 1_000, peakAfter: 5_500)
+        XCTAssertEqual(exact["exact"], 5_000)
+        // Peak did not rise → only an upper bound; keeps the smallest.
+        let bound = MemoryAdvisor.updatedMeasurement(
+            ["bound": 4_000], baseline: 1_000, peakBefore: 9_000, peakAfter: 9_000)
+        XCTAssertEqual(bound["bound"], 4_000)
+
+        let gb: Int64 = 1_000_000_000
+        // Exact peak above the estimate raises it (with margin).
+        XCTAssertEqual(MemoryAdvisor.footprint(staticEstimate: 4 * gb, measurement: ["exact": 5 * gb]),
+                       5_500_000_000)
+        // A bound never raises an estimate.
+        XCTAssertEqual(MemoryAdvisor.footprint(staticEstimate: 4 * gb, measurement: ["bound": 6 * gb]), 4 * gb)
+        // Lowering stops at 75% of the estimate.
+        XCTAssertEqual(MemoryAdvisor.footprint(staticEstimate: 8 * gb, measurement: ["exact": 1 * gb]), 6 * gb)
+        // No measurement: estimate unchanged.
+        XCTAssertEqual(MemoryAdvisor.footprint(staticEstimate: 3 * gb, measurement: [:]), 3 * gb)
+    }
+
+    func test_kvShape_qwen3AndHybridConfigs() throws {
+        let qwen3 = try XCTUnwrap(KVCacheShape(config: [
+            "num_hidden_layers": 36, "num_attention_heads": 32,
+            "num_key_value_heads": 8, "head_dim": 128, "hidden_size": 2560,
+        ]))
+        XCTAssertEqual(qwen3, KVCacheShape(attentionLayers: 36, kvHeads: 8, headDim: 128))
+        // 36 × 8 × 128 × 2 = 73,728 elements/token; fp16 2 B, 8-bit 1.0625 B.
+        XCTAssertEqual(qwen3.bytesPerToken(kvBits: nil), 147_456)
+        XCTAssertEqual(qwen3.bytesPerToken(kvBits: 8), 78_336)
+        XCTAssertEqual(qwen3.bytesPerToken(kvBits: 4), 41_472)
+
+        let hybrid = try XCTUnwrap(KVCacheShape(config: ["text_config": [
+            "num_hidden_layers": 8, "num_attention_heads": 16, "num_key_value_heads": 4,
+            "head_dim": 256,
+            "layer_types": ["linear_attention", "linear_attention", "linear_attention", "full_attention",
+                            "linear_attention", "linear_attention", "linear_attention", "full_attention"],
+        ] as [String: Any]]))
+        XCTAssertEqual(hybrid.attentionLayers, 2)
+        let interval = try XCTUnwrap(KVCacheShape(config: [
+            "num_hidden_layers": 48, "num_attention_heads": 16, "head_dim": 128, "full_attention_interval": 4,
+        ]))
+        XCTAssertEqual(interval.attentionLayers, 12)
+        XCTAssertEqual(interval.kvHeads, 16)
+        XCTAssertNil(KVCacheShape(config: ["hidden_size": 1024]))
+    }
+
+    func test_sizedProfile_followsMemoryWithinCaps() {
+        let shape = KVCacheShape(attentionLayers: 36, kvHeads: 8, headDim: 128)
+        let base = MLXAssistantExecutionProfile.resolve(repoID: "mlx-community/Qwen3-4B-4bit")
+        // Plenty of memory: full cap at 8-bit.
+        let roomy = base.sized(shape: shape, headroomBytes: 3_000_000_000, contextCap: 16_384)
+        XCTAssertEqual(roomy.maxContextTokens, 16_384)
+        XCTAssertEqual(roomy.kvBits, 8)
+        XCTAssertNil(roomy.maxKVSize)
+        // Tight: 8-bit can't reach the cap → 4-bit, window from memory.
+        let tight = base.sized(shape: shape, headroomBytes: 400_000_000, contextCap: 16_384)
+        XCTAssertEqual(tight.kvBits, 4)
+        XCTAssertEqual(tight.maxContextTokens, 9_472)  // 400 MB / 41,472 B → 9,645 → 256-aligned
+        // No memory left: never below the 2K floor.
+        XCTAssertEqual(base.sized(shape: shape, headroomBytes: -5, contextCap: 16_384).maxContextTokens, 2_048)
+        // Unknown shape: profile unchanged.
+        XCTAssertEqual(base.sized(shape: nil, headroomBytes: 9_000_000_000, contextCap: 16_384), base)
+
+        // Rotating profile: window grows with memory but never below its own.
+        let qwen35 = MLXAssistantExecutionProfile.resolve(repoID: "local/MLX-Qwen3.5-4B-4bit")
+        let hybrid = KVCacheShape(attentionLayers: 8, kvHeads: 4, headDim: 256)
+        let grown = qwen35.sized(shape: hybrid, headroomBytes: 1_000_000_000, contextCap: 16_384)
+        XCTAssertEqual(grown.maxContextTokens, 16_384)
+        XCTAssertEqual(grown.maxKVSize, 16_384)
+        XCTAssertEqual(qwen35.sized(shape: hybrid, headroomBytes: 0, contextCap: 16_384).maxKVSize, 2_048)
+    }
+
+    func test_outputCap_growingCacheKeepsHalfTheWindow() {
+        let growing = MLXAssistantExecutionProfile.resolve(repoID: "mlx-community/Qwen3-4B-4bit")
+        XCTAssertEqual(growing.outputCap(contextLimit: 4_096), 2_048)
+        XCTAssertEqual(
+            growing.inputBudget(modelContextWindowTokens: 32_768, deviceContextCap: 4_096,
+                                requestedOutputTokens: 8_192),
+            1_792)
+        let rotating = MLXAssistantExecutionProfile.resolve(repoID: "mlx-community/Ornith-1.0-9B-4bit")
+        XCTAssertNil(rotating.outputCap(contextLimit: 4_096), "a rotating window doesn't grow with the reply")
+    }
+
+    func test_ggufContext_sizedFromBudgetWithinFloorAndTrainedLength() {
+        // 1 MB/token, 6 GB budget → 6,000 → 5,888; under the 16K cap.
+        XCTAssertEqual(LlamaCppVLM.kvSizedContext(perTokenBytes: 1_000_000, kvBudgetBytes: 6_000_000_000,
+                                                  floor: 4_096, ceiling: 16_384, trainedContext: 32_768), 5_888)
+        XCTAssertEqual(LlamaCppVLM.kvSizedContext(perTokenBytes: 1_000, kvBudgetBytes: 6_000_000_000,
+                                                  floor: 4_096, ceiling: 16_384, trainedContext: 8_192), 8_192)
+        XCTAssertEqual(LlamaCppVLM.kvSizedContext(perTokenBytes: 1_000_000, kvBudgetBytes: 0,
+                                                  floor: 4_096, ceiling: 16_384, trainedContext: 32_768), 4_096)
+    }
+
+    func test_pccInputBudget_longReplySettingKeepsPromptRoom() {
+        XCTAssertEqual(ApplePrivateCloud.inputBudget(contextSize: 4_096, maximumResponseTokens: 8_192), 1_536)
     }
 }

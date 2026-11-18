@@ -41,6 +41,20 @@ final class AudioPlaybackService: ObservableObject {
 
     private init() {
         engine.attach(playerNode)
+        // A route change (AirPods connect, Bluetooth swap) stops the engine
+        // and can drop the player's pending completion callbacks. Without
+        // this, `pendingCompletions` never reaches 0, `waitUntilQueueDrained`
+        // spins, and voice mode sits in "speaking" with no audio ("the voice
+        // just stops"). Reset the queue so waiters release; the next chunk
+        // restarts the engine on the new route.
+        _ = NotificationCenter.default.addObserver(   // singleton: never removed
+            forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.pendingCompletions > 0, !self.engine.isRunning else { return }
+                self.releaseStalledQueue(reason: "engine configuration change")
+            }
+        }
     }
 
     // MARK: - Clock
@@ -110,10 +124,33 @@ final class AudioPlaybackService: ObservableObject {
     }
 
     /// Wait until the player queue drains for the current generation.
+    /// Bails out when the engine died or the playhead stopped moving for 3 s
+    /// with buffers still queued — a lost completion must not hang the caller.
     func waitUntilQueueDrained() async {
+        var lastSample: Int64 = -1
+        var lastProgress = Date()
         while pendingCompletions > 0, !Task.isCancelled {
+            if !engine.isRunning {
+                releaseStalledQueue(reason: "engine stopped with buffers queued")
+                return
+            }
+            let sample = refreshSnapshotFromPlayer(targetHostTime: 0).currentPlayerSample
+            if sample != lastSample {
+                lastSample = sample
+                lastProgress = Date()
+            } else if Date().timeIntervalSince(lastProgress) > 3 {
+                releaseStalledQueue(reason: "playhead stalled")
+                return
+            }
             try? await Task.sleep(nanoseconds: 20_000_000)
         }
+    }
+
+    private func releaseStalledQueue(reason: String) {
+        print("[AudioPlaybackService] releasing stalled queue: \(reason)")
+        generation &+= 1   // late completions from the dead queue become no-ops
+        handleWatchdogTimeout()
+        SpeechPlaybackCoordinator.shared.markChunkFinished()
     }
 
     private func enqueue(buffer: AVAudioPCMBuffer, volume: Float, waitForConsumption: Bool) async -> Int64 {

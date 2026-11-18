@@ -136,13 +136,6 @@ final class AppSettings: ObservableObject {
     /// once created).
     @AppStorage("wifiOnlyDownloads")       var wifiOnlyDownloads: Bool = false
 
-    /// Allow pairing with a Mac that did NOT advertise a TLS cert fingerprint,
-    /// which means the pairing handshake (nonce + bearer token) travels over
-    /// plaintext http on the local network. Default OFF — a LAN attacker could
-    /// otherwise sniff the bearer. Only legacy Mac builds need this; the
-    /// pairing flow refuses an insecure Mac unless the user opts in here.
-    @AppStorage("allowInsecureBridgePairing") var allowInsecureBridgePairing: Bool = false
-
     // Local OpenAI / Ollama compatibility server. The access key is stored
     // separately in Keychain; only these non-secret preferences use defaults.
     @AppStorage("localAPIEnabled") var localAPIEnabled: Bool = false
@@ -163,9 +156,6 @@ final class AppSettings: ObservableObject {
     @AppStorage("fastvlmMaxTokens")        var fastvlmMaxTokens: Int = 512
     @AppStorage("fastvlmTemperature")      var fastvlmTemperature: Double = 0.2
     @AppStorage("showDebugModelShapes")    var showDebugModelShapes: Bool = false
-    /// HuggingFace repo ID for FastVLM MLX weights. User-editable so they
-    /// can switch to a working mirror if the default 404s/401s.
-    @AppStorage("fastVLMRepoID")           var fastVLMRepoID: String = "apple/FastVLM-0.5B-MLX"
 
     /// Active visual model the camera tab uses. Empty string = the built-in
     /// FastVLM path (Core ML encoder + MLX decoder). Any other value is a
@@ -256,7 +246,7 @@ final class AppSettings: ObservableObject {
     @AppStorage("voiceAnswerEnabled")      var voiceAnswerEnabled: Bool = true
     /// Speech-to-text provider for the chat composer's single-shot
     /// dictation. "system" routes through Apple's SFSpeechRecognizer
-    /// (cloud-fallback on some locales). "whisper" routes through the
+    /// (unsupported on-device locales refuse recognition). "whisper" routes through the
     /// on-device whisper.cpp model — fully offline, multilingual, but
     /// requires the user to download a model first. The continuous
     /// voice-conversation mode is unaffected and always uses the

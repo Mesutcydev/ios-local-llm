@@ -2,6 +2,52 @@ import XCTest
 @testable import IOSLocalLLM
 
 final class LocalAPIServerTests: XCTestCase {
+    func testNativeLFM3CallsRespectSchemasAndParallelSetting() throws {
+        let tool = LocalAPIToolDefinition(name: "search", description: nil, parametersJSON: #"{"type":"object","properties":{"query":{"type":"string"},"limit":{"type":"integer"}},"required":["query"]}"#)
+        let xml = "<tool_call><function=search><parameter=query>007</parameter><parameter=limit>2</parameter></function></tool_call>"
+        let calls = LocalAPIToolCalling.parse(xml + xml, tools: [tool], parallelToolCalls: true)
+        XCTAssertEqual(calls.count, 2)
+        let args = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(calls[0].argumentsJSON.utf8)) as? [String: Any])
+        XCTAssertEqual(args["query"] as? String, "007")
+        XCTAssertEqual(args["limit"] as? Int, 2)
+        XCTAssertEqual(LocalAPIToolCalling.parse(xml + xml, tools: [tool], parallelToolCalls: false).count, 1)
+        XCTAssertTrue(LocalAPIToolCalling.parse(xml, tools: [], parallelToolCalls: true).isEmpty)
+        XCTAssertTrue(LocalAPIToolCalling.shouldBufferForToolDecision(String(xml.prefix(80))))
+    }
+
+    func testNativeLFM3ToolPromptCarriesFunctionSchema() {
+        let tool = LocalAPIToolDefinition(name: "lookup", description: "Look up a record", parametersJSON: #"{"type":"object","properties":{}}"#)
+        let messages = LocalAPIToolCalling.messages(from: [ChatMessage(role: .user, content: "Find it")], tools: [tool], choice: .function("lookup"), parallelToolCalls: false, nativeLFM3: true)
+        XCTAssertEqual(messages.first?.role, .system)
+        XCTAssertTrue(messages.first?.content.contains("<tools>") == true)
+        XCTAssertTrue(messages.first?.content.contains("You must call the function named lookup") == true)
+        XCTAssertFalse(messages.first?.content.contains("output only valid JSON") == true)
+    }
+
+    func testNativeLFM3PromptMergesIntoFirstSystemTurn() {
+        let tool = LocalAPIToolDefinition(name: "lookup", description: "Look up a record", parametersJSON: #"{"type":"object","properties":{}}"#)
+        let messages = LocalAPIToolCalling.messages(from: [
+            ChatMessage(role: .system, content: "Be brief."),
+            ChatMessage(role: .user, content: "Find it"),
+        ], tools: [tool], choice: .auto, parallelToolCalls: true, nativeLFM3: true)
+        XCTAssertEqual(messages.filter { $0.role == .system }.count, 1)
+        XCTAssertTrue(messages.first?.content.hasPrefix("Be brief.") == true)
+        XCTAssertTrue(messages.first?.content.contains("<tools>") == true)
+    }
+
+    func testNativeLFM3ToolLinesMatchTemplateFormat() {
+        let tool = LocalAPIToolDefinition(name: "lookup", description: "Look up a/b", parametersJSON: #"{"type":"object","properties":{}}"#)
+        XCTAssertTrue(LFM3ToolCodec.instructions(tools: [tool]).contains(
+            #"{"name": "lookup", "description": "Look up a/b", "parameters": {"properties":{},"type":"object"}}"#))
+    }
+
+    func testToolDecisionBuffersReasoningBeforeALFM3Call() {
+        XCTAssertTrue(LocalAPIToolCalling.shouldBufferForToolDecision("<think>checking"))
+        XCTAssertTrue(LocalAPIToolCalling.shouldBufferForToolDecision(
+            "<think>checking</think>\n<tool_call><function=lookup>"))
+        XCTAssertFalse(LocalAPIToolCalling.shouldBufferForToolDecision(
+            "<think>checking</think>Here is the answer."))
+    }
     func testPortValidation() {
         XCTAssertNil(LocalAPIValidation.validPort(1023))
         XCTAssertEqual(LocalAPIValidation.validPort(11434), 11434)
@@ -704,5 +750,63 @@ final class LocalAPIServerTests: XCTestCase {
         XCTAssertEqual(request?.path, "/v1/chat/completions")
         XCTAssertEqual(request?.headers["authorization"], "Bearer abc")
         XCTAssertEqual(request?.body, Data("{}".utf8))
+    }
+
+    func testRequestPresentsKeyChecksHeadersOnly() {
+        func request(_ header: String, body: String = "") -> Data {
+            Data("POST /v1/chat/completions HTTP/1.1\r\n\(header)\r\n\r\n\(body)".utf8)
+        }
+        XCTAssertTrue(LocalAPIServer.requestPresentsKey(request("Authorization: Bearer sk-test"), key: "sk-test"))
+        XCTAssertTrue(LocalAPIServer.requestPresentsKey(request("X-API-Key: sk-test"), key: "sk-test"))
+        XCTAssertFalse(LocalAPIServer.requestPresentsKey(request("Authorization: Bearer wrong"), key: "sk-test"))
+        XCTAssertFalse(LocalAPIServer.requestPresentsKey(request("Content-Length: 5"), key: "sk-test"))
+        // A key smuggled into the body, or headers that never end, do not count.
+        XCTAssertFalse(LocalAPIServer.requestPresentsKey(request("Content-Length: 20", body: "Authorization: Bearer sk-test"), key: "sk-test"))
+        XCTAssertFalse(LocalAPIServer.requestPresentsKey(Data("POST / HTTP/1.1\r\nAuthorization: Bearer sk-test".utf8), key: "sk-test"))
+    }
+
+    func testEmbeddingsDecodeAcceptsOpenAIAndOllamaShapes() throws {
+        XCTAssertEqual(try LocalAPIEmbeddings.decode(Data(#"{"input":"hi"}"#.utf8)).inputs, ["hi"])
+        let many = try LocalAPIEmbeddings.decode(Data(#"{"input":["a","b"],"encoding_format":"base64"}"#.utf8))
+        XCTAssertEqual(many.inputs, ["a", "b"])
+        XCTAssertTrue(many.base64)
+        let legacy = try LocalAPIEmbeddings.decode(Data(#"{"prompt":"hi"}"#.utf8))
+        XCTAssertTrue(legacy.legacy)
+        for bad in [#"{}"#, #"{"input":""}"#, #"{"input":[]}"#, #"{"input":[[1,2]]}"#, "[]"] {
+            XCTAssertThrowsError(try LocalAPIEmbeddings.decode(Data(bad.utf8)), bad)
+        }
+    }
+
+    func testEmbeddingsResponseShapes() throws {
+        let vectors: [[Float]] = [[1, 0], [0, 1]]
+        let request = LocalAPIEmbeddings.Request(inputs: ["one two", "three"])
+        let openAI = try XCTUnwrap(JSONSerialization.jsonObject(with: LocalAPIEmbeddings.response(vectors, for: request, path: "/v1/embeddings")) as? [String: Any])
+        XCTAssertEqual(openAI["object"] as? String, "list")
+        XCTAssertEqual((openAI["data"] as? [[String: Any]])?.count, 2)
+        XCTAssertEqual((openAI["usage"] as? [String: Int])?["prompt_tokens"], 3)
+
+        var b64 = request
+        b64.base64 = true
+        let encoded = try XCTUnwrap(JSONSerialization.jsonObject(with: LocalAPIEmbeddings.response(vectors, for: b64, path: "/v1/embeddings")) as? [String: Any])
+        let first = try XCTUnwrap((encoded["data"] as? [[String: Any]])?.first?["embedding"] as? String)
+        XCTAssertEqual(Data(base64Encoded: first)?.count, 2 * MemoryLayout<Float>.size)
+
+        let ollama = try XCTUnwrap(JSONSerialization.jsonObject(with: LocalAPIEmbeddings.response(vectors, for: request, path: "/api/embed")) as? [String: Any])
+        XCTAssertEqual((ollama["embeddings"] as? [[Double]])?.count, 2)
+        var old = request
+        old.legacy = true
+        let legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: LocalAPIEmbeddings.response(vectors, for: old, path: "/api/embeddings")) as? [String: Any])
+        XCTAssertEqual((legacy["embedding"] as? [Double])?.count, 2)
+    }
+
+    func testEmbeddingsAreNormalizedAndRankBySimilarity() throws {
+        let vectors: [[Float]]
+        do {
+            vectors = try LocalAPIEmbeddings.embed(["The cat sat on the mat.", "A kitten rests on a rug.", "Quarterly tax filing deadlines."])
+        } catch is LocalAPIEmbeddings.Unavailable {
+            throw XCTSkip("No NaturalLanguage sentence embedding on this runtime")
+        }
+        XCTAssertEqual(OnDeviceEmbedder.cosine(vectors[0], vectors[0]), 1, accuracy: 0.001)
+        XCTAssertGreaterThan(OnDeviceEmbedder.cosine(vectors[0], vectors[1]), OnDeviceEmbedder.cosine(vectors[0], vectors[2]))
     }
 }

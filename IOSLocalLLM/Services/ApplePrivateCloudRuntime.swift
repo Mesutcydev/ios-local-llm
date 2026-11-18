@@ -26,6 +26,7 @@ extension ApplePrivateCloud {
     static func currentStatus() async -> ApplePCCStatus {
         #if FM_PCC
         if #available(iOS 27.0, *) {
+            guard isProvisionedForCurrentBuild else { return .entitlementUnavailable }
             return await ApplePrivateCloudRuntime.shared.currentStatus()
         }
         #endif
@@ -37,6 +38,7 @@ extension ApplePrivateCloud {
     static func contextSize() async -> Int? {
         #if FM_PCC
         if #available(iOS 27.0, *) {
+            guard isProvisionedForCurrentBuild else { return nil }
             return await ApplePrivateCloudRuntime.shared.contextSize()
         }
         #endif
@@ -49,6 +51,9 @@ extension ApplePrivateCloud {
     static func stream(_ request: ApplePCCRequest) async -> AsyncThrowingStream<String, Error> {
         #if FM_PCC
         if #available(iOS 27.0, *) {
+            guard isProvisionedForCurrentBuild else {
+                return AsyncThrowingStream { $0.finish(throwing: ApplePCCError.notProvisioned) }
+            }
             return await ApplePrivateCloudRuntime.shared.stream(request)
         }
         #endif
@@ -59,6 +64,7 @@ extension ApplePrivateCloud {
     static func answer(_ request: ApplePCCRequest) async throws -> String {
         #if FM_PCC
         if #available(iOS 27.0, *) {
+            guard isProvisionedForCurrentBuild else { throw ApplePCCError.notProvisioned }
             return try await ApplePrivateCloudRuntime.shared.answer(request)
         }
         #endif
@@ -68,7 +74,7 @@ extension ApplePrivateCloud {
     /// Cancel an in-flight request by id (used by the model-switch coordinator).
     static func cancel(_ requestID: UUID) {
         #if FM_PCC
-        if #available(iOS 27.0, *) {
+        if #available(iOS 27.0, *), isProvisionedForCurrentBuild {
             Task { await ApplePrivateCloudRuntime.shared.cancel(requestID: requestID) }
         }
         #endif
@@ -78,14 +84,16 @@ extension ApplePrivateCloud {
     /// (the brief's "Show Options"). No-op when unavailable.
     static func showLimitIncreaseOptions() {
         #if FM_PCC
-        if #available(iOS 27.0, *) {
+        if #available(iOS 27.0, *), isProvisionedForCurrentBuild {
             Task { await ApplePrivateCloudRuntime.shared.showLimitIncreaseOptions() }
         }
         #endif
     }
 
     static var unavailableError: ApplePCCError {
-        isCompiledIn ? .unsupportedOS : .notCompiledIn
+        guard isCompiledIn else { return .notCompiledIn }
+        guard isSupportedOnCurrentOS else { return .unsupportedOS }
+        return isProvisionedForCurrentBuild ? .unsupportedOS : .notProvisioned
     }
 }
 
@@ -116,13 +124,15 @@ actor ApplePrivateCloudRuntime {
 
     // A single model handle. PCC carries no local weights, so this is cheap to
     // hold and never participates in MLX/RAM unload paths.
-    private let model = PrivateCloudComputeLanguageModel()
+    private let model: PrivateCloudComputeLanguageModel? = EntitlementsProbe.isPrivateCloudUsable
+        ? PrivateCloudComputeLanguageModel() : nil
 
     // In-flight generation tasks, keyed by request id, so the switch
     // coordinator can cancel a specific request without touching local models.
     private var tasks: [UUID: Task<Void, Never>] = [:]
 
     func currentStatus() -> ApplePCCStatus {
+        guard let model else { return .entitlementUnavailable }
         switch model.availability {
         case .available:
             let quota = model.quotaUsage
@@ -143,11 +153,12 @@ actor ApplePrivateCloudRuntime {
     }
 
     func contextSize() async -> Int? {
+        guard let model else { return nil }
         do { return try await model.contextSize } catch { return nil }
     }
 
     func showLimitIncreaseOptions() {
-        model.quotaUsage.limitIncreaseSuggestion?.show()
+        model?.quotaUsage.limitIncreaseSuggestion?.show()
     }
 
     func cancel(requestID: UUID) {
@@ -157,6 +168,7 @@ actor ApplePrivateCloudRuntime {
 
     func answer(_ request: ApplePCCRequest) async throws -> String {
         guard currentStatus().canSend else { throw statusError(currentStatus()) }
+        guard let model else { throw ApplePCCError.notProvisioned }
         let session = LanguageModelSession(model: model, instructions: request.instructions)
         do {
             let response = try await session.respond(
@@ -202,6 +214,10 @@ actor ApplePrivateCloudRuntime {
             return
         }
 
+        guard let model else {
+            continuation.finish(throwing: ApplePCCError.notProvisioned)
+            return
+        }
         let session = LanguageModelSession(model: model, instructions: request.instructions)
         let context = ContextOptions(reasoningLevel: request.resolvedReasoning.sdkLevel)
         let options = FoundationModels.GenerationOptions(
@@ -236,6 +252,7 @@ actor ApplePrivateCloudRuntime {
         case .limitReached:               return .quotaExceeded
         case .unsupportedDevice:          return .unavailable("This device isn't eligible for Apple Private Cloud.")
         case .appleIntelligenceUnavailable: return .unavailable("Apple Intelligence isn't ready yet. Try again shortly.")
+        case .entitlementUnavailable:      return .notProvisioned
         case .offline:                    return .offline
         default:                          return .unknown("")
         }

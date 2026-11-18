@@ -15,9 +15,12 @@ struct MicDictationButton: View {
     @State private var showDeniedSheet = false
 
     @Environment(\.koduTheme) private var T
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ObservedObject private var localization = LocalizationService.shared
 
     /// When true, show the recording state inline as a chip; otherwise toggle the icon only.
     var compact: Bool = false
+    var composerStyle: Bool = false
 
     var body: some View {
         Button {
@@ -27,6 +30,9 @@ struct MicDictationButton: View {
             iconLabel
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(localization.t(dictation.isRecording ? "Stop dictation" : "Dictate a message"))
+        .accessibilityValue(localization.t(dictation.isRecording ? "Listening" : "Ready"))
+        .onDisappear { dictation.stop() }
         .alert("Microphone access needed",
                isPresented: $showDeniedSheet) {
             Button("Open Settings") {
@@ -44,14 +50,21 @@ struct MicDictationButton: View {
 
     @ViewBuilder
     private var iconLabel: some View {
-        if dictation.isRecording {
+        if composerStyle {
+            Image(systemName: dictation.isRecording ? "stop.fill" : "mic")
+                .font(.system(size: dictation.isRecording ? 16 : 20, weight: .medium))
+                .foregroundStyle(dictation.isRecording ? T.bad : T.ink2)
+                .frame(width: 44, height: 44)
+                .background(dictation.isRecording ? T.bad.opacity(0.10) : .clear, in: Circle())
+                .contentShape(Circle())
+        } else if dictation.isRecording {
             // Recording: red pulsing dot + level meter
             HStack(spacing: 6) {
                 Circle()
                     .fill(T.bad)
                     .frame(width: 8, height: 8)
-                    .scaleEffect(1 + CGFloat(dictation.levelMeter) * 0.6)
-                    .animation(.easeOut(duration: 0.15), value: dictation.levelMeter)
+                    .scaleEffect(reduceMotion ? 1 : 1 + CGFloat(dictation.levelMeter) * 0.6)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: dictation.levelMeter)
                 if !compact {
                     Text("listening")
                         .font(T.mono(11, .semibold))

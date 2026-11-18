@@ -1,0 +1,4610 @@
+[
+  {
+    "native": "Done",
+    "canonical": "Done",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Edit",
+    "canonical": "Edit",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SnippetPickerView.swift"
+  },
+  {
+    "native": "Delete",
+    "canonical": "Delete",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "create persona",
+    "canonical": "create persona",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/PersonaPickerView.swift"
+  },
+  {
+    "native": "new persona",
+    "canonical": "new persona",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/PersonaPickerView.swift"
+  },
+  {
+    "native": "edit persona",
+    "canonical": "edit persona",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/PersonaPickerView.swift"
+  },
+  {
+    "native": "e.g. Python Tutor",
+    "canonical": "e.g. Python Tutor",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/PersonaPickerView.swift"
+  },
+  {
+    "native": "short description shown in the picker",
+    "canonical": "short description shown in the picker",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/PersonaPickerView.swift"
+  },
+  {
+    "native": "Cancel",
+    "canonical": "Cancel",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Save",
+    "canonical": "Save",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SnippetPickerView.swift"
+  },
+  {
+    "native": "Ask iOS Local LLM",
+    "canonical": "Ask iOS Local LLM",
+    "formats": [],
+    "source": "IOSLocalLLM/Services/Intents/IOSLocalLLMAppIntents.swift"
+  },
+  {
+    "native": "Ask the on-device assistant a question. Opens iOS Local LLM and answers locally — nothing leaves your device.",
+    "canonical": "Ask the on-device assistant a question. Opens iOS Local LLM and answers locally — nothing leaves your device.",
+    "formats": [],
+    "source": "IOSLocalLLM/Services/Intents/IOSLocalLLMAppIntents.swift"
+  },
+  {
+    "native": "Question",
+    "canonical": "Question",
+    "formats": [],
+    "source": "IOSLocalLLM/Services/Intents/IOSLocalLLMAppIntents.swift"
+  },
+  {
+    "native": "What do you want to ask?",
+    "canonical": "What do you want to ask?",
+    "formats": [],
+    "source": "IOSLocalLLM/Services/Intents/IOSLocalLLMAppIntents.swift"
+  },
+  {
+    "native": "Quick Ask iOS Local LLM",
+    "canonical": "Quick Ask iOS Local LLM",
+    "formats": [],
+    "source": "IOSLocalLLM/Services/Intents/IOSLocalLLMAppIntents.swift"
+  },
+  {
+    "native": "Get a fast on-device answer from the built-in system model — no app launch, fully private.",
+    "canonical": "Get a fast on-device answer from the built-in system model — no app launch, fully private.",
+    "formats": [],
+    "source": "IOSLocalLLM/Services/Intents/IOSLocalLLMAppIntents.swift"
+  },
+  {
+    "native": "New iOS Local LLM Chat",
+    "canonical": "New iOS Local LLM Chat",
+    "formats": [],
+    "source": "IOSLocalLLM/Services/Intents/IOSLocalLLMAppIntents.swift"
+  },
+  {
+    "native": "Start a fresh conversation with the on-device assistant.",
+    "canonical": "Start a fresh conversation with the on-device assistant.",
+    "formats": [],
+    "source": "IOSLocalLLM/Services/Intents/IOSLocalLLMAppIntents.swift"
+  },
+  {
+    "native": "Caption What I'm Looking At",
+    "canonical": "Caption What I'm Looking At",
+    "formats": [],
+    "source": "IOSLocalLLM/Services/Intents/IOSLocalLLMAppIntents.swift"
+  },
+  {
+    "native": "Open the live camera caption — a local vision model describes the scene.",
+    "canonical": "Open the live camera caption — a local vision model describes the scene.",
+    "formats": [],
+    "source": "IOSLocalLLM/Services/Intents/IOSLocalLLMAppIntents.swift"
+  },
+  {
+    "native": "Talk to iOS Local LLM",
+    "canonical": "Talk to iOS Local LLM",
+    "formats": [],
+    "source": "IOSLocalLLM/Services/Intents/IOSLocalLLMAppIntents.swift"
+  },
+  {
+    "native": "Open hands-free voice conversation with the on-device assistant.",
+    "canonical": "Open hands-free voice conversation with the on-device assistant.",
+    "formats": [],
+    "source": "IOSLocalLLM/Services/Intents/IOSLocalLLMAppIntents.swift"
+  },
+  {
+    "native": "Voice",
+    "canonical": "Voice",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VoiceConversationView.swift"
+  },
+  {
+    "native": "Caption",
+    "canonical": "Caption",
+    "formats": [],
+    "source": "IOSLocalLLM/Services/Intents/IOSLocalLLMAppIntents.swift"
+  },
+  {
+    "native": "New Chat",
+    "canonical": "New Chat",
+    "formats": [],
+    "source": "IOSLocalLLM/Services/Intents/IOSLocalLLMAppIntents.swift"
+  },
+  {
+    "native": "skip",
+    "canonical": "skip",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/OnboardingView.swift"
+  },
+  {
+    "native": "local by default. network features are optional.",
+    "canonical": "local by default. network features are optional.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/OnboardingView.swift"
+  },
+  {
+    "native": "Next",
+    "canonical": "Next",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/OnboardingView.swift"
+  },
+  {
+    "native": "next",
+    "canonical": "next",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/OnboardingView.swift"
+  },
+  {
+    "native": "Opens the on-device image generation studio",
+    "canonical": "Opens the on-device image generation studio",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HomeView.swift"
+  },
+  {
+    "native": "Generate an Image",
+    "canonical": "Generate an Image",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HomeView.swift"
+  },
+  {
+    "native": "Create images privately with on-device models",
+    "canonical": "Create images privately with on-device models",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HomeView.swift"
+  },
+  {
+    "native": "Close",
+    "canonical": "Close",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AnalysisPanelView.swift"
+  },
+  {
+    "native": "Open the OnDevice AI Image Studio preview website. App Store release coming soon.",
+    "canonical": "Open the OnDevice AI Image Studio preview website. App Store release coming soon.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Wipe all on-device data?",
+    "canonical": "Wipe all on-device data?",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Mode",
+    "canonical": "Mode",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Extracts source code from the detected region and generates a code review.",
+    "canonical": "Extracts source code from the detected region and generates a code review.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Describes what the camera sees — useful for diagrams, whiteboards, UI screenshots, or any non-code scene.",
+    "canonical": "Describes what the camera sees — useful for diagrams, whiteboards, UI screenshots, or any non-code scene.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Download models",
+    "canonical": "Download models",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Pick models again",
+    "canonical": "Pick models again",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Required for gated repos (google/gemma-*, meta-llama/*, mistralai/Ministral-*). Stored in Keychain.",
+    "canonical": "Required for gated repos (google/gemma-*, meta-llama/*, mistralai/Ministral-*). Stored in Keychain.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Update",
+    "canonical": "Update",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Set token",
+    "canonical": "Set token",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Sends your token with HF requests. Turn off temporarily to debug 401s without removing the token.",
+    "canonical": "Sends your token with HF requests. Turn off temporarily to debug 401s without removing the token.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Load now",
+    "canonical": "Load now",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "author/repo",
+    "canonical": "author/repo",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Reset",
+    "canonical": "Reset",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Components/ArenaLeaderboardCard.swift"
+  },
+  {
+    "native": "%@ app icon",
+    "canonical": "{{0}} app icon",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "%lld models · %lld conversations · %lld snippets · %lld memories · %lld credentials · freed %@",
+    "canonical": "{{0}} models · {{1}} conversations · {{2}} snippets · {{3}} memories · {{4}} credentials · freed {{5}}",
+    "formats": [
+      "lld",
+      "lld",
+      "lld",
+      "lld",
+      "lld",
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Wipe everything",
+    "canonical": "Wipe everything",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Deletes downloaded models, conversations, snippets, memories, saved API keys, Mac Bridge pairings, cache, and resets settings. iCloud sync is disabled; existing iCloud copies and the parental PIN are not deleted. Restart afterward. Cannot be undone.",
+    "canonical": "Deletes downloaded models, conversations, snippets, memories, saved API keys, Mac Bridge pairings, cache, and resets settings. iCloud sync is disabled; existing iCloud copies and the parental PIN are not deleted. Restart afterward. Cannot be undone.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "OnDevice: AI Image Studio",
+    "canonical": "OnDevice: AI Image Studio",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Create private AI images on-device, even when you're offline.",
+    "canonical": "Create private AI images on-device, even when you're offline.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "coming soon",
+    "canonical": "coming soon",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "See the preview and follow launch updates.",
+    "canonical": "See the preview and follow launch updates.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Website",
+    "canonical": "Website",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "system",
+    "canonical": "system",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "whisper",
+    "canonical": "whisper",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "When enabled, Sync Now uploads conversation history to your private iCloud database and merges it with your other devices. Turning this off stops new sync work; it does not delete copies already in iCloud.",
+    "canonical": "When enabled, Sync Now uploads conversation history to your private iCloud database and merges it with your other devices. Turning this off stops new sync work; it does not delete copies already in iCloud.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "No successful sync in this session",
+    "canonical": "No successful sync in this session",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Last successful sync: %@",
+    "canonical": "Last successful sync: {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Enable iCloud conversation sync",
+    "canonical": "Enable iCloud conversation sync",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Syncing…",
+    "canonical": "Syncing…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Sync Now",
+    "canonical": "Sync Now",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SettingsView.swift"
+  },
+  {
+    "native": "Argent Remote",
+    "canonical": "Argent Remote",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "text to type",
+    "canonical": "text to type",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/ArgentRemoteView.swift"
+  },
+  {
+    "native": "bundle id",
+    "canonical": "bundle id",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/ArgentRemoteView.swift"
+  },
+  {
+    "native": "url / scheme",
+    "canonical": "url / scheme",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/ArgentRemoteView.swift"
+  },
+  {
+    "native": "flow name",
+    "canonical": "flow name",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/ArgentRemoteView.swift"
+  },
+  {
+    "native": "tool name",
+    "canonical": "tool name",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/ArgentRemoteView.swift"
+  },
+  {
+    "native": "--flag value …",
+    "canonical": "--flag value …",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/ArgentRemoteView.swift"
+  },
+  {
+    "native": "Web Activity",
+    "canonical": "Web Activity",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebActivityLogView.swift"
+  },
+  {
+    "native": "Clear",
+    "canonical": "Clear",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "· cache",
+    "canonical": "· cache",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebActivityLogView.swift"
+  },
+  {
+    "native": "Voice on: %@%@",
+    "canonical": "Voice on: {{0}}{{1}}",
+    "formats": [
+      "@",
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/Voice/VoiceStatusPill.swift"
+  },
+  {
+    "native": "Opens voice settings",
+    "canonical": "Opens voice settings",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceStatusPill.swift"
+  },
+  {
+    "native": "Audio output: %@",
+    "canonical": "Audio output: {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/Voice/AudioRoutePicker.swift"
+  },
+  {
+    "native": "Audio output route",
+    "canonical": "Audio output route",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/AudioRoutePicker.swift"
+  },
+  {
+    "native": "Opens system route picker",
+    "canonical": "Opens system route picker",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/AudioRoutePicker.swift"
+  },
+  {
+    "native": "Conversation model",
+    "canonical": "Conversation model",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VoiceConversationView.swift"
+  },
+  {
+    "native": "Ternary Bonsai 8B",
+    "canonical": "Ternary Bonsai 8B",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceUITestFixtureView.swift"
+  },
+  {
+    "native": "Follow speech",
+    "canonical": "Follow speech",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/KaraokeTranscriptView.swift"
+  },
+  {
+    "native": "End",
+    "canonical": "End",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceUITestFixtureView.swift"
+  },
+  {
+    "native": "Mute voice",
+    "canonical": "Mute voice",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceUITestFixtureView.swift"
+  },
+  {
+    "native": "Interrupt",
+    "canonical": "Interrupt",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceUITestFixtureView.swift"
+  },
+  {
+    "native": "Image Generation",
+    "canonical": "Image Generation",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "A parent or guardian must enter the parental PIN to continue.",
+    "canonical": "A parent or guardian must enter the parental PIN to continue.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Prompts and generated images are checked locally. Explicit content is withheld. Checks can make mistakes.",
+    "canonical": "Prompts and generated images are checked locally. Explicit content is withheld. Checks can make mistakes.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Image generation is locked",
+    "canonical": "Image generation is locked",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Hide Keyboard",
+    "canonical": "Hide Keyboard",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Generated image",
+    "canonical": "Generated image",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Your generated image appears here",
+    "canonical": "Your generated image appears here",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "PROMPT",
+    "canonical": "PROMPT",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "a watercolor fox in a misty forest…",
+    "canonical": "a watercolor fox in a misty forest…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Hide options",
+    "canonical": "Hide options",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "More options",
+    "canonical": "More options",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "NEGATIVE PROMPT",
+    "canonical": "NEGATIVE PROMPT",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "things to avoid…",
+    "canonical": "things to avoid…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "More steps = more detail but slower. Turbo models need only 1–4.",
+    "canonical": "More steps = more detail but slower. Turbo models need only 1–4.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "STEPS",
+    "canonical": "STEPS",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "default (%lld)",
+    "canonical": "default ({{0}})",
+    "formats": [
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Stop",
+    "canonical": "Stop",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "Generate",
+    "canonical": "Generate",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Download & Generate",
+    "canonical": "Download & Generate",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Download once to generate offline. No prompt needed.",
+    "canonical": "Download once to generate offline. No prompt needed.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Change image model, %@",
+    "canonical": "Change image model, {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Change",
+    "canonical": "Change",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Image model",
+    "canonical": "Image model",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Image Models",
+    "canonical": "Image Models",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Choose a model and download it before writing a prompt. These models are also available in Models → Image.",
+    "canonical": "Choose a model and download it before writing a prompt. These models are also available in Models → Image.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "SDXL needs the highest-memory iPhones. Live headroom is checked before loading a model.",
+    "canonical": "SDXL needs the highest-memory iPhones. Live headroom is checked before loading a model.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Delete %@?",
+    "canonical": "Delete {{0}}?",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Use %@",
+    "canonical": "Use {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Delete %@",
+    "canonical": "Delete {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Its downloaded weights are removed from this device. You can download it again later.",
+    "canonical": "Its downloaded weights are removed from this device. You can download it again later.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "May not fit this device. Available memory is checked before generation.",
+    "canonical": "May not fit this device. Available memory is checked before generation.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Downloaded · Ready to generate",
+    "canonical": "Downloaded · Ready to generate",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Downloading %@",
+    "canonical": "Downloading {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Downloading · %@",
+    "canonical": "Downloading · {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Cancel download of %@",
+    "canonical": "Cancel download of {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Unlock image generation with the parental PIN to download models.",
+    "canonical": "Unlock image generation with the parental PIN to download models.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Download %@, %@",
+    "canonical": "Download {{0}}, {{1}}",
+    "formats": [
+      "@",
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Downloads the model without generating an image or requiring a prompt.",
+    "canonical": "Downloads the model without generating an image or requiring a prompt.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Retry download · %@",
+    "canonical": "Retry download · {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Download model · %@",
+    "canonical": "Download model · {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/ImageGenerationView.swift"
+  },
+  {
+    "native": "Clear all results?",
+    "canonical": "Clear all results?",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AnalysisHistoryView.swift"
+  },
+  {
+    "native": "Clear history",
+    "canonical": "Clear history",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AnalysisHistoryView.swift"
+  },
+  {
+    "native": "Capture & analyze a screen to start your history. Last 10 results are kept in memory.",
+    "canonical": "Capture & analyze a screen to start your history. Last 10 results are kept in memory.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AnalysisHistoryView.swift"
+  },
+  {
+    "native": "Open",
+    "canonical": "Open",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AnalysisHistoryView.swift"
+  },
+  {
+    "native": "Copy text",
+    "canonical": "Copy text",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Send to Assistant",
+    "canonical": "Send to Assistant",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LiveOCROverlayView.swift"
+  },
+  {
+    "native": "diff",
+    "canonical": "diff",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/DiffView.swift"
+  },
+  {
+    "native": "copy",
+    "canonical": "copy",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Ask Lens",
+    "canonical": "Ask Lens",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "Enter a question about the camera view",
+    "canonical": "Enter a question about the camera view",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensTaskPanel.swift"
+  },
+  {
+    "native": "Edit your Lens question",
+    "canonical": "Edit your Lens question",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensTaskPanel.swift"
+  },
+  {
+    "native": "Ask questions about anything you see",
+    "canonical": "Ask questions about anything you see",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensTaskPanel.swift"
+  },
+  {
+    "native": "Collapse prompt",
+    "canonical": "Collapse prompt",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensTaskPanel.swift"
+  },
+  {
+    "native": "Analyze",
+    "canonical": "Analyze",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Your frame never leaves this device.",
+    "canonical": "Your frame never leaves this device.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensTaskPanel.swift"
+  },
+  {
+    "native": "Frame captured",
+    "canonical": "Frame captured",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensTaskPanel.swift"
+  },
+  {
+    "native": "Processing on device",
+    "canonical": "Processing on device",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensTaskPanel.swift"
+  },
+  {
+    "native": "Processed locally",
+    "canonical": "Processed locally",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensTaskPanel.swift"
+  },
+  {
+    "native": "Copy",
+    "canonical": "Copy",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodePanelView.swift"
+  },
+  {
+    "native": "Share",
+    "canonical": "Share",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensTaskPanel.swift"
+  },
+  {
+    "native": "Speak",
+    "canonical": "Speak",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensTaskPanel.swift"
+  },
+  {
+    "native": "Ask Again",
+    "canonical": "Ask Again",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensTaskPanel.swift"
+  },
+  {
+    "native": "Retake",
+    "canonical": "Retake",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensTaskPanel.swift"
+  },
+  {
+    "native": "Expand",
+    "canonical": "Expand",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/KaraokeTranscriptView.swift"
+  },
+  {
+    "native": "Lens couldn’t finish",
+    "canonical": "Lens couldn’t finish",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensTaskPanel.swift"
+  },
+  {
+    "native": "Retry",
+    "canonical": "Retry",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VoiceConversationView.swift"
+  },
+  {
+    "native": "Captured frame",
+    "canonical": "Captured frame",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensTaskPanel.swift"
+  },
+  {
+    "native": "%@ mode",
+    "canonical": "{{0}} mode",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/LensTaskPanel.swift"
+  },
+  {
+    "native": "Start with an assistant model. The Voice tab guides you through speech-model downloads and microphone permission when you are ready.",
+    "canonical": "Start with an assistant model. The Voice tab guides you through speech-model downloads and microphone permission when you are ready.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/OnboardingModelPickerView.swift"
+  },
+  {
+    "native": "Start with",
+    "canonical": "Start with",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/OnboardingModelPickerView.swift"
+  },
+  {
+    "native": "Choose your models",
+    "canonical": "Choose your models",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/OnboardingModelPickerView.swift"
+  },
+  {
+    "native": "Choose what you want to try first. Download only the model you need now; add the others later in Models.",
+    "canonical": "Choose what you want to try first. Download only the model you need now; add the others later in Models.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/OnboardingModelPickerView.swift"
+  },
+  {
+    "native": "Selected",
+    "canonical": "Selected",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/OnboardingModelPickerView.swift"
+  },
+  {
+    "native": "Not selected",
+    "canonical": "Not selected",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/OnboardingModelPickerView.swift"
+  },
+  {
+    "native": "Download model",
+    "canonical": "Download model",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/OnboardingModelPickerView.swift"
+  },
+  {
+    "native": "Continue",
+    "canonical": "Continue",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/OnboardingModelPickerView.swift"
+  },
+  {
+    "native": "Setting up your models",
+    "canonical": "Setting up your models",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/OnboardingModelPickerView.swift"
+  },
+  {
+    "native": "Your selected model is downloading for offline use. You can continue to the app and track progress in Models.",
+    "canonical": "Your selected model is downloading for offline use. You can continue to the app and track progress in Models.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/OnboardingModelPickerView.swift"
+  },
+  {
+    "native": "Retry download",
+    "canonical": "Retry download",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/FixRepoSheet.swift"
+  },
+  {
+    "native": "Skip for now — finish in Models",
+    "canonical": "Skip for now — finish in Models",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/OnboardingModelPickerView.swift"
+  },
+  {
+    "native": "Download recovery",
+    "canonical": "Download recovery",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/FixRepoSheet.swift"
+  },
+  {
+    "native": "Access required",
+    "canonical": "Access required",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/FixRepoSheet.swift"
+  },
+  {
+    "native": "Choose an alternative",
+    "canonical": "Choose an alternative",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/FixRepoSheet.swift"
+  },
+  {
+    "native": "Storage and connection",
+    "canonical": "Storage and connection",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/FixRepoSheet.swift"
+  },
+  {
+    "native": "Retry the same model after resolving the error. Choosing an alternative does not change your active model.",
+    "canonical": "Retry the same model after resolving the error. Choosing an alternative does not change your active model.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/FixRepoSheet.swift"
+  },
+  {
+    "native": "Check your Hugging Face token and accept the model's terms on its repository page.",
+    "canonical": "Check your Hugging Face token and accept the model's terms on its repository page.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/FixRepoSheet.swift"
+  },
+  {
+    "native": "Hugging Face token",
+    "canonical": "Hugging Face token",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/FixRepoSheet.swift"
+  },
+  {
+    "native": "Search results show device compatibility and model details before installation. Select the installed model from Models when it is ready.",
+    "canonical": "Search results show device compatibility and model details before installation. Select the installed model from Models when it is ready.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/FixRepoSheet.swift"
+  },
+  {
+    "native": "Model name or author/repository",
+    "canonical": "Model name or author/repository",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/FixRepoSheet.swift"
+  },
+  {
+    "native": "Find compatible models",
+    "canonical": "Find compatible models",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/FixRepoSheet.swift"
+  },
+  {
+    "native": "For disk-space errors, remove an unused model in Models → Storage Cleanup. For connection errors, check your network and Wi-Fi-only download setting, then retry.",
+    "canonical": "For disk-space errors, remove an unused model in Models → Storage Cleanup. For connection errors, check your network and Wi-Fi-only download setting, then retry.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/FixRepoSheet.swift"
+  },
+  {
+    "native": "Loading complete voice catalog…",
+    "canonical": "Loading complete voice catalog…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VoiceModelPickerView.swift"
+  },
+  {
+    "native": "Search voice models",
+    "canonical": "Search voice models",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VoiceModelPickerView.swift"
+  },
+  {
+    "native": "Select",
+    "canonical": "Select",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VoiceModelPickerView.swift"
+  },
+  {
+    "native": "Details",
+    "canonical": "Details",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VoiceModelPickerView.swift"
+  },
+  {
+    "native": "Open Project",
+    "canonical": "Open Project",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VoiceModelPickerView.swift"
+  },
+  {
+    "native": "tip",
+    "canonical": "tip",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensPromptPresetSheet.swift"
+  },
+  {
+    "native": "Apple System Voice ships with iOS premium voices and works offline out of the box — it's the most reliable choice. On-device neural voices (KittenTTS, Kokoro) are smaller English voices that some people prefer; if one ever fails its self-check, the app reads replies through System Voice automatically. Pick the specific voice and speed in Voice settings.",
+    "canonical": "Apple System Voice ships with iOS premium voices and works offline out of the box — it's the most reliable choice. On-device neural voices (KittenTTS, Kokoro) are smaller English voices that some people prefer; if one ever fails its self-check, the app reads replies through System Voice automatically. Pick the specific voice and speed in Voice settings.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VoiceModelPickerView.swift"
+  },
+  {
+    "native": "Model Details",
+    "canonical": "Model Details",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VoiceModelPickerView.swift"
+  },
+  {
+    "native": "Task",
+    "canonical": "Task",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VoiceModelPickerView.swift"
+  },
+  {
+    "native": "Support",
+    "canonical": "Support",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VoiceModelPickerView.swift"
+  },
+  {
+    "native": "no frame prepared yet",
+    "canonical": "no frame prepared yet",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensDebugOverlay.swift"
+  },
+  {
+    "native": "bypasses LensFramePreparer — captions will degrade",
+    "canonical": "bypasses LensFramePreparer — captions will degrade",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensDebugOverlay.swift"
+  },
+  {
+    "native": "send raw (DIAGNOSTIC)",
+    "canonical": "send raw (DIAGNOSTIC)",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensDebugOverlay.swift"
+  },
+  {
+    "native": "send raw",
+    "canonical": "send raw",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensDebugOverlay.swift"
+  },
+  {
+    "native": "Code",
+    "canonical": "Code",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AnalysisPanelView.swift"
+  },
+  {
+    "native": "capture",
+    "canonical": "capture",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodeModeView.swift"
+  },
+  {
+    "native": "· auto-picked",
+    "canonical": "· auto-picked",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodeModeView.swift"
+  },
+  {
+    "native": "extracted",
+    "canonical": "extracted",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodeModeView.swift"
+  },
+  {
+    "native": "%lld ln",
+    "canonical": "{{0}} ln",
+    "formats": [
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/CodeModeView.swift"
+  },
+  {
+    "native": "copied",
+    "canonical": "copied",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "re-run on edited code",
+    "canonical": "re-run on edited code",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodeModeView.swift"
+  },
+  {
+    "native": "Thinking…",
+    "canonical": "Thinking…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodeModeView.swift"
+  },
+  {
+    "native": "capturing…",
+    "canonical": "capturing…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodeModeView.swift"
+  },
+  {
+    "native": "frame code · tap to capture",
+    "canonical": "frame code · tap to capture",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodeModeView.swift"
+  },
+  {
+    "native": "Microphone access needed",
+    "canonical": "Microphone access needed",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/MicDictationButton.swift"
+  },
+  {
+    "native": "Open Settings",
+    "canonical": "Open Settings",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "Enable microphone and speech recognition for iOS Local LLM in Settings → Privacy.",
+    "canonical": "Enable microphone and speech recognition for iOS Local LLM in Settings → Privacy.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/MicDictationButton.swift"
+  },
+  {
+    "native": "listening",
+    "canonical": "listening",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/MicDictationButton.swift"
+  },
+  {
+    "native": "%lld steps",
+    "canonical": "{{0}} steps",
+    "formats": [
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/MacroChainView.swift"
+  },
+  {
+    "native": "Run macro",
+    "canonical": "Run macro",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/MacroChainView.swift"
+  },
+  {
+    "native": "Enter input text first",
+    "canonical": "Enter input text first",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/MacroChainView.swift"
+  },
+  {
+    "native": "Runs all steps of the selected macro",
+    "canonical": "Runs all steps of the selected macro",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/MacroChainView.swift"
+  },
+  {
+    "native": "step %lld/%lld: %@",
+    "canonical": "step {{0}}/{{1}}: {{2}}",
+    "formats": [
+      "lld",
+      "lld",
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/MacroChainView.swift"
+  },
+  {
+    "native": "Stop macro",
+    "canonical": "Stop macro",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/MacroChainView.swift"
+  },
+  {
+    "native": "Cancels the running multi-step chain",
+    "canonical": "Cancels the running multi-step chain",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/MacroChainView.swift"
+  },
+  {
+    "native": "stop",
+    "canonical": "stop",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceControlsView.swift"
+  },
+  {
+    "native": "run macro",
+    "canonical": "run macro",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/MacroChainView.swift"
+  },
+  {
+    "native": "step %lld",
+    "canonical": "step {{0}}",
+    "formats": [
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/MacroChainView.swift"
+  },
+  {
+    "native": "Device Not Supported",
+    "canonical": "Device Not Supported",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/UnsupportedDeviceView.swift"
+  },
+  {
+    "native": "iOS Local LLM runs large AI models entirely on-device. Inference needs at least 8 GB of physical RAM to load without thermal throttling or Jetsam kills.",
+    "canonical": "iOS Local LLM runs large AI models entirely on-device. Inference needs at least 8 GB of physical RAM to load without thermal throttling or Jetsam kills.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/UnsupportedDeviceView.swift"
+  },
+  {
+    "native": "Under 8 GB the OS evicts the model mid-inference and the app crashes or freezes. We'd rather block install than ship that experience.",
+    "canonical": "Under 8 GB the OS evicts the model mid-inference and the app crashes or freezes. We'd rather block install than ship that experience.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/UnsupportedDeviceView.swift"
+  },
+  {
+    "native": "Clear all benchmark history?",
+    "canonical": "Clear all benchmark history?",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/BenchmarkView.swift"
+  },
+  {
+    "native": "run quality eval",
+    "canonical": "run quality eval",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/QualityEvalView.swift"
+  },
+  {
+    "native": "Stop benchmark",
+    "canonical": "Stop benchmark",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/BenchmarkView.swift"
+  },
+  {
+    "native": "Cancels the run without saving partial results",
+    "canonical": "Cancels the run without saving partial results",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/BenchmarkView.swift"
+  },
+  {
+    "native": "run benchmark",
+    "canonical": "run benchmark",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/BenchmarkView.swift"
+  },
+  {
+    "native": "%lld tok",
+    "canonical": "{{0}} tok",
+    "formats": [
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "clear history",
+    "canonical": "clear history",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/QualityEvalView.swift"
+  },
+  {
+    "native": "100% On-Device & Private",
+    "canonical": "100% On-Device & Private",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/UserGuideView.swift"
+  },
+  {
+    "native": "All models run locally. No data leaves this device.",
+    "canonical": "All models run locally. No data leaves this device.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/UserGuideView.swift"
+  },
+  {
+    "native": "Interactive Local Chat",
+    "canonical": "Interactive Local Chat",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/UserGuideView.swift"
+  },
+  {
+    "native": "Engage in direct chats with your chosen reasoning model (e.g. Qwen, Llama). Code blocks are automatically formatted with syntax highlighting.",
+    "canonical": "Engage in direct chats with your chosen reasoning model (e.g. Qwen, Llama). Code blocks are automatically formatted with syntax highlighting.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/UserGuideView.swift"
+  },
+  {
+    "native": "Local Diffusion Models",
+    "canonical": "Local Diffusion Models",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/UserGuideView.swift"
+  },
+  {
+    "native": "Create artwork locally using Stable Diffusion or SDXL-Turbo, designed to operate safely within iOS RAM limits.",
+    "canonical": "Create artwork locally using Stable Diffusion or SDXL-Turbo, designed to operate safely within iOS RAM limits.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/UserGuideView.swift"
+  },
+  {
+    "native": "Real-Time Code & Vision",
+    "canonical": "Real-Time Code & Vision",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/UserGuideView.swift"
+  },
+  {
+    "native": "Use the viewfinder to scan source code from screens or whiteboards, or stream continuous descriptive VLM captions.",
+    "canonical": "Use the viewfinder to scan source code from screens or whiteboards, or stream continuous descriptive VLM captions.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/UserGuideView.swift"
+  },
+  {
+    "native": "Hands-Free Conversational Loop",
+    "canonical": "Hands-Free Conversational Loop",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/UserGuideView.swift"
+  },
+  {
+    "native": "Talk directly with models using robust voice activity detection (VAD) that filters out ambient background noise.",
+    "canonical": "Talk directly with models using robust voice activity detection (VAD) that filters out ambient background noise.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/UserGuideView.swift"
+  },
+  {
+    "native": "Unified Model Library",
+    "canonical": "Unified Model Library",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/UserGuideView.swift"
+  },
+  {
+    "native": "The central hub for downloading models, searching HuggingFace, and tracking local disk space usage.",
+    "canonical": "The central hub for downloading models, searching HuggingFace, and tracking local disk space usage.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/UserGuideView.swift"
+  },
+  {
+    "native": "Desktop Coupling",
+    "canonical": "Desktop Coupling",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/UserGuideView.swift"
+  },
+  {
+    "native": "Pair with LocalCoderBridge on your Mac. Scan the desktop QR code to establish secure local connection links.",
+    "canonical": "Pair with LocalCoderBridge on your Mac. Scan the desktop QR code to establish secure local connection links.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/UserGuideView.swift"
+  },
+  {
+    "native": "Failed to save the image to the specified location.",
+    "canonical": "Failed to save the image to the specified location.",
+    "formats": [],
+    "source": "IOSLocalLLM/Vendor/StableDiffusion/Image.swift"
+  },
+  {
+    "native": "Unable to open the image file.",
+    "canonical": "Unable to open the image file.",
+    "formats": [],
+    "source": "IOSLocalLLM/Vendor/StableDiffusion/Image.swift"
+  },
+  {
+    "native": "Diagnostics",
+    "canonical": "Diagnostics",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "Clear log",
+    "canonical": "Clear log",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "Clear MetricKit",
+    "canonical": "Clear MetricKit",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "Previous session ended in a %@",
+    "canonical": "Previous session ended in a {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "Breadcrumb trail (%lld)",
+    "canonical": "Breadcrumb trail ({{0}})",
+    "formats": [
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "Last crash",
+    "canonical": "Last crash",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "Analyzing on-device…",
+    "canonical": "Analyzing on-device…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "Analyzing…",
+    "canonical": "Analyzing…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "Analyze with on-device AI",
+    "canonical": "Analyze with on-device AI",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "Re-analyze",
+    "canonical": "Re-analyze",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "On-device analysis",
+    "canonical": "On-device analysis",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "Runs the selected assistant model locally — nothing leaves your device.",
+    "canonical": "Runs the selected assistant model locally — nothing leaves your device.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "System",
+    "canonical": "System",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "No log entries at this level.",
+    "canonical": "No log entries at this level.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "Level",
+    "canonical": "Level",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "Log · %lld",
+    "canonical": "Log · {{0}}",
+    "formats": [
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "MetricKit reports",
+    "canonical": "MetricKit reports",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/DiagnosticsView.swift"
+  },
+  {
+    "native": "clear usage history",
+    "canonical": "clear usage history",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SystemStatusView.swift"
+  },
+  {
+    "native": "Ready to use · %@",
+    "canonical": "Ready to use · {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/ModelDownloadRows.swift"
+  },
+  {
+    "native": "%lld/%lld files",
+    "canonical": "{{0}}/{{1}} files",
+    "formats": [
+      "lld",
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/ModelDownloadRows.swift"
+  },
+  {
+    "native": "Import failed",
+    "canonical": "Import failed",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelsManagerView.swift"
+  },
+  {
+    "native": "Chat, vision, and imported MLX models.",
+    "canonical": "Chat, vision, and imported MLX models.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelsManagerView.swift"
+  },
+  {
+    "native": "Future Runtime Integrations",
+    "canonical": "Future Runtime Integrations",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelsManagerView.swift"
+  },
+  {
+    "native": "Download an image model below. No prompt needed. Generate offline when you're ready.",
+    "canonical": "Download an image model below. No prompt needed. Generate offline when you're ready.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelsManagerView.swift"
+  },
+  {
+    "native": "Copy repo ID",
+    "canonical": "Copy repo ID",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelsManagerView.swift"
+  },
+  {
+    "native": "Stop loading",
+    "canonical": "Stop loading",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelsManagerView.swift"
+  },
+  {
+    "native": "Clean up partial downloads",
+    "canonical": "Clean up partial downloads",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelsManagerView.swift"
+  },
+  {
+    "native": "%@ from cancelled or failed downloads",
+    "canonical": "{{0}} from cancelled or failed downloads",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/ModelsManagerView.swift"
+  },
+  {
+    "native": "Import a model from Files",
+    "canonical": "Import a model from Files",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelsManagerView.swift"
+  },
+  {
+    "native": "Add an MLX folder with `config.json` and weights, then surface it in Installed immediately.",
+    "canonical": "Add an MLX folder with `config.json` and weights, then surface it in Installed immediately.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelsManagerView.swift"
+  },
+  {
+    "native": "Generate images on-device",
+    "canonical": "Generate images on-device",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelsManagerView.swift"
+  },
+  {
+    "native": "SD / SDXL diffusion via MLX. FLUX is too large for iOS memory.",
+    "canonical": "SD / SDXL diffusion via MLX. FLUX is too large for iOS memory.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelsManagerView.swift"
+  },
+  {
+    "native": "required",
+    "canonical": "required",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelsManagerView.swift"
+  },
+  {
+    "native": "Stored only - runtime not implemented",
+    "canonical": "Stored only - runtime not implemented",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelsManagerView.swift"
+  },
+  {
+    "native": "on-device",
+    "canonical": "on-device",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelsManagerView.swift"
+  },
+  {
+    "native": "gated",
+    "canonical": "gated",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelsManagerView.swift"
+  },
+  {
+    "native": "Review",
+    "canonical": "Review",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AnalysisPanelView.swift"
+  },
+  {
+    "native": "analysis",
+    "canonical": "analysis",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AnalysisPanelView.swift"
+  },
+  {
+    "native": "ask assistant",
+    "canonical": "ask assistant",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AnalysisPanelView.swift"
+  },
+  {
+    "native": "share",
+    "canonical": "share",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AnalysisPanelView.swift"
+  },
+  {
+    "native": "USER",
+    "canonical": "USER",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AnalysisPanelView.swift"
+  },
+  {
+    "native": "QWEN ←",
+    "canonical": "QWEN ←",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AnalysisPanelView.swift"
+  },
+  {
+    "native": "generating",
+    "canonical": "generating",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AnalysisPanelView.swift"
+  },
+  {
+    "native": "ask about this image…",
+    "canonical": "ask about this image…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AnalysisPanelView.swift"
+  },
+  {
+    "native": "No review available.",
+    "canonical": "No review available.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AnalysisPanelView.swift"
+  },
+  {
+    "native": "No review available. Ask a question below to analyse this capture further.",
+    "canonical": "No review available. Ask a question below to analyse this capture further.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AnalysisPanelView.swift"
+  },
+  {
+    "native": "Allow this %@ once",
+    "canonical": "Allow this {{0}} once",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/Assistant/AssistantActivityCards.swift"
+  },
+  {
+    "native": "Always allow %@",
+    "canonical": "Always allow {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/Assistant/AssistantActivityCards.swift"
+  },
+  {
+    "native": "Decline and continue offline",
+    "canonical": "Decline and continue offline",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Assistant/AssistantActivityCards.swift"
+  },
+  {
+    "native": "Allow once",
+    "canonical": "Allow once",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Assistant/AssistantActivityCards.swift"
+  },
+  {
+    "native": "Always allow",
+    "canonical": "Always allow",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Assistant/AssistantActivityCards.swift"
+  },
+  {
+    "native": "Not now",
+    "canonical": "Not now",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Assistant/AssistantActivityCards.swift"
+  },
+  {
+    "native": "Choose a file for the assistant",
+    "canonical": "Choose a file for the assistant",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Assistant/AssistantActivityCards.swift"
+  },
+  {
+    "native": "Decline file access",
+    "canonical": "Decline file access",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Assistant/AssistantActivityCards.swift"
+  },
+  {
+    "native": "Choose file",
+    "canonical": "Choose file",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Assistant/AssistantActivityCards.swift"
+  },
+  {
+    "native": "Storage Cleanup",
+    "canonical": "Storage Cleanup",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "Remove unselected models?",
+    "canonical": "Remove unselected models?",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "Remove and free %@",
+    "canonical": "Remove and free {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "Models marked Keep stay on this device. Removed models can be downloaded again later.",
+    "canonical": "Models marked Keep stay on this device. Removed models can be downloaded again later.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "Models are stored separately from the app",
+    "canonical": "Models are stored separately from the app",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "Select the models you want to keep. Required and currently active models start selected; everything else can be removed in one step.",
+    "canonical": "Select the models you want to keep. Required and currently active models start selected; everything else can be removed in one step.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "%lld installed · %@",
+    "canonical": "{{0}} installed · {{1}}",
+    "formats": [
+      "lld",
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "%lld kept",
+    "canonical": "{{0}} kept",
+    "formats": [
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "Keep",
+    "canonical": "Keep",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "Active only",
+    "canonical": "Active only",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "All selected",
+    "canonical": "All selected",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "Select all",
+    "canonical": "Select all",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "Required",
+    "canonical": "Required",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "ACTIVE",
+    "canonical": "ACTIVE",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "Partial downloads",
+    "canonical": "Partial downloads",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "Cancelled files and resumable transfer cache · %@",
+    "canonical": "Cancelled files and resumable transfer cache · {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "Remove %lld models",
+    "canonical": "Remove {{0}} models",
+    "formats": [
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "Clear partial downloads",
+    "canonical": "Clear partial downloads",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "Downloaded models will appear here when there is storage to manage.",
+    "canonical": "Downloaded models will appear here when there is storage to manage.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "No downloaded models",
+    "canonical": "No downloaded models",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelStorageCleanupView.swift"
+  },
+  {
+    "native": "blind mode",
+    "canonical": "blind mode",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VisualModelComparisonView.swift"
+  },
+  {
+    "native": "pick two different models to compare",
+    "canonical": "pick two different models to compare",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CompareView.swift"
+  },
+  {
+    "native": "running %@…",
+    "canonical": "running {{0}}…",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/CompareView.swift"
+  },
+  {
+    "native": "run both",
+    "canonical": "run both",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CompareView.swift"
+  },
+  {
+    "native": "WINNER",
+    "canonical": "WINNER",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CompareView.swift"
+  },
+  {
+    "native": "Vision model: %@, %@, on device",
+    "canonical": "Vision model: {{0}}, {{1}}, on device",
+    "formats": [
+      "@",
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "Ready · On-device",
+    "canonical": "Ready · On-device",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "On-device",
+    "canonical": "On-device",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "Text recognition (OCR)",
+    "canonical": "Text recognition (OCR)",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VisualModelPickerView.swift"
+  },
+  {
+    "native": "Camera unavailable",
+    "canonical": "Camera unavailable",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "CODE · ON-DEVICE",
+    "canonical": "CODE · ON-DEVICE",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "Frame code and capture a still for OCR and review.",
+    "canonical": "Frame code and capture a still for OCR and review.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "Close Lens",
+    "canonical": "Close Lens",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "Lens control",
+    "canonical": "Lens control",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "More Lens options",
+    "canonical": "More Lens options",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "Import a photo",
+    "canonical": "Import a photo",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "Choose an image from the photo library to analyze",
+    "canonical": "Choose an image from the photo library to analyze",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "Vision model unavailable",
+    "canonical": "Vision model unavailable",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "Capture frame",
+    "canonical": "Capture frame",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "Opens Models so you can install a vision model",
+    "canonical": "Opens Models so you can install a vision model",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "Captures and analyzes the current camera frame on device",
+    "canonical": "Captures and analyzes the current camera frame on device",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "Ask about what the camera sees…",
+    "canonical": "Ask about what the camera sees…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "Clear Lens question",
+    "canonical": "Clear Lens question",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CameraRootView.swift"
+  },
+  {
+    "native": "Assistant response transcript",
+    "canonical": "Assistant response transcript",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/KaraokeTranscriptView.swift"
+  },
+  {
+    "native": "Replay",
+    "canonical": "Replay",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/KaraokeTranscriptView.swift"
+  },
+  {
+    "native": "ASSISTANT",
+    "canonical": "ASSISTANT",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/KaraokeTranscriptView.swift"
+  },
+  {
+    "native": "Collapse transcript",
+    "canonical": "Collapse transcript",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/KaraokeTranscriptView.swift"
+  },
+  {
+    "native": "Expand transcript",
+    "canonical": "Expand transcript",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/KaraokeTranscriptView.swift"
+  },
+  {
+    "native": "Collapse",
+    "canonical": "Collapse",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/KaraokeTranscriptView.swift"
+  },
+  {
+    "native": "You said: %@",
+    "canonical": "You said: {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/Voice/KaraokeTranscriptView.swift"
+  },
+  {
+    "native": "YOU",
+    "canonical": "YOU",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/KaraokeTranscriptView.swift"
+  },
+  {
+    "native": "Knowledge Base",
+    "canonical": "Knowledge Base",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "Remove all documents?",
+    "canonical": "Remove all documents?",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "Remove %@?",
+    "canonical": "Remove {{0}}?",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "Remove all documents",
+    "canonical": "Remove all documents",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "Remove All",
+    "canonical": "Remove All",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "The whole on-device index is deleted. This can't be undone.",
+    "canonical": "The whole on-device index is deleted. This can't be undone.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "Remove",
+    "canonical": "Remove",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFTokenSheet.swift"
+  },
+  {
+    "native": "Its indexed chunks are deleted from this device.",
+    "canonical": "Its indexed chunks are deleted from this device.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "On-device embeddings unavailable",
+    "canonical": "On-device embeddings unavailable",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "This device's language doesn't have a local embedding model, so the Knowledge Base can't index text here.",
+    "canonical": "This device's language doesn't have a local embedding model, so the Knowledge Base can't index text here.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "Use in answers",
+    "canonical": "Use in answers",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "The assistant grounds replies in your files and cites them — fully offline.",
+    "canonical": "The assistant grounds replies in your files and cites them — fully offline.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "Indexing…",
+    "canonical": "Indexing…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "No documents yet",
+    "canonical": "No documents yet",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "Add files or paste text to chat with your own content.",
+    "canonical": "Add files or paste text to chat with your own content.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "DOCUMENTS",
+    "canonical": "DOCUMENTS",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "%lld chunks",
+    "canonical": "{{0}} chunks",
+    "formats": [
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "Remove %@",
+    "canonical": "Remove {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/FileAttachmentChip.swift"
+  },
+  {
+    "native": "%lld chunks · %@",
+    "canonical": "{{0}} chunks · {{1}}",
+    "formats": [
+      "lld",
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "Paste text",
+    "canonical": "Paste text",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "Name (e.g. Project notes)",
+    "canonical": "Name (e.g. Project notes)",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "Add",
+    "canonical": "Add",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KnowledgeBaseView.swift"
+  },
+  {
+    "native": "Ask iOS Local LLM ${prompt}",
+    "canonical": "Ask iOS Local LLM ${prompt}",
+    "formats": [],
+    "source": "IOSLocalLLM/Services/Intents/IOSLocalLLMAppIntents.swift"
+  },
+  {
+    "native": "Quick ask iOS Local LLM ${prompt}",
+    "canonical": "Quick ask iOS Local LLM ${prompt}",
+    "formats": [],
+    "source": "IOSLocalLLM/Services/Intents/IOSLocalLLMAppIntents.swift"
+  },
+  {
+    "native": "Clear all quality history?",
+    "canonical": "Clear all quality history?",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/QualityEvalView.swift"
+  },
+  {
+    "native": "quality score",
+    "canonical": "quality score",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/QualityEvalView.swift"
+  },
+  {
+    "native": "read",
+    "canonical": "read",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceControlsView.swift"
+  },
+  {
+    "native": "Web Access disabled",
+    "canonical": "Web Access disabled",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebStatusBadge.swift"
+  },
+  {
+    "native": "Waiting for permission",
+    "canonical": "Waiting for permission",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebStatusBadge.swift"
+  },
+  {
+    "native": "Searching",
+    "canonical": "Searching",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebStatusBadge.swift"
+  },
+  {
+    "native": "Fetching %lld of %lld sources",
+    "canonical": "Fetching {{0}} of {{1}} sources",
+    "formats": [
+      "lld",
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/Web/WebStatusBadge.swift"
+  },
+  {
+    "native": "Answering with %lld sources",
+    "canonical": "Answering with {{0}} sources",
+    "formats": [
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/Web/WebStatusBadge.swift"
+  },
+  {
+    "native": "Web failed: %@",
+    "canonical": "Web failed: {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/Web/WebStatusBadge.swift"
+  },
+  {
+    "native": "Full licenses and notices",
+    "canonical": "Full licenses and notices",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Legal/AttributionsView.swift"
+  },
+  {
+    "native": "iOS Local LLM is built on the work of many researchers and engineers who released their models, frameworks, and tools openly. Each is listed below with its license and source.",
+    "canonical": "iOS Local LLM is built on the work of many researchers and engineers who released their models, frameworks, and tools openly. Each is listed below with its license and source.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Legal/AttributionsView.swift"
+  },
+  {
+    "native": "source",
+    "canonical": "source",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Legal/AttributionsView.swift"
+  },
+  {
+    "native": "license",
+    "canonical": "license",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Legal/AttributionsView.swift"
+  },
+  {
+    "native": "paper",
+    "canonical": "paper",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Legal/AttributionsView.swift"
+  },
+  {
+    "native": "Its downloaded weights are removed from this device.",
+    "canonical": "Its downloaded weights are removed from this device.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelDownloadCenterView.swift"
+  },
+  {
+    "native": "Copy repo URL",
+    "canonical": "Copy repo URL",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelDownloadCenterView.swift"
+  },
+  {
+    "native": "Open on huggingface.co",
+    "canonical": "Open on huggingface.co",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelDownloadCenterView.swift"
+  },
+  {
+    "native": "Delete model",
+    "canonical": "Delete model",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelDownloadCenterView.swift"
+  },
+  {
+    "native": "this iphone · %@ tier · %@ ram",
+    "canonical": "this iphone · {{0}} tier · {{1}} ram",
+    "formats": [
+      "@",
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/ModelDownloadCenterView.swift"
+  },
+  {
+    "native": "Downloaded models run locally. Optional web search, private-cloud models, and paired tools use the network when you enable them.",
+    "canonical": "Downloaded models run locally. Optional web search, private-cloud models, and paired tools use the network when you enable them.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelDownloadCenterView.swift"
+  },
+  {
+    "native": "Interrupted downloads resume automatically. You can close the app mid-download.",
+    "canonical": "Interrupted downloads resume automatically. You can close the app mid-download.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelDownloadCenterView.swift"
+  },
+  {
+    "native": "Preparing…",
+    "canonical": "Preparing…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelDownloadCenterView.swift"
+  },
+  {
+    "native": "preparing…",
+    "canonical": "preparing…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelDownloadCenterView.swift"
+  },
+  {
+    "native": "pause",
+    "canonical": "pause",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelDownloadCenterView.swift"
+  },
+  {
+    "native": "retry",
+    "canonical": "retry",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "download",
+    "canonical": "download",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelDownloadCenterView.swift"
+  },
+  {
+    "native": "finding…",
+    "canonical": "finding…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelDownloadCenterView.swift"
+  },
+  {
+    "native": "auto-find",
+    "canonical": "auto-find",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelDownloadCenterView.swift"
+  },
+  {
+    "native": "find repo",
+    "canonical": "find repo",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ModelDownloadCenterView.swift"
+  },
+  {
+    "native": "done",
+    "canonical": "done",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KeyboardToolbar.swift"
+  },
+  {
+    "native": "Checking installed voice models",
+    "canonical": "Checking installed voice models",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceSettingsView.swift"
+  },
+  {
+    "native": "No voices available for this engine.",
+    "canonical": "No voices available for this engine.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceSettingsView.swift"
+  },
+  {
+    "native": "auto",
+    "canonical": "auto",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceSettingsView.swift"
+  },
+  {
+    "native": "sentence",
+    "canonical": "sentence",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceSettingsView.swift"
+  },
+  {
+    "native": "clause",
+    "canonical": "clause",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceSettingsView.swift"
+  },
+  {
+    "native": "iOS Local LLM",
+    "canonical": "iOS Local LLM",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/FirstLightSplashView.swift"
+  },
+  {
+    "native": "LOCAL AI WORKBENCH",
+    "canonical": "LOCAL AI WORKBENCH",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/PlumDuskSplashView.swift"
+  },
+  {
+    "native": "Private. On your device.",
+    "canonical": "Private. On your device.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/FirstLightSplashView.swift"
+  },
+  {
+    "native": "OK",
+    "canonical": "OK",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KoduComponents.swift"
+  },
+  {
+    "native": "on",
+    "canonical": "on",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KoduComponents.swift"
+  },
+  {
+    "native": "off",
+    "canonical": "off",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KoduComponents.swift"
+  },
+  {
+    "native": "Unable to create a %@ with model ID '%@'. The model may not support this operation type.",
+    "canonical": "Unable to create a {{0}} with model ID '{{1}}'. The model may not support this operation type.",
+    "formats": [
+      "@",
+      "@"
+    ],
+    "source": "IOSLocalLLM/Vendor/StableDiffusion/StableDiffusion.swift"
+  },
+  {
+    "native": "The model has been discarded to conserve memory and is no longer available. Please recreate the model container.",
+    "canonical": "The model has been discarded to conserve memory and is no longer available. Please recreate the model container.",
+    "formats": [],
+    "source": "IOSLocalLLM/Vendor/StableDiffusion/StableDiffusion.swift"
+  },
+  {
+    "native": "Conversation",
+    "canonical": "Conversation",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VoiceConversationView.swift"
+  },
+  {
+    "native": "You",
+    "canonical": "You",
+    "formats": [],
+    "source": "IOSLocalLLM/Models/ConversationStore.swift"
+  },
+  {
+    "native": "Assistant",
+    "canonical": "Assistant",
+    "formats": [],
+    "source": "IOSLocalLLM/ContentView.swift"
+  },
+  {
+    "native": "search models (qwen, llama, kokoro…)",
+    "canonical": "search models (qwen, llama, kokoro…)",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFSearchView.swift"
+  },
+  {
+    "native": "Results filtered to on-device runtimes by default — MLX, Core ML, and supported GGUF vision repos. Files are stored privately in the app's Documents folder.",
+    "canonical": "Results filtered to on-device runtimes by default — MLX, Core ML, and supported GGUF vision repos. Files are stored privately in the app's Documents folder.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFSearchView.swift"
+  },
+  {
+    "native": "Built for on-device use",
+    "canonical": "Built for on-device use",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFSearchView.swift"
+  },
+  {
+    "native": "Open model on Hugging Face",
+    "canonical": "Open model on Hugging Face",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFSearchView.swift"
+  },
+  {
+    "native": "Hide model details",
+    "canonical": "Hide model details",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFSearchView.swift"
+  },
+  {
+    "native": "Show model details",
+    "canonical": "Show model details",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFSearchView.swift"
+  },
+  {
+    "native": "Images tab",
+    "canonical": "Images tab",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFSearchView.swift"
+  },
+  {
+    "native": "checking…",
+    "canonical": "checking…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFSearchView.swift"
+  },
+  {
+    "native": "Cancel download",
+    "canonical": "Cancel download",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFSearchView.swift"
+  },
+  {
+    "native": "Pair with this Mac?",
+    "canonical": "Pair with this Mac?",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Forget all paired Macs?",
+    "canonical": "Forget all paired Macs?",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Forget %@?",
+    "canonical": "Forget {{0}}?",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Open Mac bridge integration guide",
+    "canonical": "Open Mac bridge integration guide",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Opens the public protocol documentation on GitHub.",
+    "canonical": "Opens the public protocol documentation on GitHub.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Pair",
+    "canonical": "Pair",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Forget All",
+    "canonical": "Forget All",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Their bearer tokens are deleted from this device. Re-pair each Mac to reconnect.",
+    "canonical": "Their bearer tokens are deleted from this device. Re-pair each Mac to reconnect.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Forget",
+    "canonical": "Forget",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Its bearer token is deleted from this device. Re-pair to reconnect.",
+    "canonical": "Its bearer token is deleted from this device. Re-pair to reconnect.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Review the public pairing protocol, security boundaries, and client implementation notes.",
+    "canonical": "Review the public pairing protocol, security boundaries, and client implementation notes.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Mac bridge integration",
+    "canonical": "Mac bridge integration",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "OPEN GUIDE",
+    "canonical": "OPEN GUIDE",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "One-tap simulator control — screenshot, tap, swipe, launch app, …",
+    "canonical": "One-tap simulator control — screenshot, tap, swipe, launch app, …",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Control from your Mac",
+    "canonical": "Control from your Mac",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Pair a Mac to run its prompts on this iPhone — nothing leaves your devices.",
+    "canonical": "Pair a Mac to run its prompts on this iPhone — nothing leaves your devices.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "MAC BRIDGE",
+    "canonical": "MAC BRIDGE",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Pair with Mac",
+    "canonical": "Pair with Mac",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Open iOS Local LLM Bridge on your Mac, click \"Show QR\", then scan it here.",
+    "canonical": "Open iOS Local LLM Bridge on your Mac, click \"Show QR\", then scan it here.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Scan Mac QR",
+    "canonical": "Scan Mac QR",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Pairing with Mac…",
+    "canonical": "Pairing with Mac…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Pair Another Mac",
+    "canonical": "Pair Another Mac",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Paired with %@",
+    "canonical": "Paired with {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "The Mac can now send inference requests to this iPhone.",
+    "canonical": "The Mac can now send inference requests to this iPhone.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Try Again",
+    "canonical": "Try Again",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "No Macs paired yet. Scan a Mac QR above.",
+    "canonical": "No Macs paired yet. Scan a Mac QR above.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "PAIRED MACS",
+    "canonical": "PAIRED MACS",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Forget %@",
+    "canonical": "Forget {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Paired %@",
+    "canonical": "Paired {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Serve a local model over HTTPS. Manage the server, keys, and client setup.",
+    "canonical": "Serve a local model over HTTPS. Manage the server, keys, and client setup.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Local API Server",
+    "canonical": "Local API Server",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "OpenAI · Anthropic · Ollama",
+    "canonical": "OpenAI · Anthropic · Ollama",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Camera scanner not available on this device.",
+    "canonical": "Camera scanner not available on this device.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Point at the QR code on your Mac",
+    "canonical": "Point at the QR code on your Mac",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgePairingView.swift"
+  },
+  {
+    "native": "Reset %@ standings?",
+    "canonical": "Reset {{0}} standings?",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/Components/ArenaLeaderboardCard.swift"
+  },
+  {
+    "native": "MODEL",
+    "canonical": "MODEL",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Components/ArenaLeaderboardCard.swift"
+  },
+  {
+    "native": "ELO",
+    "canonical": "ELO",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Components/ArenaLeaderboardCard.swift"
+  },
+  {
+    "native": "W-L-T",
+    "canonical": "W-L-T",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Components/ArenaLeaderboardCard.swift"
+  },
+  {
+    "native": "reset standings",
+    "canonical": "reset standings",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Components/ArenaLeaderboardCard.swift"
+  },
+  {
+    "native": "Clears Elo ratings and win/loss records for %@ models on this device.",
+    "canonical": "Clears Elo ratings and win/loss records for {{0}} models on this device.",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/Components/ArenaLeaderboardCard.swift"
+  },
+  {
+    "native": "no votes yet — run a comparison and pick a winner to start the ladder",
+    "canonical": "no votes yet — run a comparison and pick a winner to start the ladder",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Components/ArenaLeaderboardCard.swift"
+  },
+  {
+    "native": "Home",
+    "canonical": "Home",
+    "formats": [],
+    "source": "IOSLocalLLM/ContentView.swift"
+  },
+  {
+    "native": "Lens",
+    "canonical": "Lens",
+    "formats": [],
+    "source": "IOSLocalLLM/ContentView.swift"
+  },
+  {
+    "native": "Models",
+    "canonical": "Models",
+    "formats": [],
+    "source": "IOSLocalLLM/ContentView.swift"
+  },
+  {
+    "native": "retry with web",
+    "canonical": "retry with web",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebSourcesView.swift"
+  },
+  {
+    "native": "answer offline instead",
+    "canonical": "answer offline instead",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebSourcesView.swift"
+  },
+  {
+    "native": "Source %lld: %@, from %@",
+    "canonical": "Source {{0}}: {{1}}, from {{2}}",
+    "formats": [
+      "lld",
+      "@",
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/Web/WebSourcesView.swift"
+  },
+  {
+    "native": "No download. Choose a vision model below for image descriptions.",
+    "canonical": "No download. Choose a vision model below for image descriptions.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VisualModelPickerView.swift"
+  },
+  {
+    "native": "Remove the stored token?",
+    "canonical": "Remove the stored token?",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFTokenSheet.swift"
+  },
+  {
+    "native": "Gated model downloads will stop working until you add it again.",
+    "canonical": "Gated model downloads will stop working until you add it again.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFTokenSheet.swift"
+  },
+  {
+    "native": "Access Token",
+    "canonical": "Access Token",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFTokenSheet.swift"
+  },
+  {
+    "native": "Paste a personal access token to download gated models like Gemma source weights, Llama 3, and Ministral. Generate one at huggingface.co/settings/tokens (read access is enough).",
+    "canonical": "Paste a personal access token to download gated models like Gemma source weights, Llama 3, and Ministral. Generate one at huggingface.co/settings/tokens (read access is enough).",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFTokenSheet.swift"
+  },
+  {
+    "native": "Token saved · %@",
+    "canonical": "Token saved · {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/HFTokenSheet.swift"
+  },
+  {
+    "native": "hf_…",
+    "canonical": "hf_…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFTokenSheet.swift"
+  },
+  {
+    "native": "Paste",
+    "canonical": "Paste",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFTokenSheet.swift"
+  },
+  {
+    "native": "Test",
+    "canonical": "Test",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFTokenSheet.swift"
+  },
+  {
+    "native": "Hugging Face requires a token for repositories where the publisher gates access — typically because the model has a license that requires you to accept terms. Examples: official google/gemma-* mirrors, meta-llama/* models, mistralai/Ministral-*.",
+    "canonical": "Hugging Face requires a token for repositories where the publisher gates access — typically because the model has a license that requires you to accept terms. Examples: official google/gemma-* mirrors, meta-llama/* models, mistralai/Ministral-*.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFTokenSheet.swift"
+  },
+  {
+    "native": "Most iOS Local LLM defaults (mlx-community/*, ggml-org/*) are open and don't need a token. Set one only if you want to download from gated repos.",
+    "canonical": "Most iOS Local LLM defaults (mlx-community/*, ggml-org/*) are open and don't need a token. Set one only if you want to download from gated repos.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/HFTokenSheet.swift"
+  },
+  {
+    "native": "OnDevice LLM",
+    "canonical": "OnDevice LLM",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/PlumDuskSplashView.swift"
+  },
+  {
+    "native": "Local AI. Optional connected features.",
+    "canonical": "Local AI. Optional connected features.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/PlumDuskSplashView.swift"
+  },
+  {
+    "native": "paste API key",
+    "canonical": "paste API key",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebSettingsView.swift"
+  },
+  {
+    "native": "clear",
+    "canonical": "clear",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebSettingsView.swift"
+  },
+  {
+    "native": "save key",
+    "canonical": "save key",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebSettingsView.swift"
+  },
+  {
+    "native": "https://search.example.com",
+    "canonical": "https://search.example.com",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebSettingsView.swift"
+  },
+  {
+    "native": "save endpoint",
+    "canonical": "save endpoint",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebSettingsView.swift"
+  },
+  {
+    "native": "Model inference runs locally on this device. Web Access is optional. When enabled, the app may send a short search query or a URL you provide to the search provider you chose. Your chat history, attachments, and personal content are not sent. Fetched pages are processed on this device and given to the local model as reference material. You can turn Web Access off at any time.",
+    "canonical": "Model inference runs locally on this device. Web Access is optional. When enabled, the app may send a short search query or a URL you provide to the search provider you chose. Your chat history, attachments, and personal content are not sent. Fetched pages are processed on this device and given to the local model as reference material. You can turn Web Access off at any time.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebSettingsView.swift"
+  },
+  {
+    "native": "Local API",
+    "canonical": "Local API",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Rotate the API key?",
+    "canonical": "Rotate the API key?",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "HTTPS encrypts traffic. Verify this device’s public-key pin before connecting. SDKs must trust the certificate or support pinning. The server stops when the app backgrounds.",
+    "canonical": "HTTPS encrypts traffic. Verify this device’s public-key pin before connecting. SDKs must trust the certificate or support pinning. The server stops when the app backgrounds.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "DEVELOPER TOOLS",
+    "canonical": "DEVELOPER TOOLS",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Connect your tools to a model running on this device.",
+    "canonical": "Connect your tools to a model running on this device.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Rotate API key",
+    "canonical": "Rotate API key",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Existing clients will need the new key for their next request.",
+    "canonical": "Existing clients will need the new key for their next request.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Server stopped",
+    "canonical": "Server stopped",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Starting server…",
+    "canonical": "Starting server…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Stopping server…",
+    "canonical": "Stopping server…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Listening · model unloaded",
+    "canonical": "Listening · model unloaded",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Preparing local model…",
+    "canonical": "Preparing local model…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Ready for requests",
+    "canonical": "Ready for requests",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Generating response…",
+    "canonical": "Generating response…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Choose a local model",
+    "canonical": "Choose a local model",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Server couldn’t start",
+    "canonical": "Server couldn’t start",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Model needs attention",
+    "canonical": "Model needs attention",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Uses the shared chat runtime. Memory and thermal limits still apply.",
+    "canonical": "Uses the shared chat runtime. Memory and thermal limits still apply.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Select an installed model to serve requests on this device.",
+    "canonical": "Select an installed model to serve requests on this device.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Model in use",
+    "canonical": "Model in use",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Connect both devices to the same network. Replace IPHONE_IP with this device’s address.",
+    "canonical": "Connect both devices to the same network. Replace IPHONE_IP with this device’s address.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Client format",
+    "canonical": "Client format",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Network address",
+    "canonical": "Network address",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Refresh connection details",
+    "canonical": "Refresh connection details",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Key copies stay on this device’s clipboard. Revealed keys hide when you leave this page.",
+    "canonical": "Key copies stay on this device’s clipboard. Revealed keys hide when you leave this page.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "API key revealed",
+    "canonical": "API key revealed",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "API key hidden",
+    "canonical": "API key hidden",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Rotate",
+    "canonical": "Rotate",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "1. Start the server and load an installed model.\n2. Verify the TLS pin through a trusted channel.\n3. Run these commands on your client.",
+    "canonical": "1. Start the server and load an installed model.\n2. Verify the TLS pin through a trusted channel.\n3. Run these commands on your client.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Copied commands include your API key. Keep both --insecure and --pinnedpubkey together; the pin verifies this device’s certificate.",
+    "canonical": "Copied commands include your API key. Keep both --insecure and --pinnedpubkey together; the pin verifies this device’s certificate.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Ports 1024–65535. Applying a change restarts an enabled server.",
+    "canonical": "Ports 1024–65535. Applying a change restarts an enabled server.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Off by default. Peer-to-peer / AWDL can accept nearby devices outside your network. Authentication is still required.",
+    "canonical": "Off by default. Peer-to-peer / AWDL can accept nearby devices outside your network. Authentication is still required.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Keep screen awake while running",
+    "canonical": "Keep screen awake while running",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Allow nearby devices",
+    "canonical": "Allow nearby devices",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Port",
+    "canonical": "Port",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Apply",
+    "canonical": "Apply",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "All routes require an API key. Responses supports text only. Compatibility is scoped; unsupported options return an error.",
+    "canonical": "All routes require an API key. Responses supports text only. Compatibility is scoped; unsupported options return an error.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "8 endpoints · OpenAI, Anthropic, Ollama",
+    "canonical": "8 endpoints · OpenAI, Anthropic, Ollama",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "Copy %@",
+    "canonical": "Copy {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/Bridge/LocalAPIServerView.swift"
+  },
+  {
+    "native": "PIN",
+    "canonical": "PIN",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/ImageParentalControlsView.swift"
+  },
+  {
+    "native": "annotate",
+    "canonical": "annotate",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/MarkupCanvasView.swift"
+  },
+  {
+    "native": "Use",
+    "canonical": "Use",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/MarkupCanvasView.swift"
+  },
+  {
+    "native": "Voice Validation",
+    "canonical": "Voice Validation",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Identity",
+    "canonical": "Identity",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Playback",
+    "canonical": "Playback",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Test actions",
+    "canonical": "Test actions",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Soak",
+    "canonical": "Soak",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Report",
+    "canonical": "Report",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Physical checklist",
+    "canonical": "Physical checklist",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Speak 30s English script",
+    "canonical": "Speak 30s English script",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Speak punctuation script",
+    "canonical": "Speak punctuation script",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Speak Turkish",
+    "canonical": "Speak Turkish",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Speak Arabic",
+    "canonical": "Speak Arabic",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Interrupt after 5s",
+    "canonical": "Interrupt after 5s",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Test voice restore toast",
+    "canonical": "Test voice restore toast",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Refresh route",
+    "canonical": "Refresh route",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Cycles: %lld",
+    "canonical": "Cycles: {{0}}",
+    "formats": [
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Start 15m quick soak",
+    "canonical": "Start 15m quick soak",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Start 60m extended soak",
+    "canonical": "Start 60m extended soak",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Stop soak",
+    "canonical": "Stop soak",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Generate diagnostic report",
+    "canonical": "Generate diagnostic report",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Share report",
+    "canonical": "Share report",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Voice/VoiceValidationView.swift"
+  },
+  {
+    "native": "Dismiss tip",
+    "canonical": "Dismiss tip",
+    "formats": [],
+    "source": "IOSLocalLLM/Services/TipsManager.swift"
+  },
+  {
+    "native": "Query: \"%@\"",
+    "canonical": "Query: \"{{0}}\"",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/Web/WebPermissionSheet.swift"
+  },
+  {
+    "native": "URL: %@",
+    "canonical": "URL: {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/Web/WebPermissionSheet.swift"
+  },
+  {
+    "native": "Only the query or URL shown above is sent. Chat history and attachments are not sent by the web tool. The recipient receives your IP address and an API credential when configured. Search providers may retain queries and reuse them to improve their services. Do not include private information.",
+    "canonical": "Only the query or URL shown above is sent. Chat history and attachments are not sent by the web tool. The recipient receives your IP address and an API credential when configured. Search providers may retain queries and reuse them to improve their services. Do not include private information.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebPermissionSheet.swift"
+  },
+  {
+    "native": "Read provider privacy policy",
+    "canonical": "Read provider privacy policy",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebPermissionSheet.swift"
+  },
+  {
+    "native": "Allow this web request once",
+    "canonical": "Allow this web request once",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebPermissionSheet.swift"
+  },
+  {
+    "native": "Always allow web requests",
+    "canonical": "Always allow web requests",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebPermissionSheet.swift"
+  },
+  {
+    "native": "Continue offline",
+    "canonical": "Continue offline",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebPermissionSheet.swift"
+  },
+  {
+    "native": "Allow Once",
+    "canonical": "Allow Once",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebPermissionSheet.swift"
+  },
+  {
+    "native": "Always Allow",
+    "canonical": "Always Allow",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebPermissionSheet.swift"
+  },
+  {
+    "native": "Not Now",
+    "canonical": "Not Now",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Web/WebPermissionSheet.swift"
+  },
+  {
+    "native": "Download an assistant model from the Models tab first.",
+    "canonical": "Download an assistant model from the Models tab first.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "No downloaded assistant models",
+    "canonical": "No downloaded assistant models",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "Browse Models",
+    "canonical": "Browse Models",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "Choose a model for this conversation, or set one as the default for new chats.",
+    "canonical": "Choose a model for this conversation, or set one as the default for new chats.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "Only models installed on this device can serve local API requests.",
+    "canonical": "Only models installed on this device can serve local API requests.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "New conversations and future launches will start with this model.",
+    "canonical": "New conversations and future launches will start with this model.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "Use this model automatically for new conversations",
+    "canonical": "Use this model automatically for new conversations",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "Default model",
+    "canonical": "Default model",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "Set as default",
+    "canonical": "Set as default",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "import from files",
+    "canonical": "import from files",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "author/repo (e.g. mlx-community/...)",
+    "canonical": "author/repo (e.g. mlx-community/...)",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "load this repo",
+    "canonical": "load this repo",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "Reviews privacy disclosure before first use",
+    "canonical": "Reviews privacy disclosure before first use",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "Show Options",
+    "canonical": "Show Options",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "Reasoning",
+    "canonical": "Reasoning",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "Use Apple Private Cloud",
+    "canonical": "Use Apple Private Cloud",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "When selected, the conversation content needed for your request is sent to Apple Private Cloud Compute for processing.",
+    "canonical": "When selected, the conversation content needed for your request is sent to Apple Private Cloud Compute for processing.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "Agree and Continue",
+    "canonical": "Agree and Continue",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantModelPickerView.swift"
+  },
+  {
+    "native": "no snippets yet",
+    "canonical": "no snippets yet",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SnippetPickerView.swift"
+  },
+  {
+    "native": "Save reusable prompts you find yourself typing often — they show up here for one-tap insert.",
+    "canonical": "Save reusable prompts you find yourself typing often — they show up here for one-tap insert.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SnippetPickerView.swift"
+  },
+  {
+    "native": "create your first",
+    "canonical": "create your first",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SnippetPickerView.swift"
+  },
+  {
+    "native": "new snippet",
+    "canonical": "new snippet",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SnippetPickerView.swift"
+  },
+  {
+    "native": "edit snippet",
+    "canonical": "edit snippet",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SnippetPickerView.swift"
+  },
+  {
+    "native": "snippet title",
+    "canonical": "snippet title",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SnippetPickerView.swift"
+  },
+  {
+    "native": "%@ Code",
+    "canonical": "{{0}} Code",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/CodePanelView.swift"
+  },
+  {
+    "native": "Copied!",
+    "canonical": "Copied!",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodePanelView.swift"
+  },
+  {
+    "native": "Message your assistant",
+    "canonical": "Message your assistant",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Message your on-device assistant",
+    "canonical": "Message your on-device assistant",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Model: %@",
+    "canonical": "Model: {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Choose a model",
+    "canonical": "Choose a model",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Add a prompt or attachment",
+    "canonical": "Add a prompt or attachment",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Dismiss keyboard",
+    "canonical": "Dismiss keyboard",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Prompt or snippet",
+    "canonical": "Prompt or snippet",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Photo",
+    "canonical": "Photo",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "File",
+    "canonical": "File",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Sampling settings",
+    "canonical": "Sampling settings",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "On-device runtime",
+    "canonical": "On-device runtime",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Current model",
+    "canonical": "Current model",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Runtime",
+    "canonical": "Runtime",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Model",
+    "canonical": "Model",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Family",
+    "canonical": "Family",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Approx. memory",
+    "canonical": "Approx. memory",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "State",
+    "canonical": "State",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Engine",
+    "canonical": "Engine",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Quantization",
+    "canonical": "Quantization",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Context window",
+    "canonical": "Context window",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Thermal",
+    "canonical": "Thermal",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Switch model",
+    "canonical": "Switch model",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Sampling",
+    "canonical": "Sampling",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Top-k",
+    "canonical": "Top-k",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "These values apply only to the next message. Empty controls use the selected model’s saved profile or the app defaults.",
+    "canonical": "These values apply only to the next message. Empty controls use the selected model’s saved profile or the app defaults.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Reset to model defaults",
+    "canonical": "Reset to model defaults",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Model settings",
+    "canonical": "Model settings",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Customize this model",
+    "canonical": "Customize this model",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Off uses the app-wide Assistant settings. Turn it on to save an independent profile for this model.",
+    "canonical": "Off uses the app-wide Assistant settings. Turn it on to save an independent profile for this model.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Reset to app defaults",
+    "canonical": "Reset to app defaults",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Repository",
+    "canonical": "Repository",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Settings",
+    "canonical": "Settings",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Effective settings",
+    "canonical": "Effective settings",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Source",
+    "canonical": "Source",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Response length",
+    "canonical": "Response length",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Temperature",
+    "canonical": "Temperature",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Top-p",
+    "canonical": "Top-p",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "%lld tokens",
+    "canonical": "{{0}} tokens",
+    "formats": [
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Thinking mode",
+    "canonical": "Thinking mode",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Behavior",
+    "canonical": "Behavior",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Device safety limits can still shorten a response when the phone is hot or memory is constrained.",
+    "canonical": "Device safety limits can still shorten a response when the phone is hot or memory is constrained.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Min-p",
+    "canonical": "Min-p",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "Repetition penalty",
+    "canonical": "Repetition penalty",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "These values are restored automatically whenever this model becomes active.",
+    "canonical": "These values are restored automatically whenever this model becomes active.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/AssistantChatComponents.swift"
+  },
+  {
+    "native": "change image",
+    "canonical": "change image",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VisualModelComparisonView.swift"
+  },
+  {
+    "native": "pick image",
+    "canonical": "pick image",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VisualModelComparisonView.swift"
+  },
+  {
+    "native": "FastVLM (built-in)",
+    "canonical": "FastVLM (built-in)",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VisualModelComparisonView.swift"
+  },
+  {
+    "native": "running left…",
+    "canonical": "running left…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VisualModelComparisonView.swift"
+  },
+  {
+    "native": "running right…",
+    "canonical": "running right…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VisualModelComparisonView.swift"
+  },
+  {
+    "native": "compare",
+    "canonical": "compare",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VisualModelComparisonView.swift"
+  },
+  {
+    "native": "Voice dictation",
+    "canonical": "Voice dictation",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KeyboardToolbar.swift"
+  },
+  {
+    "native": "Hide keyboard",
+    "canonical": "Hide keyboard",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KeyboardToolbar.swift"
+  },
+  {
+    "native": "Send",
+    "canonical": "Send",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KeyboardToolbar.swift"
+  },
+  {
+    "native": "sending",
+    "canonical": "sending",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KeyboardToolbar.swift"
+  },
+  {
+    "native": "send",
+    "canonical": "send",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/KeyboardToolbar.swift"
+  },
+  {
+    "native": "AGENT (PREVIEW)",
+    "canonical": "AGENT (PREVIEW)",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/Bridge/BridgeAgentCard.swift"
+  },
+  {
+    "native": "Approved on Mac → focused %@",
+    "canonical": "Approved on Mac → focused {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/Bridge/BridgeAgentCard.swift"
+  },
+  {
+    "native": "Preset is applied on the next analysis. Switch back to “describe” for the classic short live-caption feel.",
+    "canonical": "Preset is applied on the next analysis. Switch back to “describe” for the classic short live-caption feel.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/LensPromptPresetSheet.swift"
+  },
+  {
+    "native": "Clear conversation?",
+    "canonical": "Clear conversation?",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Runtime status: %@",
+    "canonical": "Runtime status: {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Shows compatible on-device models",
+    "canonical": "Shows compatible on-device models",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Loads the selected on-device model",
+    "canonical": "Loads the selected on-device model",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Shows on-device model and performance details",
+    "canonical": "Shows on-device model and performance details",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Share response",
+    "canonical": "Share response",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Jump to latest message",
+    "canonical": "Jump to latest message",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Back",
+    "canonical": "Back",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Assistant, %@",
+    "canonical": "Assistant, {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Shows available assistant models",
+    "canonical": "Shows available assistant models",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Stop generation",
+    "canonical": "Stop generation",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "filter messages…",
+    "canonical": "filter messages…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Choose",
+    "canonical": "Choose",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Load",
+    "canonical": "Load",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Change model",
+    "canonical": "Change model",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Reply length capped at %lld tokens",
+    "canonical": "Reply length capped at {{0}} tokens",
+    "formats": [
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Reply reached the token limit. Continue from here.",
+    "canonical": "Reply reached the token limit. Continue from here.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "%lld memory facts active",
+    "canonical": "{{0}} memory facts active",
+    "formats": [
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Network active",
+    "canonical": "Network active",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "No network activity",
+    "canonical": "No network activity",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "cut off",
+    "canonical": "cut off",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Mac bridge: %@. Tap to test connection.",
+    "canonical": "Mac bridge: {{0}}. Tap to test connection.",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Advanced reasoning through Apple Private Cloud Compute. A network connection is required.",
+    "canonical": "Advanced reasoning through Apple Private Cloud Compute. A network connection is required.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Ask questions, write, and explore ideas with a model running on your device.",
+    "canonical": "Ask questions, write, and explore ideas with a model running on your device.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Run open language models on your phone.",
+    "canonical": "Run open language models on your phone.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "%@ runs entirely on-device via %@. No servers. No keys. No telemetry.",
+    "canonical": "{{0}} runs entirely on-device via {{1}}. No servers. No keys. No telemetry.",
+    "formats": [
+      "@",
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Refreshes Apple Private Cloud availability",
+    "canonical": "Refreshes Apple Private Cloud availability",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "cloud",
+    "canonical": "cloud",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Load model",
+    "canonical": "Load model",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Inserts this prompt so you can edit it",
+    "canonical": "Inserts this prompt so you can edit it",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Memory margin",
+    "canonical": "Memory margin",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "This one-time attempt gives %@ a smaller memory margin. The app will still refuse the load if the model exceeds available memory, the device is too hot, or memory recovery is in progress.",
+    "canonical": "This one-time attempt gives {{0}} a smaller memory margin. The app will still refuse the load if the model exceeds available memory, the device is too hot, or memory recovery is in progress.",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Try a smaller memory margin",
+    "canonical": "Try a smaller memory margin",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Use the smaller memory margin for this attempt.",
+    "canonical": "Use the smaller memory margin for this attempt.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Try with safety checks",
+    "canonical": "Try with safety checks",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "search conversations…",
+    "canonical": "search conversations…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "history",
+    "canonical": "history",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Export",
+    "canonical": "Export",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Export as Markdown",
+    "canonical": "Export as Markdown",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Export as JSON",
+    "canonical": "Export as JSON",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "This chat is removed from this device. This can't be undone.",
+    "canonical": "This chat is removed from this device. This can't be undone.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "no saved conversations yet",
+    "canonical": "no saved conversations yet",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Conversations save automatically — and we'll auto-title them after the first reply.",
+    "canonical": "Conversations save automatically — and we'll auto-title them after the first reply.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "start a new chat",
+    "canonical": "start a new chat",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Expanded",
+    "canonical": "Expanded",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Collapsed",
+    "canonical": "Collapsed",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Collapses tool details",
+    "canonical": "Collapses tool details",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Shows tool details",
+    "canonical": "Shows tool details",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Reset %@ to default",
+    "canonical": "Reset {{0}} to default",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "override (default %@)",
+    "canonical": "override (default {{0}})",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "MATH · LATEX",
+    "canonical": "MATH · LATEX",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "· %lld words",
+    "canonical": "· {{0}} words",
+    "formats": [
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "reasoning…",
+    "canonical": "reasoning…",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "reasoning",
+    "canonical": "reasoning",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "hide",
+    "canonical": "hide",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "show",
+    "canonical": "show",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "Repair & retry",
+    "canonical": "Repair & retry",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CodingAssistantView.swift"
+  },
+  {
+    "native": "retry →",
+    "canonical": "retry →",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SetupBannerView.swift"
+  },
+  {
+    "native": "finish setup →",
+    "canonical": "finish setup →",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/SetupBannerView.swift"
+  },
+  {
+    "native": "Conversation model %@. Voice %@",
+    "canonical": "Conversation model {{0}}. Voice {{1}}",
+    "formats": [
+      "@",
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/VoiceConversationView.swift"
+  },
+  {
+    "native": "Conversation model: %@",
+    "canonical": "Conversation model: {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/VoiceConversationView.swift"
+  },
+  {
+    "native": "TTS engine: %@",
+    "canonical": "TTS engine: {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/VoiceConversationView.swift"
+  },
+  {
+    "native": "Apple TTS fallback is active",
+    "canonical": "Apple TTS fallback is active",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VoiceConversationView.swift"
+  },
+  {
+    "native": "Audio playing",
+    "canonical": "Audio playing",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VoiceConversationView.swift"
+  },
+  {
+    "native": "Playing",
+    "canonical": "Playing",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/VoiceConversationView.swift"
+  },
+  {
+    "native": "Timing: %@",
+    "canonical": "Timing: {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/VoiceConversationView.swift"
+  },
+  {
+    "native": "Active phrase: %@",
+    "canonical": "Active phrase: {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/VoiceConversationView.swift"
+  },
+  {
+    "native": "Rebuilds/s: %lld · scrolls/s: %lld",
+    "canonical": "Rebuilds/s: {{0}} · scrolls/s: {{1}}",
+    "formats": [
+      "lld",
+      "lld"
+    ],
+    "source": "IOSLocalLLM/Views/VoiceConversationView.swift"
+  },
+  {
+    "native": "Mode: %@ · interrupt: %@ ms",
+    "canonical": "Mode: {{0}} · interrupt: {{1}} ms",
+    "formats": [
+      "@",
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/VoiceConversationView.swift"
+  },
+  {
+    "native": "Route: %@",
+    "canonical": "Route: {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/VoiceConversationView.swift"
+  },
+  {
+    "native": "LLM: %@",
+    "canonical": "LLM: {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/VoiceConversationView.swift"
+  },
+  {
+    "native": "TTS: %@",
+    "canonical": "TTS: {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/VoiceConversationView.swift"
+  },
+  {
+    "native": "Download Core AI pack?",
+    "canonical": "Download Core AI pack?",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CoreAIModelsSectionView.swift"
+  },
+  {
+    "native": "Remove Core AI pack?",
+    "canonical": "Remove Core AI pack?",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CoreAIModelsSectionView.swift"
+  },
+  {
+    "native": "Text chat runs on this device. Download a complete pack before loading. One heavy runtime is kept in memory at a time.",
+    "canonical": "Text chat runs on this device. Download a complete pack before loading. One heavy runtime is kept in memory at a time.",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CoreAIModelsSectionView.swift"
+  },
+  {
+    "native": "Core AI · Optional local runtime",
+    "canonical": "Core AI · Optional local runtime",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CoreAIModelsSectionView.swift"
+  },
+  {
+    "native": "Core AI model downloads",
+    "canonical": "Core AI model downloads",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CoreAIModelsSectionView.swift"
+  },
+  {
+    "native": "Download %@",
+    "canonical": "Download {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/CoreAIModelsSectionView.swift"
+  },
+  {
+    "native": "This downloads model files from Hugging Face. Keep the app open while the transfer completes. %@",
+    "canonical": "This downloads model files from Hugging Face. Keep the app open while the transfer completes. {{0}}",
+    "formats": [
+      "@"
+    ],
+    "source": "IOSLocalLLM/Views/CoreAIModelsSectionView.swift"
+  },
+  {
+    "native": "Remove pack",
+    "canonical": "Remove pack",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CoreAIModelsSectionView.swift"
+  },
+  {
+    "native": "Installed · Core AI",
+    "canonical": "Installed · Core AI",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CoreAIModelsSectionView.swift"
+  },
+  {
+    "native": "Use model",
+    "canonical": "Use model",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CoreAIModelsSectionView.swift"
+  },
+  {
+    "native": "View model files and license",
+    "canonical": "View model files and license",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CoreAIModelsSectionView.swift"
+  },
+  {
+    "native": "Review download",
+    "canonical": "Review download",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CoreAIModelsSectionView.swift"
+  },
+  {
+    "native": "Installed",
+    "canonical": "Installed",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CoreAIDownloadControlsView.swift"
+  },
+  {
+    "native": "Resume",
+    "canonical": "Resume",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CoreAIDownloadControlsView.swift"
+  },
+  {
+    "native": "Download",
+    "canonical": "Download",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CoreAIDownloadControlsView.swift"
+  },
+  {
+    "native": "Pause",
+    "canonical": "Pause",
+    "formats": [],
+    "source": "IOSLocalLLM/Views/CoreAIDownloadControlsView.swift"
+  }
+]

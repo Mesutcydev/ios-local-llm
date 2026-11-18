@@ -2,10 +2,8 @@ import SwiftUI
 import UIKit   // UIFont probe in the font-name fallback path
 
 // MARK: - KoduTheme
-// Studio design language for IOSLocalLLM — Apple clear glass, neutral content,
-// and color reserved for state or a primary action. Surface colors are
-// intentionally translucent: native iOS 26 chrome gets real `.clear` glass,
-// while legacy/custom fills still reveal the shared ambient backdrop.
+// Studio design language: neutral content and color reserved for state.
+// Dark appearances use opaque neutral surfaces for predictable contrast.
 //
 // Source: Direction B from the Kodu design handoff.
 //   Geist + Geist Mono · #fafaf9 background · #1d4ed8 accent · table density.
@@ -55,6 +53,11 @@ struct KoduTheme {
     /// the page stays true #000000.
     var isOLED: Bool = false
 
+    /// Supplied by the theme modifier's ScaledMetric. Using a real SwiftUI
+    /// system font avoids looking up UIKit's private SF font names as custom
+    /// fonts, which can silently resolve to a serif face on newer OS releases.
+    var systemFontScale: CGFloat = 1
+
     // Brand-accent anchors. Stored (not computed) so `KoduTheme.make(appearance:accent:)`
     // can swap the whole brand-accent family per selected palette while leaving
     // backgrounds, ink, the sage `accent2`, and semantic good/warn/bad intact.
@@ -70,16 +73,16 @@ struct KoduTheme {
         surface2:  Color.white.opacity(0.18),
         surface3:  Color.white.opacity(0.10),
         ink:       Color(red: 0.110, green: 0.110, blue: 0.118),  // #1C1C1E label
-        ink2:      Color(red: 0.427, green: 0.427, blue: 0.447),  // #6D6D72 secondary
-        ink3:      Color(red: 0.557, green: 0.557, blue: 0.576),  // #8E8E93 tertiary
+        ink2:      Color(red: 0.310, green: 0.310, blue: 0.337),  // secondary reading text
+        ink3:      Color(red: 0.361, green: 0.361, blue: 0.388),  // readable metadata on glass
         ink4:      Color(red: 0.780, green: 0.780, blue: 0.800),  // #C7C7CC quaternary
         rule:      Color.black.opacity(0.10),
         rule2:     Color.black.opacity(0.18),
-        accent:    Color(red: 0.000, green: 0.478, blue: 1.000),  // system blue fallback
+        accent:    Color(red: 0.000, green: 0.420, blue: 0.920),  // blue, 4.6:1 on bg (system blue was 3.8:1)
         accentSoft:   Color(red: 0.000, green: 0.478, blue: 1.000).opacity(0.10),
         accentSofter: Color(red: 0.000, green: 0.478, blue: 1.000).opacity(0.06),
-        good:      Color(red: 0.133, green: 0.545, blue: 0.302),
-        warn:      Color(red: 0.690, green: 0.424, blue: 0.047),
+        good:      Color(red: 0.110, green: 0.500, blue: 0.270),  // 4.7:1 on bg
+        warn:      Color(red: 0.620, green: 0.380, blue: 0.040),  // 4.8:1 on bg
         bad:       Color(red: 0.784, green: 0.118, blue: 0.196),
         pad: 16, gap: 10,
         isDark: false,
@@ -90,15 +93,14 @@ struct KoduTheme {
 
     // MARK: - Dark — neutral utility
     static let dark = KoduTheme(
-        // Lift the canvas above black so clear glass reads as smoked crystal,
-        // while keeping enough depth for bright, fully opaque foreground ink.
-        bg:        Color(red: 0.140, green: 0.155, blue: 0.190),
-        surface:   Color.white.opacity(0.13),
-        surface2:  Color.white.opacity(0.18),
-        surface3:  Color.white.opacity(0.08),
+        // Neutral, opaque layers keep contrast stable across screens.
+        bg:        Color(white: 0.075),
+        surface:   Color(white: 0.12),
+        surface2:  Color(white: 0.16),
+        surface3:  Color(white: 0.20),
         ink:       Color(red: 0.929, green: 0.929, blue: 0.937),
         ink2:      Color(red: 0.706, green: 0.706, blue: 0.729),
-        ink3:      Color(red: 0.510, green: 0.510, blue: 0.533),
+        ink3:      Color(white: 0.66),
         ink4:      Color(red: 0.337, green: 0.337, blue: 0.357),
         rule:      Color.white.opacity(0.15),
         rule2:     Color.white.opacity(0.25),
@@ -115,26 +117,20 @@ struct KoduTheme {
         accentStrong: Color(red: 0.220, green: 0.600, blue: 1.000)
     )
 
-    // MARK: - OLED Dark — Plum Dusk
-    //
-    // Pure #000000 page so OLED pixels switch off (deeper blacks, less battery),
-    // with NEUTRAL grays for ink/surfaces instead of the warm mulberry of the
-    // standard dark theme — the readable, high-contrast look of a modern code
-    // editor. Surfaces are translucent whites over the black page, so cards/
-    // pills read as subtly elevated panels (≈#121212 / #212121) rather than
-    // pure black, keeping depth without lifting the page off true black.
+    // MARK: - OLED Dark
+    // Pure black canvas with opaque, subtly elevated neutral surfaces.
     static let oled = KoduTheme(
-        bg:        Color(red: 0.004, green: 0.004, blue: 0.008),  // #010102 OLED black
-        surface:   Color.white.opacity(0.10),                     // clear elevated card
-        surface2:  Color.white.opacity(0.15),                     // clear glass highlight
-        surface3:  Color.white.opacity(0.06),                     // quiet glass layer
+        bg:        Color.black,                                      // true OLED black
+        surface:   Color(white: 0.065),                           // elevated card
+        surface2:  Color(white: 0.11),                            // controls and toolbars
+        surface3:  Color(white: 0.15),                            // nested surface
         ink:       Color(red: 0.929, green: 0.929, blue: 0.937),  // #EDEDEF off-white (not harsh pure white)
         ink2:      Color(red: 0.706, green: 0.706, blue: 0.729),  // #B4B4BA secondary
-        ink3:      Color(red: 0.510, green: 0.510, blue: 0.533),  // #828288 tertiary
+        ink3:      Color(white: 0.66),  // #828288 tertiary
         ink4:      Color(red: 0.337, green: 0.337, blue: 0.357),  // #56565B quaternary
         rule:      Color.white.opacity(0.09),
         rule2:     Color.white.opacity(0.16),
-        accent:    Color(red: 0.769, green: 0.169, blue: 0.522),  // #C42B85
+        accent:    Color(red: 0.820, green: 0.190, blue: 0.540),  // magenta, 4.5:1 on black, 4.7:1 under white
         accentSoft:   Color(red: 0.643, green: 0.067, blue: 0.384).opacity(0.30),
         accentSofter: Color(red: 0.643, green: 0.067, blue: 0.384).opacity(0.16),
         good:      Color(red: 0.525, green: 1.000, blue: 0.753),  // #86FFC0
@@ -200,7 +196,7 @@ struct KoduTheme {
                 // still passes everywhere (no light-on-light), while the accent
                 // stays legible as ink on dark/OLED backgrounds.
                 return dark
-                    ? (c(0.46,0.46,0.51), c(0.55,0.55,0.60), c(0.36,0.36,0.41), c(0.42,0.42,0.47))
+                    ? (c(0.76,0.76,0.80), c(0.55,0.55,0.60), c(0.36,0.36,0.41), c(0.42,0.42,0.47))
                     : (c(0.169,0.169,0.188), c(0.227,0.227,0.251), c(0.102,0.102,0.118), c(0.137,0.137,0.153))
             case .system:
                 // iOS-native systemBlue — #007AFF (light) / a brighter blue for
@@ -349,10 +345,9 @@ struct KoduTheme {
     // MARK: - Typography helpers
     // Falls back to system fonts when Geist isn't installed.
     //
-    // Each helper returns a Font that respects iOS Dynamic Type by mapping
-    // the design's nominal size to the closest semantic TextStyle relative-
-    // weight. The result still LOOKS like our design at default settings, but
-    // scales when the user has Larger Text enabled in iOS Accessibility.
+    // Keep each nominal design size at the default text setting. Bundled
+    // fonts use Font.custom scaling; native fallbacks use the theme modifier's
+    // body-relative ScaledMetric so both paths support Dynamic Type.
 
     /// Display / sans body. Uses Geist when the font is bundled, otherwise
     /// falls back to the system default. The Kodu prototype targets Geist
@@ -360,33 +355,32 @@ struct KoduTheme {
     /// that don't have the file.
     func display(_ size: CGFloat, _ weight: Font.Weight = .semibold) -> Font {
         Self.named("Geist", size: size, weight: weight)
-            ?? .system(Self.textStyle(for: size), design: .default).weight(weight)
+            ?? .system(size: size * systemFontScale, weight: weight)
     }
 
+    /// Shared reading size for prompts, live responses, and completed transcripts.
+    /// Both the bundled font and system fallback follow Dynamic Type.
+    var conversationBody: Font {
+        Self.named("Geist", size: 17, weight: .regular) ?? .body
+    }
+
+    /// Smallest design size at the default text setting. Captions authored at
+    /// 8–9.5 pt were well under legibility guidance; they still scale with
+    /// Dynamic Type from here.
+    static let minimumTextSize: CGFloat = 10
+
     func sans(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
-        Self.named("Geist", size: size, weight: weight)
-            ?? .system(Self.textStyle(for: size), design: .default).weight(weight)
+        let size = max(size, Self.minimumTextSize)
+        return Self.named("Geist", size: size, weight: weight)
+            ?? .system(size: size * systemFontScale, weight: weight)
     }
 
     /// Monospaced — pervasive in this design language. Prefers Geist Mono,
     /// falls back to the system monospaced face.
     func mono(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
-        Self.named("Geist Mono", size: size, weight: weight)
-            ?? .system(Self.textStyle(for: size), design: .monospaced).weight(weight)
-    }
-
-    static func textStyle(for size: CGFloat) -> Font.TextStyle {
-        switch size {
-        case ..<12: return .caption2
-        case ..<13: return .caption
-        case ..<15: return .footnote
-        case ..<17: return .subheadline
-        case ..<20: return .body
-        case ..<22: return .title3
-        case ..<28: return .title2
-        case ..<34: return .title
-        default: return .largeTitle
-        }
+        let size = max(size, Self.minimumTextSize)
+        return Self.named("Geist Mono", size: size, weight: weight)
+            ?? .system(size: size * systemFontScale, weight: weight, design: .monospaced)
     }
 
     /// Returns nil when the family isn't registered with UIFont — the caller
@@ -395,13 +389,13 @@ struct KoduTheme {
     private static func named(_ family: String, size: CGFloat, weight: Font.Weight) -> Font? {
         let key = "\(family)|\(weight.weightString)"
         if let cached = fontCache[key] {
-            return cached.map { Font.custom($0, size: size, relativeTo: textStyle(for: size)).weight(weight) }
+            return cached.map { Font.custom($0, size: size).weight(weight) }
         }
         // Probe UIFont — cheap miss is fine, we'll cache the negative result.
         let candidate = uiFontName(family: family, weight: weight)
         if UIFont(name: candidate, size: size) != nil {
             fontCache[key] = candidate
-            return Font.custom(candidate, size: size, relativeTo: textStyle(for: size)).weight(weight)
+            return Font.custom(candidate, size: size).weight(weight)
         }
         fontCache[key] = .some(nil)   // negative cache
         return nil
@@ -464,6 +458,17 @@ extension EnvironmentValues {
 extension View {
     /// Inject a KoduTheme into the environment.
     func koduTheme(_ theme: KoduTheme) -> some View {
-        self.environment(\.koduTheme, theme)
+        modifier(KoduThemeModifier(theme: theme))
+    }
+}
+
+private struct KoduThemeModifier: ViewModifier {
+    let theme: KoduTheme
+    @ScaledMetric(relativeTo: .body) private var fontScale: CGFloat = 1
+
+    func body(content: Content) -> some View {
+        var scaledTheme = theme
+        scaledTheme.systemFontScale = fontScale
+        return content.environment(\.koduTheme, scaledTheme)
     }
 }

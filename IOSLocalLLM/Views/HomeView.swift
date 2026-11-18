@@ -15,6 +15,7 @@ import SwiftUI
 // and testable.
 struct HomeView: View {
     @Environment(\.koduTheme) private var T
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ObservedObject private var assistant = CodingAssistantService.shared
     @ObservedObject private var center = ModelDownloadCenter.shared
     @ObservedObject private var convos = ConversationStore.shared
@@ -28,8 +29,8 @@ struct HomeView: View {
     var onOpenVoice: () -> Void
     /// Open the Models tab.
     var onOpenModels: () -> Void
-    /// Present the Mac / Bridge screen.
-    var onOpenMac: () -> Void
+    /// Present the local API server workspace.
+    var onOpenLocalAPIServer: () -> Void
     /// Present the on-device image generation studio.
     var onGenerateImage: () -> Void
     /// Present Settings.
@@ -41,15 +42,23 @@ struct HomeView: View {
         ScrollView {
             VStack(spacing: 16) {
                 header
-                heroCard
-                quickActions
-                imageGenerationCard
-                recentSection
-                privacyCard
+                LazyVGrid(columns: [GridItem(.adaptive(
+                    minimum: dynamicTypeSize.isAccessibilitySize ? 440 : 300
+                ), spacing: 16)], alignment: .leading, spacing: 16) {
+                    heroCard
+                    VStack(spacing: 16) {
+                        quickActions
+                        imageGenerationCard
+                    }
+                    recentSection
+                    privacyCard
+                }
             }
             .padding(.horizontal, 18)
-            .padding(.top, 8)
+            .padding(.top, AppSpacing.large)
             .padding(.bottom, 28)
+            .frame(maxWidth: AppLayout.dashboardWidth)
+            .frame(maxWidth: .infinity)
         }
         .background(LiquidPinkBackdrop())
         .scrollIndicators(.hidden)
@@ -58,33 +67,18 @@ struct HomeView: View {
     // MARK: Header — greeting + avatar/settings
 
     private var header: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 1) {
-                Text(greeting.uppercased())
-                    .font(T.sans(13, .semibold))
-                    .tracking(0)
-                    .foregroundColor(T.ink3)
-                Text("Studio")
-                    .font(T.display(30, .semibold))
-                    .foregroundColor(T.ink)
-            }
-            Spacer()
+        KScreenHeader(title: loc.t("Studio"), eyebrow: greeting) {
             Button(action: { HapticManager.impact(.light); onOpenSettings() }) {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(T.ink2)
-                    .frame(width: 40, height: 40)
-                    .kClearGlass(
-                        in: Circle(),
-                        interactive: true,
-                        fallbackFill: T.surface,
-                        fallbackStroke: T.rule
-                    )
+                Image(systemName: "gearshape")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(T.ink2)
+                    .frame(width: 44, height: 44)
+                    .kClearGlass(in: Circle(), interactive: true)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(KTactileButtonStyle())
             .accessibilityLabel(loc.t("settings"))
+            .accessibilityIdentifier("home.settings")
         }
-        .padding(.top, 6)
     }
 
     // MARK: Hero — assistant ready
@@ -98,13 +92,17 @@ struct HomeView: View {
             // A cancelled load (tab switch, memory pressure) isn't a real
             // failure — present it as the calm idle state, not an alarm.
             if e.localizedCaseInsensitiveContains("cancel") {
-                return (T.ink3, loc.t("Tap New chat to start"))
+                return needsModelSetup
+                    ? (T.accent, loc.t("Choose a model to get started"))
+                    : (T.ink3, loc.t("Tap New chat to start"))
             }
             return (T.bad, loc.t("Model needs setup"))
         case .unloaded:
             return downloadInProgress
-                ? (T.warn, loc.t("Preparing model…"))
-                : (T.ink3, loc.t("Tap New chat to start"))
+                ? (T.warn, loc.t("Downloading model…"))
+                : needsModelSetup
+                    ? (T.accent, loc.t("Choose a model to get started"))
+                    : (T.ink3, loc.t("Tap New chat to start"))
         }
     }
 
@@ -114,13 +112,27 @@ struct HomeView: View {
         if case .loading(let m) = assistant.state, !m.isEmpty { return m }
         if case .failed(let e) = assistant.state, !e.isEmpty,
            !e.localizedCaseInsensitiveContains("cancel") { return e }
+        if needsModelSetup {
+            return loc.t("Choose and download a model in Models before starting a local chat.")
+        }
         return "\(assistant.activeModel.displayName) — \(loc.t("replies stay on your iPhone"))"
+    }
+
+    private var needsModelSetup: Bool {
+        guard assistant.activeExecutionLocation == .localDownloaded else { return false }
+        switch assistant.state {
+        case .unloaded, .failed:
+            return !downloadInProgress && !assistant.selectedModelIsInstalled
+        case .loading, .ready, .generating:
+            return false
+        }
     }
 
     /// True while any model is actively downloading — so the hero reads
     /// "Preparing…" instead of a misleading "ready"/idle state.
     private var downloadInProgress: Bool {
         center.models.contains { m in
+            guard m.sourceRepoID == assistant.activeModel.repoID else { return false }
             switch m.state {
             case .downloading, .enumerating: return true
             default: return false
@@ -134,7 +146,7 @@ struct HomeView: View {
             HStack(spacing: 8) {
                 Circle().fill(state.dot)
                     .frame(width: 7, height: 7)
-                Text(loc.t("Local by default").uppercased())
+                Text(loc.t("Your local AI studio"))
                     .font(T.sans(12, .bold)).tracking(0)
                     .foregroundColor(T.ink3)
                 Spacer()
@@ -153,21 +165,14 @@ struct HomeView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 10) {
-                Button(action: { HapticManager.impact(.medium); onNewChat() }) {
-                    Text(loc.t("New chat"))
-                        .font(T.sans(15, .semibold))
-                        .foregroundColor(T.accentStrong)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .kClearGlass(
-                            in: RoundedRectangle(cornerRadius: 12, style: .continuous),
-                            tint: T.accentStrong.opacity(0.26),
-                            interactive: true,
-                            fallbackFill: T.accentStrong,
-                            fallbackStroke: T.accent.opacity(0.35)
-                        )
+                KPrimaryButton(
+                    label: loc.t(needsModelSetup ? "Choose a model" : "New chat"),
+                    systemImage: "square.and.pencil"
+                ) {
+                    HapticManager.impact(.medium)
+                    if needsModelSetup { onOpenModels() } else { onNewChat() }
                 }
-                .buttonStyle(.plain)
+                .accessibilityIdentifier("home.assistant.start")
                 Button(action: { HapticManager.impact(.light); onOpenVoice() }) {
                     Image(systemName: "mic.fill")
                         .font(.system(size: 18, weight: .semibold))
@@ -181,9 +186,10 @@ struct HomeView: View {
                         )
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(loc.t("voice"))
+                .accessibilityLabel(loc.t("Voice"))
             }
             .padding(.top, 18)
+            .avoidingDisplayDivision()
         }
         .padding(20)
         .background(card(20))
@@ -192,11 +198,16 @@ struct HomeView: View {
     // MARK: Quick actions
 
     private var quickActions: some View {
-        HStack(spacing: 12) {
-            quickAction(icon: "camera.viewfinder", label: loc.t("lens"), action: onOpenLens)
-            quickAction(icon: "waveform", label: loc.t("voice"), action: onOpenVoice)
-            quickAction(icon: "desktopcomputer", label: loc.t("mac"), action: onOpenMac)
+        LazyVGrid(columns: [GridItem(.adaptive(
+            minimum: dynamicTypeSize.isAccessibilitySize ? 150 : 88
+        ), spacing: 12)], spacing: 12) {
+            quickAction(icon: "camera.viewfinder", label: loc.t("Lens"), action: onOpenLens)
+            quickAction(icon: "waveform", label: loc.t("Voice"), action: onOpenVoice)
+            quickAction(icon: "server.rack", label: loc.t("Local API Server"), action: onOpenLocalAPIServer)
+                .accessibilityIdentifier("home.api.open")
         }
+        .fixedSize(horizontal: false, vertical: true)
+        .avoidingDisplayDivision()
     }
 
     private func quickAction(icon: String, label: String, action: @escaping () -> Void) -> some View {
@@ -212,12 +223,16 @@ struct HomeView: View {
                 Text(label)
                     .font(T.sans(12.5, .semibold))
                     .foregroundColor(T.ink)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 6)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, 14)
             .background(card(18))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 
     private var imageGenerationCard: some View {
@@ -244,7 +259,7 @@ struct HomeView: View {
 
                 Spacer(minLength: 8)
 
-                Image(systemName: "chevron.right")
+                Image(systemName: "chevron.forward")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(T.ink3)
             }
@@ -273,8 +288,12 @@ struct HomeView: View {
             if recent.isEmpty {
                 HStack(spacing: 12) {
                     iconTile("message", tint: T.accent)
-                    Text(loc.t("No recent activity yet"))
-                        .font(T.sans(15)).foregroundColor(T.ink3)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(loc.t("No recent activity yet"))
+                            .font(T.sans(15, .medium)).foregroundStyle(T.ink)
+                        Text(loc.t("Your conversations will appear here."))
+                            .font(T.sans(13)).foregroundStyle(T.ink2)
+                    }
                     Spacer()
                 }
                 .padding(14)
@@ -304,7 +323,7 @@ struct HomeView: View {
                     .font(T.sans(12.5)).foregroundColor(T.ink3)
             }
             Spacer(minLength: 6)
-            Image(systemName: "chevron.right")
+            Image(systemName: "chevron.forward")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(T.ink4)
         }
@@ -333,6 +352,8 @@ struct HomeView: View {
                 Text(loc.t("Manage"))
                     .font(T.sans(13, .semibold)).foregroundColor(T.ink)
                     .padding(.horizontal, 13).padding(.vertical, 7)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Capsule())
                     .kClearGlass(
                         in: Capsule(),
                         interactive: true,

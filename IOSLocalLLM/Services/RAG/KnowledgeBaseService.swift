@@ -21,7 +21,7 @@ struct KBDocument: Codable, Identifiable, Hashable {
     var byteCount: Int
 }
 
-struct KBChunk: Codable {
+struct KBChunk: Codable, Sendable {
     let id: UUID
     let docID: UUID
     let text: String
@@ -45,11 +45,16 @@ final class KnowledgeBaseService: ObservableObject {
     @Published private(set) var isIndexing = false
     /// When true the assistant augments answers with retrieved KB context.
     @Published var isEnabled: Bool {
-        didSet { UserDefaults.standard.set(isEnabled, forKey: Self.enabledKey) }
+        didSet { preferences.set(isEnabled, forKey: Self.enabledKey) }
     }
 
     private var chunks: [KBChunk] = []
-    private let embedder = OnDeviceEmbedder()
+    private lazy var embedder = OnDeviceEmbedder()
+    private let storageURL: URL
+    private let preferences: UserDefaults
+    private let embedding: (@Sendable (String) async -> [Float]?)?
+    private var importGeneration: UInt64 = 0
+    private var importJobs: [UUID: Task<[KBChunk], Never>] = [:]
 
     private static let enabledKey = "knowledgeBase.enabled"
 
@@ -58,15 +63,39 @@ final class KnowledgeBaseService: ObservableObject {
     private let chunkChars = 1_600                // ~400 tokens
     private let overlapChars = 200                // ~50 tokens
     private let maxChunksPerDoc = 400
-    private let maxTotalChunks = 5_000
+    private let maxTotalChunks: Int
 
     /// True when on-device embeddings are usable (language model present).
-    var isAvailable: Bool { embedder.isAvailable }
+    var isAvailable: Bool { embedding != nil || embedder.isAvailable }
     var totalChunks: Int { chunks.count }
 
-    private init() {
-        isEnabled = UserDefaults.standard.bool(forKey: Self.enabledKey)
+    init(indexURL: URL? = nil, preferences: UserDefaults = .standard,
+         maxTotalChunks: Int = 5_000,
+         embedding: (@Sendable (String) async -> [Float]?)? = nil) {
+        self.storageURL = indexURL ?? Self.indexURL
+        self.preferences = preferences
+        self.maxTotalChunks = max(0, maxTotalChunks)
+        self.embedding = embedding
+        isEnabled = preferences.bool(forKey: Self.enabledKey)
         load()
+    }
+
+    func cancelImports() {
+        importGeneration &+= 1
+        importJobs.values.forEach { $0.cancel() }
+        importJobs.removeAll()
+        isIndexing = false
+    }
+
+    /// Cancel producers before deleting their output so a late import cannot
+    /// restore private documents or recreate the index after a reset.
+    func wipeFromDisk() {
+        cancelImports()
+        documents.removeAll()
+        chunks.removeAll()
+        isEnabled = false
+        preferences.removeObject(forKey: Self.enabledKey)
+        try? FileManager.default.removeItem(at: storageURL)
     }
 
     // MARK: - Mutation
@@ -75,8 +104,8 @@ final class KnowledgeBaseService: ObservableObject {
     /// runs off the main actor; the index is updated and persisted on return.
     func addDocument(name: String, text: String) async {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, embedder.isAvailable else {
-            if !embedder.isAvailable {
+        guard !trimmed.isEmpty, isAvailable else {
+            if !isAvailable {
                 ToastCenter.shared.error("Knowledge Base unavailable",
                                          detail: "On-device embeddings aren't supported for this language.")
             }
@@ -88,32 +117,55 @@ final class KnowledgeBaseService: ObservableObject {
             return
         }
         let clipped = String(trimmed.prefix(maxCharsPerDoc))
+        let generation = importGeneration
+        let jobID = UUID()
         isIndexing = true
-        defer { isIndexing = false }
+        defer {
+            importJobs.removeValue(forKey: jobID)
+            isIndexing = !importJobs.isEmpty
+        }
 
         let docID = UUID()
-        let embedder = self.embedder
+        let embedding = self.embedding
         let chunkChars = self.chunkChars
         let overlapChars = self.overlapChars
         let maxChunks = self.maxChunksPerDoc
 
-        let newChunks: [KBChunk] = await Task.detached(priority: .userInitiated) {
+        let job = Task.detached(priority: .userInitiated) { () -> [KBChunk] in
+            // Each import owns its NaturalLanguage objects.
+            let worker = embedding == nil ? OnDeviceEmbedder() : nil
             let windows = Self.chunk(clipped, chunkChars: chunkChars,
                                      overlapChars: overlapChars, maxChunks: maxChunks)
             var out: [KBChunk] = []
             out.reserveCapacity(windows.count)
             for w in windows {
-                guard let v = embedder.embed(w) else { continue }
+                guard !Task.isCancelled else { return [] }
+                let vector: [Float]?
+                if let embedding { vector = await embedding(w) }
+                else { vector = worker?.embed(w) }
+                guard let v = vector else { continue }
                 out.append(KBChunk(id: UUID(), docID: docID, text: w, vector: v))
             }
             return out
-        }.value
+        }
+        importJobs[jobID] = job
+        let newChunks = await withTaskCancellationHandler {
+            await job.value
+        } onCancel: {
+            job.cancel()
+        }
+        guard generation == importGeneration, !Task.isCancelled, !job.isCancelled else { return }
 
         guard !newChunks.isEmpty else {
             ToastCenter.shared.error("Couldn't index \(name)", detail: "No embeddable text found.")
             return
         }
 
+        guard newChunks.count <= maxTotalChunks - chunks.count else {
+            ToastCenter.shared.error("Knowledge Base full",
+                                     detail: "Remove older documents before indexing more.")
+            return
+        }
         chunks.append(contentsOf: newChunks)
         documents.append(KBDocument(id: docID, name: name, addedAt: Date(),
                                     chunkCount: newChunks.count, byteCount: clipped.utf8.count))
@@ -130,6 +182,7 @@ final class KnowledgeBaseService: ObservableObject {
     }
 
     func clear() {
+        cancelImports()
         documents.removeAll()
         chunks.removeAll()
         persist()
@@ -220,8 +273,13 @@ final class KnowledgeBaseService: ObservableObject {
     private func persist() {
         let index = Index(documents: documents, chunks: chunks)
         do {
+            // A privacy reset removes the parent directory as well as the file.
+            // Recreate it only when the user adds or edits the index again.
+            try FileManager.default.createDirectory(
+                at: storageURL.deletingLastPathComponent(), withIntermediateDirectories: true
+            )
             let data = try JSONEncoder().encode(index)
-            try data.write(to: Self.indexURL, options: [.atomic, .completeFileProtectionUnlessOpen])
+            try data.write(to: storageURL, options: [.atomic, .completeFileProtectionUnlessOpen])
         } catch {
             // Non-fatal: the in-memory index still works this session.
             print("[KnowledgeBase] persist failed: \(error)")
@@ -229,7 +287,7 @@ final class KnowledgeBaseService: ObservableObject {
     }
 
     private func load() {
-        guard let data = try? Data(contentsOf: Self.indexURL),
+        guard let data = try? Data(contentsOf: storageURL),
               let index = try? JSONDecoder().decode(Index.self, from: data) else { return }
         documents = index.documents
         chunks = index.chunks

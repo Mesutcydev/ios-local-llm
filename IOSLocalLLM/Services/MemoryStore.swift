@@ -92,6 +92,12 @@ final class MemoryStore: ObservableObject {
         facts.filter { $0.personaID == nil || $0.personaID == personaID }.count
     }
 
+    /// Clears persisted and live user content so a later save cannot restore it.
+    func clearAllForWipe() {
+        facts.removeAll()
+        UserDefaults.standard.removeObject(forKey: storageKey)
+    }
+
     // MARK: - Persistence
 
     private func load() {

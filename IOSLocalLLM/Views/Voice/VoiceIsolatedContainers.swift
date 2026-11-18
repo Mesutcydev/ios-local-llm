@@ -2,8 +2,8 @@ import SwiftUI
 
 // MARK: - Isolated observation boundaries
 // Orb never observes karaoke; karaoke never observes amplitude.
-// Spoken-end is polled (not @Published) so VoiceConversationView is not
-// invalidated at display-link rate. The orb renders independently in Metal.
+// VoiceConversationView observes neither model, so it is never invalidated
+// by playback progress. The orb renders independently in Metal.
 
 struct VoiceOrbContainer: View {
     @ObservedObject var orb: OrbPresentationModel
@@ -57,21 +57,18 @@ struct KaraokeTranscriptContainer: View {
     var body: some View {
         let text = karaoke.text.isEmpty ? fallbackText : karaoke.text
         if !text.isEmpty {
-            // Phrase / text changes still arrive via @ObservedObject.
-            // Spoken-end is polled at ~12 Hz so highlight advances smoothly
-            // without publishing into the parent Voice screen.
-            TimelineView(.animation(minimumInterval: 1.0 / 12.0)) { _ in
-                KaraokeTranscriptView(
-                    text: text,
-                    activePhraseID: karaoke.activePhraseID,
-                    activeRange: karaoke.activePhraseUTF16Range,
-                    spokenUTF16End: karaoke.spokenUTF16End,
-                    isExpanded: isExpanded,
-                    onToggleExpand: onToggleExpand,
-                    onCopy: onCopy,
-                    onReplay: onReplay
-                )
-            }
+            // Text, phrase and the word-stepped spoken end all arrive via
+            // @ObservedObject — only this container observes the model.
+            KaraokeTranscriptView(
+                text: text,
+                activePhraseID: karaoke.activePhraseID,
+                activeRange: karaoke.activePhraseUTF16Range,
+                spokenUTF16End: karaoke.spokenUTF16End,
+                isExpanded: isExpanded,
+                onToggleExpand: onToggleExpand,
+                onCopy: onCopy,
+                onReplay: onReplay
+            )
         }
     }
 }

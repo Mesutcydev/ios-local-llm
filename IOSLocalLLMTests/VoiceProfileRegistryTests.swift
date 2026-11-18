@@ -104,6 +104,18 @@ final class VoiceProfileRegistryTests: XCTestCase {
         XCTAssertNotEqual(withOverride.defaultTTSRate, baseRate)
     }
 
+    func test_legacyPrefixOverride_survivesUpgradeAndReset() {
+        let legacy = "com.mesutcydev.ioslocalllm.voice.profile.qwen3-4b.rate"
+        UserDefaults.standard.set(0.66, forKey: legacy)
+        defer { UserDefaults.standard.removeObject(forKey: legacy) }
+
+        XCTAssertEqual(VoiceProfileRegistry.profile(for: "qwen3-4b").defaultTTSRate, 0.66)
+        XCTAssertNil(UserDefaults.standard.object(forKey: legacy), "moved to the current key")
+        VoiceProfileRegistry.clearOverrides(for: "qwen3-4b")
+        XCTAssertEqual(VoiceProfileRegistry.profile(for: "qwen3-4b").defaultTTSRate, 0.5,
+            "a reset must not resurrect the legacy value")
+    }
+
     func test_clearOverrides_returnsToBaseline() {
         VoiceProfileRegistry.setRateOverride(0.42, for: "qwen3-4b")
         VoiceProfileRegistry.setPitchOverride(1.5, for: "qwen3-4b")
@@ -151,5 +163,39 @@ final class VoiceProfileRegistryTests: XCTestCase {
         let p = VoiceProfileRegistry.profile(for: "qwen3-4b")
         XCTAssertTrue(p.usesReasoningTokens)
         XCTAssertEqual(p.dominantLanguages, ["en", "tr"])
+    }
+}
+
+// MARK: - VoiceConversationService.sanitizedHistory
+//
+// Voice turns can end without a reply (barge-in, thermal refusal, model
+// still loading). The history sent to the model must not carry empty
+// assistant turns or back-to-back user turns — strict-alternation chat
+// templates reject them and the model starts answering with nothing.
+final class VoiceConversationHistoryTests: XCTestCase {
+
+    func test_sanitizedHistory_dropsEmptyRepliesAndMergesUserTurns() {
+        let history: [ChatMessage] = [
+            ChatMessage(role: .system, content: "sys"),
+            ChatMessage(role: .user, content: "first"),
+            ChatMessage(role: .assistant, content: "  ", isStreaming: true),
+            ChatMessage(role: .user, content: "second"),
+            ChatMessage(role: .assistant, content: "partial", wasInterrupted: true),
+            ChatMessage(role: .user, content: "third"),
+        ]
+        let out = VoiceConversationService.sanitizedHistory(history)
+        XCTAssertEqual(out.map(\.role), [.system, .user, .assistant, .user])
+        XCTAssertEqual(out[1].content, "first\nsecond")
+        XCTAssertEqual(out[2].content, "partial")
+        XCTAssertEqual(out[3].content, "third")
+    }
+
+    func test_sanitizedHistory_keepsToolTurns() {
+        let history: [ChatMessage] = [
+            ChatMessage(role: .user, content: "weather?"),
+            ChatMessage(role: .assistant, content: "<tool_call>"),
+            ChatMessage(role: .tool, content: "sunny"),
+        ]
+        XCTAssertEqual(VoiceConversationService.sanitizedHistory(history).count, 3)
     }
 }

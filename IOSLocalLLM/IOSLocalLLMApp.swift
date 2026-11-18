@@ -5,6 +5,7 @@ import SwiftUI
 @main
 struct IOSLocalLLMApp: App {
     @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var localization = LocalizationService.shared
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @Environment(\.scenePhase) private var scenePhase
     @State private var isShowingSplash = true
@@ -98,10 +99,8 @@ struct IOSLocalLLMApp: App {
                 window.rootViewController?.view.backgroundColor = .black
 
                 #if targetEnvironment(macCatalyst)
-                // The iOS app is iPhone-only/portrait; on Mac that would
-                // otherwise derive a cramped, oddly-fixed window. Make the
-                // window freely resizable with a usable minimum so the
-                // portrait-oriented UI stays legible. Hide the title bar so
+                // Give the Mac workbench a freely resizable window with a
+                // usable minimum for its navigation and controls. Hide the title bar so
                 // the app's own chrome owns the full window.
                 scene.sizeRestrictions?.minimumSize = CGSize(width: 480, height: 720)
                 scene.sizeRestrictions?.maximumSize = CGSize(width: 2200, height: 3000)
@@ -114,6 +113,8 @@ struct IOSLocalLLMApp: App {
             appearance: settings.appearance,
             accent: KoduTheme.appAccent))
         .preferredColorScheme(settings.resolvedColorScheme)
+        .environment(\.locale, localization.resolvedLocale)
+        .environment(\.layoutDirection, localization.resolvedLayoutDirection)
         .koduScaledType()
     }
 }

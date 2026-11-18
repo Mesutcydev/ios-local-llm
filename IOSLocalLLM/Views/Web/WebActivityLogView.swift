@@ -28,7 +28,7 @@ struct WebActivityLogView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }.foregroundColor(T.ink)
+                    Button("Done", systemImage: "checkmark") { dismiss() }.foregroundColor(T.ink)
                 }
                 if !log.entries.isEmpty {
                     ToolbarItem(placement: .topBarLeading) {

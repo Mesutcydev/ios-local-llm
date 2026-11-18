@@ -57,6 +57,8 @@ final class LifecycleController: Sendable {
         case .inactive:
             Task { await onInactive(epoch: epoch) }
         case .background:
+            ImageGenerationParentalControls.shared.lock()
+            ImageGenerationService.shared.clearForParentalLock()
             Task { await onBackground(epoch: epoch) }
         @unknown default:
             break
@@ -221,6 +223,7 @@ final class LifecycleController: Sendable {
         endBackgroundTaskIfNeeded()
 
         // Re-arm the unclean-exit marker. A kill while active leaves it set.
+        CrashReporter.shared.markRunning()
         RecoveryManager.shared.markRunning(
             slot: "foreground",
             modelID: CodingAssistantService.shared.activeModelRepoID,

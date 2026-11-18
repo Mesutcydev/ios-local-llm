@@ -1,0 +1,21 @@
+// Original app interface translations. Copyright 2026 Mesut and contributors; MIT.
+// Preserve interpolation tokens. Regenerate from the reviewed interface catalog.
+"App Group container missing. Configure entitlements." = "Λείπει το κοντέινερ ομάδας εφαρμογών. Διαμόρφωση δικαιωμάτων.";
+"Couldn't decode image" = "Δεν ήταν δυνατή η αποκωδικοποίηση της εικόνας";
+"Couldn't encode image" = "Δεν ήταν δυνατή η κωδικοποίηση της εικόνας";
+"Couldn't prepare image" = "Δεν ήταν δυνατή η προετοιμασία της εικόνας";
+"Couldn't read URL" = "Δεν ήταν δυνατή η ανάγνωση της διεύθυνσης URL";
+"Couldn't read image" = "Δεν ήταν δυνατή η ανάγνωση της εικόνας";
+"Couldn't read text" = "Δεν ήταν δυνατή η ανάγνωση του κειμένου";
+"Couldn't resize image" = "Δεν ήταν δυνατή η αλλαγή του μεγέθους της εικόνας";
+"Couldn't save share" = "Δεν ήταν δυνατή η αποθήκευση της κοινής χρήσης";
+"Couldn't save the shared link" = "Δεν ήταν δυνατή η αποθήκευση του κοινόχρηστου συνδέσμου";
+"Done" = "Γινώμενος";
+"Empty text" = "Κενό κείμενο";
+"No content to share" = "Δεν υπάρχει περιεχόμενο για κοινή χρήση";
+"Open OnDevice LLM to use your shared content. It is saved on this device." = "Ανοίξτε το OnDevice LLM για να χρησιμοποιήσετε το κοινόχρηστο περιεχόμενό σας. Είναι αποθηκευμένο σε αυτήν τη συσκευή.";
+"Saved to OnDevice LLM" = "Αποθηκεύτηκε στο OnDevice LLM";
+"Shared storage is unavailable. Try opening OnDevice LLM first." = "Ο κοινόχρηστος χώρος αποθήκευσης δεν είναι διαθέσιμος. Δοκιμάστε πρώτα να ανοίξετε το OnDevice LLM.";
+"Unsupported content type" = "Μη υποστηριζόμενος τύπος περιεχομένου";
+"Your content could not be saved." = "Δεν ήταν δυνατή η αποθήκευση του περιεχομένου σας.";
+"Your content could not be saved. Try sharing it again." = "Δεν ήταν δυνατή η αποθήκευση του περιεχομένου σας. Δοκιμάστε να το μοιραστείτε ξανά.";

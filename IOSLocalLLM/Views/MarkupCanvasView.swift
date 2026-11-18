@@ -35,7 +35,7 @@ struct MarkupCanvasView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel", systemImage: "xmark") { dismiss() }
                         .foregroundColor(.white)
                 }
                 ToolbarItem(placement: .topBarTrailing) {

@@ -63,7 +63,7 @@ struct AnalysisPanelView: View {
             }
         }
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
                 .fill(T.bg)
                 .ignoresSafeArea()
         )
@@ -97,7 +97,7 @@ struct AnalysisPanelView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button("Close") { showModelPickerSheet = false }
+                        Button("Close", systemImage: "xmark") { showModelPickerSheet = false }
                             .font(T.sans(15))
                             .foregroundColor(T.ink2)
                     }
@@ -674,6 +674,10 @@ struct ShareSheet: UIViewControllerRepresentable {
 
 struct MarkdownTextView: View {
     let markdown: String
+    /// Long-form documents (legal text) are hard-wrapped in source, so their
+    /// wrapped lines are joined into paragraphs and bare web links are tappable.
+    /// Chat and analysis output keeps one block per source line.
+    var isDocument = false
     @Environment(\.koduTheme) private var T
 
     var body: some View {
@@ -683,8 +687,63 @@ struct MarkdownTextView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// Source lines after optionally joining hard-wrapped continuation lines
+    /// into the paragraph or bullet they belong to.
+    static func logicalLines(_ markdown: String, joiningWrappedLines: Bool) -> [String] {
+        let raw = markdown.components(separatedBy: "\n")
+        guard joiningWrappedLines else { return raw }
+        var out: [String] = []
+        var inCode = false
+        var canContinue = false   // previous logical line is body text or a bullet
+        for line in raw {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if line.hasPrefix("```") {
+                inCode.toggle(); out.append(line); canContinue = false
+            } else if inCode {
+                out.append(line)
+            } else if trimmed.isEmpty {
+                out.append(line); canContinue = false
+            } else if canContinue, !startsNewBlock(line, trimmed: trimmed) {
+                out[out.count - 1] += " " + trimmed
+            } else {
+                out.append(line)
+                canContinue = !line.hasPrefix("#") && !line.hasPrefix("> ")
+                    && !(line.hasPrefix("**") && line.hasSuffix("**"))
+            }
+        }
+        return out
+    }
+
+    private static func startsNewBlock(_ line: String, trimmed: String) -> Bool {
+        line.hasPrefix("#") || line.hasPrefix("> ") || trimmed.hasPrefix("- ")
+            || (line.hasPrefix("**") && line.hasSuffix("**"))
+            || line.range(of: #"^\s*\d+[.)]\s"#, options: .regularExpression) != nil
+    }
+
+    /// Inline emphasis (`**bold**`, `_italic_`, `code`) rendered instead of
+    /// showing the markers; falls back to the literal text if parsing fails.
+    private func inline(_ text: String) -> Text {
+        var options = AttributedString.MarkdownParsingOptions()
+        options.interpretedSyntax = .inlineOnlyPreservingWhitespace
+        guard var attributed = try? AttributedString(markdown: text, options: options) else {
+            return Text(verbatim: text)
+        }
+        if isDocument, let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) {
+            let plain = String(attributed.characters)
+            for match in detector.matches(in: plain, range: NSRange(plain.startIndex..., in: plain)) {
+                guard let url = match.url, url.scheme == "https" || url.scheme == "http",
+                      let range = Range(match.range, in: plain),
+                      let lower = AttributedString.Index(range.lowerBound, within: attributed),
+                      let upper = AttributedString.Index(range.upperBound, within: attributed)
+                else { continue }
+                attributed[lower..<upper].link = url
+            }
+        }
+        return Text(attributed)
+    }
+
     private var blocks: [AnyView] {
-        let lines = markdown.components(separatedBy: "\n")
+        let lines = Self.logicalLines(markdown, joiningWrappedLines: isDocument)
         var views: [AnyView] = []
         var codeLines: [String] = []
         var inCodeBlock = false
@@ -729,14 +788,15 @@ struct MarkdownTextView: View {
             Text(String(line.dropFirst(4)))
                 .font(T.sans(13, .semibold))
                 .foregroundColor(T.ink)
-        } else if line.hasPrefix("**") && line.hasSuffix("**") && line.count > 4 {
-            Text(String(line.dropFirst(2).dropLast(2)))
+        } else if line.hasPrefix("**") && line.hasSuffix("**") && line.count > 4
+                    && !line.dropFirst(2).dropLast(2).contains("**") {
+            inline(String(line.dropFirst(2).dropLast(2)))
                 .font(T.sans(13, .semibold))
                 .foregroundColor(T.ink)
         } else if line.hasPrefix("- ") {
             HStack(alignment: .top, spacing: 6) {
                 Text("·").foregroundColor(T.ink3)
-                Text(String(line.dropFirst(2)))
+                inline(String(line.dropFirst(2)))
                     .font(T.sans(13))
                     .foregroundColor(T.ink2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -750,7 +810,7 @@ struct MarkdownTextView: View {
         } else if line.isEmpty {
             Spacer().frame(height: 4)
         } else {
-            Text(line)
+            inline(line)
                 .font(T.sans(13))
                 .foregroundColor(T.ink2)
                 .lineSpacing(3)

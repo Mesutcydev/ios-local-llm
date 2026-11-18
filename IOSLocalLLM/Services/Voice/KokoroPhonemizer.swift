@@ -81,8 +81,9 @@ final class KokoroPhonemizer {
         defer { loadLock.unlock() }
         if loaded { return }
         loadVocabIndex()
-        loadCMUdict()
-        loaded = true
+        if dict.isEmpty { loadCMUdict() }
+        // Retry next call until a Kokoro or Paradee vocabulary is installed.
+        loaded = !charToID.isEmpty
     }
 
     /// Load vocab_index.json — the phoneme symbol → ID table.
@@ -101,10 +102,12 @@ final class KokoroPhonemizer {
             return urls
         }()
 
-        for root in roots {
-            let url = root
-                .appendingPathComponent("Kokoro", isDirectory: true)
-                .appendingPathComponent("vocab_index.json")
+        // Paradee-8M's config.json carries the identical Kokoro vocabulary.
+        let candidates = roots.flatMap { root in [
+            root.appendingPathComponent("Kokoro", isDirectory: true).appendingPathComponent("vocab_index.json"),
+            root.appendingPathComponent("Paradee", isDirectory: true).appendingPathComponent("config.json"),
+        ] }
+        for url in candidates {
             guard fm.fileExists(atPath: url.path),
                   let data = try? Data(contentsOf: url),
                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -246,6 +249,12 @@ final class KokoroPhonemizer {
                 out.append(stress == nil ? "ə" : "ʌ")
                 continue
             }
+            // Kokoro's (misaki) vocabulary has no ɝ, so it was silently
+            // dropped: stressed ER is ɜɹ, unstressed əɹ.
+            if code == "ER" {
+                out.append(contentsOf: stress == nil ? ["ə", "ɹ"] : ["ɜ", "ɹ"])
+                continue
+            }
             for ch in Self.arpabetToIPATable[code] ?? [] {
                 out.append(ch)
             }
@@ -264,11 +273,13 @@ final class KokoroPhonemizer {
 
     private static let arpabetToIPATable: [String: [Character]] = [
         "AA": ["ɑ"], "AE": ["æ"], "AO": ["ɔ"],
-        "EH": ["ɛ"], "ER": ["ɝ"], "IH": ["ɪ"],
+        "EH": ["ɛ"], "IH": ["ɪ"],
         "IY": ["i"], "UH": ["ʊ"], "UW": ["u"],
-        "AW": ["a", "ʊ"], "AY": ["a", "ɪ"],
-        "EY": ["e", "ɪ"], "OW": ["o", "ʊ"],
-        "OY": ["ɔ", "ɪ"],
+        // misaki writes the US diphthongs as one symbol each; the two-char
+        // espeak spelling reads as two separate vowels ("tiny" → "tanny").
+        "AW": ["W"], "AY": ["I"],
+        "EY": ["A"], "OW": ["O"],
+        "OY": ["Y"],
         "B":  ["b"], "CH": ["ʧ"], "D":  ["d"],
         "DH": ["ð"], "F":  ["f"], "G":  ["ɡ"],
         "HH": ["h"], "JH": ["ʤ"], "K":  ["k"],

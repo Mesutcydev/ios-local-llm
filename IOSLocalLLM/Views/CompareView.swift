@@ -79,7 +79,7 @@ struct CompareView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }.foregroundColor(T.ink)
+                    Button("Done", systemImage: "checkmark") { dismiss() }.foregroundColor(T.ink)
                 }
             }
         }
@@ -360,11 +360,11 @@ struct CompareView: View {
     }
 
     private func verdictLabel(_ outcome: ModelArenaStore.Outcome) -> String {
-        guard let a = resultA, let b = resultB else { return "recorded" }
+        guard let a = resultA, let b = resultB else { return LocalizationService.shared.t("recorded") }
         switch outcome {
-        case .aWins: return "\(a.modelName) wins — recorded to standings"
-        case .bWins: return "\(b.modelName) wins — recorded to standings"
-        case .tie:   return "tie — recorded to standings"
+        case .aWins: return LocalizationService.shared.t("\(a.modelName) wins — recorded to standings")
+        case .bWins: return LocalizationService.shared.t("\(b.modelName) wins — recorded to standings")
+        case .tie:   return LocalizationService.shared.t("tie — recorded to standings")
         }
     }
 

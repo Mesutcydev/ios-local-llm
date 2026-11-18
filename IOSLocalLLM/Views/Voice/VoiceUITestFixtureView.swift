@@ -12,6 +12,8 @@ struct VoiceUITestFixtureView: View {
     @State private var playbackTime: Double = 0
     @State private var phase: VoiceSessionPhase = .speaking
     @State private var level: Float = 0.35
+    /// Real phrase + word timings for the mock transcript, in milliseconds.
+    @State private var track = KaraokeCueTrack.empty
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var mockDuration: Double {
@@ -77,6 +79,21 @@ struct VoiceUITestFixtureView: View {
         }
         .padding()
         .onAppear { startMockPlayback() }
+        .task {
+            // Same estimator, phrase builder and cue track as live voice mode,
+            // so the fixture shows the real word-by-word fill.
+            let segments = (try? await EstimatedSpeechTimingProvider.shared.timings(
+                for: transcript,
+                audioDuration: mockDuration,
+                engineCapabilities: [.completePCMBuffers]
+            )) ?? []
+            track = KaraokeCueTrack.from(
+                phrases: KaraokePhraseBuilder.build(from: segments).phrases,
+                sampleRate: 1000,
+                timingSource: .estimated,
+                words: segments.flatMap(\.words)
+            )
+        }
     }
 
     private var mockVoiceLabel: String {
@@ -91,16 +108,14 @@ struct VoiceUITestFixtureView: View {
         return "Kokoro — American English"
     }
 
+    private var sample: Int64 { Int64(playbackTime * 1000) }
+
     private var spokenEnd: Int {
-        let len = (transcript as NSString).length
-        return Int(Double(len) * min(1, playbackTime / max(mockDuration, 1)))
+        track.spokenUTF16End(at: sample, transcriptLength: (transcript as NSString).length)
     }
 
     private var activeRange: NSRange? {
-        let len = (transcript as NSString).length
-        guard len > 0, phase == .speaking else { return nil }
-        let loc = min(spokenEnd, len - 1)
-        return NSRange(location: loc, length: min(4, len - loc))
+        phase == .speaking ? track.cue(at: sample)?.textRange : nil
     }
 
     private func startMockPlayback() {
@@ -126,6 +141,7 @@ enum VoiceUITestLaunch {
 
 /// Uses real release views with deterministic search data and no download.
 struct ReleaseUITestFixtureView: View {
+    @ObservedObject private var localization = LocalizationService.shared
     private let environment = ProcessInfo.processInfo.environment
 
     var body: some View {
@@ -134,19 +150,50 @@ struct ReleaseUITestFixtureView: View {
                                       accent: KoduTheme.appAccent))
             .preferredColorScheme(environment["RELEASE_DARK"] == "1" ? .dark : .light)
             .dynamicTypeSize(environment["RELEASE_LARGE"] == "1" ? .accessibility5 : .large)
+            .environment(\.locale, localization.resolvedLocale)
+            .environment(\.layoutDirection, localization.resolvedLayoutDirection)
     }
 
     @ViewBuilder private var content: some View {
         switch environment["RELEASE_SCREEN"] {
+        case "api": NavigationStack { LocalAPIServerView() }
+        case "bridge": BridgePairingView()
+        case "legal": LegalAcceptanceView(onAccepted: {})
         case "onboarding": OnboardingView()
         case "settings": SettingsView(assistant: CodingAssistantService.shared)
+        case "image": ImageGenerationView()
+        case "vision": VisualModelPickerView()
+        case "models": NavigationStack { ModelsManagerView() }
+        case "composer": ComposerUITestFixtureView()
+        case "studio": ContentView()
         case "home": HomeView(onNewChat: {}, onOpenLens: {}, onOpenVoice: {}, onOpenModels: {},
-                              onOpenMac: {}, onGenerateImage: {}, onOpenSettings: {}, onOpenConversation: { _ in })
+                              onOpenLocalAPIServer: {}, onGenerateImage: {}, onOpenSettings: {}, onOpenConversation: { _ in })
         default:
             HFSearchView(service: HFSearchService { request in
                 let data = Data(#"[{"id":"mlx-community/Qwen2.5-Coder-1.5B-Instruct-4bit","tags":["mlx","license:apache-2.0"],"pipeline_tag":"text-generation","downloads":1200}]"#.utf8)
                 return (data, HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
             }, estimateSizes: false)
+        }
+    }
+}
+
+private struct ComposerUITestFixtureView: View {
+    @State private var text = "Keep this message ready."
+    @State private var generating = false
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        VStack {
+            Spacer()
+            AssistantComposer(
+                text: $text, isFocused: $focused, canSend: !text.isEmpty,
+                isGenerating: generating, hasCustomSampling: true,
+                modelName: "Qwen3-Long-Model-Name-For-Accessible-Layouts", hasAttachments: false,
+                onModel: {}, onVoice: {}, onAdd: {}, onPhoto: {}, onFile: {}, onSampling: {},
+                onSend: { text = "" }, onStop: { generating = false }
+            )
+            .background(.background, in: RoundedRectangle(cornerRadius: 24))
+            .padding(12)
         }
     }
 }

@@ -45,6 +45,11 @@ public struct ChatMessage: Identifiable, Codable, Hashable, Sendable {
     /// True when the runtime stopped because the output budget ran out
     /// (no EOS). Optional so conversations written by older builds decode.
     public var hitTokenLimit: Bool? = nil
+    /// On a tool-result turn: the call that produced it, as
+    /// `{"arguments":{…},"name":…}`. Chat removes the model's call turn from
+    /// the transcript, so templates with a native call turn (LFM3) replay it
+    /// from here. Optional so conversations written by older builds decode.
+    public var toolCallJSON: String? = nil
 
     /// A single image attachment in an interleaved message.
     public struct ImageAttachment: Codable, Hashable, Sendable {
@@ -114,7 +119,8 @@ public struct ChatMessage: Identifiable, Codable, Hashable, Sendable {
         lhs.generationDuration == rhs.generationDuration &&
         lhs.generationModelID == rhs.generationModelID &&
         lhs.generationExecutionLocation == rhs.generationExecutionLocation &&
-        lhs.hitTokenLimit == rhs.hitTokenLimit
+        lhs.hitTokenLimit == rhs.hitTokenLimit &&
+        lhs.toolCallJSON == rhs.toolCallJSON
     }
 
     public func hash(into hasher: inout Hasher) {
@@ -132,6 +138,7 @@ public struct ChatMessage: Identifiable, Codable, Hashable, Sendable {
         hasher.combine(generationModelID)
         hasher.combine(generationExecutionLocation)
         hasher.combine(hitTokenLimit)
+        hasher.combine(toolCallJSON)
     }
 
     /// Content supplied to a model prompt. Views and exports continue to use

@@ -39,13 +39,13 @@ struct AnalysisHistoryView: View {
                         Button(role: .destructive) {
                             showClearConfirm = true
                         } label: {
-                            Image(systemName: "trash")
+                            Label("Clear history", systemImage: "trash")
                                 .foregroundColor(T.bad)
                         }
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
+                    Button("Done", systemImage: "checkmark") { dismiss() }
                         .foregroundColor(T.ink)
                 }
             }
@@ -79,8 +79,7 @@ struct AnalysisHistoryView: View {
 
     private var list: some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12),
-                                GridItem(.flexible(), spacing: 12)],
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: 12)],
                       spacing: 12) {
                 ForEach(analysis.analysisResults) { result in
                     // HeroCardButton wraps the card so the tap can play a

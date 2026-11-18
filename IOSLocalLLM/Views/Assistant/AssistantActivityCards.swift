@@ -164,7 +164,7 @@ struct AssistantApprovalCard: View {
                         onAllowOnce()
                     }) {
                         Text("Allow once")
-                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                            .scaledFont(size: 13, weight: .semibold, design: .monospaced)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 11)
                             .foregroundStyle(T.bg)
@@ -179,7 +179,7 @@ struct AssistantApprovalCard: View {
                             onAlwaysAllow()
                         }) {
                             Text("Always allow")
-                                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                                .scaledFont(size: 13, weight: .semibold, design: .monospaced)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 11)
                                 .foregroundStyle(T.ink)
@@ -194,7 +194,7 @@ struct AssistantApprovalCard: View {
                         onDecline()
                     }) {
                         Text("Not now")
-                            .font(.system(size: 13, design: .monospaced))
+                            .scaledFont(size: 13, design: .monospaced)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
                             .foregroundStyle(T.ink3)
@@ -233,7 +233,7 @@ struct AssistantFileApprovalCard: View {
                     onChoose()
                 }) {
                     Text("Choose file")
-                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .scaledFont(size: 13, weight: .semibold, design: .monospaced)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 11)
                         .foregroundStyle(T.bg)
@@ -247,7 +247,7 @@ struct AssistantFileApprovalCard: View {
                     onDecline()
                 }) {
                     Text("Not now")
-                        .font(.system(size: 13, design: .monospaced))
+                        .scaledFont(size: 13, design: .monospaced)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .foregroundStyle(T.ink3)
@@ -262,6 +262,7 @@ struct AssistantFileApprovalCard: View {
 // MARK: - Image generation
 
 struct AssistantImageGenerationCard: View {
+    @Environment(\.koduTheme) private var T
     let status: AssistantActivity.ImageStatus
     let detail: String
 
@@ -274,6 +275,15 @@ struct AssistantImageGenerationCard: View {
                     subtitle: AssistantActivity.imageGenerationSubtitle(status),
                     pulsing: true
                 )
+                // The Image tab's live progress bar.
+                switch status {
+                case .downloading(let fraction), .generating(let fraction):
+                    ProgressView(value: fraction).tint(T.accent)
+                case .loading, .checking:
+                    ProgressView().tint(T.accent)
+                case .failed:
+                    EmptyView()
+                }
                 if !detail.isEmpty {
                     Text(detail)
                         .font(.caption)

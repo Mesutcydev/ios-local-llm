@@ -117,7 +117,9 @@ public enum ApplePrivateCloud {
         contextSize: Int,
         maximumResponseTokens: Int
     ) -> Int {
-        max(512, contextSize - max(1, maximumResponseTokens) - 512)
+        // Reserve at most half the window for the reply, so a long response
+        // setting can't starve the prompt.
+        max(512, contextSize - min(max(1, maximumResponseTokens), contextSize / 2) - 512)
     }
 
     /// Resolve the app-level `.automatic` option without sending an extra
@@ -210,6 +212,10 @@ public enum ApplePrivateCloud {
         return false
     }
 
+    public static var isProvisionedForCurrentBuild: Bool {
+        EntitlementsProbe.isPrivateCloudUsable
+    }
+
     /// FoundationModels streams CUMULATIVE content snapshots, but the app's
     /// token sink appends deltas. Returns the new suffix to append. Pure so the
     /// runtime's streaming stays correct under test without a device/SDK.
@@ -267,6 +273,7 @@ public struct ApplePCCRequest: Sendable {
 
 public enum ApplePCCError: LocalizedError, Equatable, Sendable {
     case notCompiledIn          // built without FM_PCC
+    case notProvisioned         // installed signature/profile lacks PCC
     case unsupportedOS          // OS < iOS 27
     case unavailable(String)    // model.availability == .unavailable(reason)
     case offline                // network failure
@@ -281,6 +288,8 @@ public enum ApplePCCError: LocalizedError, Equatable, Sendable {
         switch self {
         case .notCompiledIn:
             return "Apple Private Cloud isn't included in this build."
+        case .notProvisioned:
+            return "Apple Private Cloud isn't enabled for this build's entitlement. Choose a local model."
         case .unsupportedOS:
             return "Apple Private Cloud requires iOS 27 or later."
         case .unavailable(let reason):

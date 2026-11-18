@@ -74,7 +74,7 @@ final class ModelArenaStore: ObservableObject {
     /// All records keyed by `Record.id` ("lane:modelID").
     @Published private(set) var records: [String: Record] = [:]
 
-    private let storageKey = "ioslocalllm.modelarena.records.v1"
+    private let storageKey = "codelens.modelarena.records.v1"
 
     private init() { load() }
 

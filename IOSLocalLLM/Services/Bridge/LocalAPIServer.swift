@@ -683,6 +683,17 @@ enum LocalAPIToolCalling {
         let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return true }
 
+        // LFM3 thinking turns may put a complete native call after the
+        // reasoning block. Keep buffering the turn until the reasoning closes
+        // and the post-reasoning prefix shows whether this is a tool call.
+        if trimmed.hasPrefix("<think>") || "<think>".hasPrefix(trimmed) {
+            guard let end = trimmed.range(of: "</think>") else { return true }
+            let after = trimmed[end.upperBound...]
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if after.isEmpty { return true }
+            return after.hasPrefix("<tool_call") || "<tool_call".hasPrefix(after)
+        }
+
         let toolPrefixes = ["{", "<tool_call", "```json", "```"]
         let couldBeToolCall = toolPrefixes.contains {
             trimmed.hasPrefix($0) || $0.hasPrefix(trimmed)
@@ -707,7 +718,8 @@ enum LocalAPIToolCalling {
         from messages: [ChatMessage],
         tools: [LocalAPIToolDefinition],
         choice: LocalAPIToolChoice,
-        parallelToolCalls: Bool
+        parallelToolCalls: Bool,
+        nativeLFM3: Bool = false
     ) -> [ChatMessage] {
         guard !tools.isEmpty, choice != .none else { return messages }
 
@@ -739,6 +751,28 @@ enum LocalAPIToolCalling {
         let countInstruction = parallelToolCalls
             ? "You may include multiple calls when they can run in parallel."
             : "Return exactly one tool call at a time."
+        if nativeLFM3 {
+            let instructions = LFM3ToolCodec.instructions(tools: tools)
+                + "\n" + choiceInstruction + "\n" + countInstruction
+            // LFM3's template appends the <tools> block to the first system
+            // message. Keep the caller's system prompt and tool schema in the
+            // same turn instead of creating a second system turn.
+            var result = messages
+            if let index = result.firstIndex(where: { $0.role == .system }) {
+                let existing = result[index].content
+                result[index].content = existing.isEmpty
+                    ? instructions
+                    : existing + "\n\n" + instructions
+                if let modelContent = result[index].modelContent {
+                    result[index].modelContent = modelContent.isEmpty
+                        ? instructions
+                        : modelContent + "\n\n" + instructions
+                }
+            } else {
+                result.insert(ChatMessage(role: .system, content: instructions), at: 0)
+            }
+            return result
+        }
         let protocolPrompt = """
         You can call external functions. \(choiceInstruction)
         \(countInstruction)
@@ -782,6 +816,14 @@ enum LocalAPIToolCalling {
     ) -> [LocalAPIToolCall] {
         let validNames = Set(tools.map(\.name))
         guard !validNames.isEmpty else { return [] }
+
+        if output.contains("<tool_call>") && output.contains("<function=") {
+            let calls = LFM3ToolCodec.parse(output, tools: tools).compactMap { call -> LocalAPIToolCall? in
+                guard let json = normalizedArguments(call.arguments) else { return nil }
+                return .init(id: "call_\(UUID().uuidString.replacingOccurrences(of: "-", with: ""))", name: call.name, argumentsJSON: json)
+            }
+            return parallelToolCalls ? calls : Array(calls.prefix(1))
+        }
 
         var parsedCalls: [LocalAPIToolCall] = []
         for data in candidateJSONObjects(in: output) {
@@ -1201,6 +1243,84 @@ enum LocalAPIResponse {
     }
 }
 
+/// `/v1/embeddings` (OpenAI), `/api/embed` and legacy `/api/embeddings` (Ollama),
+/// served by Apple's on-device NaturalLanguage sentence embeddings: no download,
+/// no network, independent of the loaded chat model. Vectors are L2-normalized
+/// and always English-space so an index built over several calls stays comparable.
+enum LocalAPIEmbeddings {
+    static let modelID = "apple-nl-sentence-embedding"
+    static let maxInputs = 256
+
+    struct Request: Equatable {
+        var inputs: [String]
+        var base64 = false
+        var legacy = false   // Ollama `/api/embeddings`: single `prompt` -> `{"embedding": [...]}`
+    }
+
+    /// `input` may be a string or an array of strings; `prompt` is the legacy Ollama field.
+    static func decode(_ body: Data) throws -> Request {
+        guard let raw = try? JSONSerialization.jsonObject(with: body) as? [String: Any] else {
+            throw LocalAPIProtocolError.malformed("JSON object required")
+        }
+        var request = Request(inputs: [], base64: (raw["encoding_format"] as? String) == "base64")
+        if let one = raw["input"] as? String {
+            request.inputs = [one]
+        } else if let many = raw["input"] as? [String] {
+            request.inputs = many
+        } else if raw["input"] is [Any] {
+            throw LocalAPIProtocolError.unsupported("Token-array input is not supported; send text")
+        } else if let prompt = raw["prompt"] as? String {
+            request.inputs = [prompt]
+            request.legacy = true
+        } else {
+            throw LocalAPIProtocolError.malformed("input must be a string or an array of strings")
+        }
+        guard !request.inputs.isEmpty, request.inputs.count <= maxInputs,
+              request.inputs.allSatisfy({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+            throw LocalAPIProtocolError.malformed("input must be 1-\(maxInputs) non-empty strings")
+        }
+        return request
+    }
+
+    /// No NaturalLanguage embedding model for this device (served as 503).
+    struct Unavailable: Error {}
+
+    /// Throws `Unavailable`, or `.malformed` when one input has nothing embeddable (400).
+    static func embed(_ inputs: [String]) throws -> [[Float]] {
+        let embedder = OnDeviceEmbedder()
+        guard embedder.isAvailable else { throw Unavailable() }
+        return try inputs.map {
+            guard let vector = embedder.embed($0) else {
+                throw LocalAPIProtocolError.malformed("Input could not be embedded")
+            }
+            return vector
+        }
+    }
+
+    static func response(_ vectors: [[Float]], for request: Request, path: String) -> Data {
+        if path == "/api/embed" {
+            return LocalAPIResponse.json(["model": modelID, "embeddings": vectors])
+        }
+        if request.legacy {
+            return LocalAPIResponse.json(["embedding": vectors.first ?? []])
+        }
+        // ponytail: usage is a whitespace word count, not a tokenizer count.
+        let tokens = request.inputs.reduce(0) { $0 + $1.split(whereSeparator: \.isWhitespace).count }
+        return LocalAPIResponse.json([
+            "object": "list",
+            "model": modelID,
+            "data": vectors.enumerated().map { index, vector -> [String: Any] in
+                // The OpenAI Python SDK asks for base64 (little-endian float32) by default.
+                let value: Any = request.base64
+                    ? vector.withUnsafeBufferPointer { Data(buffer: $0) }.base64EncodedString()
+                    : vector
+                return ["object": "embedding", "index": index, "embedding": value]
+            },
+            "usage": ["prompt_tokens": tokens, "total_tokens": tokens]
+        ])
+    }
+}
+
 actor LocalAPIServer {
     enum Event: Sendable {
         case ready
@@ -1209,6 +1329,7 @@ actor LocalAPIServer {
 
     private var listener: NWListener?
     private var listenerID: UUID?
+    private var connections: [UUID: NWConnection] = [:]
     private struct ActiveInference {
         let id: UUID
         let signal: LocalAPIInferenceSignal
@@ -1216,6 +1337,12 @@ actor LocalAPIServer {
     }
     private var activeInference: ActiveInference?
     private let maxRequestBytes = 4 * 1024 * 1024
+    /// Requests that have not presented the API key are cut off at this size,
+    /// so unauthenticated peers cannot make the phone buffer megabytes each.
+    private let maxUnauthenticatedRequestBytes = 64 * 1024
+    /// One inference runs at a time, so a handful of clients is plenty; extra
+    /// connections are dropped instead of each holding a request buffer.
+    private let maxConcurrentConnections = 32
     private let requestTimeout: TimeInterval = 15
 
     /// Brute-force guard on bearer authentication. Tracked per remote
@@ -1233,9 +1360,20 @@ actor LocalAPIServer {
         onEvent = handler
     }
 
-    func start(port: UInt16) throws {
+    static func encryptedParameters(identity: SecIdentity) throws -> NWParameters {
+        let tls = NWProtocolTLS.Options()
+        guard let securityIdentity = sec_identity_create(identity) else {
+            throw LocalAPIProtocolError.malformed("TLS identity is unavailable")
+        }
+        sec_protocol_options_set_local_identity(tls.securityProtocolOptions, securityIdentity)
+        sec_protocol_options_set_min_tls_protocol_version(tls.securityProtocolOptions, .TLSv12)
+        sec_protocol_options_set_peer_authentication_required(tls.securityProtocolOptions, false)
+        return NWParameters(tls: tls, tcp: NWProtocolTCP.Options())
+    }
+
+    func start(port: UInt16, identity: SecIdentity) throws {
         guard listener == nil else { return }
-        let params = NWParameters.tcp
+        let params = try Self.encryptedParameters(identity: identity)
         params.allowLocalEndpointReuse = true
         // Opt-in: AWDL advertisement reaches nearby devices that are not
         // on the user's network. The API is designed for the trusted LAN.
@@ -1257,6 +1395,8 @@ actor LocalAPIServer {
     }
 
     func stop() {
+        for connection in connections.values { connection.cancel() }
+        connections.removeAll()
         listener?.cancel()
         listener = nil
         listenerID = nil
@@ -1278,6 +1418,13 @@ actor LocalAPIServer {
     }
 
     private func handle(_ connection: NWConnection) async {
+        guard listener != nil, connections.count < maxConcurrentConnections else {
+            connection.cancel()
+            return
+        }
+        let id = UUID()
+        connections[id] = connection
+        defer { connections[id] = nil; connection.cancel() }
         connection.start(queue: .global(qos: .userInitiated))
         do {
             let request = try await readRequest(connection)
@@ -1289,6 +1436,7 @@ actor LocalAPIServer {
 
     private func readRequest(_ connection: NWConnection) async throws -> HTTPRequest {
         var buffer = Data()
+        var keyChecked = false
         let deadline = Date().addingTimeInterval(requestTimeout)
         while true {
             let remaining = deadline.timeIntervalSinceNow
@@ -1299,8 +1447,34 @@ actor LocalAPIServer {
             guard buffer.count <= maxRequestBytes else {
                 throw LocalAPIProtocolError.malformed("Request too large")
             }
+            // Large bodies (images, long chats) are fine, but only for callers
+            // that already sent the key in the headers; check once.
+            if !keyChecked, buffer.count > maxUnauthenticatedRequestBytes {
+                guard Self.requestPresentsKey(buffer, key: LocalAPIKeyStore.key()) else {
+                    throw LocalAPIProtocolError.malformed("Request too large before authentication")
+                }
+                keyChecked = true
+            }
             if let request = HTTPRequest(data: buffer) { return request }
         }
+    }
+
+    /// True when the request headers (everything before the blank line)
+    /// carry the API key as `Authorization: Bearer` or `X-API-Key`. Mirrors
+    /// the check in `route`; the body is never inspected.
+    static func requestPresentsKey(_ data: Data, key: String) -> Bool {
+        guard let end = data.range(of: Data("\r\n\r\n".utf8)),
+              let head = String(data: data[data.startIndex..<end.lowerBound], encoding: .utf8)
+        else { return false }
+        for line in head.components(separatedBy: "\r\n").dropFirst() {
+            guard let colon = line.range(of: ": ") else { continue }
+            let name = line[..<colon.lowerBound].lowercased()
+            let value = String(line[colon.upperBound...])
+            if name == "x-api-key", tokensMatch(value, key) { return true }
+            if name == "authorization", value.hasPrefix("Bearer "),
+               tokensMatch(String(value.dropFirst(7)), key) { return true }
+        }
+        return false
     }
 
     private func receive(_ connection: NWConnection, timeout: TimeInterval) async throws -> Data {
@@ -1377,6 +1551,8 @@ actor LocalAPIServer {
             await run(request, connection: connection, dialect: .ollamaChat)
         case ("POST", "/api/generate"):
             await run(request, connection: connection, dialect: .ollamaGenerate)
+        case ("POST", "/v1/embeddings"), ("POST", "/api/embed"), ("POST", "/api/embeddings"):
+            await embed(request, connection: connection)
         default:
             await error(connection, status: 404, message: "Endpoint not supported", dialect: Self.dialect(forPath: request.path), corsOrigin: corsOrigin)
         }
@@ -1533,11 +1709,20 @@ actor LocalAPIServer {
         )
         let temperature = decoded.temperature.map { min(max(0, $0), 2) }
         let topP = decoded.topP.map { min(max(0, $0), 1) }
+        let (nativeLFM3, opensReasoning) = await MainActor.run {
+            let service = CodingAssistantService.shared
+            return (service.activeModel.chatTemplate.format.hasPrefix("lfm3"), service.promptOpensReasoning())
+        }
+        // An LFM3 thinking prompt ends with `<think>`, so the stream begins
+        // inside reasoning. Restore the tag before tool decisions so a call
+        // drafted in reasoning is never executed and clients get balanced tags.
+        let reasoningPrefix = nativeLFM3 && opensReasoning ? "<think>" : ""
         let inferenceMessages = LocalAPIToolCalling.messages(
             from: decoded.messages,
             tools: decoded.tools,
             choice: decoded.toolChoice,
-            parallelToolCalls: decoded.parallelToolCalls
+            parallelToolCalls: decoded.parallelToolCalls,
+            nativeLFM3: nativeLFM3
         )
         let stream = await inferenceStream(
             messages: inferenceMessages,
@@ -1555,7 +1740,7 @@ actor LocalAPIServer {
                 ? "resp_\(UUID().uuidString.replacingOccurrences(of: "-", with: ""))"
                 : "chatcmpl-\(UUID().uuidString)"
             if toolCallingEnabled {
-                var output = ""
+                var output = reasoningPrefix
                 var calls: [LocalAPIToolCall] = []
                 var streamsAsText = false
                 do {
@@ -1573,7 +1758,7 @@ actor LocalAPIServer {
                             )
                             continue
                         }
-                        if token.contains("}") {
+                        if token.contains("}") || output.contains("</tool_call>") {
                             calls = LocalAPIToolCalling.parse(
                                 output,
                                 tools: decoded.tools,
@@ -1826,7 +2011,10 @@ actor LocalAPIServer {
                 connection.cancel()
                 return
             }
-            let truncation = inferenceSignal.didHitTokenLimit
+            // A reply cut off by the response deadline is truncated as well;
+            // without this the client is told it finished normally.
+            let deadlineHit = activeInference?.id == inferenceID && activeInference?.timedOut == true
+            let truncation = inferenceSignal.didHitTokenLimit || deadlineHit
             switch dialect {
             case .openAIChat:
                 try? await sendFinal(connection, Data("data: ".utf8) + LocalAPIResponse.openAIChunk(id: requestID, model: snapshot.0, text: "", finishReason: truncation ? "length" : "stop") + Data("\n\n".utf8))
@@ -1897,7 +2085,7 @@ actor LocalAPIServer {
             }
             connection.cancel()
         } else {
-            var output = ""
+            var output = reasoningPrefix
             var detectedCalls: [LocalAPIToolCall] = []
             var stopTriggered = false
             for await token in stream {
@@ -1909,7 +2097,7 @@ actor LocalAPIServer {
                     await cancelInference()
                     break
                 }
-                if toolCallingEnabled, token.contains("}") {
+                if toolCallingEnabled, token.contains("}") || output.contains("</tool_call>") {
                     detectedCalls = LocalAPIToolCalling.parse(
                         output,
                         tools: decoded.tools,
@@ -2201,10 +2389,34 @@ actor LocalAPIServer {
                 "modified_at": ISO8601DateFormatter().string(from: Date()),
                 "size": model.downloadSizeBytes ?? 0,
                 "digest": "",
-                "details": ["family": model.repoID, "format": model.runtime == .llamaCpp ? "gguf" : "mlx"]
+                "details": ["family": model.repoID, "format": model.runtime == .coreAI ? "coreai" : (model.runtime == .llamaCpp ? "gguf" : "mlx")]
             ]]
         ])
         await respond(connection, status: 200, contentType: "application/json", data: payload, corsOrigin: corsOrigin)
+    }
+
+    private func embed(_ request: HTTPRequest, connection: NWConnection) async {
+        let dialect = Self.dialect(forPath: request.path)
+        let corsOrigin = LocalAPIValidation.allowedCORSOrigin(
+            origin: request.headers["origin"],
+            settingValue: AppSettings.shared.localAPICORSOrigins
+        )
+        guard request.headers["content-type"]?.lowercased().hasPrefix("application/json") == true else {
+            await error(connection, status: 415, message: "Content-Type must be application/json", dialect: dialect, corsOrigin: corsOrigin)
+            return
+        }
+        do {
+            let decoded = try LocalAPIEmbeddings.decode(request.body ?? Data())
+            let vectors = try await Task.detached { try LocalAPIEmbeddings.embed(decoded.inputs) }.value
+            await respond(connection, status: 200, contentType: "application/json",
+                          data: LocalAPIEmbeddings.response(vectors, for: decoded, path: request.path), corsOrigin: corsOrigin)
+        } catch is LocalAPIEmbeddings.Unavailable {
+            await error(connection, status: 503, message: "On-device embeddings are unavailable on this device", dialect: dialect, corsOrigin: corsOrigin)
+        } catch LocalAPIProtocolError.malformed(let message), LocalAPIProtocolError.unsupported(let message) {
+            await error(connection, status: 400, message: message, dialect: dialect, corsOrigin: corsOrigin)
+        } catch {
+            await self.error(connection, status: 400, message: "Malformed request", dialect: dialect, corsOrigin: corsOrigin)
+        }
     }
 
     private func showOllamaModel(_ request: HTTPRequest, connection: NWConnection) async {
@@ -2232,7 +2444,7 @@ actor LocalAPIServer {
             "template": "",
             "details": [
                 "family": model.repoID,
-                "format": model.runtime == .llamaCpp ? "gguf" : "mlx"
+                "format": model.runtime == .coreAI ? "coreai" : (model.runtime == .llamaCpp ? "gguf" : "mlx")
             ],
             "model_info": ["general.architecture": model.repoID]
         ])
@@ -2710,6 +2922,7 @@ final class LocalAPIManager: ObservableObject {
     @Published private(set) var state: State = .stopped
     @Published private(set) var addresses: [String] = []
     @Published private(set) var apiKey = LocalAPIKeyStore.key()
+    @Published private(set) var publicKeyPin = ""
 
     private let server = LocalAPIServer()
     private let pathMonitor = NWPathMonitor()
@@ -2722,6 +2935,15 @@ final class LocalAPIManager: ObservableObject {
             }
         }
         pathMonitor.start(queue: pathQueue)
+    }
+
+    /// Prepare copyable TLS details without opening a network listener.
+    func prepareClientSetup() throws {
+        try BridgeIdentity.shared.generateIfNeeded()
+        guard !BridgeIdentity.shared.publicKeyPin.isEmpty else {
+            throw LocalAPIProtocolError.malformed("TLS identity is unavailable")
+        }
+        publicKeyPin = BridgeIdentity.shared.publicKeyPin
     }
 
     func start() async {
@@ -2745,7 +2967,14 @@ final class LocalAPIManager: ObservableObject {
             }
         }
         do {
-            try await server.start(port: port)
+            try BridgeIdentity.shared.generateIfNeeded()
+            guard let identity = BridgeIdentity.shared.identity,
+                  !BridgeIdentity.shared.publicKeyPin.isEmpty else {
+                throw LocalAPIProtocolError.malformed("TLS identity is unavailable")
+            }
+            publicKeyPin = BridgeIdentity.shared.publicKeyPin
+            apiKey = LocalAPIKeyStore.key()
+            try await server.start(port: port, identity: identity)
         } catch {
             state = .failed(error.localizedDescription)
             updateIdleTimer(running: false)
@@ -2774,6 +3003,12 @@ final class LocalAPIManager: ObservableObject {
 
     func rotateKey() {
         apiKey = LocalAPIKeyStore.rotate()
+    }
+
+    func clearCachedCredentialsForWipe() {
+        apiKey = ""
+        publicKeyPin = ""
+        addresses = []
     }
 
     func refreshAddresses() {

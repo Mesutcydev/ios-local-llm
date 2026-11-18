@@ -73,3 +73,37 @@ final class TextChunkerSanitizerTests: XCTestCase {
         XCTAssertTrue(joined.contains("🎉"))
     }
 }
+
+final class MarkdownDocumentLinesTests: XCTestCase {
+    func testWrappedLinesJoinIntoParagraphsAndBullets() {
+        let markdown = """
+        # Title
+
+        First line wraps
+        onto the next.
+
+        - bullet one
+          continues here
+        - bullet two
+
+        ## Next
+        Body line
+        1. numbered stays separate
+        """
+        XCTAssertEqual(
+            MarkdownTextView.logicalLines(markdown, joiningWrappedLines: true),
+            ["# Title", "", "First line wraps onto the next.", "",
+             "- bullet one continues here", "- bullet two", "",
+             "## Next", "Body line", "1. numbered stays separate"]
+        )
+        // Chat and analysis output keeps one block per source line.
+        XCTAssertEqual(MarkdownTextView.logicalLines(markdown, joiningWrappedLines: false),
+                       markdown.components(separatedBy: "\n"))
+    }
+
+    func testCodeFencesAreNeverJoined() {
+        let markdown = "intro\n```\nlet a = 1\nlet b = 2\n```\noutro"
+        XCTAssertEqual(MarkdownTextView.logicalLines(markdown, joiningWrappedLines: true),
+                       ["intro", "```", "let a = 1", "let b = 2", "```", "outro"])
+    }
+}

@@ -73,7 +73,7 @@ struct ModelStorageCleanupView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
+                    Button("Done", systemImage: "checkmark") { dismiss() }
                 }
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -227,7 +227,7 @@ private struct ModelStorageCleanupHeader: View {
             .foregroundColor(T.ink3)
         }
         .padding(16)
-        .kGlass(cornerRadius: 20, fallbackFill: T.surface, fallbackStroke: T.rule)
+        .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
     }
 }
 
@@ -301,7 +301,7 @@ private struct ModelStorageCleanupRow: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .kGlass(cornerRadius: 18, fallbackFill: T.surface, fallbackStroke: T.rule)
+            .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
         }
         .buttonStyle(.plain)
         .disabled(item.isRequired)
@@ -349,7 +349,7 @@ private struct ModelPartialDownloadCleanupRow: View {
                     .foregroundColor(isSelected ? T.warn : T.ink3)
             }
             .padding(14)
-            .kGlass(cornerRadius: 18, fallbackFill: T.surface, fallbackStroke: T.rule)
+            .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
         }
         .buttonStyle(.plain)
     }

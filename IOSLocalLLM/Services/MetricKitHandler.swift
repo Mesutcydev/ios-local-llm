@@ -25,7 +25,7 @@ final class MetricKitHandler: NSObject, ObservableObject, MXMetricManagerSubscri
         let json: String          // raw JSON payload for debugging
     }
 
-    private let storageKey = "ioslocalllm.metrickit.entries.v1"
+    private let storageKey = "codelens.metrickit.entries.v1"
 
     override private init() {
         super.init()

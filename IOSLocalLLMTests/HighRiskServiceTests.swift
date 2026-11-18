@@ -41,6 +41,16 @@ final class ModelDownloadCenterServiceTests: XCTestCase {
 }
 
 final class CodingAssistantServicePolicyTests: XCTestCase {
+    func testGGUFAdmissionRefusesZeroAndInsufficientHeadroomInBothModes() {
+        for paging in [false, true] {
+            let policy = GGUFLoadPolicy.resolve(fileBytes: 2_000_000_000, pagingEnabled: paging)
+            XCTAssertFalse(policy.admits(availableBytes: 0))
+            XCTAssertFalse(policy.admits(availableBytes: -1))
+            XCTAssertFalse(policy.admits(availableBytes: policy.minimumAvailableBytes - 1))
+            XCTAssertTrue(policy.admits(availableBytes: policy.minimumAvailableBytes))
+        }
+    }
+
     func testStorageBackedGGUFPolicyDisablesGPULayersAndBoundsHeadroom() {
         let policy = GGUFLoadPolicy.resolve(
             fileBytes: 8 * 1_024 * 1_024 * 1_024,
@@ -175,6 +185,21 @@ final class DownloadLifecycleReleaseTests: XCTestCase {
         try await manager.delete()
         XCTAssertTrue(FileManager.default.fileExists(atPath: sibling.path))
         XCTAssertFalse(FileManager.default.fileExists(atPath: selected.path))
+    }
+
+    func testReadyDownloadDropsSupersededProjector() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        for name in ["LFM3-Audio-2B-Q4_K_M.gguf", "mmproj-LFM3-Audio-2B-Q8_0.gguf", "mmproj-LFM3-Audio-2B-Q4_K_M.gguf"] {
+            try Data([1]).write(to: root.appendingPathComponent(name))
+        }
+        let manager = HFModelDownloadManager(repoID: "test/model", destination: root,
+                                            fileAllowlist: ["LFM3-Audio-2B-Q4_K_M.gguf", "mmproj-LFM3-Audio-2B-Q4_K_M.gguf"])
+        manager.checkIfReady()
+        XCTAssertEqual(manager.state, .ready)
+        let left = try FileManager.default.contentsOfDirectory(atPath: root.path).sorted()
+        XCTAssertEqual(left, ["LFM3-Audio-2B-Q4_K_M.gguf", "mmproj-LFM3-Audio-2B-Q4_K_M.gguf"])
     }
 
     func testCancellationBeforeTaskRegistrationCancelsOnlyThatTask() {

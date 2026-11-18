@@ -60,7 +60,6 @@ struct BridgePairingView: View {
                     LocalAPIServerCard()
                     macBridgeIntegrationCard
                     pairingCard
-                    insecurePairingCard
                     pairedClientsCard
                     // Phase-1 agent surface. Only renders when at least
                     // one paired Mac has issued an agent bearer to us —
@@ -137,42 +136,13 @@ struct BridgePairingView: View {
         }
     }
 
-    // MARK: - Insecure pairing opt-in
-    //
-    // A Mac that doesn't advertise a TLS cert fingerprint pairs over plaintext
-    // http, so the nonce + bearer travel in the clear on the LAN. pairWithMac()
-    // refuses such a Mac unless this is on; surfaced here so the opt-in the
-    // failure message points to actually exists and is discoverable.
+    // MARK: - Encrypted pairing confirmation
 
     private func pairingConfirmationMessage(_ pending: BridgeManager.PendingPairing) -> String {
         if let fp = pending.fingerprint {
             return "\(pending.macName)\nCertificate \(fp.prefix(16))…\nOnly continue if this is the Mac you are pairing with."
         }
-        return "\(pending.macName)\nThis Mac has no certificate — pairing is unencrypted and needs “Allow insecure pairing”."
-    }
-
-    private var insecurePairingCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Toggle(isOn: $settings.allowInsecureBridgePairing) {
-                HStack(spacing: 10) {
-                    Image(systemName: "lock.open.trianglebadge.exclamationmark")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(settings.allowInsecureBridgePairing ? T.warn : T.ink3)
-                    Text("Allow insecure pairing")
-                        .font(T.sans(15, .semibold))
-                        .foregroundColor(T.ink)
-                }
-            }
-            .tint(T.accent)
-
-            Text("Only for older Mac apps without encrypted pairing. When on, the pairing handshake (including the access token) is sent over plaintext on your local network. Leave off unless a Mac fails to pair.")
-                .font(T.sans(12))
-                .foregroundColor(T.ink3)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .kGlass(cornerRadius: 16, fallbackFill: T.surface)
+        return "\(pending.macName)\nThis Mac has no certificate. Update the Mac app to support encrypted pairing."
     }
 
     // MARK: - Mac bridge integration guide
@@ -270,7 +240,7 @@ struct BridgePairingView: View {
                         .multilineTextAlignment(.leading)
                 }
                 Spacer()
-                Image(systemName: "chevron.right")
+                Image(systemName: "chevron.forward")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(T.ink3)
             }
@@ -356,13 +326,13 @@ struct BridgePairingView: View {
     private var statusLabel: String {
         switch manager.serverState {
         case .running(let host, let port):
-            return "Mac pairing bridge (TLS) · \(host):\(port)"
+            return LocalizationService.shared.t("Mac pairing bridge (TLS) · \(host):\(port)")
         case .starting:
-            return "Mac pairing bridge starting…"
+            return LocalizationService.shared.t("Mac pairing bridge starting…")
         case .failed(let msg):
-            return "Mac pairing bridge error: \(msg)"
+            return LocalizationService.shared.t("Mac pairing bridge error: \(msg)")
         case .stopped:
-            return "Mac pairing bridge stopped"
+            return LocalizationService.shared.t("Mac pairing bridge stopped")
         }
     }
 
@@ -567,412 +537,64 @@ struct BridgePairingView: View {
 
 // MARK: - Cross-platform local API
 
+/// Compact entry point keeps the Mac bridge focused on pairing. The local API
+/// has its own opt-in controls and connection workspace.
 private struct LocalAPIServerCard: View {
     @ObservedObject private var manager = LocalAPIManager.shared
-    @ObservedObject private var settings = AppSettings.shared
-    @ObservedObject private var assistant = CodingAssistantService.shared
     @Environment(\.koduTheme) private var theme
 
-    @State private var portText = String(AppSettings.shared.localAPIPort)
-    @State private var revealsKey = false
-    @State private var showDownloadedModelPicker = false
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            header
-            Toggle("Enable Local API Server", isOn: enabledBinding)
-                .font(theme.sans(14, .semibold))
-                .tint(theme.accent)
-            status
-            modelStatus
-            Toggle("Keep screen awake while server runs", isOn: keepAwakeBinding)
-                .font(theme.sans(13, .medium))
-                .tint(theme.accent)
-            Toggle("Allow nearby devices (peer-to-peer / AWDL)", isOn: peerToPeerBinding)
-                .font(theme.sans(13, .medium))
-                .tint(theme.accent)
-            Text("Off by default: peer-to-peer accepts connections from nearby devices that are not on your network. Leave off unless you need it.")
-                .font(theme.sans(11))
-                .foregroundColor(theme.ink3)
-            portEditor
-            if case .running(let port) = manager.state {
-                endpointList(port: port)
-                keyControls
-                setupExamples(port: port)
-            }
-            warning
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .kGlass(cornerRadius: 16, fallbackFill: theme.surface)
-        .onAppear {
-            portText = String(settings.localAPIPort)
-            manager.refreshAddresses()
-        }
-        .sheet(isPresented: $showDownloadedModelPicker) {
-            AssistantModelPickerView(downloadedOnly: true)
-        }
-    }
-
-    private var keepAwakeBinding: Binding<Bool> {
-        Binding(
-            get: { settings.localAPIKeepScreenAwake },
-            set: { enabled in
-                settings.localAPIKeepScreenAwake = enabled
-                manager.refreshIdleTimerPolicy()
-            }
-        )
-    }
-
-    private var peerToPeerBinding: Binding<Bool> {
-        Binding(
-            get: { settings.localAPIIncludePeerToPeer },
-            set: { enabled in
-                settings.localAPIIncludePeerToPeer = enabled
-                // The listener reads this at start, so restart when running.
-                Task {
-                    if settings.localAPIEnabled { await manager.restart() }
+        NavigationLink {
+            LocalAPIServerView()
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "network")
+                        .font(.system(size: 22, weight: .medium))
+                        .foregroundStyle(theme.accent)
+                        .frame(width: 36, height: 40)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Local API Server")
+                            .font(theme.sans(17, .semibold)).foregroundStyle(theme.ink)
+                        Text("OpenAI · Anthropic · Ollama")
+                            .font(theme.mono(11)).foregroundStyle(theme.ink2)
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.forward")
+                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(theme.ink3)
                 }
-            }
-        )
-    }
-
-    private var modelStatus: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: modelStatusSymbol)
-                .foregroundColor(modelStatusColor)
-                .frame(width: 18)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(assistant.activeModel.displayName)
-                    .font(theme.sans(13, .semibold))
-                    .foregroundColor(theme.ink)
-                Text(modelStatusText)
-                    .font(theme.mono(10))
-                    .foregroundColor(modelStatusColor)
-            }
-            Spacer()
-            if canLoadModel {
-                Button {
-                    Task { await assistant.load() }
-                    HapticManager.impact(.medium)
-                } label: {
-                    Text("Load")
-                        .font(theme.mono(10, .semibold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(Capsule().fill(theme.accent))
+                HStack(spacing: 6) {
+                    Circle().fill(statusColor).frame(width: 6, height: 6)
+                    Text(status).font(theme.sans(12)).foregroundStyle(theme.ink2)
                 }
-                .buttonStyle(.plain)
+                Text("Serve a local model over HTTPS. Manage the server, keys, and client setup.")
+                    .font(theme.sans(13)).foregroundStyle(theme.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Button {
-                showDownloadedModelPicker = true
-                HapticManager.impact(.light)
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(theme.ink)
-                    .frame(width: 30, height: 30)
-                    .background(Circle().fill(theme.surface2))
-            }
-            .buttonStyle(.plain)
-            .disabled(isModelBusy)
-            .accessibilityLabel("Choose downloaded model")
+            .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+            .kGlass(cornerRadius: 16, fallbackFill: theme.surface)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("api.workspace.open")
     }
 
-    private var canLoadModel: Bool {
-        switch assistant.state {
-        case .unloaded, .failed: true
-        default: false
-        }
-    }
-
-    private var isModelBusy: Bool {
-        switch assistant.state {
-        case .loading, .generating: true
-        default: false
-        }
-    }
-
-    private var modelStatusText: String {
-        switch assistant.state {
-        case .unloaded: return "Not loaded"
-        case .loading(let detail): return detail.isEmpty ? "Loading…" : "Loading · \(detail)"
-        case .ready: return "Ready for API requests"
-        case .generating: return "Generating · server busy"
-        case .failed(let message): return "Load failed · \(message)"
-        }
-    }
-
-    private var modelStatusSymbol: String {
-        switch assistant.state {
-        case .ready: return "checkmark.circle.fill"
-        case .generating: return "waveform"
-        case .loading: return "arrow.triangle.2.circlepath"
-        case .failed: return "exclamationmark.triangle.fill"
-        case .unloaded: return "circle.dashed"
-        }
-    }
-
-    private var modelStatusColor: Color {
-        switch assistant.state {
-        case .ready: return theme.good
-        case .generating, .loading: return theme.warn
-        case .failed: return theme.bad
-        case .unloaded: return theme.ink3
-        }
-    }
-
-    private var header: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "network")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundColor(theme.accent)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Local API Server")
-                    .font(theme.sans(16, .bold))
-                    .foregroundColor(theme.ink)
-                Text("OpenAI + Anthropic + Ollama · separate from the Mac pairing bridge")
-                    .font(theme.mono(9.5))
-                    .foregroundColor(theme.ink3)
-            }
-            Spacer()
-        }
-    }
-
-    private var enabledBinding: Binding<Bool> {
-        Binding(
-            get: { settings.localAPIEnabled },
-            set: { enabled in
-                settings.localAPIEnabled = enabled
-                Task {
-                    if enabled { await manager.start() }
-                    else { await manager.stop() }
-                }
-            }
-        )
-    }
-
-    private var status: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(statusColor)
-                .frame(width: 7, height: 7)
-            Text(statusText)
-                .font(theme.mono(10.5))
-                .foregroundColor(theme.ink2)
-                .textSelection(.enabled)
-            Spacer()
-            if settings.localAPIEnabled {
-                Button("Restart") {
-                    Task { await manager.restart() }
-                }
-                .font(theme.mono(10, .semibold))
-                .foregroundColor(theme.accent)
-            }
+    private var status: String {
+        switch manager.state {
+        case .stopped: "Server stopped"
+        case .starting: "Starting…"
+        case .running(let port): "Listening on port \(port)"
+        case .failed: "Server needs attention"
         }
     }
 
     private var statusColor: Color {
         switch manager.state {
-        case .running: return theme.good
-        case .starting: return theme.warn
-        case .failed: return theme.bad
-        case .stopped: return theme.ink4
+        case .stopped: theme.ink3
+        case .starting: theme.warn
+        case .running: theme.good
+        case .failed: theme.bad
         }
-    }
-
-    private var statusText: String {
-        switch manager.state {
-        case .running(let port): return "running on port \(port)"
-        case .starting: return "starting…"
-        case .failed(let message): return "error: \(message)"
-        case .stopped: return "stopped"
-        }
-    }
-
-    private var portEditor: some View {
-        HStack(spacing: 10) {
-            Text("Port")
-                .font(theme.sans(13, .medium))
-                .foregroundColor(theme.ink2)
-            TextField("11434", text: $portText)
-                .keyboardType(.numberPad)
-                .textFieldStyle(.roundedBorder)
-                .font(theme.mono(12))
-            Button("Apply") {
-                guard let port = Int(portText),
-                      LocalAPIValidation.validPort(port) != nil else {
-                    ToastCenter.shared.error("Invalid port", detail: "Use a port from 1024 through 65535.")
-                    return
-                }
-                // Persist first so app lifecycle restarts and the listener both
-                // read the same value. Previously this happened inside the
-                // asynchronous restart task, making Apply appear to do nothing.
-                settings.localAPIPort = port
-                portText = String(port)
-                if settings.localAPIEnabled {
-                    Task {
-                        await manager.restart()
-                        if case .running(let activePort) = manager.state,
-                           activePort == UInt16(port) {
-                            ToastCenter.shared.success(
-                                "Local API port changed",
-                                detail: "Now listening on \(activePort)."
-                            )
-                        }
-                    }
-                } else {
-                    ToastCenter.shared.success(
-                        "Local API port saved",
-                        detail: "The server will use \(port) when enabled."
-                    )
-                }
-            }
-            .font(theme.mono(10, .semibold))
-            .foregroundColor(theme.accent)
-        }
-    }
-
-    private func endpointList(port: UInt16) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("CONNECTION URLS")
-                .font(theme.mono(9, .bold))
-                .tracking(0.6)
-                .foregroundColor(theme.ink3)
-            if manager.addresses.isEmpty {
-                Text("No reachable local IPv4 address. Connect both devices to the same network.")
-                    .font(theme.sans(12))
-                    .foregroundColor(theme.warn)
-            } else {
-                ForEach(manager.addresses, id: \.self) { address in
-                    CopyableAPIEndpoint(
-                        label: "OpenAI",
-                        value: "http://\(address):\(port)/v1",
-                        theme: theme
-                    )
-                    CopyableAPIEndpoint(
-                        label: "Ollama",
-                        value: "http://\(address):\(port)",
-                        theme: theme
-                    )
-                    CopyableAPIEndpoint(
-                        label: "Anthropic",
-                        value: "http://\(address):\(port)",
-                        theme: theme
-                    )
-                }
-            }
-        }
-    }
-
-    private var keyControls: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("API KEY")
-                .font(theme.mono(9, .bold))
-                .tracking(0.6)
-                .foregroundColor(theme.ink3)
-            HStack(spacing: 8) {
-                Text(revealsKey ? manager.apiKey : String(repeating: "•", count: 24))
-                    .font(theme.mono(10))
-                    .foregroundColor(theme.ink2)
-                    .lineLimit(1)
-                    .textSelection(.enabled)
-                Spacer()
-                Button(revealsKey ? "Hide" : "Reveal") { revealsKey.toggle() }
-                Button("Copy") {
-                    // localOnly keeps the key off Universal Clipboard.
-                    UIPasteboard.general.setItems(
-                        [[UIPasteboard.typeAutomatic: manager.apiKey]],
-                        options: [.localOnly: true]
-                    )
-                    ToastCenter.shared.success("API key copied")
-                }
-                Button("Rotate") {
-                    manager.rotateKey()
-                    ToastCenter.shared.info("API key rotated", detail: "Update clients before their next request.")
-                }
-            }
-            .font(theme.mono(9.5, .semibold))
-            .foregroundColor(theme.accent)
-        }
-    }
-
-    private func setupExamples(port: UInt16) -> some View {
-        let host = manager.addresses.first ?? "IPHONE_IP"
-        let command = """
-        export OPENAI_BASE_URL=http://\(host):\(port)/v1
-        export OPENAI_API_KEY=\(manager.apiKey)
-        curl "$OPENAI_BASE_URL/models" -H "Authorization: Bearer $OPENAI_API_KEY"
-        """
-        return VStack(alignment: .leading, spacing: 7) {
-            Text("LINUX QUICK START")
-                .font(theme.mono(9, .bold))
-                .tracking(0.6)
-                .foregroundColor(theme.ink3)
-            Text(command)
-                .font(theme.mono(9.5))
-                .foregroundColor(theme.ink2)
-                .textSelection(.enabled)
-                .padding(10)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(theme.surface3, in: RoundedRectangle(cornerRadius: 8))
-            Button("Copy setup commands") {
-                UIPasteboard.general.setItems(
-                    [[UIPasteboard.typeAutomatic: command]],
-                    options: [.localOnly: true]
-                )
-                ToastCenter.shared.success("Linux setup copied")
-            }
-            .font(theme.mono(10, .semibold))
-            .foregroundColor(theme.accent)
-            Text("For Ollama SDKs, use the Ollama URL above as the host and send the same Authorization bearer header.")
-                .font(theme.sans(11))
-                .foregroundColor(theme.ink3)
-        }
-    }
-
-    private var warning: some View {
-        Label {
-            Text("HTTP traffic is not encrypted. Enable this only on a trusted LAN. The server stops when iOS backgrounds the app.")
-                .font(theme.sans(11))
-                .foregroundColor(theme.ink3)
-        } icon: {
-            Image(systemName: "exclamationmark.shield")
-                .foregroundColor(theme.warn)
-        }
-    }
-}
-
-private struct CopyableAPIEndpoint: View {
-    let label: String
-    let value: String
-    let theme: KoduTheme
-
-    var body: some View {
-        Button {
-            UIPasteboard.general.string = value
-            ToastCenter.shared.success("\(label) URL copied")
-        } label: {
-            HStack(spacing: 8) {
-                Text(label)
-                    .font(theme.mono(9, .bold))
-                    .foregroundColor(theme.accent)
-                    .frame(width: 45, alignment: .leading)
-                Text(value)
-                    .font(theme.mono(9.5))
-                    .foregroundColor(theme.ink2)
-                    .lineLimit(1)
-                Spacer()
-                Image(systemName: "doc.on.doc")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(theme.ink3)
-            }
-            .padding(9)
-            .background(theme.surface3, in: RoundedRectangle(cornerRadius: 8))
-        }
-        .buttonStyle(.plain)
     }
 }
 

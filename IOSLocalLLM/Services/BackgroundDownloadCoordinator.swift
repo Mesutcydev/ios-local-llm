@@ -30,7 +30,7 @@ final class BackgroundDownloadCoordinator: NSObject {
 
     private lazy var session: URLSession = {
         let cfg = URLSessionConfiguration.background(
-            withIdentifier: "com.mesutcydev.ioslocalllm.background-downloads"
+            withIdentifier: "com.codelens.background-downloads"
         )
         cfg.isDiscretionary = false
         cfg.sessionSendsLaunchEvents = true
@@ -49,9 +49,12 @@ final class BackgroundDownloadCoordinator: NSObject {
     /// whether we're on an expensive (cellular / hotspot) link.
     private let pathMonitor: NWPathMonitor = {
         let monitor = NWPathMonitor()
-        monitor.start(queue: DispatchQueue(label: "com.mesutcydev.ioslocalllm.download-path-monitor"))
+        monitor.start(queue: DispatchQueue(label: "com.codelens.download-path-monitor"))
         return monitor
     }()
+
+    /// True on a cellular or personal-hotspot link.
+    var isOnExpensiveNetwork: Bool { pathMonitor.currentPath.isExpensive }
 
     /// Re-creates the background URLSession after iOS relaunches the app to
     /// deliver background-session events. The session is `lazy`, so without
@@ -62,12 +65,15 @@ final class BackgroundDownloadCoordinator: NSObject {
     // MARK: - Per-task tracking
 
     private struct Pending {
+        let task: URLSessionDownloadTask
         let destination: URL
         let expectedSize: Int64
         let progress: (Int64, Int64) -> Void
         let continuation: CheckedContinuation<URL, Error>
     }
     private var pendingByTaskID: [Int: Pending] = [:]
+    private var invalidatedTaskIDs: Set<Int> = []
+    private var isWiping = false
 
     // MARK: - Public API
 
@@ -79,10 +85,43 @@ final class BackgroundDownloadCoordinator: NSObject {
         expectedSize: Int64,
         progress: @escaping (Int64, Int64) -> Void
     ) async throws -> URL {
+        guard !isWiping else { throw CancellationError() }
+        // A transfer started before the app was relaunched may still be
+        // running in the system's background session. Attach to it instead
+        // of downloading the same file a second time.
+        let running = await withCheckedContinuation { continuation in
+            session.getAllTasks { continuation.resume(returning: $0) }
+        }
+        guard !isWiping else { throw CancellationError() }
+        // Creating the session above also delivers transfers that finished
+        // while the app was not running; one of them may be this file.
+        if expectedSize > 0,
+           let size = (try? FileManager.default.attributesOfItem(atPath: destination.path))?[.size] as? NSNumber,
+           size.int64Value == expectedSize {
+            return destination
+        }
+        let adopted = running.compactMap { $0 as? URLSessionDownloadTask }.first { task in
+            task.state == .running
+                && task.taskDescription == destination.path
+                && task.originalRequest?.url == url
+                && pendingByTaskID[task.taskIdentifier] == nil
+                && !invalidatedTaskIDs.contains(task.taskIdentifier)
+        }
         let cancellation = DownloadCancellation()
         return try await withTaskCancellationHandler {
             try Task.checkCancellation()
             return try await withCheckedThrowingContinuation { continuation in
+            if let adopted {
+                self.pendingByTaskID[adopted.taskIdentifier] = Pending(
+                    task: adopted,
+                    destination: destination,
+                    expectedSize: expectedSize,
+                    progress: progress,
+                    continuation: continuation
+                )
+                cancellation.install(adopted)
+                return
+            }
             var request = URLRequest(url: url)
             request.timeoutInterval = 60
             // Attach HF token for huggingface.co downloads only — the
@@ -133,6 +172,7 @@ final class BackgroundDownloadCoordinator: NSObject {
             // a download finishing after relaunch was deleted as untracked.
             task.taskDescription = destination.path
             self.pendingByTaskID[task.taskIdentifier] = Pending(
+                task: task,
                 destination: destination,
                 expectedSize: expectedSize,
                 progress: progress,
@@ -179,6 +219,19 @@ final class BackgroundDownloadCoordinator: NSObject {
         try? FileManager.default.removeItem(at: resumeDataSidecar(for: url))
     }
 
+    /// True when the next `download()` of `url` continues an interrupted
+    /// transfer instead of starting at byte 0. Mirrors the rule in
+    /// `download()`: an authorized request never resumes.
+    nonisolated static func willResume(_ url: URL) -> Bool {
+        var probe = URLRequest(url: url)
+        if let host = url.host?.lowercased(),
+           host == "huggingface.co" || host.hasSuffix(".huggingface.co") {
+            HFTokenStore.authorize(&probe)
+        }
+        return probe.value(forHTTPHeaderField: "Authorization") == nil
+            && FileManager.default.fileExists(atPath: resumeDataSidecar(for: url).path)
+    }
+
     /// Total bytes held by abandoned URLSession resume sidecars. These are
     /// useful for retrying a failed transfer, but once the user explicitly
     /// chooses storage cleanup they should not remain as invisible cache.
@@ -222,20 +275,38 @@ final class BackgroundDownloadCoordinator: NSObject {
         }
     }
 
-    /// Cancels in-flight tasks whose pending destination path begins with the
-    /// given root. Used to abort one repo's downloads without stomping others.
-    func cancelTasks(matching destinationPrefix: String) async {
-        let matchingIDs = pendingByTaskID
-            .filter { $0.value.destination.path.hasPrefix(destinationPrefix) }
-            .map(\.key)
+    /// Invalidates destinations before deleting model storage. Late delegate
+    /// callbacks cannot restore files or resume data after a reset.
+    func cancelAllForWipe() async {
+        isWiping = true
+        invalidatedTaskIDs.formUnion(pendingByTaskID.keys)
+        let pending = pendingByTaskID.values
+        pendingByTaskID.removeAll()
+        for item in pending { item.continuation.resume(throwing: CancellationError()) }
+        let tasks = await withCheckedContinuation { continuation in
+            session.getAllTasks { continuation.resume(returning: $0) }
+        }
+        for task in tasks {
+            invalidatedTaskIDs.insert(task.taskIdentifier)
+            task.taskDescription = nil
+            task.cancel()
+        }
+        _ = Self.clearAllResumeData()
+    }
 
-        await withCheckedContinuation { continuation in
-            session.getAllTasks { tasks in
-                for task in tasks where matchingIDs.contains(task.taskIdentifier) {
-                    task.cancel()
-                }
-                continuation.resume()
-            }
+    func finishWipe() { isWiping = false }
+
+    /// Stops the transfer writing to `destination` and keeps its partial
+    /// bytes: URLSession's resume data is stored, so the next `download()` of
+    /// the same URL continues where this one stopped.
+    func pause(destination: URL) {
+        let path = destination.standardizedFileURL.path
+        for pending in pendingByTaskID.values
+        where pending.destination.standardizedFileURL.path == path {
+            let url = pending.task.originalRequest?.url ?? pending.task.currentRequest?.url
+            pending.task.cancel(byProducingResumeData: { data in
+                if let data { Self.storeResumeData(data, for: url) }
+            })
         }
     }
 }
@@ -262,6 +333,14 @@ extension BackgroundDownloadCoordinator: URLSessionDownloadDelegate {
         // MainActor.assumeIsolated to access MainActor-isolated state safely.
         let pending: Pending? = MainActor.assumeIsolated {
             self.pendingByTaskID.removeValue(forKey: taskID)
+        }
+        let invalidated = MainActor.assumeIsolated {
+            self.isWiping || self.invalidatedTaskIDs.contains(taskID)
+        }
+        if invalidated {
+            try? fm.removeItem(at: location)
+            pending?.continuation.resume(throwing: CancellationError())
+            return
         }
         // After an app relaunch the in-memory Pending map is gone, but the
         // destination was stored on the task itself (taskDescription) at
@@ -355,7 +434,10 @@ extension BackgroundDownloadCoordinator: URLSessionDownloadDelegate {
         guard let error else { return }   // success path handled in didFinishDownloadingTo
         // Persist URLSession's resume data so the next attempt for this URL
         // continues where the transfer broke instead of restarting at byte 0.
-        if let resumeData = (error as NSError)
+        let invalidated = MainActor.assumeIsolated {
+            self.isWiping || self.invalidatedTaskIDs.contains(task.taskIdentifier)
+        }
+        if !invalidated, let resumeData = (error as NSError)
             .userInfo[NSURLSessionDownloadTaskResumeData] as? Data {
             Self.storeResumeData(resumeData,
                                  for: task.originalRequest?.url ?? task.currentRequest?.url)

@@ -163,7 +163,7 @@ final class SpeechTimingTests: XCTestCase {
 
     func testStaleGenerationRejected() {
         let coordinator = SpeechPlaybackCoordinator.shared
-        coordinator.beginUtterance(karaokeSeed: "Hello")
+        coordinator.beginUtterance(chunks: ["Hello"])
         let generationBefore = coordinator.snapshot.currentTime
         coordinator.interrupt()
         XCTAssertEqual(coordinator.snapshot.phase, .interrupted)
@@ -173,7 +173,7 @@ final class SpeechTimingTests: XCTestCase {
 
     func testInterruptClearsActiveHighlight() {
         let coordinator = SpeechPlaybackCoordinator.shared
-        coordinator.beginUtterance(karaokeSeed: "Testing interrupt")
+        coordinator.beginUtterance(chunks: ["Testing interrupt"])
         coordinator.interrupt()
         XCTAssertEqual(coordinator.snapshot.normalizedLevel, 0)
         XCTAssertNil(coordinator.snapshot.activeWordIndex)

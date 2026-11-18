@@ -1,0 +1,21 @@
+// Original app interface translations. Copyright 2026 Mesut and contributors; MIT.
+// Preserve interpolation tokens. Regenerate from the reviewed interface catalog.
+"App Group container missing. Configure entitlements." = "App-Gruppencontainer fehlt. Berechtigungen konfigurieren.";
+"Couldn't decode image" = "Bild konnte nicht dekodiert werden";
+"Couldn't encode image" = "Bild konnte nicht kodiert werden";
+"Couldn't prepare image" = "Bild konnte nicht vorbereitet werden";
+"Couldn't read URL" = "URL konnte nicht gelesen werden";
+"Couldn't read image" = "Bild konnte nicht gelesen werden";
+"Couldn't read text" = "Text konnte nicht gelesen werden";
+"Couldn't resize image" = "Die Bildgröße konnte nicht geändert werden";
+"Couldn't save share" = "Die Freigabe konnte nicht gespeichert werden";
+"Couldn't save the shared link" = "Der freigegebene Link konnte nicht gespeichert werden";
+"Done" = "Fertig";
+"Empty text" = "Leerer Text";
+"No content to share" = "Kein Inhalt zum Teilen vorhanden";
+"Open OnDevice LLM to use your shared content. It is saved on this device." = "Öffnen Sie OnDevice LLM, um Ihre freigegebenen Inhalte zu verwenden. Es wird auf diesem Gerät gespeichert.";
+"Saved to OnDevice LLM" = "In OnDevice LLM gespeichert";
+"Shared storage is unavailable. Try opening OnDevice LLM first." = "Der freigegebene Speicher ist nicht verfügbar. Versuchen Sie zunächst, OnDevice LLM zu öffnen.";
+"Unsupported content type" = "Nicht unterstützter Inhaltstyp";
+"Your content could not be saved." = "Ihr Inhalt konnte nicht gespeichert werden.";
+"Your content could not be saved. Try sharing it again." = "Ihr Inhalt konnte nicht gespeichert werden. Versuchen Sie es erneut zu teilen.";

@@ -8,21 +8,32 @@ import SwiftUI
 
 /// Small monospaced caption. The workhorse text style of the design.
 struct KMono: View {
-    let text: String
-    var size: CGFloat = 11
-    var weight: Font.Weight = .regular
-    var color: Color? = nil
-    var tracking: CGFloat = 0
-    /// When false, renders in SF-Pro sans instead of monospace. Native iOS
-    /// Settings uses sans for plain labels/values; mono is reserved for
-    /// genuinely code/technical content (ids, shapes, tok/s). Defaults true
-    /// so every existing KMono usage is unchanged.
-    var mono: Bool = true
-
+    private let label: Text
+    var size: CGFloat
+    var weight: Font.Weight
+    var color: Color?
+    var tracking: CGFloat
+    var mono: Bool
     @Environment(\.koduTheme) private var T
 
+    // Literal interface captions follow the selected locale. Dynamic values
+    // (persona names, file names, model IDs) remain verbatim like SwiftUI.Text.
+    init(text: LocalizedStringKey, size: CGFloat = 11, weight: Font.Weight = .regular,
+         color: Color? = nil, tracking: CGFloat = 0, mono: Bool = true) {
+        label = Text(text)
+        self.size = size; self.weight = weight; self.color = color
+        self.tracking = tracking; self.mono = mono
+    }
+
+    init<S: StringProtocol>(text: S, size: CGFloat = 11, weight: Font.Weight = .regular,
+         color: Color? = nil, tracking: CGFloat = 0, mono: Bool = true) {
+        label = Text(verbatim: String(text))
+        self.size = size; self.weight = weight; self.color = color
+        self.tracking = tracking; self.mono = mono
+    }
+
     var body: some View {
-        Text(text)
+        label
             .font(mono ? T.mono(size, weight) : T.sans(size, weight))
             .foregroundColor(color ?? T.ink2)
             .tracking(tracking)
@@ -32,6 +43,7 @@ struct KMono: View {
 /// Uppercase mono label used as a small caption above values.
 /// e.g. `TOK/SEC`, `TOKENS`, `SESSION`
 struct KCaption: View {
+    @ObservedObject private var localization = LocalizationService.shared
     let text: String
     var color: Color? = nil
     @Environment(\.koduTheme) private var T
@@ -42,7 +54,7 @@ struct KCaption: View {
         // don't need to be accent-colored. Callers pass `color:` for the rare
         // intentional accent eyebrow. (Desaturating these app-wide is a big part
         // of the professional, ChatGPT-like restraint.)
-        Text(text.uppercased())
+        Text(localization.t(text).uppercased(with: localization.resolvedLocale))
             .font(T.sans(11, .bold))
             .foregroundColor(color ?? T.ink3)
             .tracking(0)
@@ -59,6 +71,7 @@ enum KStatusGlyph: String {
 }
 
 struct KStatusBadge: View {
+    @ObservedObject private var localization = LocalizationService.shared
     let glyph: KStatusGlyph
     let label: String
     let color: Color
@@ -68,7 +81,7 @@ struct KStatusBadge: View {
     var body: some View {
         HStack(spacing: 4) {
             Text(glyph.rawValue)
-            Text(label)
+            Text(localization.t(label))
         }
         .font(T.mono(10))
         .foregroundColor(color)
@@ -76,7 +89,7 @@ struct KStatusBadge: View {
         // indistinguishable to color-blind users — collapse the badge into a
         // single element that announces just the status word.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(label)
+        .accessibilityLabel(localization.t(label))
     }
 }
 
@@ -84,11 +97,135 @@ struct KStatusBadge: View {
 
 /// Reusable tactile feedback button style for the Kodu Studio design language.
 struct KTactileButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1.0)
             .opacity(configuration.isPressed ? 0.90 : 1.0)
-            .animation(.spring(response: 0.15, dampingFraction: 0.6), value: configuration.isPressed)
+            .animation(.easeOut(duration: 0.16), value: configuration.isPressed)
+    }
+}
+
+// MARK: - Studio screen chrome
+
+/// Shared hierarchy for the studio's browsing screens. Actions move below the
+/// title at accessibility sizes instead of squeezing the heading.
+struct KScreenHeader<Actions: View>: View {
+    @ObservedObject private var localization = LocalizationService.shared
+    let title: String
+    let eyebrow: String
+    @ViewBuilder var actions: () -> Actions
+    @Environment(\.koduTheme) private var T
+    @Environment(\.dynamicTypeSize) private var textSize
+
+    var body: some View {
+        let layout = textSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: 12))
+        layout {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(localization.t(eyebrow))
+                    .font(T.sans(12, .medium))
+                    .foregroundStyle(T.ink2)
+                Text(localization.t(title))
+                    .font(T.display(30, .semibold))
+                    .foregroundStyle(T.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            actions()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// A search field whose clear action has a full touch target without changing
+/// the row's height as text is entered.
+struct KSearchField: View {
+    @ObservedObject private var localization = LocalizationService.shared
+    let placeholder: String
+    @Binding var text: String
+    var onClear: () -> Void = {}
+    var onSubmit: () -> Void = {}
+    @FocusState private var focused: Bool
+    @Environment(\.koduTheme) private var T
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.body)
+                .foregroundStyle(T.ink3)
+                .accessibilityHidden(true)
+            TextField(localization.t(placeholder), text: $text,
+                      prompt: Text(verbatim: localization.t(placeholder)).foregroundColor(T.ink3))
+                .font(T.sans(15))
+                .foregroundStyle(T.ink)
+                .tint(T.accent)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                .submitLabel(.search)
+                .focused($focused)
+                .onSubmit {
+                    focused = false
+                    onSubmit()
+                }
+                .accessibilityLabel(localization.t(placeholder))
+            if !text.isEmpty {
+                Button {
+                    text = ""
+                    onClear()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.body)
+                        .foregroundStyle(T.ink2)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(LocalizationService.shared.t("Clear search"))
+            }
+        }
+        .padding(.leading, 14)
+        .padding(.trailing, text.isEmpty ? 14 : 2)
+        .frame(minHeight: 48)
+        .padding(.vertical, 2)
+        .kGlass(cornerRadius: AppRadius.control)
+    }
+}
+
+/// Selection stays legible on neutral glass in every palette. A checkmark and
+/// VoiceOver trait make selection independent of color.
+struct KFilterChip: View {
+    @ObservedObject private var localization = LocalizationService.shared
+    let title: String
+    let isSelected: Bool
+    var action: () -> Void
+    @Environment(\.koduTheme) private var T
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.caption.weight(.semibold))
+                        .accessibilityHidden(true)
+                }
+                Text(localization.t(title))
+                    .font(T.sans(13, isSelected ? .semibold : .medium))
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+            .foregroundStyle(isSelected ? T.ink : T.ink2)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(isSelected ? T.accentSoft : T.surface, in: Capsule())
+            .overlay(Capsule().strokeBorder(isSelected ? T.rule2 : T.rule, lineWidth: AppStroke.hairline))
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(KTactileButtonStyle())
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -133,6 +270,7 @@ struct KIconButton<Icon: View>: View {
 
 /// Primary action button — solid ink fill, white text.
 struct KPrimaryButton: View {
+    @ObservedObject private var localization = LocalizationService.shared
     let label: String
     var systemImage: String? = nil
     var trailing: String? = nil      // e.g. "↵" mono hint on the right
@@ -148,25 +286,20 @@ struct KPrimaryButton: View {
                     Image(systemName: sys)
                         .font(.system(size: 13, weight: .medium))
                 }
-                Text(label)
-                    .font(T.sans(15, .medium))
+                Text(localization.t(label))
+                    .font(T.sans(15, .semibold))
                 Spacer(minLength: 0)
                 if let trailing {
                     Text(trailing)
                         .font(T.mono(10))
-                        .foregroundColor(T.ink4)
+                        .foregroundColor(T.bg.opacity(0.75))
                 }
             }
-            .foregroundColor(T.accentStrong)
-            .padding(.horizontal, 14)
-            .frame(height: 50)
-            .frame(maxWidth: .infinity)
-            .kClearGlass(
-                in: RoundedRectangle(cornerRadius: 10, style: .continuous),
-                tint: T.accentStrong,
-                interactive: true,
-                fallbackFill: T.accentStrong
-            )
+            .foregroundColor(T.bg)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, minHeight: 48)
+            .background(T.ink, in: RoundedRectangle(cornerRadius: AppRadius.control, style: .continuous))
             .opacity(disabled ? 0.45 : 1)
         }
         .buttonStyle(KTactileButtonStyle())
@@ -176,6 +309,7 @@ struct KPrimaryButton: View {
 
 /// Secondary action — surface fill with a 1px rule border.
 struct KSecondaryButton: View {
+    @ObservedObject private var localization = LocalizationService.shared
     let label: String
     var systemImage: String? = nil
     var trailing: String? = "→"
@@ -192,7 +326,7 @@ struct KSecondaryButton: View {
                         .font(.system(size: 13))
                         .foregroundColor(destructive ? T.bad : T.ink)
                 }
-                Text(label)
+                Text(localization.t(label))
                     .font(T.sans(13.5))
                     .foregroundColor(destructive ? T.bad : T.ink)
                 Spacer(minLength: 0)
@@ -216,11 +350,78 @@ struct KSecondaryButton: View {
     }
 }
 
+// MARK: - Compact inline buttons
+
+/// Inline action sized to its label (row actions, banners, retries) in the
+/// same palette as KPrimaryButton / KSecondaryButton. Use `.kPrimary` /
+/// `.kSecondary` instead of the system `.borderedProminent` / `.bordered`,
+/// which render as oversized glass pills next to the studio components.
+/// `role: .destructive` turns a secondary label red.
+struct KCompactButtonStyle: ButtonStyle {
+    enum Kind { case primary, secondary }
+    var kind: Kind
+
+    func makeBody(configuration: Configuration) -> some View {
+        KCompactButtonBody(configuration: configuration, kind: kind)
+    }
+}
+
+private struct KCompactButtonBody: View {
+    let configuration: ButtonStyleConfiguration
+    let kind: KCompactButtonStyle.Kind
+    @Environment(\.koduTheme) private var T
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let destructive = configuration.role == .destructive
+        let foreground: Color = kind == .primary ? T.bg : (destructive ? T.bad : T.ink)
+        configuration.label
+            .font(T.sans(13, .semibold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
+            .foregroundStyle(foreground)
+            .padding(.horizontal, 14)
+            .frame(minHeight: 34)
+            .background {
+                if kind == .primary {
+                    Capsule().fill(destructive ? T.bad : T.ink)
+                }
+            }
+            .modifier(KCompactGlass(enabled: kind == .secondary))
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+            .opacity(isEnabled ? (configuration.isPressed ? 0.85 : 1) : 0.45)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
+            .animation(.easeOut(duration: 0.16), value: configuration.isPressed)
+    }
+}
+
+private struct KCompactGlass: ViewModifier {
+    let enabled: Bool
+    @Environment(\.koduTheme) private var T
+
+    func body(content: Content) -> some View {
+        if enabled {
+            content.kClearGlass(in: Capsule(), interactive: true,
+                                fallbackFill: T.surface, fallbackStroke: T.rule)
+        } else {
+            content
+        }
+    }
+}
+
+extension ButtonStyle where Self == KCompactButtonStyle {
+    static var kPrimary: KCompactButtonStyle { .init(kind: .primary) }
+    static var kSecondary: KCompactButtonStyle { .init(kind: .secondary) }
+}
+
 // MARK: - Section
 // A grouped settings/info block: small mono caption + a hairline rule
 // extending to the right, then a bordered surface container.
 
 struct KSection<Content: View>: View {
+    @ObservedObject private var localization = LocalizationService.shared
     let title: String
     var tinted: Bool = false
     @ViewBuilder var content: () -> Content
@@ -259,7 +460,11 @@ struct KSection<Content: View>: View {
 // to control multiple sections (in which case use `expanded:` binding).
 
 struct KCollapsibleSection<Content: View>: View {
+    @ObservedObject private var localization = LocalizationService.shared
     let title: String
+    /// Text on the tappable row; defaults to `title`. Pass one when the
+    /// caption names a group and the row should say what opening it shows.
+    var rowTitle: String? = nil
     var tinted: Bool = false
     var defaultExpanded: Bool = false
     @ViewBuilder var content: () -> Content
@@ -268,10 +473,12 @@ struct KCollapsibleSection<Content: View>: View {
     @State private var localExpanded: Bool
 
     init(title: String,
+         rowTitle: String? = nil,
          tinted: Bool = false,
          defaultExpanded: Bool = false,
          @ViewBuilder content: @escaping () -> Content) {
         self.title = title
+        self.rowTitle = rowTitle
         self.tinted = tinted
         self.defaultExpanded = defaultExpanded
         self.content = content
@@ -294,10 +501,11 @@ struct KCollapsibleSection<Content: View>: View {
             } label: {
                 VStack(spacing: 0) {
                     HStack(spacing: 12) {
-                        Text(title.replacingOccurrences(of: "_", with: " ").capitalized)
+                        Text(rowTitle.map { localization.t($0) }
+                             ?? localization.t(title.replacingOccurrences(of: "_", with: " ")).capitalized(with: localization.resolvedLocale))
                             .font(T.sans(15, .semibold)).foregroundColor(T.ink)
                         Spacer()
-                        Image(systemName: "chevron.right")
+                        Image(systemName: "chevron.forward")
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundColor(T.ink4)
                             .rotationEffect(.degrees(localExpanded ? 90 : 0))
@@ -327,27 +535,29 @@ struct KCollapsibleSection<Content: View>: View {
 
 /// One row inside a KSection. `last: true` removes the bottom divider.
 struct KRow<Trailing: View>: View {
+    @ObservedObject private var localization = LocalizationService.shared
     let label: String
     @ViewBuilder var trailing: () -> Trailing
     var last: Bool = false
     var stack: Bool = false
 
     @Environment(\.koduTheme) private var T
+    @Environment(\.dynamicTypeSize) private var textSize
 
     var body: some View {
         VStack(spacing: 0) {
             Group {
-                if stack {
+                if stack || textSize.isAccessibilitySize {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(label).font(T.sans(15)).foregroundColor(T.ink)
-                        trailing()
+                        Text(localization.t(label)).font(T.sans(15)).foregroundColor(T.ink)
+                        trailing().accessibilityLabel(localization.t(label))
                     }
                 } else {
                     HStack(spacing: 12) {
-                        Text(label).font(T.sans(15)).foregroundColor(T.ink)
+                        Text(localization.t(label)).font(T.sans(15)).foregroundColor(T.ink)
                             .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 8)
-                        trailing()
+                        trailing().accessibilityLabel(localization.t(label))
                     }
                 }
             }
@@ -442,12 +652,13 @@ struct KTelemetryStrip: View {
 
 /// Small bordered tag — `qwen3`, `mlx`, `code`, etc.
 struct KTag: View {
+    @ObservedObject private var localization = LocalizationService.shared
     let text: String
     var size: CGFloat = 10
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        Text(text)
+        Text(localization.t(text))
             .font(T.mono(size))
             .foregroundColor(T.ink2)
             .padding(.horizontal, 7)
@@ -537,10 +748,11 @@ struct KFlowLayout: Layout {
 
 /// ACTIVE pill — accent text on accentSoft fill.
 struct KActivePill: View {
+    @ObservedObject private var localization = LocalizationService.shared
     let text: String
     @Environment(\.koduTheme) private var T
     var body: some View {
-        Text(text.uppercased())
+        Text(localization.t(text).uppercased(with: localization.resolvedLocale))
             .font(T.mono(9, .semibold))
             .tracking(0)
             .foregroundColor(T.accent)
@@ -561,6 +773,7 @@ struct KActivePill: View {
 // (an alert) instead of consuming vertical space inline.
 
 struct KCompatChip: View {
+    @ObservedObject private var localization = LocalizationService.shared
     enum Level {
         case ok, tight, blocked
         var glyph: String {
@@ -594,7 +807,7 @@ struct KCompatChip: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: level.glyph).font(.system(size: 9, weight: .bold))
-                Text(text).font(T.mono(10, .medium))
+                Text(localization.t(text)).font(T.mono(10, .medium))
                 if detail != nil {
                     Image(systemName: "info.circle").font(.system(size: 8, weight: .semibold)).opacity(0.65)
                 }
@@ -605,10 +818,10 @@ struct KCompatChip: View {
         }
         .buttonStyle(.plain)
         .disabled(detail == nil)
-        .alert(text, isPresented: $showDetail) {
+        .alert(localization.t(text), isPresented: $showDetail) {
             Button("OK", role: .cancel) {}
         } message: {
-            if let detail { Text(detail) }
+            if let detail { Text(localization.t(detail)) }
         }
     }
 }
@@ -621,6 +834,7 @@ struct KCompatChip: View {
 // removing anything.
 
 struct KDisclosureRows<Content: View>: View {
+    @ObservedObject private var localization = LocalizationService.shared
     let title: String
     var count: Int? = nil
     var startsOpen: Bool = false
@@ -645,10 +859,10 @@ struct KDisclosureRows<Content: View>: View {
                 HapticManager.impact(.light)
             } label: {
                 HStack(spacing: 8) {
-                    Text(count.map { "\(title) (\($0))" } ?? title)
+                    Text(count.map { "\(localization.t(title)) (\($0))" } ?? localization.t(title))
                         .font(T.sans(13, .medium)).foregroundColor(T.ink2)
                     Spacer()
-                    Image(systemName: "chevron.right")
+                    Image(systemName: "chevron.forward")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(T.ink4)
                         .rotationEffect(.degrees(open ? 90 : 0))
@@ -700,12 +914,13 @@ struct KWordmark: View {
 /// Large display title used at the top of full screens.
 /// e.g. "Models", "Settings"
 struct KPageTitle: View {
+    @ObservedObject private var localization = LocalizationService.shared
     let title: String
-    var size: CGFloat = 30
+    var size: CGFloat = 28   // one page-title size app-wide
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        Text(title)
+        Text(localization.t(title))
             .font(T.display(size, .semibold))
             .tracking(0)
             .foregroundColor(T.ink)
@@ -718,10 +933,11 @@ struct KPageTitle: View {
 struct KToggle: View {
     @Binding var isOn: Bool
     @Environment(\.koduTheme) private var T
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Button {
-            withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) { isOn.toggle() }
+            withAnimation(reduceMotion ? nil : .spring(response: 0.25, dampingFraction: 0.85)) { isOn.toggle() }
         } label: {
             ZStack(alignment: isOn ? .trailing : .leading) {
                 RoundedRectangle(cornerRadius: 9)
@@ -732,6 +948,8 @@ struct KToggle: View {
                     .frame(width: 14, height: 14)
                     .padding(.horizontal, 2)
             }
+            .frame(minWidth: 44, minHeight: 44)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         // This is a custom switch, not a SwiftUI Toggle — without these traits

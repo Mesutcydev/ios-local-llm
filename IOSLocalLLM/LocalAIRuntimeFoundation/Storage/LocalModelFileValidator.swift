@@ -93,14 +93,42 @@ enum LocalModelFileValidator {
     }
 
     /// Shared recursive, case-insensitive GGUF finder. `nameMatches` receives
-    /// the lowercased filename.
+    /// the lowercased filename. A folder can hold several quantizations of
+    /// one model; directory order is unspecified, so candidates are ranked
+    /// (4-bit first, then by name) to load the same file every time.
     private static func firstValidGGUF(in dir: URL, where nameMatches: (String) -> Bool) -> URL? {
         guard let files = recursiveFiles(in: dir) else { return nil }
-        return files.first { url in
-            url.pathExtension.lowercased() == "gguf"
-                && nameMatches(url.lastPathComponent.lowercased())
-                && isValidGGUFFile(url)
-        }
+        return files
+            .filter { url in
+                url.pathExtension.lowercased() == "gguf"
+                    && nameMatches(url.lastPathComponent.lowercased())
+            }
+            .sorted { lhs, rhs in
+                let lhsRank = ggufQuantizationRank(lhs.lastPathComponent)
+                let rhsRank = ggufQuantizationRank(rhs.lastPathComponent)
+                return lhsRank != rhsRank
+                    ? lhsRank < rhsRank
+                    : lhs.lastPathComponent < rhs.lastPathComponent
+            }
+            .first(where: isValidGGUFFile)
+    }
+
+    /// Quantizations in the order a phone should prefer them: 4-bit keeps
+    /// quality while fitting the per-app memory limit.
+    private static let ggufQuantizationPreference = [
+        "q4_k_m", "q4_0", "q4_k_s", "q5_k_m", "q5_k_s", "q6_k", "q8_0",
+    ]
+
+    /// The preferred-quantization tag in `name`, if it carries one.
+    static func ggufQuantizationTag(_ name: String) -> String? {
+        let lower = name.lowercased()
+        return ggufQuantizationPreference.first(where: lower.contains)
+    }
+
+    /// Lower is better; names without a known tag rank last.
+    static func ggufQuantizationRank(_ name: String) -> Int {
+        ggufQuantizationTag(name).flatMap(ggufQuantizationPreference.firstIndex(of:))
+            ?? ggufQuantizationPreference.count
     }
 
     static func hasValidGGUFTextModel(in dir: URL) -> Bool {

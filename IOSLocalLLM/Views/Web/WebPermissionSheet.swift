@@ -36,7 +36,7 @@ struct WebPermissionSheet: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             KCaption(text: "WEB TOOL")
-            KPageTitle(title: "Use web sources?", size: 26)
+            KPageTitle(title: "Use web sources?", size: 28)
             Text(reason)
                 .font(T.sans(13))
                 .foregroundColor(T.ink2)
@@ -90,11 +90,25 @@ struct WebPermissionSheet: View {
 
     private var privacyCard: some View {
         VStack(alignment: .leading, spacing: 4) {
-            KMono(text: "what is NOT sent", size: 9, color: T.ink3)
-            Text("Your chat history, attachments, OCR, and screenshots are not sent. Inference still runs on this device.")
+            KMono(text: "privacy", size: 9, color: T.ink3)
+            Text("Only the query or URL shown above is sent. Chat history and attachments are not sent by the web tool. The recipient receives your IP address and an API credential when configured. Search providers may retain queries and reuse them to improve their services. Do not include private information.")
                 .font(T.sans(12))
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
+            if case .query = payload, let providerPrivacyURL {
+                Link("Read provider privacy policy", destination: providerPrivacyURL)
+                    .font(T.sans(12))
+            }
+        }
+    }
+
+    private var providerPrivacyURL: URL? {
+        switch webTool.settings.provider {
+        case .brave: return URL(string: "https://api-dashboard.search.brave.com/app/documentation/general/privacy-policy")!
+        case .tavily: return URL(string: "https://www.tavily.com/privacy")!
+        case .exa: return URL(string: "https://exa.ai/privacy-policy")!
+        case .duckduckgoHTML: return URL(string: "https://duckduckgo.com/privacy")!
+        case .directURLOnly, .searxng, .custom: return nil
         }
     }
 
@@ -102,6 +116,7 @@ struct WebPermissionSheet: View {
         VStack(spacing: 8) {
             Button {
                 HapticManager.impact(.medium)
+                webTool.settings.acceptPrivacyDisclosure()
                 onAllowOnce()
                 dismiss()
             } label: {
@@ -117,6 +132,7 @@ struct WebPermissionSheet: View {
 
             Button {
                 HapticManager.impact(.light)
+                webTool.settings.acceptPrivacyDisclosure()
                 onAlwaysAllow()
                 dismiss()
             } label: {

@@ -7,7 +7,9 @@ import SwiftUI
 struct AssistantModelPickerView: View {
 
     let downloadedOnly: Bool
+    let allowsApplePrivateCloud: Bool
 
+    @ObservedObject private var coreAIStore = CoreAIModelStore.shared
     @ObservedObject private var assistant = CodingAssistantService.shared
     @ObservedObject private var center = ModelDownloadCenter.shared
     @ObservedObject private var registry = InstalledModelRegistry.shared
@@ -23,8 +25,9 @@ struct AssistantModelPickerView: View {
     @State private var isImporting = false
     @State private var isActivating = false
 
-    init(downloadedOnly: Bool = false) {
+    init(downloadedOnly: Bool = false, allowsApplePrivateCloud: Bool = true) {
         self.downloadedOnly = downloadedOnly
+        self.allowsApplePrivateCloud = allowsApplePrivateCloud
     }
 
     private var recommendedAssistant: AssistantModel? {
@@ -64,8 +67,7 @@ struct AssistantModelPickerView: View {
             }) else { continue }
 
             let downloader = center.existingDownloader(forRepoID: rec.repoID)
-                ?? HFModelDownloadManager(repoID: rec.repoID, destination: rec.localURL)
-            downloader.checkIfReady()
+                ?? untrackedDownloader(repoID: rec.repoID, destination: rec.localURL)
             let wrapper = DownloadableModel(
                 id: rec.repoID,
                 displayName: rec.displayName,
@@ -82,6 +84,15 @@ struct AssistantModelPickerView: View {
         }
 
         return result
+    }
+
+    /// Downloader for a registry record the center does not track yet. Only
+    /// this case needs a disk check; the center keeps its own entries current,
+    /// and probing them here ran file I/O on every render.
+    private func untrackedDownloader(repoID: String, destination: URL) -> HFModelDownloadManager {
+        let downloader = HFModelDownloadManager(repoID: repoID, destination: destination)
+        downloader.checkIfReady()
+        return downloader
     }
 
     /// Complete downloaded-only list used by API/server surfaces. Unlike the
@@ -112,11 +123,7 @@ struct AssistantModelPickerView: View {
                 result.append(preset)
             } else {
                 let downloader = center.existingDownloader(forRepoID: record.repoID)
-                    ?? HFModelDownloadManager(
-                        repoID: record.repoID,
-                        destination: record.localURL
-                    )
-                downloader.checkIfReady()
+                    ?? untrackedDownloader(repoID: record.repoID, destination: record.localURL)
                 let wrapper = DownloadableModel(
                     id: record.repoID,
                     displayName: record.displayName,
@@ -149,6 +156,9 @@ struct AssistantModelPickerView: View {
                 result.append(assistantModel(from: downloadable))
             }
         }
+        if CoreAIInferenceService.availabilityReason == nil {
+            result.append(contentsOf: coreAIStore.installations.compactMap(\.assistantModel))
+        }
         return result.sorted {
             let lhsActive = $0.id == assistant.activeModel.id
             let rhsActive = $1.id == assistant.activeModel.id
@@ -163,7 +173,7 @@ struct AssistantModelPickerView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     header
-                    if ApplePrivateCloud.isSupportedOnCurrentOS {
+                    if allowsApplePrivateCloud && ApplePrivateCloud.isSupportedOnCurrentOS {
                         ApplePrivateCloudPickerSection(
                             status: assistant.applePrivateCloudStatus,
                             isActive: assistant.activeExecutionLocation == .applePrivateCloud,
@@ -201,7 +211,7 @@ struct AssistantModelPickerView: View {
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 13)
                                 }
-                                .buttonStyle(.borderedProminent)
+                                .buttonStyle(.kPrimary)
                                 .tint(T.accent)
                                 .padding(.horizontal, 24)
                             }
@@ -228,6 +238,14 @@ struct AssistantModelPickerView: View {
                         // switch to instantly, above the full preset catalog.
                         if !downloadedModels.isEmpty {
                             downloadedSection
+                        }
+                        if CoreAIInferenceService.availabilityReason == nil,
+                           !coreAIStore.installations.isEmpty {
+                            modelSection(title: "Core AI") {
+                                ForEach(coreAIStore.installations.compactMap(\.assistantModel)) { model in
+                                    row(for: model)
+                                }
+                            }
                         }
                         presetsSection
                         importSection
@@ -257,7 +275,7 @@ struct AssistantModelPickerView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }.foregroundColor(T.ink)
+                    Button("Done", systemImage: "checkmark") { dismiss() }.foregroundColor(T.ink)
                 }
             }
             .onAppear {
@@ -344,12 +362,16 @@ struct AssistantModelPickerView: View {
         VStack(alignment: .leading, spacing: 4) {
             KCaption(text: "ASSISTANT")
             KPageTitle(
-                title: downloadedOnly ? "Switch model" : "Choose default model",
-                size: 30
+                title: downloadedOnly
+                    ? (allowsApplePrivateCloud ? "Switch model" : "Choose API model")
+                    : "Choose default model",
+                size: 28
             )
             Text(
                 downloadedOnly
-                    ? "Choose a model for this conversation, or set one as the default for new chats."
+                    ? (allowsApplePrivateCloud
+                       ? "Choose a model for this conversation, or set one as the default for new chats."
+                       : "Only models installed on this device can serve local API requests.")
                     : "New conversations and future launches will start with this model."
             )
                 .font(T.sans(13))
@@ -368,10 +390,7 @@ struct AssistantModelPickerView: View {
                 selectedID = model.id
                 HapticManager.impact(.light)
                 Task {
-                    await assistant.switchTo(
-                        model,
-                        persistAsDefault: !downloadedOnly
-                    )
+                    await activate(model)
                     dismiss()
                 }
             } label: {
@@ -414,17 +433,72 @@ struct AssistantModelPickerView: View {
 
                     Spacer(minLength: 4)
 
-                    Image(systemName: "chevron.right")
+                    Image(systemName: "chevron.forward")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(T.accent)
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .kGlass(cornerRadius: 22, fallbackFill: T.surface)
+                .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
+    }
+
+    // MARK: - Activation
+
+    /// Switches to `model`. A model that is not on the device used to be
+    /// fetched invisibly while it loaded, into a cache the Models tab never
+    /// listed. It now starts an ordinary Models download instead, with
+    /// progress, pause and delete.
+    private func activate(_ model: AssistantModel) async {
+        if !downloadedOnly, model.runtime != .coreAI, !CodingAssistantService.isInstalled(model) {
+            startDownload(of: model)
+            return
+        }
+        await assistant.switchTo(
+            model,
+            persistAsDefault: !downloadedOnly,
+            allowDownload: !downloadedOnly
+        )
+    }
+
+    private func startDownload(of model: AssistantModel) {
+        func catalogEntry() -> DownloadableModel? {
+            center.models.first {
+                $0.id == model.id
+                    || $0.sourceRepoID.caseInsensitiveCompare(model.repoID) == .orderedSame
+            }
+        }
+        let isPreset = AssistantModelCatalog.presets.contains { $0.id == model.id }
+        if catalogEntry() == nil {
+            // A repo typed by hand: register it like a search download.
+            let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let destination = docs.appendingPathComponent("HFModels", isDirectory: true)
+                .appendingPathComponent(model.repoID.replacingOccurrences(of: "/", with: "_"))
+            center.registerCustom(
+                repoID: model.repoID,
+                displayName: model.displayName,
+                subtitle: model.repoID,
+                category: .assistant,
+                sizeLabel: "—",
+                docURL: "https://huggingface.co/\(model.repoID)",
+                downloader: HFModelDownloadManager(repoID: model.repoID, destination: destination)
+            )
+        }
+        guard let entry = catalogEntry() else {
+            ToastCenter.shared.error("Can't load selected model")
+            return
+        }
+        entry.start()
+        // start() explains itself when the memory or platform gate refuses.
+        guard entry.state.isActive else { return }
+        if isPreset {
+            settings.assistantModelID = model.id
+            settings.hasPickedAssistantModel = true
+        }
+        ToastCenter.shared.info("Download started", detail: model.displayName)
     }
 
     // MARK: - Presets
@@ -486,10 +560,7 @@ struct AssistantModelPickerView: View {
                         "set active tapped · preset · id=\(model.id) · repoID=\(model.repoID)",
                         category: "picker"
                     )
-                    await assistant.switchTo(
-                        model,
-                        persistAsDefault: !downloadedOnly
-                    )
+                    await activate(model)
                     isActivating = false
                     dismiss()
                 }
@@ -511,7 +582,7 @@ struct AssistantModelPickerView: View {
                                     KActivePill(text: "default")
                                 }
                             }
-                            Text(model.subtitle)
+                            Text(LocalizedStringKey(model.subtitle))
                                 .font(T.sans(12))
                                 .foregroundColor(T.ink2)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -562,13 +633,13 @@ struct AssistantModelPickerView: View {
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .kGlass(cornerRadius: 22, fallbackFill: T.surface)
+                .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
                         .stroke(isSelected ? T.accent.opacity(0.35) : Color.clear,
                                 lineWidth: 1)
                 )
-                .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
             }
             .buttonStyle(.plain)
 
@@ -657,7 +728,7 @@ struct AssistantModelPickerView: View {
         HStack(spacing: 4) {
             Image(systemName: compatibility.symbol)
                 .font(.system(size: 8, weight: .semibold))
-            Text(compatibility.label)
+            Text(LocalizedStringKey(compatibility.label))
                 .font(T.mono(8.5, .semibold))
                 .tracking(0.2)
         }
@@ -667,7 +738,7 @@ struct AssistantModelPickerView: View {
         .background(Capsule().fill(T.ink2.opacity(0.08)))
         .overlay(Capsule().stroke(T.ink2.opacity(0.24), lineWidth: 0.5))
         .fixedSize(horizontal: true, vertical: false)
-        .accessibilityHint(compatibility.detail)
+        .accessibilityHint(Text(LocalizedStringKey(compatibility.detail)))
     }
 
     // MARK: - Downloaded (HF Search + custom repos + local imports)
@@ -722,7 +793,7 @@ struct AssistantModelPickerView: View {
                     if isImporting {
                         ProgressView().tint(T.good).scaleEffect(0.7)
                     } else {
-                        Image(systemName: "chevron.right")
+                        Image(systemName: "chevron.forward")
                             .font(.system(size: 10))
                             .foregroundColor(T.ink3)
                     }
@@ -758,7 +829,8 @@ struct AssistantModelPickerView: View {
             }
             await assistant.switchTo(
                 model,
-                persistAsDefault: !downloadedOnly
+                persistAsDefault: !downloadedOnly,
+                allowDownload: !downloadedOnly
             )
             dismiss()
         } catch {
@@ -796,10 +868,7 @@ struct AssistantModelPickerView: View {
                         .assistantModel!
                     HapticManager.impact(.medium)
                     Task {
-                        await assistant.switchTo(
-                            custom,
-                            persistAsDefault: !downloadedOnly
-                        )
+                        await activate(custom)
                         dismiss()
                     }
                 } label: {
@@ -882,15 +951,15 @@ private struct ApplePrivateCloudPickerSection: View {
                         if isActivating {
                             ProgressView().controlSize(.small)
                         } else {
-                            Image(systemName: "chevron.right")
+                            Image(systemName: "chevron.forward")
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(T.accent)
                         }
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .kGlass(cornerRadius: 22, fallbackFill: T.surface)
-                    .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface)
+                    .contentShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .disabled(isActivating)
@@ -937,48 +1006,48 @@ private struct ApplePrivateCloudPickerSection: View {
 
     private var statusTitle: String {
         switch status {
-        case .ready: return "Available"
-        case .approachingLimit: return "Available · nearing daily limit"
-        case .limitReached: return "Daily limit reached"
-        case .unsupportedOS: return "Requires iOS 27"
-        case .unsupportedDevice: return "Device not eligible"
-        case .appleIntelligenceUnavailable: return "Apple Intelligence unavailable"
-        case .offline: return "Offline"
-        case .temporarilyUnavailable: return "Temporarily unavailable"
-        case .entitlementUnavailable: return "Not enabled for this build"
-        case .unknown: return "Availability unknown"
+        case .ready: return LocalizationService.shared.t("Available")
+        case .approachingLimit: return LocalizationService.shared.t("Available · nearing daily limit")
+        case .limitReached: return LocalizationService.shared.t("Daily limit reached")
+        case .unsupportedOS: return LocalizationService.shared.t("Requires iOS 27")
+        case .unsupportedDevice: return LocalizationService.shared.t("Device not eligible")
+        case .appleIntelligenceUnavailable: return LocalizationService.shared.t("Apple Intelligence unavailable")
+        case .offline: return LocalizationService.shared.t("Offline")
+        case .temporarilyUnavailable: return LocalizationService.shared.t("Temporarily unavailable")
+        case .entitlementUnavailable: return LocalizationService.shared.t("Not enabled for this build")
+        case .unknown: return LocalizationService.shared.t("Availability unknown")
         }
     }
 
     private func reasoningLabel(_ level: ApplePCCReasoningLevel) -> String {
         switch level {
-        case .automatic: return "Automatic reasoning"
-        case .light: return "Light reasoning"
-        case .moderate: return "Moderate reasoning"
-        case .deep: return "Deep reasoning"
+        case .automatic: return LocalizationService.shared.t("Automatic reasoning")
+        case .light: return LocalizationService.shared.t("Light reasoning")
+        case .moderate: return LocalizationService.shared.t("Moderate reasoning")
+        case .deep: return LocalizationService.shared.t("Deep reasoning")
         }
     }
 
     private var statusDetail: String {
         switch status {
         case .ready, .approachingLimit:
-            return "Uses a network connection. No model download or local memory load."
+            return LocalizationService.shared.t("Uses a network connection. No model download or local memory load.")
         case .limitReached:
-            return "Choose Show Options or continue with any downloaded local model."
+            return LocalizationService.shared.t("Choose Show Options or continue with any downloaded local model.")
         case .offline:
-            return "Connect to the internet, then reopen this picker to refresh."
+            return LocalizationService.shared.t("Connect to the internet, then reopen this picker to refresh.")
         default:
-            return "Downloaded local models remain available."
+            return LocalizationService.shared.t("Downloaded local models remain available.")
         }
     }
 
     private var statusSymbol: String {
         switch status {
-        case .ready: return "checkmark.circle.fill"
-        case .approachingLimit: return "exclamationmark.circle.fill"
-        case .limitReached: return "hourglass.circle.fill"
-        case .offline: return "wifi.slash"
-        default: return "info.circle.fill"
+        case .ready: return LocalizationService.shared.t("checkmark.circle.fill")
+        case .approachingLimit: return LocalizationService.shared.t("exclamationmark.circle.fill")
+        case .limitReached: return LocalizationService.shared.t("hourglass.circle.fill")
+        case .offline: return LocalizationService.shared.t("wifi.slash")
+        default: return LocalizationService.shared.t("info.circle.fill")
         }
     }
 
@@ -1040,7 +1109,7 @@ private struct ApplePrivateCloudPrivacyDisclosureView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 13)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.kPrimary)
                     .tint(T.accent)
                 }
                 .padding(22)
@@ -1048,7 +1117,7 @@ private struct ApplePrivateCloudPrivacyDisclosureView: View {
             .background(LiquidPinkBackdrop())
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel", systemImage: "xmark") { dismiss() }
                 }
             }
         }

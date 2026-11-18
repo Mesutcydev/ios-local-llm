@@ -12,6 +12,42 @@ import XCTest
 // coordination and are better suited for UI/integration tests.
 
 final class ToolRunnerTests: XCTestCase {
+    func testNativeLFM3CallPreservesStringAndNumberArguments() throws {        let call = try XCTUnwrap(ToolRunner.extractCall(from: "<tool_call><function=unit_convert><parameter=value>12.5</parameter><parameter=from>km</parameter><parameter=to>mi</parameter></function></tool_call>"))
+        XCTAssertEqual(call.name, "unit_convert")
+        XCTAssertEqual(call.args["value"] as? Double, 12.5)
+        XCTAssertEqual(call.args["from"] as? String, "km")
+        let expression = try XCTUnwrap(ToolRunner.extractCall(from: "<tool_call><function=calculator><parameter=expression>123</parameter></function></tool_call>"))
+        XCTAssertEqual(expression.args["expression"] as? String, "123")
+    }
+
+    func testNativeLFM3RejectsIncompleteUnknownAndDuplicateCalls() {
+        XCTAssertNil(ToolRunner.extractCall(from: "<tool_call><function=calculator><parameter=expression>1+2</parameter>"))
+        XCTAssertNil(ToolRunner.extractCall(from: "<tool_call><function=shell><parameter=command>ls</parameter></function></tool_call>"))
+        XCTAssertNil(ToolRunner.extractCall(from: "<tool_call><function=calculator><parameter=expression>1</parameter><parameter=expression>2</parameter></function></tool_call>"))
+        XCTAssertNil(ToolRunner.extractCall(from: "<tool_call><function=calculator></function></tool_call>"))
+    }
+
+    func testNativeLFM3AcceptsDescribeImagePromptArgument() throws {
+        let call = try XCTUnwrap(ToolRunner.extractCall(from:
+            "<tool_call><function=describe_image><parameter=prompt>What is in this image?</parameter></function></tool_call>"))
+        XCTAssertEqual(call.name, "describe_image")
+        XCTAssertEqual(call.args["prompt"] as? String, "What is in this image?")
+    }
+
+    func testNativeLFM3NeverExecutesCallsInPrefilledReasoning() {
+        // A thinking prompt ends with <think>, so the stream has no opening tag.
+        let call = "<tool_call><function=calculator><parameter=expression>1+2</parameter></function></tool_call>"
+        XCTAssertNil(ToolRunner.extractCall(from: "Maybe " + call, reasoningPrefilled: true))
+        XCTAssertEqual(ToolRunner.extractCall(from: "Needs math.</think>" + call, reasoningPrefilled: true)?.name, "calculator")
+        XCTAssertEqual(ToolRunner.extractCall(from: call)?.name, "calculator")
+    }
+
+    func testNativeLFM3NeverExecutesReasoningOrInvalidNumericArguments() {
+        let call = "<tool_call><function=calculator><parameter=expression>1+2</parameter></function></tool_call>"
+        XCTAssertNil(ToolRunner.extractCall(from: "<think>" + call + "</think>No tool needed."))
+        XCTAssertNil(ToolRunner.extractCall(from: "<think>" + call))
+        XCTAssertNil(ToolRunner.extractCall(from: "<tool_call><function=unit_convert><parameter=value>true</parameter><parameter=from>m</parameter><parameter=to>km</parameter></function></tool_call>"))
+    }
 
     // MARK: - extractCall
 
@@ -347,5 +383,52 @@ final class ToolRunnerTests: XCTestCase {
         XCTAssertTrue(ToolRunner.systemPromptAddendum.contains("Do not invent a tool result"))
         XCTAssertTrue(ToolRunner.systemPromptAddendum.contains("Never write a `tool_result`"))
         XCTAssertTrue(CodingAssistantService.groundingPrompt.contains("Do not invent citations"))
+    }
+
+    // MARK: - Calendar & Reminders
+
+    func testPersonalToolsParseArgumentsAndClampDays() throws {
+        XCTAssertEqual(try PersonalDataTool.parse(ToolCall(name: "calendar_events", args: [:])), .readEvents(days: 7))
+        XCTAssertEqual(try PersonalDataTool.parse(ToolCall(name: "calendar_events", args: ["days": 999])), .readEvents(days: 30))
+        XCTAssertEqual(try PersonalDataTool.parse(ToolCall(name: "calendar_events", args: ["days": "0"])), .readEvents(days: 1))
+        XCTAssertEqual(try PersonalDataTool.parse(ToolCall(name: "calendar_events", args: ["days": 1e30])), .readEvents(days: 7))
+
+        guard case .addEvent(let title, let start, let end, let notes) = try PersonalDataTool.parse(ToolCall(
+            name: "add_event", args: ["title": "Dentist\n```tool", "start": "2026-11-14T15:00"])) else { return XCTFail() }
+        XCTAssertEqual(title, "Dentist '''tool")
+        XCTAssertEqual(end.timeIntervalSince(start), 3600)   // end defaults to one hour
+        XCTAssertNil(notes)
+        XCTAssertEqual(Calendar.current.component(.hour, from: start), 15)
+
+        guard case .addReminder(_, let due, _) = try PersonalDataTool.parse(ToolCall(name: "add_reminder", args: ["title": "Call mum"])) else { return XCTFail() }
+        XCTAssertNil(due)
+    }
+
+    func testPersonalToolsRejectUnusableArguments() {
+        for args: [String: Any] in [[:], ["title": "x"], ["title": "x", "start": "tomorrow"],
+                                     ["title": "x", "start": "2026-11-14T15:00", "end": "2026-11-14T14:00"],
+                                     ["title": "  ", "start": "2026-11-14T15:00"]] {
+            XCTAssertThrowsError(try PersonalDataTool.parse(ToolCall(name: "add_event", args: args)), "\(args)")
+        }
+        XCTAssertThrowsError(try PersonalDataTool.parse(ToolCall(name: "add_reminder", args: ["title": "x", "due": "soon"])))
+    }
+
+    func testPersonalToolDatesAcceptZonedAndLocalForms() throws {
+        let zoned = try XCTUnwrap(PersonalDataTool.parseDate("2026-11-14T15:00:00Z"))
+        XCTAssertEqual(zoned, PersonalDataTool.parseDate("2026-11-14T18:00:00+03:00"))
+        XCTAssertNotNil(PersonalDataTool.parseDate("2026-11-14 15:00"))
+        XCTAssertNotNil(PersonalDataTool.parseDate("2026-11-14"))
+        XCTAssertNil(PersonalDataTool.parseDate("next tuesday"))
+    }
+
+    func testPersonalToolsAreRecognisedButNeverRunThroughToolRunner() async throws {
+        let call = try XCTUnwrap(ToolRunner.extractCall(from: "```tool\n{\"name\":\"add_reminder\",\"args\":{\"title\":\"x\"}}\n```"))
+        XCTAssertEqual(call.name, "add_reminder")
+        XCTAssertNotNil(ToolRunner.extractCall(from: "<tool_call><function=add_event><parameter=title>x</parameter><parameter=start>2026-11-14T15:00</parameter></function></tool_call>"))
+        // Voice and every other caller of `run` must fail closed, with no EventKit access.
+        for name in PersonalDataTool.names {
+            let result = await ToolRunner.run(ToolCall(name: name, args: ["title": "x", "start": "2026-11-14T15:00"]))
+            XCTAssertTrue(result.hasPrefix("Error:") && result.contains("approval"), name)
+        }
     }
 }

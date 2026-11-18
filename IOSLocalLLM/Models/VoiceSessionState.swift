@@ -157,8 +157,8 @@ struct TTSEngineCapabilities: OptionSet, Sendable, Equatable {
                 .immediateCancellation,
                 .engineDerivedDurations
             ]
-        case .kokoro:
-            // Duration stage is fused inside the CoreML graph — not exposed.
+        case .kokoro, .paradee, .supertonic:
+            // Duration stage is fused inside the graph — not exposed.
             return [.completePCMBuffers, .playbackMetering, .immediateCancellation]
         }
     }

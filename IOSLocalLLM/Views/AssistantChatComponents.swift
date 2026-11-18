@@ -1,12 +1,16 @@
 import SwiftUI
 
+/// The message and primary action share a row; quieter editing tools sit below.
 struct AssistantComposer: View {
     @Binding var text: String
     @FocusState.Binding var isFocused: Bool
-
     let canSend: Bool
     let isGenerating: Bool
     let hasCustomSampling: Bool
+    let modelName: String
+    let hasAttachments: Bool
+    let onModel: () -> Void
+    let onVoice: () -> Void
     let onAdd: () -> Void
     let onPhoto: () -> Void
     let onFile: () -> Void
@@ -16,136 +20,141 @@ struct AssistantComposer: View {
 
     @Environment(\.koduTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var textSize
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @ObservedObject private var localization = LocalizationService.shared
+
+    private var offersVoice: Bool {
+        text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !hasAttachments && !isGenerating
+    }
 
     var body: some View {
-        VStack(spacing: AssistantSpacing.xxxSmall) {
-            TextField("Message your on-device assistant", text: $text, axis: .vertical)
-                .font(theme.sans(17))
-                .foregroundStyle(.primary)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .bottom, spacing: 12) {
+                TextField("Message your assistant", text: $text, prompt: Text("Message your assistant").foregroundStyle(theme.ink3), axis: .vertical)
+                .font(.body)
+                .foregroundStyle(theme.ink)
                 .tint(theme.accent)
                 .focused($isFocused)
-                .lineLimit(1...6)
+                .lineLimit(1...(textSize.isAccessibilitySize ? 4 : 6))
                 .submitLabel(.send)
                 .onSubmit {
                     guard canSend, !isGenerating else { return }
                     onSend()
                 }
-                .padding(.horizontal, AppSpacing.medium)
-                .padding(.top, AssistantSpacing.small)
-                .padding(.bottom, AssistantSpacing.xxxSmall)
+                .frame(minHeight: 44, alignment: .center)
+                .padding(.leading, 6)
+                .padding(.vertical, 2)
+                .layoutPriority(1)
                 .accessibilityLabel("Message your on-device assistant")
+                .accessibilityIdentifier("assistant.composer.input")
+                primaryAction
+            }
 
-            Divider()
-                .overlay(theme.rule)
-                .padding(.horizontal, AssistantSpacing.xSmall)
-
+            if textSize.isAccessibilitySize {
+                modelButton
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
             HStack(spacing: 2) {
                 Menu {
-                    Button(action: onAdd) {
-                        Label("Prompt or snippet", systemImage: "text.badge.plus")
-                    }
-                    Button(action: onPhoto) {
-                        Label("Photo", systemImage: "photo")
-                    }
-                    Button(action: onFile) {
-                        Label("File", systemImage: "doc")
+                    Button(action: onAdd) { Label("Prompt or snippet", systemImage: "text.badge.plus") }
+                    Button(action: onPhoto) { Label("Photo", systemImage: "photo") }
+                    Button(action: onFile) { Label("File", systemImage: "doc") }
+                    Divider()
+                    Button(action: onSampling) { Label("Sampling settings", systemImage: "slider.horizontal.3") }
+                    if isFocused {
+                        Button { isFocused = false; KeyboardDismiss.now() } label: {
+                            Label("Dismiss keyboard", systemImage: "keyboard.chevron.compact.down")
+                        }
                     }
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 20, weight: .medium))
                         .frame(width: 44, height: 44)
                         .contentShape(Circle())
                 }
                 .accessibilityLabel("Add a prompt or attachment")
-                composerButton("photo", label: "Attach a photo", action: onPhoto)
-                composerButton("doc", label: "Attach a file", action: onFile)
-
-                Button(action: onSampling) {
-                    ZStack(alignment: .topTrailing) {
-                        Image(systemName: "slider.horizontal.3")
-                            .font(.system(size: 16, weight: .medium))
-                            .frame(width: 44, height: 44)
-                        if hasCustomSampling {
-                            Circle()
-                                .fill(theme.accent)
-                                .frame(width: 7, height: 7)
-                                .overlay(Circle().stroke(Color(uiColor: .systemBackground), lineWidth: 1.5))
-                                .offset(x: -5, y: 5)
-                        }
-                    }
-                    .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Sampling settings")
-                .accessibilityValue(hasCustomSampling ? "Customized" : "Model defaults")
-
-                MicDictationButton(text: $text, compact: true)
+                .accessibilityIdentifier("assistant.composer.add")
+                if !textSize.isAccessibilitySize { modelButton }
+                Spacer(minLength: 4)
+                MicDictationButton(text: $text, compact: true, composerStyle: true)
                     .frame(width: 44, height: 44)
-                    .accessibilityLabel("Dictate a message")
-
+                    .accessibilityIdentifier("assistant.composer.dictation")
                 if isFocused {
                     Button {
                         isFocused = false
                         KeyboardDismiss.now()
                     } label: {
                         Image(systemName: "keyboard.chevron.compact.down")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(.secondary)
                             .frame(width: 44, height: 44)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Dismiss keyboard")
+                    .accessibilityIdentifier("assistant.composer.dismissKeyboard")
                 }
-
-                Spacer(minLength: AssistantSpacing.xxSmall)
-
-                Button(action: isGenerating ? onStop : onSend) {
-                    Image(systemName: isGenerating ? "stop.fill" : "arrow.up")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle((canSend || isGenerating) ? Color.white : Color.secondary)
-                        .frame(width: 44, height: 44)
-                        .background {
-                            Circle().fill(
-                                (canSend || isGenerating)
-                                    ? AnyShapeStyle(theme.accentStrong)
-                                    : AnyShapeStyle(Color.secondary.opacity(0.12))
-                            )
-                        }
-                        .contentTransition(.symbolEffect(.replace))
-                        .shadow(
-                            color: (canSend || isGenerating) ? theme.accent.opacity(0.28) : .clear,
-                            radius: 8,
-                            y: 2
-                        )
-                }
-                .buttonStyle(AssistantSendButtonStyle(reduceMotion: reduceMotion))
-                .disabled(!canSend && !isGenerating)
-                .accessibilityLabel(isGenerating ? "Stop generating" : "Send message")
-                .accessibilityHint(sendAccessibilityHint)
             }
-            .padding(.horizontal, AssistantSpacing.xxSmall)
-            .padding(.bottom, AssistantSpacing.xxSmall)
+            .foregroundStyle(theme.ink2)
         }
-        .animation(reduceMotion ? nil : .snappy(duration: 0.28), value: canSend)
-        .animation(reduceMotion ? nil : .snappy(duration: 0.32), value: isGenerating)
+        .padding(.horizontal, 10)
+        .padding(.top, 12)
+        .padding(.bottom, 6)
+        .onChange(of: verticalSizeClass) { _, height in
+            // ponytail: iOS 27.0 drops the keyboard inset when an iPhone turns
+            // to landscape with the keyboard up, leaving this composer under
+            // it. Showing the keyboard again once the turn has finished brings
+            // the inset back. iPad rotation keeps its size class and is not
+            // covered; delete this when the system re-applies the inset.
+            guard height == .compact, isFocused else { return }
+            isFocused = false
+            KeyboardDismiss.now()
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(500))
+                isFocused = true
+            }
+        }
     }
 
-    private var sendAccessibilityHint: String {
-        if isGenerating { return "Stops the current on-device response" }
-        if !canSend { return "Enter a message and wait for the on-device model to be ready" }
-        return "Sends this message"
-    }
-
-    private func composerButton(_ systemImage: String, label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(.secondary)
+    private var primaryAction: some View {
+        let enabled = canSend || offersVoice || isGenerating
+        return Button {
+            if isGenerating { onStop() }
+            else if offersVoice { onVoice() }
+            else { onSend() }
+        } label: {
+            Image(systemName: isGenerating ? "stop.fill" : offersVoice ? "waveform" : "arrow.up")
+                .font(.system(size: isGenerating ? 17 : 20, weight: .semibold))
+                .foregroundStyle(enabled ? theme.bg : theme.ink3)
                 .frame(width: 44, height: 44)
+                .background(enabled ? theme.ink : theme.ink.opacity(0.08), in: Circle())
+        }
+        .buttonStyle(AssistantSendButtonStyle(reduceMotion: reduceMotion))
+        .disabled(!enabled)
+        .accessibilityLabel(localization.t(isGenerating ? "Stop generating" : offersVoice ? "Start voice conversation" : "Send message"))
+        .accessibilityHint(localization.t(isGenerating ? "Stops the current response" : offersVoice ? "Opens voice mode" : "Sends this message when the model is ready"))
+        .accessibilityIdentifier("assistant.composer.primary")
+    }
+
+    private var modelButton: some View {
+        Button(action: onModel) {
+            HStack(spacing: 5) {
+                Text(verbatim: modelName)
+                    .font(.caption.weight(.medium))
+                    .lineLimit(textSize.isAccessibilitySize ? 2 : 1)
+                    .truncationMode(.middle)
+                Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold))
+                if hasCustomSampling {
+                    Circle().fill(theme.accent).frame(width: 5, height: 5)
+                }
+            }
+            .padding(.horizontal, 8)
+            .frame(minHeight: 44)
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(label)
+        .accessibilityLabel(Text("Model: \(modelName)"))
+        .accessibilityHint("Choose a model")
+        .accessibilityValue(localization.t(hasCustomSampling ? "Custom sampling settings" : "Default sampling settings"))
+        .accessibilityIdentifier("assistant.composer.model")
     }
 }
 
@@ -161,6 +170,7 @@ private struct AssistantSendButtonStyle: ButtonStyle {
 }
 
 struct AssistantRuntimeDetailsSheet: View {
+    @ObservedObject private var localization = LocalizationService.shared
     let model: AssistantModel
     let status: String
     let thermalStatus: String
@@ -175,13 +185,13 @@ struct AssistantRuntimeDetailsSheet: View {
                     LabeledContent("Model", value: model.displayName)
                     LabeledContent("Family", value: modelFamily)
                     LabeledContent("Approx. memory", value: model.approxRAMBytes.formattedBytes)
-                    LabeledContent("State", value: status)
+                    LabeledContent("State", value: localization.t(status))
                 }
                 Section("Runtime") {
                     LabeledContent("Engine", value: model.runtime.label)
-                    LabeledContent("Quantization", value: quantization)
-                    LabeledContent("Context window", value: model.contextWindowTokens.formatted() + " tokens")
-                    LabeledContent("Thermal", value: thermalStatus)
+                    LabeledContent("Quantization", value: localization.t(quantization))
+                    LabeledContent("Context window", value: localization.t("\(model.contextWindowTokens.formatted()) tokens"))
+                    LabeledContent("Thermal", value: localization.t(thermalStatus))
                 }
                 Section {
                     Button {
@@ -196,7 +206,7 @@ struct AssistantRuntimeDetailsSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button("Done", systemImage: "checkmark") { dismiss() }
                 }
             }
         }
@@ -284,7 +294,7 @@ struct SamplingSettingsSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button("Done", systemImage: "checkmark") { dismiss() }
                 }
             }
         }
@@ -389,7 +399,7 @@ struct AssistantModelSettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button("Done", systemImage: "checkmark") { dismiss() }
                 }
             }
         }
@@ -489,7 +499,7 @@ private struct AssistantModelBehaviorSettingsSection: View {
     @Binding var settings: AssistantModelGenerationSettings
     let supportsThinking: Bool
 
-    private let tokenOptions = [512, 1_024, 2_048, 4_096]
+    private let tokenOptions = [512, 1_024, 2_048, 4_096, 8_192]
 
     var body: some View {
         Section {

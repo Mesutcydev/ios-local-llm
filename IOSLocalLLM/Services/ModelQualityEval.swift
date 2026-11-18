@@ -226,7 +226,7 @@ final class ModelQualityEval: ObservableObject {
                 ],
                 maxTokensOverride: maxTokens,
                 temperatureOverride: 0.2,
-                onToken: { token in
+                onToken: { [self] token in
                     box.text += token
                     _Concurrency.Task { @MainActor [weak self] in
                         self?.liveOutput += token
@@ -278,7 +278,7 @@ final class ModelQualityEval: ObservableObject {
 
     // MARK: - Persistence
 
-    private let storageKey = "ioslocalllm.qualityeval.history.v1"
+    private let storageKey = "codelens.qualityeval.history.v1"
 
     private func load() {
         guard let data = UserDefaults.standard.data(forKey: storageKey),

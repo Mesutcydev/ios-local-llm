@@ -14,18 +14,18 @@ struct FileAttachmentChip: View {
                 .font(.system(size: 11, weight: .medium))
                 .foregroundColor(tint)
             VStack(alignment: .leading, spacing: 1) {
-                Text(attachment.displayName)
-                    .font(T.mono(11, .semibold))
+                Text(verbatim: attachment.displayName)
+                    .font(.caption.weight(.medium))
                     .foregroundColor(T.ink)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 HStack(spacing: 4) {
                     Text("\(Int64(attachment.byteSize).formattedBytes)")
-                        .font(T.mono(9))
+                        .font(.caption2)
                         .foregroundColor(T.ink3)
                     if let w = attachment.warning {
                         Text("· \(w)")
-                            .font(T.mono(9))
+                            .font(.caption2)
                             .foregroundColor(T.warn)
                             .lineLimit(1)
                     }
@@ -38,14 +38,15 @@ struct FileAttachmentChip: View {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 13))
                     .foregroundColor(T.ink3)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Remove \(attachment.displayName)")
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(RoundedRectangle(cornerRadius: 6).fill(tint.opacity(0.10)))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(tint.opacity(0.35), lineWidth: 0.5))
+        .background(RoundedRectangle(cornerRadius: 12).fill(tint.opacity(0.08)))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(tint.opacity(0.20), lineWidth: 0.5))
     }
 
     private var icon: String {

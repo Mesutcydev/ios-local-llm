@@ -35,7 +35,7 @@ final class MacroStore: ObservableObject {
     static let shared = MacroStore()
 
     @Published private(set) var macros: [Macro] = []
-    private let storageKey = "ioslocalllm.macros.v1"
+    private let storageKey = "codelens.macros.v1"
 
     private init() {
         load()
@@ -59,6 +59,12 @@ final class MacroStore: ObservableObject {
     func delete(_ id: UUID) {
         macros.removeAll { $0.id == id }
         save()
+    }
+
+    /// Clears persisted and live user content so a later save cannot restore it.
+    func clearAllForWipe() {
+        macros.removeAll()
+        UserDefaults.standard.removeObject(forKey: storageKey)
     }
 
     // MARK: - Persistence

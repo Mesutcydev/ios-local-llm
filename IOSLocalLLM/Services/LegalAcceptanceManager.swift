@@ -27,7 +27,11 @@ final class LegalAcceptanceManager: ObservableObject {
     // MARK: - Computed
 
     var needsAcceptance: Bool {
-        acceptedVersion < LegalDocuments.currentVersion
+        #if targetEnvironment(macCatalyst)
+        false
+        #else
+        !ProcessInfo.processInfo.isiOSAppOnMac && acceptedVersion < LegalDocuments.currentVersion
+        #endif
     }
 
     var needsDisclaimerAcceptance: Bool {
@@ -44,7 +48,11 @@ final class LegalAcceptanceManager: ObservableObject {
     /// back to false (or changing only their wording) actually re-prompts,
     /// instead of the version-only `needsAcceptance` silently swallowing it.
     var needsAnyAcceptance: Bool {
-        needsAcceptance || needsDisclaimerAcceptance || needsDeviceSafetyAcceptance
+        #if targetEnvironment(macCatalyst)
+        false
+        #else
+        !ProcessInfo.processInfo.isiOSAppOnMac && (needsAcceptance || needsDisclaimerAcceptance || needsDeviceSafetyAcceptance)
+        #endif
     }
 
     /// Human-readable acceptance date, or nil if never accepted.

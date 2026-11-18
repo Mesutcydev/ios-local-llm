@@ -14,7 +14,7 @@ import os
 //      allocator pooling and cancellation tails are not captured by a static
 //      weight sum, so ContentView always keeps one inference runtime active.
 //
-//   2. `schedulePrefetch(for:)` — when an active model finishes loading
+//   2. `schedulePrefetch(currentTab:)` — when an active model finishes loading
 //      and the user is idle, walk the OTHER tab's weight files in
 //      background and read them into the OS page cache. Subsequent
 //      MLX mmap'd loads of those weights hit cached pages and run

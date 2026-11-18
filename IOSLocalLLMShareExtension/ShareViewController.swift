@@ -1,5 +1,4 @@
 import UIKit
-import AppIntents
 import ImageIO
 import UniformTypeIdentifiers
 import SwiftUI
@@ -7,28 +6,25 @@ import SwiftUI
 // MARK: - ShareViewController
 // Entry point for the iOS share sheet. Accepts images, plain text, URLs, and
 // Safari web pages (NSExtensionJavaScriptPreprocessingResultsKey payload) from
-// any host app, stages the content into the App Group container, and opens
-// the main app via a custom URL scheme.
+// any host app and stages the content into the App Group container for the
+// next time the user opens the main app.
 //
 // Hand-off URLs:
 //   ios-local-llm://share?file=<jpg-name>          → image (lens tab)
 //   ios-local-llm://share?text=<percent-encoded>   → text snippet (assistant tab)
 //   ios-local-llm://share?url=<percent-encoded>    → URL (assistant tab)
 //
-// Long text shares (>1500 chars) go through the file-staging path instead of
-// the URL — iOS truncates open URLs around 2KB and Safari/Mail share
-// selections often exceed that. The query becomes ?textfile=<txt-name>.
+// Long text shares (>1500 chars) use file staging to keep the hand-off
+// envelope small. The query becomes ?textfile=<txt-name>.
 
 final class ShareViewController: UIViewController {
 
     // App Group identifier — must match the main app's entitlements.
-    private static let appGroupID = "group.com.mesutcydev.ioslocalllm.shared"
-    private static let urlScheme  = "ios-local-llm"
+    private static let appGroupID = "group.com.codelens.shared"
 
     /// Threshold above which we stash text in a file and hand the
     /// filename to the main app instead of inlining via URL query.
-    /// 1500 keeps us safely below the 2048-char open-URL cap iOS
-    /// enforces even after percent-encoding overhead.
+    /// Keep inline encoding work and envelope size small.
     private static let inlineTextLimit = 1500
     /// Bound decoded image memory inside the extension. A 2,048² BGRA
     /// thumbnail is ~16 MB versus ~190 MB for a decoded 48 MP source.
@@ -65,7 +61,7 @@ final class ShareViewController: UIViewController {
                                                        ext: "jpg")
                     do {
                         let openURL = try imageOpenURL(for: stagedURL)
-                        await openMainApp(with: openURL)
+                        await saveForMainApp(openURL, stagedFile: stagedURL)
                     } catch {
                         try? FileManager.default.removeItem(at: stagedURL)
                         throw error
@@ -75,7 +71,7 @@ final class ShareViewController: UIViewController {
                     // Don't dismiss on image failure — fall through to
                     // text/URL handling so a Safari "share page" still
                     // works when the page screenshot can't be decoded.
-                    print("[ShareExtension] image load failed: \(error)")
+                    print("[ShareExtension] image load failed")
                 }
             }
         }
@@ -202,7 +198,7 @@ final class ShareViewController: UIViewController {
     // MARK: - Hand-off helpers
 
     private func handOffText(_ text: String) async {
-        // Trim and collapse so we don't blow the URL budget on whitespace.
+        // Avoid staging empty content or unnecessary surrounding whitespace.
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             await dismiss(success: false, error: "Empty text")
@@ -210,10 +206,8 @@ final class ShareViewController: UIViewController {
         }
 
         if trimmed.count <= Self.inlineTextLimit,
-           let encoded = trimmed.addingPercentEncoding(
-               withAllowedCharacters: .urlQueryAllowed),
-           let url = URL(string: "\(Self.urlScheme)://share?text=\(encoded)") {
-            await openMainApp(with: url)
+           let url = try? handOffURL(queryName: "text", value: trimmed) {
+            await saveForMainApp(url)
             return
         }
 
@@ -229,7 +223,7 @@ final class ShareViewController: UIViewController {
                     queryName: "textfile",
                     value: stagedURL.lastPathComponent
                 )
-                await openMainApp(with: openURL)
+                await saveForMainApp(openURL, stagedFile: stagedURL)
             } catch {
                 try? FileManager.default.removeItem(at: stagedURL)
                 throw error
@@ -240,15 +234,11 @@ final class ShareViewController: UIViewController {
     }
 
     private func handOffURL(_ url: URL) async {
-        let raw = url.absoluteString
-        guard let encoded = raw.addingPercentEncoding(
-            withAllowedCharacters: .urlQueryAllowed),
-            let openURL = URL(string: "\(Self.urlScheme)://share?url=\(encoded)")
-        else {
-            await dismiss(success: false, error: "URL too long")
+        guard let openURL = try? handOffURL(queryName: "url", value: url.absoluteString) else {
+            await dismiss(success: false, error: "Couldn't save the shared link")
             return
         }
-        await openMainApp(with: openURL)
+        await saveForMainApp(openURL)
     }
 
     private func imageOpenURL(for stagedURL: URL) throws -> URL {
@@ -256,14 +246,7 @@ final class ShareViewController: UIViewController {
     }
 
     private func handOffURL(queryName: String, value: String) throws -> URL {
-        var components = URLComponents()
-        components.scheme = Self.urlScheme
-        components.host = "share"
-        components.queryItems = [URLQueryItem(name: queryName, value: value)]
-        guard let url = components.url else {
-            throw Self.shareError(code: -6, description: "Couldn't create hand-off URL")
-        }
-        return url
+        try SharedContentInbox.handOffURL(queryName: queryName, value: value)
     }
 
     // MARK: - Storage
@@ -282,7 +265,7 @@ final class ShareViewController: UIViewController {
         try FileManager.default.createDirectory(at: stagingDir, withIntermediateDirectories: true)
         removeExpiredStagedFiles(in: stagingDir)
         let fileURL = stagingDir.appendingPathComponent("share-\(UUID().uuidString).\(ext)")
-        try data.write(to: fileURL, options: .atomic)
+        try data.write(to: fileURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         return fileURL
     }
 
@@ -313,35 +296,84 @@ final class ShareViewController: UIViewController {
     }
 
     @MainActor
-    private func openMainApp(with url: URL) async {
-        // UIApplication isn't directly available to extensions; reach it via
-        // the responder chain. Two failure modes used to be swallowed by an
-        // unconditional `success: true`, closing the share sheet while nothing
-        // actually happened: (1) no UIApplication in the chain, and (2) the
-        // open being refused (iOS Local LLM not installed / scheme unhandled).
-        // Surface both so the user isn't left staring at a no-op.
-        var responder: UIResponder? = self
-        var app: UIApplication?
-        while let r = responder {
-            if let found = r as? UIApplication { app = found; break }
-            responder = r.next
+    private func saveForMainApp(_ url: URL, stagedFile: URL? = nil) async {
+        var saved = false
+        defer {
+            if !saved, let stagedFile { try? FileManager.default.removeItem(at: stagedFile) }
         }
-        guard let app else {
-            await dismiss(success: false, error: "Couldn't reach the app to open iOS Local LLM.")
+        guard let container = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: Self.appGroupID
+        ) else {
+            await dismiss(success: false, error: "Shared storage is unavailable. Try opening OnDevice LLM first.")
             return
         }
-        let opened: Bool = await withCheckedContinuation { cont in
-            app.open(url, options: [:]) { success in cont.resume(returning: success) }
+        do {
+            try SharedContentInbox.save(url, in: container)
+            saved = true
+            showResult(saved: true, message: "Open OnDevice LLM to use your shared content. It is saved on this device.")
+        } catch {
+            showResult(saved: false, message: "Your content could not be saved. Try sharing it again.")
         }
-        await dismiss(success: opened,
-                      error: opened ? nil : "iOS Local LLM couldn't be opened. Is it installed?")
     }
 
     @MainActor
     private func dismiss(success: Bool, error: String?) async {
-        if !success, let error {
-            print("[ShareExtension] \(error)")
+        if success {
+            extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+        } else {
+            showResult(saved: false, message: error ?? "Your content could not be saved.")
         }
-        extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+    }
+
+    private static var shareLocale: Locale {
+        let choice = UserDefaults(suiteName: appGroupID)?.string(forKey: "uiLanguage") ?? "system"
+        return choice == "system" ? .current : Locale(identifier: choice)
+    }
+
+    @MainActor
+    private func showResult(saved: Bool, message: String) {
+        let result = UIHostingController(rootView: ShareResultView(saved: saved, message: message) { [weak self] in
+            self?.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+        }
+        .environment(\.locale, Self.shareLocale)
+        .environment(\.layoutDirection, Self.shareLocale.language.languageCode?.identifier == "ar" ? .rightToLeft : .leftToRight))
+        addChild(result)
+        result.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(result.view)
+        NSLayoutConstraint.activate([
+            result.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            result.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            result.view.topAnchor.constraint(equalTo: view.topAnchor),
+            result.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        result.didMove(toParent: self)
+    }
+}
+
+private struct ShareResultView: View {
+    let saved: Bool
+    let message: String
+    let done: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                Image(systemName: saved ? "checkmark.circle" : "exclamationmark.triangle")
+                    .font(.largeTitle)
+                    .foregroundStyle(saved ? Color.green : Color.orange)
+                    .accessibilityHidden(true)
+                Text(LocalizedStringKey(saved ? "Saved to OnDevice LLM" : "Couldn't save share"))
+                    .font(.title2.bold())
+                    .multilineTextAlignment(.center)
+                Text(LocalizedStringKey(message))
+                    .multilineTextAlignment(.center)
+                Button("Done", action: done)
+                    .buttonStyle(.borderedProminent)
+                    .frame(minHeight: 44)
+                    .accessibilityIdentifier("share.done")
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity)
+        }
     }
 }

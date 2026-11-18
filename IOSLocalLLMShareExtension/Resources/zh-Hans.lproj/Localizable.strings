@@ -1,0 +1,21 @@
+// Original app interface translations. Copyright 2026 Mesut and contributors; MIT.
+// Preserve interpolation tokens. Regenerate from the reviewed interface catalog.
+"App Group container missing. Configure entitlements." = "应用程序组容器丢失。配置权利。";
+"Couldn't decode image" = "无法解码图像";
+"Couldn't encode image" = "无法对图像进行编码";
+"Couldn't prepare image" = "无法准备图像";
+"Couldn't read URL" = "无法读取网址";
+"Couldn't read image" = "无法读取图像";
+"Couldn't read text" = "无法读取文字";
+"Couldn't resize image" = "无法调整图像大小";
+"Couldn't save share" = "无法保存分享";
+"Couldn't save the shared link" = "无法保存共享链接";
+"Done" = "完成";
+"Empty text" = "空文本";
+"No content to share" = "没有可分享的内容";
+"Open OnDevice LLM to use your shared content. It is saved on this device." = "打开 OnDevice LLM 以使用您的共享内容。它保存在此设备上。";
+"Saved to OnDevice LLM" = "保存到 OnDevice LLM";
+"Shared storage is unavailable. Try opening OnDevice LLM first." = "共享存储不可用。首先尝试打开 OnDevice LLM。";
+"Unsupported content type" = "不支持的内容类型";
+"Your content could not be saved." = "无法保存您的内容。";
+"Your content could not be saved. Try sharing it again." = "无法保存您的内容。尝试再次分享。";

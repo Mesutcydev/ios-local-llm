@@ -8,11 +8,12 @@ import CryptoKit
 final class BridgeIdentity {
     static let shared = BridgeIdentity()
 
-    private static let certLabel = "com.mesutcydev.ioslocalllm.bridge.cert"
-    private static let keyTag    = "com.mesutcydev.ioslocalllm.bridge.privkey"
+    private static let certLabel = "com.codelens.bridge.cert"
+    private static let keyTag    = "com.codelens.bridge.privkey"
 
     private(set) var identity: SecIdentity?
     private(set) var fingerprint: String = ""
+    private(set) var publicKeyPin: String = ""
 
     private init() { tryLoad() }
 
@@ -149,6 +150,17 @@ final class BridgeIdentity {
         let derData = SecCertificateCopyData(cert) as Data
         let hash = SHA256.hash(data: derData)
         fingerprint = "sha256:" + hash.map { String(format: "%02x", $0) }.joined()
+        if let key = SecCertificateCopyKey(cert),
+           let rawKey = SecKeyCopyExternalRepresentation(key, nil) as Data? {
+            // curl pins the DER SubjectPublicKeyInfo, rather than the whole
+            // certificate. Wrap the P-256 X9.63 key using its standard OIDs.
+            let spki = DER.sequence(
+                DER.sequence(DER.oid([0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02, 0x01])
+                             + DER.oid([0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07]))
+                + DER.bitString(Array(rawKey))
+            )
+            publicKeyPin = "sha256//" + Data(SHA256.hash(data: Data(spki))).base64EncodedString()
+        }
     }
 
     private func purge() {

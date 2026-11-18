@@ -40,9 +40,13 @@ public final class WebToolService: ObservableObject {
     }
 
     // Settings persisted as JSON in UserDefaults (key keeps it scoped).
-    private let settingsKey = "ioslocalllm.webtool.settings.v1"
+    private let settingsKey = "codelens.webtool.settings.v1"
+    private let persistSettings: Bool
+    private let pageCollector: (@MainActor (QueryOrURL) async throws -> [WebFetchedPage])?
+    private var pendingWork: [UUID: Task<Result<WebContextPackage, WebToolError>, Never>] = [:]
+    private var activeRunID: UUID?
     @Published public var settings: WebToolSettings = WebToolSettings() {
-        didSet { saveSettings() }
+        didSet { if persistSettings { saveSettings() } }
     }
 
     private let decision = WebToolDecisionEngine()
@@ -56,7 +60,12 @@ public final class WebToolService: ObservableObject {
                                                     extractor: extractor)
     private let reranker = WebPassageReranker()
 
-    private init() { loadSettings() }
+    init(persistSettings: Bool = true,
+         pageCollector: (@MainActor (QueryOrURL) async throws -> [WebFetchedPage])? = nil) {
+        self.persistSettings = persistSettings
+        self.pageCollector = pageCollector
+        if persistSettings { loadSettings() }
+    }
 
     // MARK: - Public API
 
@@ -70,11 +79,34 @@ public final class WebToolService: ObservableObject {
     /// the prompt builder can stitch into the system prompt. Caller is
     /// responsible for permission gating BEFORE calling this.
     public func runWebTool(for payload: QueryOrURL, originalMessage: String) async -> Result<WebContextPackage, WebToolError> {
-        await limiter.resetRequestBudget()
-        phase = .searching
+        guard settings.mode != .off, settings.hasAcceptedPrivacyDisclosure else {
+            phase = .awaitingPermission
+            return .failure(.permissionDenied)
+        }
+        cancel()
+        let id = UUID()
+        activeRunID = id
+        let work = Task { await performWebTool(for: payload, originalMessage: originalMessage) }
+        pendingWork[id] = work
+        let result = await withTaskCancellationHandler {
+            await work.value
+        } onCancel: {
+            work.cancel()
+        }
+        pendingWork.removeValue(forKey: id)
+        guard activeRunID == id else { return .failure(.cancelled) }
+        activeRunID = nil
+        if case .failure(.cancelled) = result { phase = .idle }
+        return result
+    }
 
+    private func performWebTool(for payload: QueryOrURL, originalMessage: String) async -> Result<WebContextPackage, WebToolError> {
         do {
+            await limiter.resetRequestBudget()
+            try Task.checkCancellation()
+            phase = .searching
             let pages = try await collectPages(payload: payload)
+            try Task.checkCancellation()
             guard !pages.isEmpty else {
                 phase = .failed("No usable web sources.")
                 return .failure(.noResults)
@@ -119,6 +151,7 @@ public final class WebToolService: ObservableObject {
             phase = .ready(pkg)
             return .success(pkg)
         } catch let err as WebToolError {
+            guard !Task.isCancelled else { return .failure(.cancelled) }
             phase = .failed(err.localizedDescription)
             WebActivityLogger.shared.record(.init(
                 kind: .error, provider: settings.provider,
@@ -128,23 +161,34 @@ public final class WebToolService: ObservableObject {
             ))
             return .failure(err)
         } catch {
+            guard !Task.isCancelled else { return .failure(.cancelled) }
             phase = .failed(error.localizedDescription)
             return .failure(.parsingFailed(reason: error.localizedDescription))
         }
     }
 
     public func cancel() {
+        for work in pendingWork.values { work.cancel() }
+        activeRunID = nil
         phase = .idle
+    }
+
+    public func cancelAndWait() async {
+        let work = Array(pendingWork.values)
+        cancel()
+        for task in work { _ = await task.value }
     }
 
     // MARK: - Pipeline (search + fetch)
 
     private func collectPages(payload: QueryOrURL) async throws -> [WebFetchedPage] {
+        if let pageCollector { return try await pageCollector(payload) }
         switch payload {
         case .url(let url):
             phase = .fetching(done: 0, total: 1)
             let started = Date()
             let page = try await fetcher.fetch(url, isDirectUserURL: true)
+            try Task.checkCancellation()
             let elapsed = Int(Date().timeIntervalSince(started) * 1000)
             WebActivityLogger.shared.record(.init(
                 kind: .fetch, provider: nil, queryOrURL: url.absoluteString,
@@ -158,6 +202,7 @@ public final class WebToolService: ObservableObject {
             phase = .searching
             let started = Date()
             let results = try await search.search(query: q, settings: settings)
+            try Task.checkCancellation()
             WebActivityLogger.shared.record(.init(
                 kind: .search, provider: settings.provider, queryOrURL: q,
                 statusCode: 200, bytesIn: nil,
@@ -171,6 +216,7 @@ public final class WebToolService: ObservableObject {
 
             var pages: [WebFetchedPage] = []
             for (i, r) in topResults.enumerated() {
+                try Task.checkCancellation()
                 // Tavily / Exa give us raw content — skip the fetch.
                 if let raw = r.rawContent, !raw.isEmpty {
                     let p = WebFetchedPage(
@@ -186,6 +232,7 @@ public final class WebToolService: ObservableObject {
                     do {
                         let fetchStart = Date()
                         let p = try await fetcher.fetch(r.url, isDirectUserURL: false)
+                        try Task.checkCancellation()
                         WebActivityLogger.shared.record(.init(
                             kind: .fetch, provider: nil,
                             queryOrURL: r.url.absoluteString,
@@ -196,6 +243,7 @@ public final class WebToolService: ObservableObject {
                         ))
                         pages.append(p)
                     } catch let err as WebToolError {
+                        try Task.checkCancellation()
                         WebActivityLogger.shared.record(.init(
                             kind: .error, provider: nil,
                             queryOrURL: r.url.absoluteString, statusCode: nil,

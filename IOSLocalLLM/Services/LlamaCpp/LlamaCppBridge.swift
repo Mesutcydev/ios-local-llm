@@ -91,6 +91,13 @@ final class LlamaCppVLM: @unchecked Sendable {
     private var sampler: UnsafeMutablePointer<llama_sampler>?
     private let configuredThreads: Int32
     private let configuredContextSize: UInt32
+    /// 8-bit K/V cache with flash attention (text-only contexts).
+    private let usesQuantizedKV: Bool
+    /// Context window this runtime was created with.
+    var contextSize: Int { Int(configuredContextSize) }
+    /// LFM3-VL needs the publisher's non-thinking vision prompt and its
+    /// low-temperature sampler; the generic caption defaults are too loose.
+    private var usesLFM3VisionTemplate = false
     private let textGenerationActive = OSAllocatedUnfairLock(initialState: false)
     private var cachedSequence: [llama_token] = []
     private var cacheUsableForContinue = false
@@ -104,6 +111,8 @@ final class LlamaCppVLM: @unchecked Sendable {
         cacheUsableForContinue = false
     }
 
+    var supportsVision: Bool { mtmdCtx.map { mtmd_support_vision($0) } ?? false }
+
     // MARK: - Cancellation
 
     private let cancelFlag = OSAllocatedUnfairLock(initialState: false)
@@ -111,6 +120,21 @@ final class LlamaCppVLM: @unchecked Sendable {
     /// Request the in-flight `describe` call to exit at the next
     /// token boundary. Safe from any thread.
     func cancelCurrent() { cancelFlag.withLock { $0 = true } }
+
+    /// Blocks until no other decode owns this context. A cancelled describe
+    /// can still be inside mtmd prefill, which is not interruptible; a retry
+    /// decoding the same context meanwhile crashed in ggml_metal_synchronize
+    /// (build 144, LFM3-VL). The old run exits at its next token boundary.
+    private func waitForGenerationSlot(claim: Bool) throws {
+        while !textGenerationActive.withLock({ active -> Bool in
+            if active { return false }
+            if claim { active = true }
+            return true
+        }) {
+            if Task.isCancelled { throw LlamaCppError.cancelled }
+            Thread.sleep(forTimeInterval: 0.02)
+        }
+    }
 
     // MARK: - Backend init (one-shot per process)
 
@@ -120,9 +144,90 @@ final class LlamaCppVLM: @unchecked Sendable {
     private static func ensureBackendInit() {
         backendInitLock.lock(); defer { backendInitLock.unlock() }
         if !backendInitDone {
+            // Upstream debug logs can contain rendered prompts. Keep content
+            // out of logs; the app records only its own bounded diagnostics.
+            llama_log_set({ _, _, _ in }, nil)
+            ggml_log_set({ _, _, _ in }, nil)
+            mtmd_helper_log_set({ _, _, _ in }, nil)
             llama_backend_init()
             backendInitDone = true
         }
+    }
+
+    /// Normalize the model's file path or metadata name so imported and
+    /// renamed LFM3-VL files still select the publisher's vision prompt.
+    private static func isLFM3VisionIdentity(_ identity: String) -> Bool {
+        let normalized = identity.lowercased().filter {
+            $0.isASCII && ($0.isLetter || $0.isNumber)
+        }
+        return normalized.contains("lfm3vl2b")
+    }
+
+    private static func modelName(_ model: OpaquePointer) -> String? {
+        metaString(model, "general.name")
+    }
+
+    private static func metaString(_ model: OpaquePointer, _ key: String) -> String? {
+        var buffer = [CChar](repeating: 0, count: 128)
+        let length = buffer.withUnsafeMutableBufferPointer { ptr in
+            llama_model_meta_val_str(model, key, ptr.baseAddress, ptr.count)
+        }
+        guard length > 0 else { return nil }
+        return String(
+            decoding: buffer.prefix(Int(length)).map { UInt8(bitPattern: $0) },
+            as: UTF8.self
+        )
+    }
+
+    // MARK: - Context sizing
+
+    private static func contextParams(
+        nCtx: UInt32, batch: UInt32, threads: Int32, quantizedKV: Bool
+    ) -> llama_context_params {
+        var params = llama_context_default_params()
+        params.n_ctx = nCtx
+        params.n_batch = batch
+        params.n_ubatch = batch
+        params.n_threads = threads
+        params.n_threads_batch = threads
+        if quantizedKV {
+            params.type_k = GGML_TYPE_Q8_0
+            params.type_v = GGML_TYPE_Q8_0
+            params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_ENABLED
+        }
+        return params
+    }
+
+    /// Largest 8-bit-KV context the budget holds. Uses the GGUF's real key /
+    /// value head sizes and counts every layer, so hybrid and sliding-window
+    /// models get a conservative (smaller) answer.
+    private static func memorySizedContext(
+        model m: OpaquePointer, floor: UInt32, ceiling: UInt32, kvBudgetBytes: Int64
+    ) -> UInt32 {
+        let heads = Int(llama_model_n_head(m))
+        let kvHeads = Int(llama_model_n_head_kv(m))
+        let layers = Int(llama_model_n_layer(m))
+        guard heads > 0, kvHeads > 0, layers > 0 else { return floor }
+        let arch = metaString(m, "general.architecture") ?? ""
+        let keyDim = metaString(m, "\(arch).attention.key_length").flatMap { Int($0) }
+            ?? Int(llama_model_n_embd(m)) / heads
+        let valueDim = metaString(m, "\(arch).attention.value_length").flatMap { Int($0) } ?? keyDim
+        return kvSizedContext(
+            perTokenBytes: Double(layers * kvHeads * (keyDim + valueDim)) * 34 / 32,  // q8_0
+            kvBudgetBytes: kvBudgetBytes, floor: floor, ceiling: ceiling,
+            trainedContext: llama_model_n_ctx_train(m))
+    }
+
+    /// Pure sizing rule: tokens the budget holds, rounded down to 256, within
+    /// [floor, min(ceiling, trained)]. Never below `floor` (the old fixed size).
+    static func kvSizedContext(
+        perTokenBytes: Double, kvBudgetBytes: Int64,
+        floor: UInt32, ceiling: UInt32, trainedContext: Int32
+    ) -> UInt32 {
+        let cap = trainedContext > 0 ? min(ceiling, UInt32(trainedContext)) : ceiling
+        guard perTokenBytes > 0, cap > floor else { return floor }
+        let fitting = UInt32(clamping: Int64(Double(max(0, kvBudgetBytes)) / perTokenBytes)) / 256 * 256
+        return max(floor, min(cap, fitting))
     }
 
     // MARK: - Init / deinit
@@ -136,10 +241,12 @@ final class LlamaCppVLM: @unchecked Sendable {
         mmprojPath: String? = nil,
         nThreads: Int32 = Int32(ProcessInfo.processInfo.activeProcessorCount),
         contextSize: UInt32 = 4096,
-        gpuLayers: Int32 = 999
+        gpuLayers: Int32 = 999,
+        enableAudio: Bool = false,
+        maxContextSize: UInt32? = nil,
+        kvBudgetBytes: Int64 = 0
     ) throws {
         self.configuredThreads = nThreads
-        self.configuredContextSize = contextSize
         Self.ensureBackendInit()
 
         // 1. Load the text LLM. Default params enable mmap on iOS
@@ -148,22 +255,46 @@ final class LlamaCppVLM: @unchecked Sendable {
         var modelParams = llama_model_default_params()
         modelParams.load_mode = LLAMA_LOAD_MODE_MMAP
         modelParams.n_gpu_layers = gpuLayers
+        #if targetEnvironment(simulator)
+        if enableAudio { modelParams.n_gpu_layers = 0 }
+        #endif
         guard let m = llama_model_load_from_file(llmPath, modelParams) else {
             throw LlamaCppError.modelLoadFailed(llmPath)
         }
         self.model = m
+        self.usesLFM3VisionTemplate = Self.isLFM3VisionIdentity(llmPath)
+            || Self.modelName(m).map(Self.isLFM3VisionIdentity) == true
 
         // 2. Create the inference context. n_batch is the max
         //    tokens per llama_decode call; image embeddings can
         //    arrive in larger batches than typical text, so we
         //    bump above the 32-token default.
-        var ctxParams = llama_context_default_params()
-        ctxParams.n_ctx = contextSize
-        ctxParams.n_batch = 512
-        ctxParams.n_ubatch = 512
-        ctxParams.n_threads = nThreads
-        ctxParams.n_threads_batch = nThreads
-        guard let c = llama_init_from_model(m, ctxParams) else {
+        //    A text-only assistant context (maxContextSize set) uses an 8-bit
+        //    K/V cache — half of f16, so the same memory holds twice the
+        //    context — sized to the caller's KV budget.
+        var quantizedKV = maxContextSize != nil && mmprojPath == nil && !enableAudio
+        var nCtx = contextSize
+        if quantizedKV, let maxContextSize {
+            nCtx = Self.memorySizedContext(model: m, floor: contextSize,
+                                           ceiling: maxContextSize, kvBudgetBytes: kvBudgetBytes)
+        }
+        var ctxParams = Self.contextParams(nCtx: nCtx, batch: 512, threads: nThreads, quantizedKV: quantizedKV)
+        if enableAudio {
+            ctxParams.embeddings = true
+            ctxParams.pooling_type = LLAMA_POOLING_TYPE_NONE
+        }
+        var created = llama_init_from_model(m, ctxParams)
+        if created == nil, quantizedKV {
+            // 8-bit V needs flash attention, which some architectures lack.
+            // Retry with the f16 cache in the same memory: half the context.
+            quantizedKV = false
+            nCtx = max(contextSize, nCtx / 2 / 256 * 256)
+            ctxParams = Self.contextParams(nCtx: nCtx, batch: 512, threads: nThreads, quantizedKV: false)
+            created = llama_init_from_model(m, ctxParams)
+        }
+        self.configuredContextSize = nCtx
+        self.usesQuantizedKV = quantizedKV
+        guard let c = created else {
             llama_model_free(m)
             self.model = nil
             throw LlamaCppError.contextInitFailed
@@ -194,7 +325,17 @@ final class LlamaCppVLM: @unchecked Sendable {
         //    binds it to the LLM and returns a context that
         //    handles tokenization + image-to-embedding as one unit.
         var mtmdParams = mtmd_context_params_default()
-        mtmdParams.use_gpu = true
+        if usesLFM3VisionTemplate {
+            // Keep the projector on the same device as the backbone. The
+            // LFM3 VL projector is small; loading it on Metal while the LLM
+            // runs CPU-only has produced failed prefill on low-memory paths.
+            mtmdParams.use_gpu = gpuLayers != 0
+        } else {
+            mtmdParams.use_gpu = enableAudio ? gpuLayers != 0 : true
+        }
+        #if targetEnvironment(simulator)
+        if enableAudio || usesLFM3VisionTemplate { mtmdParams.use_gpu = false }
+        #endif
         mtmdParams.print_timings = false
         mtmdParams.n_threads = nThreads
         mtmdParams.image_marker = nil           // deprecated; use media_marker
@@ -212,7 +353,7 @@ final class LlamaCppVLM: @unchecked Sendable {
         //    the user paired a wrong mmproj (e.g. audio) with the
         //    LLM. Better to fail load than to hit a confusing
         //    decode error later.
-        guard mtmd_support_vision(mc) else {
+        guard enableAudio ? mtmd_support_audio(mc) : mtmd_support_vision(mc) else {
             mtmd_free(mc)
             llama_free(c)
             llama_model_free(m)
@@ -232,8 +373,17 @@ final class LlamaCppVLM: @unchecked Sendable {
             self.mtmdCtx = nil; self.ctx = nil; self.model = nil
             throw LlamaCppError.samplerInitFailed
         }
-        llama_sampler_chain_add(chain, llama_sampler_init_temp(0.7))
-        llama_sampler_chain_add(chain, llama_sampler_init_top_p(0.9, 1))
+        if usesLFM3VisionTemplate {
+            llama_sampler_chain_add(chain, llama_sampler_init_penalties(
+                llama_vocab_n_tokens(llama_model_get_vocab(m)), 64, 1.1, 0, 0
+            ))
+            llama_sampler_chain_add(chain, llama_sampler_init_top_k(50))
+            llama_sampler_chain_add(chain, llama_sampler_init_top_p(1.0, 1))
+            llama_sampler_chain_add(chain, llama_sampler_init_temp(0.1))
+        } else {
+            llama_sampler_chain_add(chain, llama_sampler_init_temp(0.7))
+            llama_sampler_chain_add(chain, llama_sampler_init_top_p(0.9, 1))
+        }
         llama_sampler_chain_add(chain, llama_sampler_init_dist(UInt32.random(in: 1...UInt32.max)))
         self.sampler = chain
     }
@@ -269,6 +419,8 @@ final class LlamaCppVLM: @unchecked Sendable {
         let hitTokenLimit: Bool
         let promptTokens: Int
         let outputTokens: Int
+        var audioSamples: [Float] = []
+        var audioSampleRate: Double = 24_000
     }
 
     /// Runs an already chat-formatted prompt through a standalone text GGUF.
@@ -295,6 +447,9 @@ final class LlamaCppVLM: @unchecked Sendable {
         guard acquired else { throw LlamaCppError.generationInProgress }
         defer { textGenerationActive.withLock { $0 = false } }
         cancelFlag.withLock { $0 = false }
+        // Swift task cancellation stays sticky even if a queued request starts
+        // after Stop has set (and this entry point has reset) the native flag.
+        if Task.isCancelled { throw LlamaCppError.cancelled }
 
         // Per-request sampler chain in llama.cpp's canonical order
         // (penalties → top-k → top-p → temp → dist).
@@ -424,12 +579,9 @@ final class LlamaCppVLM: @unchecked Sendable {
                 llama_free(oldContext)
                 ctx = nil
             }
-            var requestParams = llama_context_default_params()
-            requestParams.n_ctx = configuredContextSize
-            requestParams.n_batch = UInt32(physicalBatchSize)
-            requestParams.n_ubatch = UInt32(physicalBatchSize)
-            requestParams.n_threads = configuredThreads
-            requestParams.n_threads_batch = configuredThreads
+            let requestParams = Self.contextParams(
+                nCtx: configuredContextSize, batch: UInt32(physicalBatchSize),
+                threads: configuredThreads, quantizedKV: usesQuantizedKV)
             guard let fresh = llama_init_from_model(m, requestParams) else {
                 throw LlamaCppError.contextInitFailed
             }
@@ -450,7 +602,7 @@ final class LlamaCppVLM: @unchecked Sendable {
             var promptOffset = decodeFrom
             var chunkIndex = 0
             while promptOffset < tokens.count {
-                if cancelFlag.withLock({ $0 }) {
+                if Task.isCancelled || cancelFlag.withLock({ $0 }) {
                     invalidateTokenCache()
                     throw LlamaCppError.cancelled
                 }
@@ -495,7 +647,7 @@ final class LlamaCppVLM: @unchecked Sendable {
 
         var hitTokenLimit = true
         for _ in 0..<generationLimit {
-            if cancelFlag.withLock({ $0 }) {
+            if Task.isCancelled || cancelFlag.withLock({ $0 }) {
                 invalidateTokenCache()
                 throw LlamaCppError.cancelled
             }
@@ -565,6 +717,9 @@ final class LlamaCppVLM: @unchecked Sendable {
         guard acquired else { throw LlamaCppError.generationInProgress }
         defer { textGenerationActive.withLock { $0 = false } }
         cancelFlag.withLock { $0 = false }
+        // Swift task cancellation stays sticky even if a queued request starts
+        // after Stop has set (and this entry point has reset) the native flag.
+        if Task.isCancelled { throw LlamaCppError.cancelled }
         cacheUsableForContinue = false
 
         guard let samp = llama_sampler_chain_init(llama_sampler_chain_default_params()) else {
@@ -606,7 +761,7 @@ final class LlamaCppVLM: @unchecked Sendable {
         var generatedIDs: [llama_token] = []
         var hitTokenLimit = true
         for _ in 0..<generationLimit {
-            if cancelFlag.withLock({ $0 }) {
+            if Task.isCancelled || cancelFlag.withLock({ $0 }) {
                 invalidateTokenCache()
                 throw LlamaCppError.cancelled
             }
@@ -662,6 +817,196 @@ final class LlamaCppVLM: @unchecked Sendable {
 
     // MARK: - Describe
 
+    /// Splits a rendered LFM3 prompt into the prefix to evaluate and the raw
+    /// text the audio helper continues: everything from the final assistant
+    /// header on (the generation cue, or an open turn being continued after a
+    /// token limit). Media markers go into the last user turn, never into a
+    /// later tool response.
+    static func splitLFM3Prompt(
+        _ prompt: String, template: ChatTemplate, mediaMarkers: String
+    ) -> (body: String, cue: String)? {
+        guard let open = prompt.range(of: template.assistantPrefix, options: .backwards) else { return nil }
+        var body = String(prompt[..<open.lowerBound])
+        if !mediaMarkers.isEmpty {
+            let userStart = body.range(of: template.userPrefix, options: .backwards)?.upperBound ?? body.startIndex
+            guard let end = body.range(of: "<|im_end|>", range: userStart..<body.endIndex) else { return nil }
+            body.insert(contentsOf: mediaMarkers, at: end.lowerBound)
+        }
+        return (body, String(prompt[open.lowerBound...]))
+    }
+
+    /// Shared Audio/Omni path. All loads still belong to the assistant's
+    /// residency owner; this method only runs its already-admitted context.
+    func generateLFM3(
+        prompt: String, audio: [Float]? = nil, image: UIImage? = nil,
+        generateSpeech: Bool = false, letModelChooseAudio: Bool = false,
+        template: ChatTemplate = .lfm3Audio,
+        maxTokens: Int,
+        sampler spec: GGUFSamplerSpec = .init(), onToken: @escaping (String) -> Void,
+        onAudioChunk: (([Float], Double) -> Void)? = nil
+    ) throws -> GGUFTextResult {
+        guard let mc = mtmdCtx, let c = ctx, let m = model,
+              mtmd_gen_audio_get_info(mc).type == MTMD_GEN_AUDIO_TYPE_LFM3A else { throw LlamaCppError.contextInitFailed }
+        let acquired = textGenerationActive.withLock { active -> Bool in
+            guard !active else { return false }; active = true; return true
+        }
+        guard acquired else { throw LlamaCppError.generationInProgress }
+        defer { textGenerationActive.withLock { $0 = false } }
+        cancelFlag.withLock { $0 = false }
+        func checkCancellation() throws {
+            if Task.isCancelled || cancelFlag.withLock({ $0 }) { throw LlamaCppError.cancelled }
+        }
+        try checkCancellation()
+        guard (audio?.count ?? 0) <= 480_000,
+              (audio?.allSatisfy({ $0.isFinite }) ?? true) else { throw LlamaCppError.promptTooLong(audio?.count ?? 0) }
+        llama_memory_clear(llama_get_memory(c), false)
+        invalidateTokenCache()
+        var bitmaps: [OpaquePointer?] = []
+        defer { bitmaps.compactMap { $0 }.forEach(mtmd_bitmap_free) }
+        if let image {
+            guard mtmd_support_vision(mc) else { throw LlamaCppError.visionUnsupported }
+            let rgb = try Self.makeRGBBitmap(from: image)
+            let bitmap = rgb.rgb.withUnsafeBufferPointer { mtmd_bitmap_init(UInt32(rgb.width), UInt32(rgb.height), $0.baseAddress) }
+            guard let bitmap else { throw LlamaCppError.bitmapInitFailed }
+            bitmaps.append(bitmap)
+        }
+        if let audio, !audio.isEmpty {
+            guard mtmd_support_audio(mc), mtmd_get_audio_sample_rate(mc) == 16_000 else { throw LlamaCppError.contextInitFailed }
+            let bitmap = audio.withUnsafeBufferPointer { mtmd_bitmap_init_from_audio($0.count, $0.baseAddress) }
+            guard let bitmap else { throw LlamaCppError.bitmapInitFailed }
+            bitmaps.append(bitmap)
+        }
+        let markers = String(repeating: "\n" + String(cString: mtmd_get_marker(mc)), count: bitmaps.count)
+        guard let split = Self.splitLFM3Prompt(prompt, template: template, mediaMarkers: markers) else {
+            throw LlamaCppError.tokenizeFailed(-1)
+        }
+        let body = split.body, cue = split.cue
+        guard let chunks = mtmd_input_chunks_init() else { throw LlamaCppError.bitmapInitFailed }
+        defer { mtmd_input_chunks_free(chunks) }
+        let tokenized = body.withCString { ptr -> Int32 in
+            var text = mtmd_input_text(text: ptr, text_len: body.utf8.count, add_special: false, parse_special: true)
+            return bitmaps.withUnsafeMutableBufferPointer { mtmd_tokenize(mc, chunks, &text, $0.baseAddress, $0.count) }
+        }
+        guard tokenized == 0 else { throw LlamaCppError.tokenizeFailed(tokenized) }
+        var positions = 0
+        for index in 0..<mtmd_input_chunks_size(chunks) {
+            if let chunk = mtmd_input_chunks_get(chunks, index) { positions += Int(mtmd_input_chunk_get_n_pos(chunk)) }
+        }
+        guard positions > 0, positions + 32 < Int(configuredContextSize) else { throw LlamaCppError.promptTooLong(positions) }
+        var past: llama_pos = 0
+        try checkCancellation()
+        let evaluated = mtmd_helper_eval_chunks(mc, c, chunks, 0, 0, 128, true, &past)
+        guard evaluated == 0 else { throw LlamaCppError.decodeFailed(evaluated) }
+        try checkCancellation()
+        guard let generator = mtmd_helper_gen_audio_init(c, mc) else { throw LlamaCppError.contextInitFailed }
+        defer { mtmd_helper_gen_audio_free(generator) }
+        var input = mtmd_helper_gen_audio_inp_default()
+        input.n_past = past
+        // AUTO lets the model choose between a tool call, text, and speech.
+        // That is the documented mode for spoken tool requests; MIXED is the
+        // documented prefill when a voice answer must contain speech.
+        input.out_mode = generateSpeech
+            ? (letModelChooseAudio ? MTMD_HELPER_GEN_AUDIO_OUT_AUTO : MTMD_HELPER_GEN_AUDIO_OUT_MIXED)
+            : MTMD_HELPER_GEN_AUDIO_OUT_TEXT
+        input.stream = true
+        input.out_type = MTMD_HELPER_GEN_AUDIO_OUTTYPE_PCM
+        input.seed = spec.seed ?? UInt32.max
+        let setStatus = cue.withCString { ptr -> Int32 in
+            input.prompt = ptr; input.prompt_len = cue.utf8.count
+            return mtmd_helper_gen_audio_set_input(generator, &input)
+        }
+        guard setStatus == 0 else { throw LlamaCppError.decodeFailed(setStatus) }
+        while true {
+            try checkCancellation()
+            let remaining = mtmd_helper_gen_audio_step_prompt(generator, 128)
+            guard remaining >= 0 else { throw LlamaCppError.decodeFailed(remaining) }
+            if remaining == 0 { break }
+        }
+        guard let sampling = llama_sampler_chain_init(llama_sampler_chain_default_params()) else { throw LlamaCppError.samplerInitFailed }
+        defer { llama_sampler_free(sampling) }
+        let vocab = llama_model_get_vocab(m)
+        if spec.repetitionPenalty != 1.0 {
+            llama_sampler_chain_add(sampling, llama_sampler_init_penalties(
+                llama_vocab_n_tokens(vocab),
+                -1, spec.repetitionPenalty, 0.0, 0.0
+            ))
+        }
+        var biasCount = 0
+        if let biases = mtmd_helper_gen_audio_get_logit_bias(generator, &biasCount), biasCount > 0 {
+            llama_sampler_chain_add(sampling, llama_sampler_init_logit_bias(llama_vocab_n_tokens(vocab), Int32(clamping: biasCount), biases))
+        }
+        llama_sampler_chain_add(sampling, llama_sampler_init_top_k(spec.topK))
+        llama_sampler_chain_add(sampling, llama_sampler_init_top_p(spec.topP, 1))
+        llama_sampler_chain_add(sampling, llama_sampler_init_temp(spec.temperature))
+        llama_sampler_chain_add(sampling, llama_sampler_init_dist(spec.seed ?? UInt32.max))
+        var hidden = llama_get_embeddings_ith(c, -1).map { UnsafePointer<Float>($0) }
+        guard hidden != nil else { throw LlamaCppError.contextInitFailed }
+        var samples: [Float] = []
+        var sampleRate: Int32 = 24_000
+        var pending: [UInt8] = []
+        var stopped = false
+        var count = 0
+        let budget = min(max(1, maxTokens), Int(configuredContextSize) - Int(past) - 32)
+        let started = Date()
+        // ponytail: 60 s of 24 kHz speech per reply; a longer answer stops
+        // like a token-limited one instead of discarding text and audio.
+        let maxSamples = 1_440_000
+        func collectAudio() throws {
+            var bytes: UnsafePointer<CChar>?
+            var size = 0
+            let status = mtmd_helper_gen_audio_get_output(generator, &sampleRate, &bytes, &size, nil)
+            guard status == 0 else { throw LlamaCppError.decodeFailed(status) }
+            if let bytes, size > 0 {
+                guard size % MemoryLayout<Float>.size == 0 else { throw LlamaCppError.decodeFailed(-1) }
+                let floats = UnsafeRawPointer(bytes).assumingMemoryBound(to: Float.self)
+                let kept = min(size / MemoryLayout<Float>.size, maxSamples - samples.count)
+                let chunk = UnsafeBufferPointer(start: floats, count: kept)
+                samples.append(contentsOf: chunk)
+                if kept > 0 { onAudioChunk?(Array(chunk), Double(sampleRate)) }
+            }
+        }
+        for _ in 0..<budget {
+            try checkCancellation()
+            let isText = mtmd_helper_gen_audio_next_is_text(generator)
+            let token = isText ? llama_sampler_sample(sampling, c, -1) : LLAMA_TOKEN_NULL
+            if isText { llama_sampler_accept(sampling, token) }
+            var next: UnsafePointer<Float>?
+            let status = mtmd_helper_gen_audio_step_gen(generator, token, hidden, &next, &stopped)
+            guard status == 0 else { throw LlamaCppError.decodeFailed(status) }
+            if stopped { break }
+            guard let next else { throw LlamaCppError.decodeFailed(-1) }
+            hidden = next
+            count += 1
+            if isText {
+                var bytes = [CChar](repeating: 0, count: 512)
+                let length = bytes.withUnsafeMutableBufferPointer { llama_token_to_piece(vocab, token, $0.baseAddress, Int32($0.count), 0, true) }
+                guard length >= 0 else { throw LlamaCppError.tokenizeFailed(length) }
+                let piece = bytes.prefix(Int(length)).map { UInt8(bitPattern: $0) }
+                let text = String(decoding: piece, as: UTF8.self)
+                if !["<|mixed_start|>", "<|audio_start|>", "<|audio_end|>", "<|text_end|>", "<|text_start|>"].contains(text) {
+                    pending.append(contentsOf: piece)
+                    let (complete, tail) = Self.splitCompleteUTF8Prefix(pending)
+                    pending = tail
+                    if !complete.isEmpty { onToken(complete) }
+                }
+            }
+            if generateSpeech {
+                try collectAudio()
+                if samples.count >= maxSamples { break }
+            }
+        }
+        try checkCancellation()
+        if generateSpeech {
+            let status = mtmd_helper_gen_audio_flush(generator)
+            guard status == 0 else { throw LlamaCppError.decodeFailed(status) }
+            try collectAudio()
+        }
+        if !pending.isEmpty { onToken(String(decoding: pending, as: UTF8.self)) }
+        return GGUFTextResult(tokensPerSecond: Double(count) / max(0.001, Date().timeIntervalSince(started)),
+            hitTokenLimit: !stopped, promptTokens: Int(past), outputTokens: count,
+            audioSamples: samples, audioSampleRate: Double(sampleRate))
+    }
+
     /// Encode the image, prepend the prompt, stream tokens via
     /// `onToken`, finish via `onComplete(tokensPerSec)`. Cancellable
     /// via `cancelCurrent()`. On error, throws and `onComplete`
@@ -676,7 +1021,23 @@ final class LlamaCppVLM: @unchecked Sendable {
         guard let mc = mtmdCtx, let c = ctx, let samp = sampler, let m = model else {
             throw LlamaCppError.contextInitFailed
         }
+        if mtmd_gen_audio_get_info(mc).type == MTMD_GEN_AUDIO_TYPE_LFM3A {
+            let template: ChatTemplate = mtmd_support_vision(mc) ? .lfm3Omni : .lfm3Audio
+            try waitForGenerationSlot(claim: false)   // generateLFM3 claims it
+            let result = try generateLFM3(
+                prompt: template.format(messages: [
+                    ChatMessage(role: .system, content: "Respond in text."),
+                    ChatMessage(role: .user, content: prompt),
+                ]), image: image, template: template, maxTokens: maxTokens, onToken: onToken)
+            onComplete(result.tokensPerSecond)
+            return
+        }
+        try waitForGenerationSlot(claim: true)
+        defer { textGenerationActive.withLock { $0 = false } }
         cancelFlag.withLock { $0 = false }
+        // Swift task cancellation stays sticky even if a queued request starts
+        // after Stop has set (and this entry point has reset) the native flag.
+        if Task.isCancelled { throw LlamaCppError.cancelled }
 
         // Reset the KV cache from the previous describe() call. mtmd_helper_
         // eval_chunks below feeds tokens starting at n_past = 0, but llama_
@@ -767,7 +1128,7 @@ final class LlamaCppVLM: @unchecked Sendable {
         var pendingUTF8: [UInt8] = []
 
         for _ in 0..<maxTokens {
-            if cancelFlag.withLock({ $0 }) {
+            if Task.isCancelled || cancelFlag.withLock({ $0 }) {
                 // Contract (see doc-comment above): on throw, onComplete
                 // is NOT called — the caller's catch handler owns the
                 // finalisation in that case. Calling onComplete here
@@ -887,6 +1248,21 @@ final class LlamaCppVLM: @unchecked Sendable {
             }
             return "\(marker)\n\(prompt)"
         }()
+
+        // The lightweight C template renderer treats LFM3 as generic ChatML,
+        // omitting its BOS and reasoning cue. Its GGUF disables automatic BOS.
+        // Read architecture metadata so renamed/imported files work as well.
+        var architecture = [CChar](repeating: 0, count: 32)
+        let length = architecture.withUnsafeMutableBufferPointer { buffer in
+            llama_model_meta_val_str(model, "general.architecture", buffer.baseAddress, buffer.count)
+        }
+        if length == 4,
+           String(decoding: architecture.prefix(4).map { UInt8(bitPattern: $0) }, as: UTF8.self) == "lfm3" {
+            return ChatTemplate.lfm3.format(
+                messages: [ChatMessage(role: .user, content: userContent)],
+                enableThinking: false
+            )
+        }
 
         guard let template = llama_model_chat_template(model, nil),
               let rendered = applyChatTemplate(template, userContent: userContent) else {

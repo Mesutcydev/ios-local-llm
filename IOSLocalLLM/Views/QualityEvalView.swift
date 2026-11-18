@@ -34,7 +34,7 @@ struct QualityEvalView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }.foregroundColor(T.ink)
+                    Button("Done", systemImage: "checkmark") { dismiss() }.foregroundColor(T.ink)
                 }
             }
             .confirmationDialog("Clear all quality history?", isPresented: $showClearConfirm) {

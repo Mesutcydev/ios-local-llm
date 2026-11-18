@@ -7,6 +7,8 @@ enum VoiceEngineKind: String, CaseIterable, Identifiable, Codable {
     case appleSystem = "apple_system"   // AVSpeechSynthesizer — always available
     case kittenTTS   = "kitten_tts"     // KittenTTS CoreML — requires download
     case kokoro      = "kokoro"         // Kokoro-82M CoreML — experimental
+    case paradee     = "paradee"        // Paradee-8M ONNX — requires download
+    case supertonic  = "supertonic"     // Supertonic 3 ONNX, 31 languages — requires download
 
     var id: String { rawValue }
 
@@ -22,6 +24,8 @@ enum VoiceEngineKind: String, CaseIterable, Identifiable, Codable {
             switch kind {
             case .appleSystem, .kittenTTS: return true
             case .kokoro:                   return VoiceModelBundleValidator.isKokoroAvailable()
+            case .paradee:                  return ParadeeTTSService.isAvailable
+            case .supertonic:               return SupertonicTTSService.isAvailable
             }
         }
     }
@@ -31,6 +35,8 @@ enum VoiceEngineKind: String, CaseIterable, Identifiable, Codable {
         case .appleSystem: return "Apple System Voice"
         case .kittenTTS:   return "KittenTTS — Tiny Neural"
         case .kokoro:      return "Kokoro — Neural"
+        case .paradee:     return "Paradee — Tiny Neural"
+        case .supertonic:  return "Supertonic — Multilingual"
         }
     }
 
@@ -39,12 +45,14 @@ enum VoiceEngineKind: String, CaseIterable, Identifiable, Codable {
         case .appleSystem: return "System"
         case .kittenTTS:   return "KittenTTS"
         case .kokoro:      return "Kokoro"
+        case .paradee:     return "Paradee"
+        case .supertonic:  return "Supertonic"
         }
     }
 
     /// Whether this engine requires a model download before first use.
     var requiresDownload: Bool {
-        self == .kittenTTS || self == .kokoro
+        self != .appleSystem
     }
 
     /// Whether this engine is labelled experimental in the UI.
@@ -71,6 +79,8 @@ enum VoiceEngineKind: String, CaseIterable, Identifiable, Codable {
         case .appleSystem: return 22050
         case .kittenTTS:   return 24000
         case .kokoro:      return 24000
+        case .paradee:     return 24000
+        case .supertonic:  return 44100
         }
     }
 }

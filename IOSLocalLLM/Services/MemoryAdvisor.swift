@@ -49,11 +49,10 @@ enum MemoryAdvisor {
     // models — the transient is already inside the peak estimate.
     static let loadHeadroomReserve: Int64 = 500_000_000
 
-    // Reserve used in edge / developer mode (`AppSettings.showEdgeModels`).
-    // Zero so a "tight" model whose peak just fits the live ceiling is allowed
-    // to load. This is the opt-in risky path; the normal path keeps the full
-    // `loadHeadroomReserve` and therefore can never be coaxed into an OOM.
-    static let edgeHeadroomReserve: Int64 = 0
+    // A smaller reserve for an explicit tight-fit attempt. Keep some room for
+    // UI/runtime allocations even when the user relaxes the normal margin.
+    // Estimates are approximate; neither setting guarantees against Jetsam.
+    static let edgeHeadroomReserve: Int64 = 150_000_000
 
     // Conservative footprint assumed when a model can't be sized (custom /
     // imported repos with no preset match and no readable on-disk folder).
@@ -154,6 +153,16 @@ enum MemoryAdvisor {
     /// VLM, switch to Assistant, Qwen3-4B is suddenly too large for this
     /// device" bug: the ceiling was polluted by the just-used VLM's GPU memory.
     static var physFootprint: Int64 {
+        taskVMInfo.map { Int64($0.phys_footprint) } ?? 0
+    }
+
+    /// Highest `phys_footprint` this process has reached since launch, kept by
+    /// the kernel's ledger, so short load spikes can't slip between samples.
+    static var physFootprintPeak: Int64 {
+        taskVMInfo.map { Int64($0.ledger_phys_footprint_peak) } ?? 0
+    }
+
+    private static var taskVMInfo: task_vm_info_data_t? {
         var info = task_vm_info_data_t()
         var count = mach_msg_type_number_t(
             MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<natural_t>.size)
@@ -162,7 +171,93 @@ enum MemoryAdvisor {
                 task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count)
             }
         }
-        return kr == KERN_SUCCESS ? Int64(info.phys_footprint) : 0
+        return kr == KERN_SUCCESS ? info : nil
+    }
+
+    // MARK: - Measured model peaks
+    //
+    // Hand-tuned estimates decide which models load, and they are guesses in
+    // both directions. After a real load/reply, `lifetimePeak − footprint
+    // before the load` is always an UPPER bound on what the model needed; when
+    // the lifetime peak rose during that model's own run it is the model's
+    // actual peak. Actual peaks replace the estimate (up or down); bounds can
+    // only lower it. Keyed by app build so a runtime update re-measures.
+
+    /// Margin on a measured peak for longer prompts than the measured run.
+    static let measuredPeakMargin = 1.1
+    static let minimumMeasuredFraction = 0.75
+
+    struct PeakProbe: Sendable {
+        let modelID: String
+        let baseline: Int64
+        let peakBefore: Int64
+    }
+
+    static func beginPeakProbe(modelID: String) -> PeakProbe {
+        PeakProbe(modelID: modelID, baseline: physFootprint, peakBefore: physFootprintPeak)
+    }
+
+    private static var measuredPeaksKey: String {
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"
+        return "measuredModelPeaks.\(build)"
+    }
+
+    /// Records the model's peak so far. Call after its load and each reply.
+    static func recordPeak(since probe: PeakProbe) {
+        let defaults = UserDefaults.standard
+        var stored = defaults.dictionary(forKey: measuredPeaksKey) as? [String: [String: Int64]] ?? [:]
+        let updated = updatedMeasurement(
+            stored[probe.modelID] ?? [:],
+            baseline: probe.baseline,
+            peakBefore: probe.peakBefore,
+            peakAfter: physFootprintPeak
+        )
+        guard updated != stored[probe.modelID] else { return }
+        stored[probe.modelID] = updated
+        defaults.set(stored, forKey: measuredPeaksKey)
+        _measuredCacheLock.lock(); _measuredCache = nil; _measuredCacheLock.unlock()
+    }
+
+    /// `["exact": …]` is the largest actual peak seen; `["bound": …]` the
+    /// smallest upper bound. Pure for unit tests.
+    static nonisolated func updatedMeasurement(
+        _ current: [String: Int64], baseline: Int64, peakBefore: Int64, peakAfter: Int64
+    ) -> [String: Int64] {
+        guard baseline > 0, peakAfter > baseline else { return current }
+        let bound = peakAfter - baseline
+        var next = current
+        if peakAfter > peakBefore {
+            next["exact"] = max(current["exact"] ?? 0, bound)
+        } else {
+            next["bound"] = min(current["bound"] ?? bound, bound)
+        }
+        return next
+    }
+
+    /// Applies a measurement to a static estimate. Pure for unit tests.
+    static nonisolated func footprint(staticEstimate: Int64, measurement: [String: Int64]) -> Int64 {
+        // A pressure dump of another runtime during the measured run would
+        // read low, so a measurement may lower an estimate by at most 25%.
+        let floor = Int64(Double(max(0, staticEstimate)) * minimumMeasuredFraction)
+        if let exact = measurement["exact"], exact > 0 {
+            return max(Int64(Double(exact) * measuredPeakMargin), floor)
+        }
+        if let bound = measurement["bound"], bound > 0, staticEstimate > 0 {
+            return min(staticEstimate, max(Int64(Double(bound) * measuredPeakMargin), floor))
+        }
+        return staticEstimate
+    }
+
+    private static let _measuredCacheLock = NSLock()
+    nonisolated(unsafe) private static var _measuredCache: [String: [String: Int64]]?
+
+    private static func measurement(for modelID: String) -> [String: Int64] {
+        _measuredCacheLock.lock(); defer { _measuredCacheLock.unlock() }
+        if _measuredCache == nil {
+            _measuredCache = UserDefaults.standard.dictionary(forKey: measuredPeaksKey)
+                as? [String: [String: Int64]] ?? [:]
+        }
+        return _measuredCache?[modelID] ?? [:]
     }
 
     // MARK: - Entitlement-aware ceiling
@@ -202,6 +297,29 @@ enum MemoryAdvisor {
     static let maximumHighMemoryIPhoneProcessCeiling: Int64 = 8_500_000_000
     static let highMemoryIPhoneRAMThreshold: Int64 = 10_000_000_000
 
+    static var hasIncreasedMemoryLimitEntitlement: Bool {
+        #if os(iOS) && !targetEnvironment(simulator) && !targetEnvironment(macCatalyst)
+        return EntitlementsProbe.hasEntitlement(EntitlementsProbe.increasedMemoryKey)
+        #else
+        return true
+        #endif
+    }
+
+    static nonisolated func resolvedProcessCeilingCandidate(
+        kernelCeiling: Int64, entitlementCeiling: Int64,
+        hasIncreasedMemoryEntitlement: Bool, lowPowerMode: Bool
+    ) -> Int64 {
+        // A reported kernel limit is authoritative: on an entitled iPhone 17
+        // Pro Max (iOS 27.2) iOS killed the app at exactly its reported
+        // 6,656 MiB while this used max(kernel, 76% of RAM) = 8.5 GB, so the
+        // gate admitted loads iOS terminates. The RAM-fraction estimate is a
+        // fallback only for when the kernel reports nothing.
+        guard kernelCeiling <= 0, hasIncreasedMemoryEntitlement, !lowPowerMode else {
+            return kernelCeiling
+        }
+        return entitlementCeiling
+    }
+
     private static var isIPhoneProcess: Bool {
         #if os(iOS) && !targetEnvironment(macCatalyst)
         return UIDevice.current.userInterfaceIdiom == .phone
@@ -229,15 +347,15 @@ enum MemoryAdvisor {
     /// Best estimate of this process's hard memory ceiling (the per-process
     /// limit iOS enforces), in bytes — independent of what is loaded right now.
     ///
-    /// Fuses two signals and trusts the larger:
+    /// Uses the kernel signal whenever it exists (see `resolvedProcessCeilingCandidate`):
     ///   • Kernel: `os_proc_available_memory()` + current `phys_footprint`.
     ///     Both use the identical footprint accounting, so the sum recovers the
     ///     limit and is STABLE regardless of what is resident. (The previous
     ///     version added `resident_size`, which omits GPU/Metal buffers, so the
     ///     ceiling sagged by a resident VLM's GPU footprint — the "open Lens,
     ///     switch to Assistant, 4B won't load" regression. See `physFootprint`.)
-    ///   • Entitlement: `physicalRAM × tierFraction`. Recovers the headroom the
-    ///     kernel signal hides on entitled devices.
+    ///   • Entitlement: `physicalRAM × tierFraction`, only when the kernel
+    ///     reports nothing.
     /// Clamped to `physicalRAM − 1.5 GB`; iPhone is additionally capped at
     /// the empirically validated 6.2 GB process budget.
     static var processMemoryCeiling: Int64 {
@@ -247,8 +365,18 @@ enum MemoryAdvisor {
             ? avail + footprint
             : (avail > 0 ? avail + max(0, deviceTotalRAM - nonResidentRAMEstimate) : 0)
         let entitlementCeiling = Int64(Double(deviceTotalRAM) * entitlementCeilingFraction)
-        let best = max(kernelCeiling, entitlementCeiling)
+        let best = resolvedProcessCeilingCandidate(
+            kernelCeiling: kernelCeiling, entitlementCeiling: entitlementCeiling,
+            hasIncreasedMemoryEntitlement: hasIncreasedMemoryLimitEntitlement,
+            lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled
+        )
+        #if os(iOS) && !targetEnvironment(simulator) && !targetEnvironment(macCatalyst)
+        // A missing kernel signal on an unentitled install must not become
+        // system-wide free RAM; that can exceed this process's actual budget.
+        let fallback = max(0, best)
+        #else
         let fallback = best > 0 ? best : availableRAM
+        #endif
         return clampedProcessCeiling(
             candidate: fallback,
             totalRAM: deviceTotalRAM,
@@ -312,6 +440,14 @@ enum MemoryAdvisor {
     /// on-disk-size × 1.6 estimate so downloaded / imported models are no
     /// longer reported as "0 — fits anywhere".
     static func estimatedFootprint(for modelID: String) -> Int64 {
+        footprint(staticEstimate: staticFootprint(for: modelID),
+                  measurement: measurement(for: modelID))
+    }
+
+    private static func staticFootprint(for modelID: String) -> Int64 {
+        if modelID.hasPrefix("coreai:"), let pack = CoreAIZooCatalog.model(forSelectionID: modelID) {
+            return Int64(Double(pack.approxDownloadBytes) * workingSetOverhead) + 500_000_000
+        }
         // 1. Built-ins with hand-tuned numbers
         switch modelID {
         case "qwen3-1.7b":       return 1_500_000_000   // ~1.5 GB peak
@@ -492,8 +628,7 @@ enum MemoryAdvisor {
     static func safetyBlocker(
         for modelID: String,
         allowTightFit: Bool = false,
-        runtime: ModelRuntime? = nil,
-        allowUnsafeMemoryLoad: Bool = false
+        runtime: ModelRuntime? = nil
     ) -> String? {
         // Callers that can start MLX work must await
         // `MLXGenerationGate.clearCacheWhenIdle()` before entering this
@@ -505,14 +640,6 @@ enum MemoryAdvisor {
         //    modern silicon and iOS already does its own backoff there.
         if DeviceSafetyMonitor.shared.thermalState == .critical {
             return "Device is too hot to safely load this model. Let it cool for a minute, then retry."
-        }
-
-        // A user-confirmed experimental attempt bypasses memory-capacity
-        // admission for this call only. Critical thermal protection remains:
-        // adding a known-oversized allocation while iOS is already throttling
-        // at its highest level is not a useful model test.
-        if allowUnsafeMemoryLoad {
-            return nil
         }
 
         // 1b. Post-pressure cooldown. iOS recently hit CRITICAL memory pressure
@@ -578,15 +705,12 @@ enum MemoryAdvisor {
             // is what previously inflated every estimate ~2.5× and refused
             // models that comfortably fit the per-process ceiling.
             //
-            // Edge / developer mode drops the reserve so a "tight" model that
-            // sits right at the ceiling can load — experimental, may be killed
-            // under pressure. A normal user keeps the full reserve, so they
-            // never load anything that would OOM. Either way a model whose peak
-            // genuinely exceeds the live ceiling is still refused.
+            // An explicit tight-fit attempt reduces the margin. It never
+            // bypasses the process ceiling, cooldown, or critical heat refusal.
             let reserve = (AppSettings.shared.showEdgeModels || allowTightFit)
                 ? edgeHeadroomReserve
                 : loadHeadroomReserve
-            let needed = assumed + reserve
+            let needed = requiredLoadMemory(footprint: assumed, reserve: reserve)
             if procAvail < needed {
                 // Distinguish "too big for this device, period" from "would
                 // fit if you freed up what's resident right now." The hard
@@ -613,6 +737,13 @@ enum MemoryAdvisor {
             }
         }
         return nil
+    }
+
+    /// Keep admission arithmetic testable without the device's live RAM state.
+    static nonisolated func requiredLoadMemory(footprint: Int64, reserve: Int64) -> Int64 {
+        let assumed = footprint > 0 ? footprint : unknownFootprintFloor
+        let (needed, overflow) = assumed.addingReportingOverflow(max(0, reserve))
+        return overflow ? Int64.max : needed
     }
 
     /// Explains a hard process-ceiling refusal without implying that the

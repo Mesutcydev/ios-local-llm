@@ -1,0 +1,21 @@
+// Original app interface translations. Copyright 2026 Mesut and contributors; MIT.
+// Preserve interpolation tokens. Regenerate from the reviewed interface catalog.
+"App Group container missing. Configure entitlements." = "Контейнер группы приложений отсутствует. Настройте права.";
+"Couldn't decode image" = "Не удалось декодировать изображение";
+"Couldn't encode image" = "Не удалось закодировать изображение";
+"Couldn't prepare image" = "Не удалось подготовить изображение";
+"Couldn't read URL" = "Не удалось прочитать URL";
+"Couldn't read image" = "Не удалось прочитать изображение";
+"Couldn't read text" = "Не удалось прочитать текст";
+"Couldn't resize image" = "Не удалось изменить размер изображения";
+"Couldn't save share" = "Не удалось сохранить общий доступ";
+"Couldn't save the shared link" = "Не удалось сохранить общую ссылку.";
+"Done" = "Готово";
+"Empty text" = "Пустой текст";
+"No content to share" = "Нет контента, которым можно поделиться";
+"Open OnDevice LLM to use your shared content. It is saved on this device." = "Откройте OnDevice LLM, чтобы использовать общий контент. Он сохранен на этом устройстве.";
+"Saved to OnDevice LLM" = "Сохранено в OnDevice LLM.";
+"Shared storage is unavailable. Try opening OnDevice LLM first." = "Общее хранилище недоступно. Попробуйте сначала открыть OnDevice LLM.";
+"Unsupported content type" = "Неподдерживаемый тип контента";
+"Your content could not be saved." = "Не удалось сохранить ваш контент.";
+"Your content could not be saved. Try sharing it again." = "Не удалось сохранить ваш контент. Попробуйте поделиться им еще раз.";

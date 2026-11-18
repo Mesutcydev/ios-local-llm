@@ -1,13 +1,15 @@
 name: IOSLocalLLM
 options:
-  bundleIdPrefix: com.mesutcydev.ioslocalllm
+  bundleIdPrefix: com.codelens
   deploymentTarget:
     iOS: "18.0"
-  xcodeVersion: "26.0"
+  xcodeVersion: "27.1"
   createIntermediateGroups: true
   groupSortPosition: top
 
 packages:
+  CoreAITextRuntime:
+    path: Packages/CoreAITextRuntime
   # Local premium glass voice orb (Canvas). Theme selector case: `.glass`.
   VoiceAgentOrb:
     path: Packages/VoiceAgentOrb
@@ -17,7 +19,7 @@ packages:
   # tokenizer/Hub bridge that mlx-swift-lm 3.x externalized into the
   # DePasqualeOrg/swift-transformers-mlx fork. The OLD ml-explore/mlx-swift-examples
   # package does NOT provide these and must not be used here.
-  #   • mlx-swift-lm 3.31.4 → MLXLLM / MLXLMCommon / MLXVLM / MLXEmbedders (iOS 17)
+  #   • mlx-swift-lm 3.32.3 → MLXLLM / MLXLMCommon / MLXVLM / MLXEmbedders (iOS 17)
   #   • swift-transformers-mlx 0.2.0 → MLXLMTransformers (pulls swift-transformers
   #     1.3.x + swift-huggingface; depends on mlx-swift-lm 3.31.3+)
   #   • PrismML mlx-swift at the pinned revision below → upstream-compatible MLX plus the
@@ -29,10 +31,10 @@ packages:
   # Swift error trampoline turns that validation error into a fatal SIGTRAP.
   mlx-swift:
     url: https://github.com/PrismML-Eng/mlx-swift.git
-    revision: e40e0a57a6f7ad08dc3fd87ad598a7aa6407d230
+    revision: 2a673fa8324ca9900f37445db1f66f4400e4af15
   mlx-swift-lm:
     url: https://github.com/ml-explore/mlx-swift-lm
-    from: "3.31.4"
+    from: "3.32.3"
   swift-transformers-mlx:
     url: https://github.com/DePasqualeOrg/swift-transformers-mlx
     from: "0.2.0"
@@ -65,7 +67,7 @@ settings:
       - "$(BUILT_PRODUCTS_DIR)"
       - "$(SDKROOT)/System/iOSSupport/usr/lib"
       - "$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/maccatalyst"
-    # The postCompileScripts below (Copy bundled VLM, Compile FastVLM)
+    # The postCompileScripts below (Copy bundled VLM, Remove research artifacts)
     # rsync/coremlcompiler into TARGET_BUILD_DIR. Their outputs aren't
     # declarable statically (rsync mirrors a directory tree of varying
     # contents), so user script sandboxing — which only permits writes
@@ -112,11 +114,13 @@ targets:
           # source scan would otherwise try to swift-compile every
           # .mil / .bin / weight blob and fail.
           - "Resources/BundledVoiceModels/**"
+          - "Resources/BundledSafety/**"
     resources:
       # Model-specific tokenizers and processor files are intentionally not
       # redistributed. The downloaded model must provide its own metadata.
       - path: IOSLocalLLM/PrivacyInfo.xcprivacy
-      - path: IOSLocalLLM/Resources/Localization/WebTriggerKeywords.json
+      - path: IOSLocalLLM/Resources/ThirdPartyLicenses.txt
+      - path: IOSLocalLLM/Resources/Localization
       # CMU Pronouncing Dictionary — trimmed (primary pronunciations only,
       # 126K entries, 3.2 MB plain text). Used by PhonemizerEN to convert
       # English text to IPA phonemes for the neural TTS engines (Kokoro,
@@ -143,28 +147,34 @@ targets:
         # writes these into the generated Info.plist files on every run,
         # so hand-edits to those plists get reverted next regen — always
         # bump HERE first, then `xcodegen` to propagate.
-        CFBundleShortVersionString: "3.2.7"
+        CFBundleShortVersionString: "3.5.3"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         # Standard HTTPS only — answers the ASC export-compliance question
         # automatically so review submission doesn't stall on it.
         ITSAppUsesNonExemptEncryption: false
-        NSCameraUsageDescription: "OnDevice LLM uses the back camera to capture live video of your terminal or code editor for real-time analysis."
-        NSPhotoLibraryUsageDescription: "OnDevice LLM can analyze code from photos in your library."
-        NSMicrophoneUsageDescription: "OnDevice LLM uses the microphone for hold-to-talk dictation in the chat composer. Audio is transcribed on-device and never leaves your phone."
-        NSLocalNetworkUsageDescription: "OnDevice LLM can expose your on-device language model to computers on your local network when you enable the Local API Server."
-        NSSpeechRecognitionUsageDescription: "OnDevice LLM uses on-device speech recognition to convert your voice into text for the chat composer."
-        UIRequiresFullScreen: true
+        NSCalendarsFullAccessUsageDescription: "OnDevice LLM reads your calendar only when you approve an assistant request to look at your schedule. Events stay on your device."
+        NSCalendarsWriteOnlyAccessUsageDescription: "OnDevice LLM adds an event to your calendar only when you approve an assistant request."
+        NSRemindersFullAccessUsageDescription: "OnDevice LLM adds a reminder only when you approve an assistant request."
+        NSCameraUsageDescription: "OnDevice LLM uses the camera to recognize text and analyze images locally in Lens."
+        NSPhotoLibraryUsageDescription: "OnDevice LLM lets you choose photos to analyze locally or attach to a conversation."
+        NSMicrophoneUsageDescription: "OnDevice LLM uses the microphone for dictation and voice conversations. Speech is transcribed on your device."
+        NSLocalNetworkUsageDescription: "OnDevice LLM connects to your paired Mac and lets trusted computers use your local models when you enable the Mac Bridge or Local API Server."
+        NSBonjourServices:
+          - _localllm._tcp
+        NSSpeechRecognitionUsageDescription: "OnDevice LLM uses on-device speech recognition to turn your voice into text for dictation and voice conversations."
+        UIRequiresFullScreen: false
         UIStatusBarStyle: UIStatusBarStyleDarkContent
         UIViewControllerBasedStatusBarAppearance: false
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         UILaunchScreen:
           # Silver launch background bridges the system launch screen to the
           # animated eye splash without a white flash.
           UIColorName: "LaunchBackground"
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
-        NSSupportsLiveActivities: true
         # Make downloaded/imported models under Documents/HFModels visible at
         # Files → On My iPhone → OnDevice LLM. Per-model export remains
         # available from the Models tab for copying to any Files provider.
@@ -174,20 +184,21 @@ targets:
           - CFBundleURLName: com.mesutcydev.ioslocalllm.scheme
             CFBundleURLSchemes:
               - ios-local-llm
+              # Preserve links created by the existing App Store app.
+              - codelens
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.mesutcydev.ioslocalllm.IOSLocalLLM
+        # Keep the App Store identity even when the project/product name changes.
+        PRODUCT_BUNDLE_IDENTIFIER: com.codelens.CodeLens
         INFOPLIST_FILE: IOSLocalLLM/Info.plist
         CODE_SIGN_ENTITLEMENTS: IOSLocalLLM/IOSLocalLLM.entitlements
         CODE_SIGN_STYLE: Automatic
         VERSIONING_SYSTEM: apple-generic
-        CURRENT_PROJECT_VERSION: "115"
-        # PCC symbols exist only in the iOS 27 SDK. Enable the implementation
-        # and its capability automatically for iOS 27 device/simulator builds;
-        # Xcode 26 and iOS 18–26 builds keep the existing local-only binary.
-        "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos27.*]": "$(inherited) FM_PCC"
-        "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphonesimulator27.*]": "$(inherited) FM_PCC"
-        "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos27.*]": IOSLocalLLM/IOSLocalLLM-PCC.entitlements
+        CURRENT_PROJECT_VERSION: "156"
+        # Private Cloud Compute requires a managed capability granted to the
+        # developer account. Standard builds use the local-only entitlement
+        # file. Enable FM_PCC and IOSLocalLLM-PCC.entitlements explicitly only
+        # after verifying that grant and validating the signed archive.
         # iOS stays iPhone-only (family 1) so the iPhone app is unchanged.
         # Mac Catalyst is built against the macosx SDK and *requires* the
         # iPad idiom (family 2) plus Mac (6); scope that to the macOS SDK
@@ -240,6 +251,8 @@ targets:
           # full module-map gymnastics.
           - "$(SRCROOT)/ThirdParty/whisper.cpp/include"
     dependencies:
+      - package: CoreAITextRuntime
+        product: CoreAILM
       - package: VoiceAgentOrb
         product: VoiceAgentOrb
       - package: mlx-swift-lm
@@ -299,7 +312,7 @@ targets:
           SRC="${SRCROOT}/IOSLocalLLM/Resources/BundledVLM"
           DEST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/BundledVLM"
           if [ ! -d "$SRC" ]; then
-            echo "warning: BundledVLM source not found at $SRC — skipping (lens tab will fall back to network download of SmolVLM2 GGUF, ~520 MB on first launch)"
+            echo "warning: BundledVLM source not found at $SRC — skipping (download a compatible vision model from Models to enable image analysis)"
             exit 0
           fi
           mkdir -p "$DEST"
@@ -338,38 +351,30 @@ targets:
         runOnlyWhenInstalling: false
         basedOnDependencyAnalysis: false
 
-      - name: Compile and bundle FastVLM Core ML encoder
+      - name: Remove restricted research model artifacts
         script: |
           set -e
-          SRC="${SRCROOT}/IOSLocalLLM/Models/FastVLM-0.5B-fp16/fastvithd.mlpackage"
           DEST_DIR="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
-          DEST_PACKAGE="${DEST_DIR}/fastvithd.mlpackage"
-          DEST_COMPILED="${DEST_DIR}/fastvithd.mlmodelc"
+          rm -rf "$DEST_DIR/fastvithd.mlpackage" "$DEST_DIR/fastvithd.mlmodelc"
+        runOnlyWhenInstalling: false
+        basedOnDependencyAnalysis: false
+
+      - name: Copy local image safety classifier
+        script: |
+          set -e
+          SRC="${SRCROOT}/IOSLocalLLM/Resources/BundledSafety/GeneratedImageSafety.mlmodelc"
+          DEST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GeneratedImageSafety.mlmodelc"
           if [ ! -d "$SRC" ]; then
-            echo "warning: fastvithd.mlpackage not found at $SRC — FastVLM lens path will be unavailable on this build."
+            rm -rf "$DEST"
+            if [ "$CONFIGURATION" = "Release" ]; then
+              echo "error: Image safety classifier missing. Follow Docs/IMAGE_CONTENT_SAFETY.md before distributing."
+              exit 1
+            fi
+            echo "warning: Image safety classifier missing; image generation will refuse to run."
             exit 0
           fi
-          # Prefer shipping the pre-compiled .mlmodelc so the first
-          # camera tap doesn't pay the ~2-3 s on-device compile cost.
-          # coremlcompiler is the Xcode-bundled tool that runs the
-          # same compile step Xcode's build system uses for sources.
-          COREMLC="$(xcrun --find coremlcompiler 2>/dev/null || true)"
-          if [ -n "$COREMLC" ] && [ -x "$COREMLC" ]; then
-            rm -rf "$DEST_COMPILED"
-            "$COREMLC" compile "$SRC" "$DEST_DIR" >/dev/null
-            # coremlcompiler writes <name>.mlmodelc into the dest dir,
-            # so DEST_COMPILED is now populated. Drop the raw
-            # mlpackage so we don't ship both.
-            rm -rf "$DEST_PACKAGE"
-            echo "Compiled FastVLM encoder to $DEST_COMPILED"
-          else
-            # Fallback: ship the raw mlpackage. FastVLMCoreMLStub
-            # handles runtime compilation via MLModel.compileModel,
-            # which costs a few seconds on first launch but is
-            # functionally equivalent.
-            rsync -a --delete "$SRC/" "$DEST_PACKAGE/"
-            echo "Copied raw FastVLM encoder mlpackage to $DEST_PACKAGE (no coremlcompiler available — will compile at runtime)"
-          fi
+          mkdir -p "$DEST"
+          rsync -a --delete "$SRC/" "$DEST/"
         runOnlyWhenInstalling: false
         basedOnDependencyAnalysis: false
 
@@ -378,6 +383,7 @@ targets:
     platform: iOS
     deploymentTarget: "18.0"
     sources:
+      - path: IOSLocalLLM/Models/SharedContentInbox.swift
       - path: IOSLocalLLMShareExtension
         excludes:
           - "Info.plist"
@@ -388,7 +394,7 @@ targets:
         CFBundleDisplayName: OnDevice LLM
         # Must match the main target's version above — App Store rejects
         # extension targets with mismatched marketing versions.
-        CFBundleShortVersionString: "3.2.7"
+        CFBundleShortVersionString: "3.5.3"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         ITSAppUsesNonExemptEncryption: false
         NSExtension:
@@ -402,12 +408,13 @@ targets:
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.mesutcydev.ioslocalllm.IOSLocalLLM.share
+        PRODUCT_BUNDLE_IDENTIFIER: com.codelens.CodeLens.share
+        APPLICATION_EXTENSION_API_ONLY: YES
         INFOPLIST_FILE: IOSLocalLLMShareExtension/Info.plist
         CODE_SIGN_ENTITLEMENTS: IOSLocalLLMShareExtension/IOSLocalLLMShareExtension.entitlements
         CODE_SIGN_STYLE: Automatic
         VERSIONING_SYSTEM: apple-generic
-        CURRENT_PROJECT_VERSION: "115"
+        CURRENT_PROJECT_VERSION: "156"
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_EMIT_LOC_STRINGS: YES
 
@@ -421,7 +428,7 @@ targets:
       - target: IOSLocalLLM
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.mesutcydev.ioslocalllm.IOSLocalLLMTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.codelens.CodeLensTests
         INFOPLIST_FILE: ""   # auto-generate
         CODE_SIGN_STYLE: Automatic
         TARGETED_DEVICE_FAMILY: "1"
@@ -450,7 +457,7 @@ targets:
       - target: IOSLocalLLM
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.mesutcydev.ioslocalllm.IOSLocalLLMUITests
+        PRODUCT_BUNDLE_IDENTIFIER: com.codelens.CodeLensUITests
         CODE_SIGN_STYLE: Automatic
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES

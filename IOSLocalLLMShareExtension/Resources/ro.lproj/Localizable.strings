@@ -1,0 +1,21 @@
+// Original app interface translations. Copyright 2026 Mesut and contributors; MIT.
+// Preserve interpolation tokens. Regenerate from the reviewed interface catalog.
+"App Group container missing. Configure entitlements." = "Lipsește containerul grupului de aplicații. Configurați drepturi.";
+"Couldn't decode image" = "Nu s-a putut decoda imaginea";
+"Couldn't encode image" = "Nu s-a putut codifica imaginea";
+"Couldn't prepare image" = "Nu s-a putut pregăti imaginea";
+"Couldn't read URL" = "URL-ul nu a putut fi citit";
+"Couldn't read image" = "Nu am putut citi imaginea";
+"Couldn't read text" = "Nu am putut citi textul";
+"Couldn't resize image" = "Nu s-a putut redimensiona imaginea";
+"Couldn't save share" = "Distribuirea nu a putut fi salvată";
+"Couldn't save the shared link" = "Nu s-a putut salva linkul partajat";
+"Done" = "Făcut";
+"Empty text" = "Text gol";
+"No content to share" = "Nu există conținut de partajat";
+"Open OnDevice LLM to use your shared content. It is saved on this device." = "Deschideți OnDevice LLM pentru a utiliza conținutul dvs. partajat. Este salvat pe acest dispozitiv.";
+"Saved to OnDevice LLM" = "Salvat în OnDevice LLM";
+"Shared storage is unavailable. Try opening OnDevice LLM first." = "Spațiul de stocare partajat nu este disponibil. Încercați mai întâi să deschideți OnDevice LLM.";
+"Unsupported content type" = "Tip de conținut neacceptat";
+"Your content could not be saved." = "Conținutul dvs. nu a putut fi salvat.";
+"Your content could not be saved. Try sharing it again." = "Conținutul dvs. nu a putut fi salvat. Încearcă să-l distribui din nou.";

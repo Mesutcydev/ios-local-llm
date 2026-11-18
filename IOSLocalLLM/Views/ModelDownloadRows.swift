@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 // MARK: - Recommended setup download control
 
@@ -112,7 +113,7 @@ struct CompletedDownloadRow: View {
                 .foregroundColor(T.good)
         }
         .padding(14)
-        .kGlass(cornerRadius: 18, fallbackFill: T.surface, fallbackStroke: T.rule)
+        .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
     }
 }
 
@@ -127,6 +128,8 @@ struct InstallingRow: View {
     /// `@ObservedObject` to an optional — the parent unwraps in the
     /// `ForEach` and hands a guaranteed-non-nil reference here.
     @ObservedObject private var downloader: HFModelDownloadManager
+    /// Cancelling deletes the downloaded files, so it is confirmed first.
+    @State private var confirmingCancel = false
 
     init(model: DownloadableModel,
          downloader: HFModelDownloadManager,
@@ -163,11 +166,19 @@ struct InstallingRow: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .kClearGlass(
-            in: RoundedRectangle(cornerRadius: 22, style: .continuous),
+            in: RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous),
             tint: accent.opacity(0.13),
             fallbackFill: T.surface,
             fallbackStroke: accent.opacity(0.26)
         )
+        .alert(loc.t("Are you sure?"), isPresented: $confirmingCancel) {
+            Button(loc.t("Cancel"), role: .cancel) {}
+            Button(loc.t("Delete"), role: .destructive) {
+                ModelDownloadCenter.shared.handleDeletion(of: model)
+            }
+        } message: {
+            Text(loc.t("This frees up disk space. The model can be downloaded again later."))
+        }
     }
 
     // MARK: - Header
@@ -201,7 +212,7 @@ struct InstallingRow: View {
                     .foregroundColor(T.ink)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(model.subtitle)
+                Text(LocalizedStringKey(model.subtitle))
                     .font(T.mono(9.5))
                     .foregroundColor(T.ink3.opacity(0.82))
                     .lineLimit(1)
@@ -287,27 +298,25 @@ struct InstallingRow: View {
             }
 
             // Action buttons. Layout flips based on state:
-            //   downloading / enumerating → Cancel
-            //   failed                     → Retry + (Open on HuggingFace)
+            //   downloading / enumerating → Pause + Cancel download
+            //   paused                     → Resume + Cancel download
+            //   failed                     → Retry + Cancel download
             HStack(spacing: 6) {
-                if case .failed = downloader.state {
+                if downloader.state.isActive {
+                    actionButton("Pause") { downloader.pause(); HapticManager.impact(.light) }
+                    actionButton("Cancel download") { confirmingCancel = true }
+                } else {
                     Button(action: { downloader.start(); HapticManager.impact(.medium) }) {
-                        Text(loc.t("Retry"))
+                        Text(loc.t(downloader.isPaused ? "Resume" : "Retry"))
                             .font(T.mono(11, .semibold))
                             .foregroundColor(T.bg)
                             .padding(.horizontal, 10).padding(.vertical, 6)
                             .background(RoundedRectangle(cornerRadius: 6).fill(T.ink))
                     }
                     .buttonStyle(.plain)
-                } else {
-                    Button(action: { downloader.cancel(); HapticManager.impact(.light) }) {
-                        Text(loc.t("Cancel"))
-                            .font(T.mono(11, .semibold))
-                            .foregroundColor(T.ink2)
-                            .padding(.horizontal, 10).padding(.vertical, 6)
-                            .background(RoundedRectangle(cornerRadius: 6).fill(T.surface2))
-                    }
-                    .buttonStyle(.plain)
+                    // Paused or failed: let the row be dismissed and its
+                    // partial files removed.
+                    actionButton("Cancel download") { confirmingCancel = true }
                 }
                 if let docURL = model.docURL, let url = URL(string: docURL) {
                     Button(action: { UIApplication.shared.open(url) }) {
@@ -325,6 +334,17 @@ struct InstallingRow: View {
     }
 
     // MARK: - Helpers
+
+    private func actionButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(loc.t(title))
+                .font(T.mono(11, .semibold))
+                .foregroundColor(T.ink2)
+                .padding(.horizontal, 10).padding(.vertical, 6)
+                .background(RoundedRectangle(cornerRadius: 6).fill(T.surface2))
+        }
+        .buttonStyle(.plain)
+    }
 
     /// Match the icon set used by installedRow's categoryGlyph so a
     /// model keeps its identity when it moves from Installing →
@@ -354,6 +374,96 @@ struct InstallingRow: View {
         let done = downloader.downloadedBytes.formattedBytes
         let total = downloader.totalBytes.formattedBytes
         return "\(done) / \(total)"
+    }
+}
+
+// MARK: - DownloadObserver
+// A small ObservableObject that bridges the DownloadableModel's underlying
+// downloader(s) to the card view, updating on every published change.
+
+@MainActor
+final class DownloadObserver: ObservableObject {
+    @Published var state: HFModelDownloadManager.DownloadState = .idle
+    @Published var progress: Double = 0
+    @Published var downloadedBytes: Int64 = 0
+    @Published var totalBytes: Int64 = 0
+    @Published var currentFile: String = ""
+    @Published var filesDone: Int = 0
+    @Published var filesTotal: Int = 0
+    /// Smoothed download throughput in bytes/sec. Drives the speed + ETA
+    /// readout so a multi-GB download tells the user how long it'll take
+    /// instead of just creeping a progress bar.
+    @Published var bytesPerSec: Double = 0
+
+    var isActive: Bool { state == .downloading || state == .enumerating }
+
+    /// Estimated seconds remaining, or nil when we can't make a trustworthy
+    /// estimate (not downloading, no rate yet, unknown total).
+    var etaSeconds: Double? {
+        guard state == .downloading, bytesPerSec > 1024, totalBytes > 0 else { return nil }
+        let remaining = Double(totalBytes - downloadedBytes)
+        guard remaining > 0 else { return nil }
+        return remaining / bytesPerSec
+    }
+
+    private var cancellables = Set<AnyCancellable>()
+    private let model: DownloadableModel
+
+    // Rolling-rate state. We sample at most ~2×/sec and smooth with an EMA so
+    // the readout doesn't jitter on every chunk callback.
+    private var lastSampleBytes: Int64 = 0
+    private var lastSampleTime: Date?
+
+    init(model: DownloadableModel) {
+        self.model = model
+        sync()
+        subscribe()
+    }
+
+    private func sync() {
+        let previousState = state
+        state          = model.state
+        progress       = model.progress
+        downloadedBytes = model.downloadedBytes
+        totalBytes     = model.totalBytes
+        currentFile    = model.currentFile
+        filesDone      = model.downloader?.filesDone ?? 0
+        filesTotal     = model.downloader?.filesTotal ?? 0
+        updateRate(enteredDownloading: previousState != .downloading && state == .downloading)
+    }
+
+    private func updateRate(enteredDownloading: Bool) {
+        guard state == .downloading else {
+            bytesPerSec = 0
+            lastSampleTime = nil
+            return
+        }
+        if enteredDownloading || lastSampleTime == nil {
+            lastSampleBytes = downloadedBytes
+            lastSampleTime = Date()
+            return
+        }
+        let now = Date()
+        let dt = now.timeIntervalSince(lastSampleTime!)
+        guard dt >= 0.4 else { return }   // throttle: don't sample on every chunk
+        let delta = Double(downloadedBytes - lastSampleBytes)
+        if delta >= 0 {                   // ignore the dip when a resume rewinds bytes
+            let instantaneous = delta / dt
+            bytesPerSec = bytesPerSec == 0 ? instantaneous
+                                           : bytesPerSec * 0.7 + instantaneous * 0.3
+        }
+        lastSampleBytes = downloadedBytes
+        lastSampleTime = now
+    }
+
+    private func subscribe() {
+        // Observe HFModelDownloadManager if present
+        if let d = model.downloader {
+            d.objectWillChange
+                .receive(on: RunLoop.main)
+                .sink { [weak self] _ in self?.sync() }
+                .store(in: &cancellables)
+        }
     }
 }
 
@@ -412,13 +522,13 @@ struct SwipeToDeleteContainer<Content: View>: View {
                 Image(systemName: "trash.fill")
                     .font(.system(size: 16, weight: .semibold))
                 Text("Delete")
-                    .font(.system(size: 11, weight: .semibold))
+                    .scaledFont(size: 11, weight: .semibold)
             }
             .foregroundColor(.white)
             .frame(width: revealWidth)
             .frame(maxHeight: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
                     .fill(T.bad)
             )
             .padding(.vertical, 2)

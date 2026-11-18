@@ -241,7 +241,7 @@ final class BenchmarkService: ObservableObject {
 
     // MARK: - Persistence
 
-    private let storageKey = "ioslocalllm.benchmark.history.v1"
+    private let storageKey = "codelens.benchmark.history.v1"
 
     private func load() {
         guard let data = UserDefaults.standard.data(forKey: storageKey),

@@ -9,6 +9,226 @@ import XCTest
 // per-category headers in the Models tab.
 
 final class ModelCategoryInferenceTests: XCTestCase {
+    func test_lfm3UsesPinnedGGUFWithoutChangingDefault() throws {
+        let model = try XCTUnwrap(AssistantModelCatalog.model(forID: "lfm3-1.7b-gguf"))
+        XCTAssertEqual(AssistantModelCatalog.presets.first?.id, "qwen3-4b-2507")
+        XCTAssertEqual(model.runtime, .llamaCpp)
+        XCTAssertEqual(model.contextWindowTokens, 4_096)
+        XCTAssertEqual(model.downloadRevision, "b3f2ae5d73cd3c91bf40e8ba752c648aa05dffdf")
+        XCTAssertEqual(model.downloadFiles, ["LFM3-1.7B-QAD-Q4_0.gguf", "LICENSE"])
+        XCTAssertTrue(model.supportsTools)
+        XCTAssertTrue(model.supportsThinking)
+        XCTAssertTrue(model.usesChatML)
+    }
+
+    func test_lfm3AudioAndOmniUseNonReasoningPromptsAndProjectors() throws {
+        for id in ["lfm3-audio-2b-gguf", "lfm3-omni-2b-gguf"] {
+            let model = try XCTUnwrap(AssistantModelCatalog.model(forID: id))
+            XCTAssertTrue(model.supportsNativeAudio)
+            XCTAssertTrue(model.supportsTools)
+            XCTAssertFalse(model.supportsThinking)
+            XCTAssertEqual(model.runtime, .llamaCpp)
+            XCTAssertEqual(model.downloadFiles?.filter { $0.hasPrefix("mmproj") }.count, 1)
+            let prompt = model.chatTemplate.format(messages: [ChatMessage(role: .user, content: "Hello")], enableThinking: true)
+            XCTAssertTrue(prompt.hasPrefix("<|startoftext|>"))
+            XCTAssertFalse(prompt.contains("<think>\n"))
+            if id == "lfm3-audio-2b-gguf" {
+                // The shipped Audio checkpoint has no reasoning cue at all.
+                XCTAssertTrue(prompt.hasSuffix("<|im_start|>assistant\n"))
+                XCTAssertFalse(prompt.contains("<think>"))
+            } else {
+                XCTAssertTrue(prompt.hasSuffix("<|im_start|>assistant\n<think></think>"))
+            }
+        }
+        XCTAssertTrue(AssistantModelCatalog.model(forID: "lfm3-omni-2b-gguf")?.supportsVision == true)
+        XCTAssertFalse(AssistantModelCatalog.model(forID: "lfm3-audio-2b-gguf")?.supportsVision == true)
+        XCTAssertEqual(ChatTemplate.detect(for: "LiquidAI/LFM3-Audio-2B-GGUF"), .lfm3Audio)
+        XCTAssertEqual(ChatTemplate.detect(for: "LiquidAI/LFM3-Omni-2B-GGUF"), .lfm3Omni)
+    }
+
+    func test_lfm3ReplaysAPIPreviousToolCallsAsNativeHistory() {
+        let prompt = ChatTemplate.lfm3.format(messages: [
+            ChatMessage(role: .user, content: "What is 2 + 2?"),
+            ChatMessage(role: .assistant, content: "Let me check.\n\n[Previous tool calls]\ncall_id=call_1 name=calculator arguments={\"expression\":\"2+2\"}"),
+            ChatMessage(role: .user, content: "[Tool result for call_id=call_1]\n4"),
+            ChatMessage(role: .user, content: "Thanks"),
+        ])
+        XCTAssertTrue(prompt.contains(
+            "<|im_start|>assistant\n<think></think>Let me check.\n\n"
+            + "<tool_call>\n<function=calculator>\n"
+            + "<parameter=expression>\n2+2\n</parameter>\n"
+            + "</function>\n</tool_call><|im_end|>"
+        ))
+        XCTAssertTrue(prompt.contains(
+            "<|im_start|>tool\n<tool_response>\n[Tool result for call_id=call_1]\n4\n</tool_response><|im_end|>"
+        ))
+        XCTAssertFalse(prompt.contains("[Previous tool calls]"))
+        XCTAssertFalse(prompt.contains("call_id=call_1 name=calculator"))
+    }
+
+    func test_lfm3ClosedAssistantTurnsReplayNonReasoningCue() {        let textTemplate = ChatTemplate.lfm3
+        let history = textTemplate.format(messages: [
+            ChatMessage(role: .user, content: "First question"),
+            ChatMessage(role: .assistant, content: "<think>hidden</think>First answer"),
+            ChatMessage(role: .user, content: "Second question"),
+        ])
+        XCTAssertTrue(history.contains("<|im_start|>assistant\n<think></think>First answer<|im_end|>"))
+        XCTAssertFalse(history.contains("hidden"))
+
+        let audioTemplate = ChatTemplate.lfm3Audio
+        let audioHistory = audioTemplate.format(messages: [
+            ChatMessage(role: .user, content: "First question"),
+            ChatMessage(role: .assistant, content: "First answer"),
+            ChatMessage(role: .user, content: "Second question"),
+        ])
+        XCTAssertTrue(audioHistory.contains("<|im_start|>assistant\nFirst answer<|im_end|>"))
+        XCTAssertFalse(audioHistory.contains("<think></think>First answer"))
+
+        let omniHistory = ChatTemplate.lfm3Omni.format(messages: [
+            ChatMessage(role: .user, content: "First question"),
+            ChatMessage(role: .assistant, content: "First answer"),
+            ChatMessage(role: .user, content: "Second question"),
+        ])
+        XCTAssertTrue(omniHistory.contains("<|im_start|>assistant\n<think></think>First answer<|im_end|>"))
+    }
+
+    func test_lfm3NativeToolInstructionsAndResponsesKeepTheirRoles() {
+        let prompt = ChatTemplate.lfm3.format(messages: [
+            ChatMessage(role: .system, content: ToolRunner.systemPromptAddendum),
+            ChatMessage(role: .user, content: "What time is it?"),
+            ChatMessage(role: .tool, content: "12:30"),
+        ])
+        XCTAssertTrue(prompt.contains("<tools>"))
+        // The released template's tool_to_json key order and separators.
+        XCTAssertTrue(prompt.contains(#"{"name": "calculator", "description": "Evaluate an arithmetic expression.", "parameters": "#))
+        XCTAssertFalse(prompt.contains("PARAMETER_NAME"))
+        XCTAssertFalse(prompt.contains("emit a fenced"))
+        XCTAssertTrue(prompt.contains("<|im_start|>tool\n<tool_response>\n12:30\n</tool_response>"))
+    }
+
+    func test_lfm3ThinkingTemplateDoesNotSendQwenCommands() {
+        let template = ChatTemplate.detect(for: "LiquidAI/LFM3-1.7B-GGUF")
+        let messages = [ChatMessage(role: .user, content: "Hello")]
+        let thinking = template.format(messages: messages, enableThinking: true)
+        let direct = template.format(messages: messages, enableThinking: false)
+        XCTAssertEqual(thinking, "<|startoftext|><|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\n<think>")
+        XCTAssertEqual(direct, "<|startoftext|><|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\n<think></think>")
+        XCTAssertFalse(thinking.contains("/think"))
+        XCTAssertFalse(direct.contains("/no_think"))
+        XCTAssertEqual(ChatTemplate.detect(for: "mlx-community/Qwen3-4B-4bit"), .chatML)
+        XCTAssertEqual(ChatTemplate.detect(for: "mlx-community/Llama-3.2-3B-Instruct-4bit"), .llama3)
+    }
+
+    func test_lfm3VisionMarkerAndContinuationKeepOneBOS() {
+        let template = ChatTemplate.lfm3
+        let messages = [
+            ChatMessage(role: .user, content: "<__media__>\nDescribe this image."),
+            ChatMessage(role: .assistant, content: "A red"),
+        ]
+        let prompt = template.format(messages: messages, leaveLastAssistantOpen: true)
+        XCTAssertTrue(prompt.hasPrefix("<|startoftext|><|im_start|>user\n<__media__>"))
+        // The continuation replays the cue the reply was generated after.
+        XCTAssertTrue(prompt.hasSuffix("<|im_start|>assistant\n<think></think>A red"))
+        XCTAssertEqual(prompt.components(separatedBy: "<|startoftext|>").count, 2)
+        let midReasoning = template.format(messages: [
+            ChatMessage(role: .user, content: "Why?"),
+            ChatMessage(role: .assistant, content: "Because"),
+        ], enableThinking: true, leaveLastAssistantOpen: true)
+        XCTAssertTrue(midReasoning.hasSuffix("<|im_start|>assistant\n<think>Because"))
+    }
+
+    func test_lfm3ToolStepsAfterTheUserKeepReasoningAndCue() {
+        // Chat feeds tool results as user-role "TOOL RESULT:" turns; LFM3
+        // renders them as tool turns, so the call step stays in the current turn.
+        let chat = ChatTemplate.lfm3.format(messages: [
+            ChatMessage(role: .user, content: "Weather?"),
+            ChatMessage(role: .assistant, content: "plan it</think><tool_call>\n<function=web_search>\n<parameter=query>\nweather\n</parameter>\n</function>\n</tool_call>"),
+            ChatMessage(role: .user, content: "TOOL RESULT: web_search\n\nSunny"),
+        ], enableThinking: true)
+        XCTAssertTrue(chat.contains("<|im_start|>assistant\n<think>plan it</think><tool_call>"))
+        XCTAssertTrue(chat.contains("<|im_start|>tool\n<tool_response>\nTOOL RESULT: web_search"))
+        XCTAssertTrue(chat.hasSuffix("<|im_start|>assistant\n<think>"))
+
+        let voice = ChatTemplate.lfm3Omni.format(messages: [
+            ChatMessage(role: .user, content: "Time?"),
+            ChatMessage(role: .assistant, content: "<tool_call>\n<function=datetime>\n</function>\n</tool_call>"),
+            ChatMessage(role: .tool, content: "12:30"),
+        ])
+        XCTAssertTrue(voice.contains("<|im_start|>assistant\n<think></think><tool_call>"))
+    }
+
+    func test_lfm3ReplaysChatToolCallBeforeItsResult() throws {
+        // Chat removes the call turn from the transcript and keeps the call on the result.
+        var result = ChatMessage(role: .user, content: "TOOL RESULT: web_search\n\nSunny")
+        result.toolCallJSON = try XCTUnwrap(ToolCall(name: "web_search", args: ["query": "weather"]).json)
+        let messages = [ChatMessage(role: .user, content: "Weather?"), result]
+        XCTAssertTrue(ChatTemplate.lfm3.format(messages: messages).contains(
+            "<|im_start|>user\nWeather?<|im_end|>\n"
+            + "<|im_start|>assistant\n<think></think><tool_call>\n<function=web_search>\n"
+            + "<parameter=query>\nweather\n</parameter>\n</function>\n</tool_call><|im_end|>\n"
+            + "<|im_start|>tool\n<tool_response>\nTOOL RESULT: web_search"))
+        XCTAssertFalse(ChatTemplate.chatML.format(messages: messages).contains("<tool_call>"))
+        // Voice and the API keep their own call turn; never duplicate it.
+        let voice = ChatTemplate.lfm3Omni.format(messages: [
+            messages[0], ChatMessage(role: .assistant, content: "<tool_call>\n</tool_call>"), result,
+        ])
+        XCTAssertEqual(voice.components(separatedBy: "<tool_call>").count, 2)
+    }
+
+    func test_lfm3NativePromptSplitsAtCueAndKeepsMediaInUserTurn() throws {
+        let template = ChatTemplate.lfm3Omni
+        let afterTool = template.format(messages: [
+            ChatMessage(role: .user, content: "What time is it?"),
+            ChatMessage(role: .assistant, content: "<tool_call>\n<function=datetime>\n</function>\n</tool_call>"),
+            ChatMessage(role: .tool, content: "12:30"),
+        ])
+        let split = try XCTUnwrap(LlamaCppVLM.splitLFM3Prompt(afterTool, template: template, mediaMarkers: "\n<__media__>"))
+        XCTAssertEqual(split.cue, "<|im_start|>assistant\n<think></think>")
+        XCTAssertTrue(split.body.contains("<|im_start|>user\nWhat time is it?\n<__media__><|im_end|>"))
+        XCTAssertTrue(split.body.hasSuffix("<tool_response>\n12:30\n</tool_response><|im_end|>\n"))
+
+        let resumed = template.format(messages: [
+            ChatMessage(role: .user, content: "Tell me a story"),
+            ChatMessage(role: .assistant, content: "Once upon"),
+        ], leaveLastAssistantOpen: true)
+        let continued = try XCTUnwrap(LlamaCppVLM.splitLFM3Prompt(resumed, template: template, mediaMarkers: ""))
+        XCTAssertEqual(continued.cue, "<|im_start|>assistant\n<think></think>Once upon")
+        XCTAssertTrue(continued.body.hasSuffix("Tell me a story<|im_end|>\n"))
+    }
+
+    @MainActor
+    func test_lfm3CatalogDownloadsOnlyOneQuantizationAndProjector() throws {
+        let catalog = ModelDownloadCenter.shared.models
+        let text = try XCTUnwrap(catalog.first { $0.id == "lfm3-1.7b-gguf" })
+        XCTAssertEqual(text.runtime, .llamaCpp)
+        XCTAssertEqual(text.downloader?.branch, "b3f2ae5d73cd3c91bf40e8ba752c648aa05dffdf")
+        XCTAssertEqual(text.downloader?.fileAllowlist, ["LFM3-1.7B-QAD-Q4_0.gguf", "LICENSE"])
+        let vision = try XCTUnwrap(catalog.first { $0.id == "LiquidAI/LFM3-VL-2B-GGUF" })
+        XCTAssertEqual(vision.category, .vlm)
+        XCTAssertEqual(vision.runtime, .llamaCpp)
+        XCTAssertEqual(vision.downloader?.branch, "7c3b4a43c9023e80bf234fec5e826a3365c8dda8")
+        XCTAssertEqual(vision.downloader?.fileAllowlist, [
+            "LFM3-VL-2B-QAD-Q4_0.gguf", "mmproj-LFM3-VL-2B-Q8_0.gguf", "LICENSE",
+        ])
+        XCTAssertTrue(vision.capabilities.contains(.vision))
+    }
+
+    func test_importedGGUFVLMTailDirectoryIsRecognized() throws {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let folder = "local_LFM3-VL-import-test-\(UUID().uuidString)"
+        let dir = docs.appendingPathComponent("HFModels").appendingPathComponent(folder)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: dir) }
+        let bytes = Data([0x47, 0x47, 0x55, 0x46]) + Data(repeating: 1, count: 60)
+        try bytes.write(to: dir.appendingPathComponent("LFM3-VL-2B-QAD-Q4_0.gguf"))
+        try bytes.write(to: dir.appendingPathComponent("mmproj-LFM3-VL-2B-Q8_0.gguf"))
+
+        let found = LlamaCppVLMService.stagedDirectory(for: "local/\(folder)")
+        XCTAssertNotNil(found)
+        XCTAssertEqual(found?.lastPathComponent, folder)
+        XCTAssertEqual(found?.resolvingSymlinksInPath().path, dir.resolvingSymlinksInPath().path)
+    }
+
     func test_explicitConversationSwitchPreservesItsLoadTarget() {
         let savedDefault = AssistantModel(
             id: "downloaded:MercuriusDream/Nanbeige4.2-3B-mlx-4bit",
@@ -71,7 +291,7 @@ final class ModelCategoryInferenceTests: XCTestCase {
     @MainActor
     func test_installedRegistryModelIsReconciledIntoModelsTabSource() throws {
         let repoID = "Jackrong/test-\(UUID().uuidString)"
-        let directory = FileManager.default.temporaryDirectory
+        let directory = ModelStoragePaths.modelRoots[1]
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(
             at: directory,
@@ -390,6 +610,38 @@ final class ModelCategoryInferenceTests: XCTestCase {
         XCTAssertTrue(source.contains("Description  \nThis"))
         XCTAssertTrue(source.contains("RAM  \nStorage"))
         XCTAssertTrue(source.contains("yet.\n\n—The image"))
+    }
+
+    /// Regression: `Text` drops Markdown block structure, so headings,
+    /// paragraphs and list items ran together ("Trench WarfareWhat it was").
+    func test_assistantMarkdownBlocks_keepHeadingsParagraphsAndListsApart() {
+        let blocks = AssistantMarkdownBlocks.parse(
+            AssistantOutputSanitizer.preservingLineBreaksForMarkdown(
+                "## Trench Warfare\n### What it was\nIt was the main style.\n\n### How it worked\n- **Trenches**: Long channels.\n- **Barbed wire**: Fences.\n\n1. First\n2. Second\n   - nested"
+            )
+        )
+        XCTAssertEqual(blocks.map(\.kind), [
+            .header(2), .header(3), .paragraph, .header(3),
+            .listItem(ordered: false, ordinal: 1, depth: 1),
+            .listItem(ordered: false, ordinal: 2, depth: 1),
+            .listItem(ordered: true, ordinal: 1, depth: 1),
+            .listItem(ordered: true, ordinal: 2, depth: 1),
+            .listItem(ordered: false, ordinal: 1, depth: 2),
+        ])
+        XCTAssertEqual(blocks.map { String($0.text.characters) }, [
+            "Trench Warfare", "What it was", "It was the main style.", "How it worked",
+            "Trenches: Long channels.", "Barbed wire: Fences.", "First", "Second", "nested",
+        ])
+    }
+
+    func test_assistantMarkdownBlocks_keepSoftBreaksAndTableRows() {
+        let plain = AssistantMarkdownBlocks.parse(
+            AssistantOutputSanitizer.preservingLineBreaksForMarkdown("One.\nTwo.\n\nThree.")
+        )
+        XCTAssertEqual(plain.map { String($0.text.characters) }, ["One.\nTwo.", "Three."])
+
+        let table = AssistantMarkdownBlocks.parse("| Name | Year |\n|---|---|\n| Verdun | 1916 |")
+        XCTAssertEqual(table.map { String($0.text.characters) }, ["Name  |  Year", "Verdun  |  1916"])
     }
 
     func test_imageGroundingSanitizer_removesCrossModelControlTokens() {

@@ -33,12 +33,20 @@ final class VoiceService: ObservableObject {
     @Published private(set) var systemState:  VoiceModelState = .ready
     @Published private(set) var kittenState:  VoiceModelState = .unloaded
     @Published private(set) var kokoroState:  VoiceModelState = .unloaded
+    @Published private(set) var paradeeState: VoiceModelState = .unloaded
+    @Published private(set) var supertonicState: VoiceModelState = .unloaded
 
     // MARK: - Engines
 
     let systemEngine  = SystemSpeechService()
     let kittenEngine  = KittenTTSService()
     let kokoroEngine  = KokoroTTSService()
+    let paradeeEngine = ParadeeTTSService()
+    let supertonicEngine = SupertonicTTSService()
+
+    var isLoadingEngine: Bool {
+        [kittenState, kokoroState, paradeeState, supertonicState].contains(.loading)
+    }
 
     /// All voices the user could currently select — the active engine's
     /// voices plus the always-available system voices, deduplicated by id.
@@ -57,11 +65,16 @@ final class VoiceService: ObservableObject {
     private let playbackService = AudioPlaybackService.shared
     private var settings: AppSettings { AppSettings.shared }
     private var downloadObserver: NSObjectProtocol?
+    private var systemVoicesSink: AnyCancellable?
 
     // MARK: - Init / Deinit
 
     private init() {
         VoiceSettingsStore.shared.beginAvailabilityCheck()
+        // System voices load off-main after launch; re-render observers when they land.
+        systemVoicesSink = systemEngine.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
         Task { @MainActor in
             self.validatePersistedSelection()
             if VoiceSettingsStore.shared.selectedEngine != .appleSystem {
@@ -81,6 +94,8 @@ final class VoiceService: ObservableObject {
             let isVoiceDownload =
                 lower.contains("kitten") ||
                 lower.contains("kokoro") ||
+                lower.contains("paradee") ||
+                lower.contains("supertonic") ||
                 lower.contains("tts")
             guard isVoiceDownload else { return }
 
@@ -102,6 +117,10 @@ final class VoiceService: ObservableObject {
                     if self.kokoroState == .ready {
                         ToastCenter.shared.success("Kokoro ready (experimental)")
                     }
+                }
+                if (preferred == .paradee && ParadeeTTSService.isAvailable)
+                    || (preferred == .supertonic && SupertonicTTSService.isAvailable) {
+                    await self.loadOnnxEngine(preferred)
                 }
             }
         }
@@ -130,8 +149,19 @@ final class VoiceService: ObservableObject {
             await kokoroEngine.load()
             kokoroState = kokoroEngine.modelState
 
+        case .paradee, .supertonic:
+            await loadOnnxEngine(preferred)
+
         case .appleSystem:
             break   // always ready
+        }
+
+        // Only the selected neural engine stays resident. Switching engines
+        // used to keep every previously loaded model (Kokoro alone is
+        // ~300 MB) next to a multi-GB chat model — memory the LLM needs.
+        let engines: [any LocalVoiceEngine] = [kittenEngine, kokoroEngine, paradeeEngine, supertonicEngine]
+        for engine in engines where engine.kind != preferred && engine.isReady {
+            engine.unload()
         }
 
         refreshStates()
@@ -146,6 +176,8 @@ final class VoiceService: ObservableObject {
         var available: Set<VoiceEngineKind> = [.appleSystem]
         if VoiceModelBundleValidator.isKittenTTSAvailable() { available.insert(.kittenTTS) }
         if VoiceModelBundleValidator.isKokoroAvailable() { available.insert(.kokoro) }
+        if ParadeeTTSService.isAvailable { available.insert(.paradee) }
+        if SupertonicTTSService.isAvailable { available.insert(.supertonic) }
         print("[VoiceService] installed neural engines discovered=\(available.map(\.rawValue).sorted())")
         VoiceSettingsStore.shared.completeAvailabilityCheck(availableEngines: available)
         if restored != .appleSystem,
@@ -231,7 +263,10 @@ final class VoiceService: ObservableObject {
         )
         let chunks = TextChunker.chunks(from: speakable, config: config)
 
-        SpeechPlaybackCoordinator.shared.beginUtterance(karaokeSeed: speakable)
+        // Seed with the chunks as they will be spoken, not the raw text: the
+        // chunker rewrites paragraph breaks and markdown, and a transcript
+        // that doesn't match the chunks got every mismatch appended twice.
+        SpeechPlaybackCoordinator.shared.beginUtterance(chunks: chunks)
         isPlaying = true
         streamGeneration &+= 1
         let myGeneration = streamGeneration
@@ -264,6 +299,7 @@ final class VoiceService: ObservableObject {
                 Task { @MainActor in
                     if self.streamGeneration == myGeneration {
                         self.isPlaying = false
+                        SpeechPlaybackCoordinator.shared.finishUtterance()
                     }
                 }
             }
@@ -472,6 +508,7 @@ final class VoiceService: ObservableObject {
                     guard let self else { return }
                     if self.streamGeneration == myGeneration {
                         self.isPlaying = false
+                        SpeechPlaybackCoordinator.shared.finishUtterance()
                     }
                 }
             }
@@ -658,6 +695,10 @@ final class VoiceService: ObservableObject {
             return kittenEngine.isReady ? kittenEngine : systemEngine
         case .kokoro:
             return kokoroEngine.isReady ? kokoroEngine : systemEngine
+        case .paradee:
+            return paradeeEngine.isReady ? paradeeEngine : systemEngine
+        case .supertonic:
+            return supertonicEngine.isReady ? supertonicEngine : systemEngine
         case .appleSystem:
             return systemEngine
         }
@@ -771,6 +812,10 @@ final class VoiceService: ObservableObject {
     }
 
     private func voiceMatchesLanguage(_ voice: VoiceOption, language: String) -> Bool {
+        // Supertonic voices are multilingual; the engine picks the text language.
+        if voice.engineKind == .supertonic {
+            return SupertonicTTSService.languages.contains(String(language.prefix(2)).lowercased())
+        }
         // Compare on the two-letter language code only. AVSpeech
         // voices identify themselves as `en-US`, `en-GB`, etc.; the
         // detector returns `en-US` for any en-* hypothesis. Matching
@@ -890,6 +935,23 @@ final class VoiceService: ObservableObject {
             kokoroState = .loading
             await kokoroEngine.load()
             kokoroState = kokoroEngine.modelState
+
+        case .paradee, .supertonic:
+            let engine: any LocalVoiceEngine = kind == .paradee ? paradeeEngine : supertonicEngine
+            guard !engine.isReady else { return }
+            await loadOnnxEngine(kind)
+        }
+        refreshStates()
+    }
+
+    /// Paradee / Supertonic share one load path; each validates its own files.
+    private func loadOnnxEngine(_ kind: VoiceEngineKind) async {
+        if kind == .paradee {
+            paradeeState = .loading
+            await paradeeEngine.load()
+        } else {
+            supertonicState = .loading
+            await supertonicEngine.load()
         }
         refreshStates()
     }
@@ -900,6 +962,8 @@ final class VoiceService: ObservableObject {
         systemState = systemEngine.modelState
         kittenState = kittenEngine.modelState
         kokoroState = kokoroEngine.modelState
+        paradeeState = paradeeEngine.modelState
+        supertonicState = supertonicEngine.modelState
     }
 
     // MARK: - Unload
@@ -908,6 +972,8 @@ final class VoiceService: ObservableObject {
         stop()
         kittenEngine.unload()
         kokoroEngine.unload()
+        paradeeEngine.unload()
+        supertonicEngine.unload()
         refreshStates()
     }
 }

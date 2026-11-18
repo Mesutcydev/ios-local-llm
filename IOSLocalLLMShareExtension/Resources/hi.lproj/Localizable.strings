@@ -1,0 +1,21 @@
+// Original app interface translations. Copyright 2026 Mesut and contributors; MIT.
+// Preserve interpolation tokens. Regenerate from the reviewed interface catalog.
+"App Group container missing. Configure entitlements." = "ऐप ग्रुप कंटेनर गायब है. पात्रताएँ कॉन्फ़िगर करें.";
+"Couldn't decode image" = "छवि को डिकोड नहीं किया जा सका";
+"Couldn't encode image" = "छवि को एन्कोड नहीं किया जा सका";
+"Couldn't prepare image" = "छवि तैयार नहीं की जा सकी";
+"Couldn't read URL" = "यूआरएल नहीं पढ़ सका";
+"Couldn't read image" = "छवि पढ़ नहीं सका";
+"Couldn't read text" = "पाठ पढ़ा नहीं जा सका";
+"Couldn't resize image" = "छवि का आकार नहीं बदला जा सका";
+"Couldn't save share" = "शेयर सहेजा नहीं जा सका";
+"Couldn't save the shared link" = "साझा लिंक सहेजा नहीं जा सका";
+"Done" = "हो गया";
+"Empty text" = "खाली पाठ";
+"No content to share" = "साझा करने के लिए कोई सामग्री नहीं";
+"Open OnDevice LLM to use your shared content. It is saved on this device." = "अपनी साझा सामग्री का उपयोग करने के लिए OnDevice LLM खोलें। यह इस डिवाइस पर सहेजा गया है.";
+"Saved to OnDevice LLM" = "ऑनडिवाइस एलएलएम में सहेजा गया";
+"Shared storage is unavailable. Try opening OnDevice LLM first." = "साझा संग्रहण अनुपलब्ध है. पहले OnDevice LLM खोलने का प्रयास करें।";
+"Unsupported content type" = "असमर्थित सामग्री प्रकार";
+"Your content could not be saved." = "आपकी सामग्री सहेजी नहीं जा सकी.";
+"Your content could not be saved. Try sharing it again." = "आपकी सामग्री सहेजी नहीं जा सकी. इसे पुनः साझा करने का प्रयास करें.";

@@ -132,6 +132,10 @@ enum WhisperModelCatalog {
     /// Multilingual variant — populated by the second catalog row in
     /// ModelDownloadCenter.buildCatalog. Same repo, different file.
     static let baseMultiFilename = "ggml-base.bin"
+    /// Larger opt-in multilingual models, same repo. Preferred over base when
+    /// installed and the current memory headroom can take their load spike.
+    static let turboFilename = "ggml-large-v3-turbo-q5_0.bin"
+    static let smallMultiFilename = "ggml-small-q5_1.bin"
 
     /// Resolve the first installed whisper model on disk. Returns nil
     /// if the user hasn't downloaded one yet — SpeechProvider must
@@ -147,7 +151,7 @@ enum WhisperModelCatalog {
     ///   3. The pre-HFModels `WhisperModels/<file>.bin` layout.
     static func installedModelPath() -> String? {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let names = [baseEnFilename, baseMultiFilename]
+        let names = [turboFilename, smallMultiFilename, baseEnFilename, baseMultiFilename]
         var candidates: [URL] = []
         for name in names {
             candidates.append(
@@ -165,7 +169,16 @@ enum WhisperModelCatalog {
                     .appendingPathComponent(name)
             )
         }
-        return candidates.first { FileManager.default.fileExists(atPath: $0.path) }?.path
+        let installed = candidates.filter { FileManager.default.fileExists(atPath: $0.path) }
+        // Base models load as before; larger ones only with headroom for
+        // their load spike, else fall back to an installed base model.
+        let isBase = { (url: URL) in [baseEnFilename, baseMultiFilename].contains(url.lastPathComponent) }
+        let fits = { (url: URL) -> Bool in
+            let bytes = Int64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
+            return Int64(Double(bytes) * MemoryAdvisor.loadSpikeMultiplier) + MemoryAdvisor.loadHeadroomReserve
+                <= MemoryAdvisor.availableMemoryForModel
+        }
+        return installed.first { isBase($0) || fits($0) }?.path
     }
 
     /// True when at least one whisper model is on disk. Cheap — single

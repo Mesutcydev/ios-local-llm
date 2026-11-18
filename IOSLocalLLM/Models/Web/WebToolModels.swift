@@ -67,9 +67,33 @@ public struct WebToolSettings: Codable, Sendable, Equatable {
     public var allowOnCellular: Bool = false
     public var customSearchEndpoint: URL? = nil
     public var searxngEndpoint: URL? = nil
+    // Optional fields preserve decoding of settings saved before the disclosure.
+    public var privacyDisclosureVersion: Int? = nil
+    public var privacyDisclosureDestination: String? = nil
     // API keys live in Keychain, NEVER in here.
 
     public init() {}
+
+    private var disclosureDestination: String {
+        switch provider {
+        case .custom: return provider.rawValue + ":" + (customSearchEndpoint?.absoluteString ?? "")
+        case .searxng: return provider.rawValue + ":" + (searxngEndpoint?.absoluteString ?? "")
+        default: return provider.rawValue
+        }
+    }
+
+    public var hasAcceptedPrivacyDisclosure: Bool {
+        privacyDisclosureVersion == 1 && privacyDisclosureDestination == disclosureDestination
+    }
+
+    public var effectiveAccessMode: WebAccessMode {
+        mode == .off ? .off : (hasAcceptedPrivacyDisclosure ? mode : .askEveryTime)
+    }
+
+    public mutating func acceptPrivacyDisclosure() {
+        privacyDisclosureVersion = 1
+        privacyDisclosureDestination = disclosureDestination
+    }
 }
 
 // MARK: - Decision
@@ -215,6 +239,7 @@ public struct WebActivityLogEntry: Sendable, Hashable, Identifiable {
 public enum WebToolError: Error, Sendable, LocalizedError {
     case webAccessDisabled
     case permissionDenied
+    case cancelled
     case blockedByURLValidator(reason: String)
     case robotsDenied(url: URL)
     case rateLimited(retryAfter: TimeInterval?)
@@ -235,6 +260,7 @@ public enum WebToolError: Error, Sendable, LocalizedError {
         switch self {
         case .webAccessDisabled:           return "Web Access is off in Settings."
         case .permissionDenied:            return "You declined web access for this question."
+        case .cancelled:                   return "Web request cancelled."
         case .blockedByURLValidator(let r):return "URL blocked: \(r)"
         case .robotsDenied(let u):         return "robots.txt disallows fetching \(u.host ?? "this URL")."
         case .rateLimited(let secs):       return "Rate-limited. Retry after \(secs.map { "\(Int($0))s" } ?? "a moment")."

@@ -2,10 +2,10 @@
   "spdxVersion": "SPDX-2.3",
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
-  "name": "ios-local-llm-3.2.7-source",
-  "documentNamespace": "https://github.com/Mesutcydev/ios-local-llm/sbom/3.2.7/2026-09-05",
+  "name": "ios-local-llm-3.4-source",
+  "documentNamespace": "https://github.com/Mesutcydev/ios-local-llm/sbom/3.4/2026-10-28",
   "creationInfo": {
-    "created": "2026-07-29T00:00:00Z",
+    "created": "2026-10-28T10:00:00Z",
     "creators": [
       "Tool: manual-lockfile-inventory",
       "Organization: iOS Local LLM contributors"
@@ -19,7 +19,7 @@
     {
       "name": "ios-local-llm",
       "SPDXID": "SPDXRef-Package-ios-local-llm",
-      "versionInfo": "3.2.7",
+      "versionInfo": "3.5.3",
       "downloadLocation": "git+https://github.com/Mesutcydev/ios-local-llm.git",
       "filesAnalyzed": false,
       "licenseConcluded": "MIT AND LicenseRef-Apple-Sample-Code AND LicenseRef-CMUdict",
@@ -29,8 +29,8 @@
     {
       "name": "llama.cpp",
       "SPDXID": "SPDXRef-Package-llama-cpp",
-      "versionInfo": "5266f24da75dc449bd56cbed7addb9c8e4a6a73e",
-      "downloadLocation": "git+https://github.com/ggml-org/llama.cpp.git@5266f24da75dc449bd56cbed7addb9c8e4a6a73e",
+      "versionInfo": "19ff817fb25e9a1b838b1d7f9f4325f7bf9779c4",
+      "downloadLocation": "git+https://github.com/ggml-org/llama.cpp.git@19ff817fb25e9a1b838b1d7f9f4325f7bf9779c4",
       "filesAnalyzed": false,
       "licenseConcluded": "MIT",
       "licenseDeclared": "MIT",
@@ -49,8 +49,8 @@
     {
       "name": "mlx-swift",
       "SPDXID": "SPDXRef-Package-mlx-swift",
-      "versionInfo": "e40e0a57a6f7ad08dc3fd87ad598a7aa6407d230",
-      "downloadLocation": "git+https://github.com/PrismML-Eng/mlx-swift.git@e40e0a57a6f7ad08dc3fd87ad598a7aa6407d230",
+      "versionInfo": "2a673fa8324ca9900f37445db1f66f4400e4af15",
+      "downloadLocation": "git+https://github.com/PrismML-Eng/mlx-swift.git@2a673fa8324ca9900f37445db1f66f4400e4af15",
       "filesAnalyzed": false,
       "licenseConcluded": "MIT",
       "licenseDeclared": "MIT",
@@ -59,8 +59,8 @@
     {
       "name": "mlx-swift-lm",
       "SPDXID": "SPDXRef-Package-mlx-swift-lm",
-      "versionInfo": "3.31.4",
-      "downloadLocation": "git+https://github.com/ml-explore/mlx-swift-lm.git@bd4b7434e6bdb588c7ef55706ff8904cb7fd4c57",
+      "versionInfo": "3.32.3",
+      "downloadLocation": "git+https://github.com/ml-explore/mlx-swift-lm.git@3b339ad6e3b3f44c8121ecff5131c7fd55e075e6",
       "filesAnalyzed": false,
       "licenseConcluded": "MIT",
       "licenseDeclared": "MIT",
@@ -95,6 +95,43 @@
       "licenseConcluded": "MIT",
       "licenseDeclared": "MIT",
       "copyrightText": "Copyright 2026 Mesut and VoiceAgentOrb contributors"
+    },
+    {
+      "name": "nsfw_model MobileNet v2 1.4/224 safety model (release build input)",
+      "SPDXID": "SPDXRef-Package-image-safety-model",
+      "versionInfo": "1.1.0",
+      "downloadLocation": "https://github.com/GantMan/nsfw_model/releases/download/1.1.0/nsfw_mobilenet_v2_140_224.zip",
+      "filesAnalyzed": false,
+      "licenseDeclared": "MIT",
+      "licenseConcluded": "MIT AND Apache-2.0",
+      "copyrightText": "Copyright (c) 2020 The nsfw_model Developers",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "57278dd5a158b7ad8cb4f8d32f26c5f836d0d038044a2119f76fecff7aa241e9"
+        }
+      ],
+      "comment": "External release build input; model weights and compiled Core ML resources are excluded from the public source distribution. The app bundles a modified Core ML conversion with preserved MIT and MobileNet backbone Apache-2.0 notices."
+    },
+    {
+      "name": "coreai-models",
+      "SPDXID": "SPDXRef-Package-coreai-models",
+      "versionInfo": "938d0b8943b942ce66438b94ab017c5631d1aef4",
+      "downloadLocation": "https://github.com/apple/coreai-models",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "name": "xgrammar",
+      "SPDXID": "SPDXRef-Package-xgrammar",
+      "versionInfo": "4d145cc13d878c751ebeed36af1c013074be76bc",
+      "downloadLocation": "https://github.com/mlc-ai/xgrammar",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION"
     }
   ],
   "relationships": [
@@ -132,6 +169,21 @@
       "spdxElementId": "SPDXRef-Package-ios-local-llm",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-Package-voice-agent-orb"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-image-safety-model",
+      "relationshipType": "BUILD_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Package-ios-local-llm"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-ios-local-llm",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-coreai-models"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-ios-local-llm",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-xgrammar"
     }
   ],
   "hasExtractedLicensingInfos": [

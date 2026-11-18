@@ -109,3 +109,10 @@ tmp/
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Local App Store marketing tooling (works on ignored AppStoreScreenshots/ and the website)
+/scripts/fit_header_safe_area.py
+/scripts/layout_header_safe_area.py
+/scripts/render_header_video.py
+/scripts/render_safe_layout_video.py
+/scripts/prepare_app_store_public_pages.mjs

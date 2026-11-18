@@ -189,20 +189,19 @@ final class DeviceSafetyMonitor: ObservableObject {
     /// for no extra battery saving. We just surface a passive "low-power
     /// mode" badge so the user knows clocks are reduced.
     var recommendedMaxTokens: Int {
-        // Device-tier ceiling, folded in so a low-RAM device can't exceed its
-        // safe KV-cache budget even with thermal warnings off. Uses a generous
-        // 3× of DeviceTierAdvisor's per-tier value so the SHIPPING tiers don't
-        // regress: .max (1536×3=4608)→4096, .pro (1280×3=3840)→3840 ≈ no change;
-        // only hypothetical low-RAM tiers (lite 512×3=1536) get clamped down.
+        // Device-tier ceiling (3× the tier default: .max 9216, .pro 6144,
+        // .mid 3072) so a low-RAM device can't exceed its safe KV budget even
+        // with thermal warnings off. 8K is the "Full" response length; the
+        // runtimes still clamp output to what their context window holds.
         let tierCeiling = DeviceTierAdvisor.recommendedMaxTokens * 3
         // The .critical clamp is a safety measure and applies even when
         // the user opted out of thermal warnings; only the softer
         // .serious clamp is gated by the setting.
         if effectiveThermalState == .critical { return min(512, tierCeiling) }
-        guard AppSettings.shared.thermalWarningsEnabled else { return min(4096, tierCeiling) }
+        guard AppSettings.shared.thermalWarningsEnabled else { return min(8192, tierCeiling) }
         switch effectiveThermalState {
         case .serious:  return min(1536, tierCeiling)
-        default:        return min(4096, tierCeiling)   // .nominal, .fair, low-power
+        default:        return min(8192, tierCeiling)   // .nominal, .fair, low-power
         }
     }
 
@@ -570,4 +569,29 @@ extension Notification.Name {
     /// Posted on memory pressure so caches (decoded images, thumbnails, etc.)
     /// can drop their discardable contents while the model stays resident.
     static let iosLocalLLMDropDiscardableCaches = Notification.Name("iosLocalLLMDropDiscardableCaches")
+}
+
+/// Shared event handling keeps cancellation and critical-only stopping testable
+/// without loading a model or heating a device.
+@MainActor
+enum InferenceThermalGuard {
+    static func monitor<Events: AsyncSequence>(
+        _ events: Events,
+        readState: @Sendable () -> ProcessInfo.ThermalState = { ProcessInfo.processInfo.thermalState },
+        onCritical: @MainActor () -> Void
+    ) async throws where Events.Element == Void {
+        // A transition can occur between admission and observer installation.
+        guard !Task.isCancelled else { return }
+        if readState() == .critical {
+            onCritical()
+            return
+        }
+        for try await _ in events {
+            guard !Task.isCancelled else { return }
+            if readState() == .critical {
+                onCritical()
+                return
+            }
+        }
+    }
 }

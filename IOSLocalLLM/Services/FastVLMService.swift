@@ -104,6 +104,14 @@ final class FastVLMService: ObservableObject {
     /// If the model weights are not yet downloaded, all components report `.unloaded`
     /// with a clear message. The UI can then prompt the user to download.
     func load() async {
+        guard ConsumerModelPolicy.allows(repoID: "apple/FastVLM-0.5B-MLX") else {
+            let reason = "FastVLM research weights are unavailable in the consumer app. Choose a compatible vision model in Models."
+            componentStatus.encoder = .failed(reason)
+            componentStatus.projector = .failed(reason)
+            componentStatus.decoder = .failed(reason)
+            componentStatus.tokenizer = .failed(reason)
+            return
+        }
         // Re-entrancy guard. The download-completed observer and a manual
         // load can call load() concurrently; both would reach
         // loadContainer() since every await below yields the MainActor.
@@ -376,7 +384,7 @@ final class FastVLMService: ObservableObject {
                                         continuation.yield(text)
                                     case .info(let completion):
                                         info = completion
-                                    case .toolCall:
+                                    case .toolCall, .rejectedToolCall:
                                         break
                                     }
                                 }

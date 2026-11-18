@@ -10,6 +10,7 @@ public actor WebSearchService {
 
     private let session: URLSession
     private let validator: URLSafetyValidator
+    private let redirectGuard: WebRedirectGuard
 
     /// Response bodies from search providers are small; cap them so a
     /// malicious/compromised endpoint cannot balloon memory.
@@ -23,7 +24,9 @@ public actor WebSearchService {
         cfg.httpAdditionalHeaders = [
             "User-Agent": "ios-local-llm/1.0 (Web Tool; +on-device)"
         ]
-        self.session = URLSession(configuration: cfg)
+        let redirectGuard = WebRedirectGuard(validator: validator)
+        self.redirectGuard = redirectGuard
+        self.session = URLSession(configuration: cfg, delegate: redirectGuard, delegateQueue: nil)
     }
 
     /// Streams the body with a hard byte cap instead of buffering first.
@@ -32,12 +35,15 @@ public actor WebSearchService {
         maxBytes: Int = WebSearchService.maxResponseBytes
     ) async throws -> (Data, URLResponse) {
         let (bytes, response) = try await session.bytes(for: request)
-        var data = Data()
-        data.reserveCapacity(64 * 1024)
-        for try await byte in bytes {
-            data.append(byte)
-            if data.count > maxBytes {
-                throw WebToolError.tooLarge(bytes: data.count)
+        defer { bytes.task.cancel() }
+        if response.expectedContentLength > Int64(maxBytes) {
+            throw WebToolError.tooLarge(bytes: Int(clamping: response.expectedContentLength))
+        }
+        let data = try await WebPageFetchService.collectBounded(bytes, maximumBytes: maxBytes)
+        if let finalURL = response.url {
+            let verdict = await validator.validateStable(finalURL)
+            guard verdict.isSafe else {
+                throw WebToolError.blockedByURLValidator(reason: verdict.reason)
             }
         }
         return (data, response)
@@ -236,7 +242,7 @@ public actor WebSearchService {
     // MARK: - SearXNG (user-hosted)
 
     private func searchSearXNG(endpoint: URL, query: String, max: Int) async throws -> [WebSearchResult] {
-        let verdict = await validator.validate(endpoint)
+        let verdict = await validator.validateStable(endpoint)
         if !verdict.isSafe { throw WebToolError.blockedByURLValidator(reason: verdict.reason) }
         guard var comps = URLComponents(url: endpoint, resolvingAgainstBaseURL: false) else {
             throw WebToolError.providerEndpointMissing
@@ -267,7 +273,7 @@ public actor WebSearchService {
     // MARK: - Custom
     /// Expected JSON: `{ "results": [{ "title", "url", "snippet" }] }`.
     private func searchCustom(endpoint: URL, query: String, max: Int) async throws -> [WebSearchResult] {
-        let verdict = await validator.validate(endpoint)
+        let verdict = await validator.validateStable(endpoint)
         if !verdict.isSafe { throw WebToolError.blockedByURLValidator(reason: verdict.reason) }
         var comps = URLComponents(url: endpoint, resolvingAgainstBaseURL: false)
         var items = comps?.queryItems ?? []

@@ -1,0 +1,21 @@
+// Original app interface translations. Copyright 2026 Mesut and contributors; MIT.
+// Preserve interpolation tokens. Regenerate from the reviewed interface catalog.
+"App Group container missing. Configure entitlements." = "حاوية مجموعة التطبيقات مفقودة. تكوين الاستحقاقات.";
+"Couldn't decode image" = "لا يمكن فك تشفير الصورة";
+"Couldn't encode image" = "تعذر تشفير الصورة";
+"Couldn't prepare image" = "تعذر تحضير الصورة";
+"Couldn't read URL" = "تعذرت قراءة عنوان URL";
+"Couldn't read image" = "تعذرت قراءة الصورة";
+"Couldn't read text" = "لا يمكن قراءة النص";
+"Couldn't resize image" = "تعذر تغيير حجم الصورة";
+"Couldn't save share" = "تعذر حفظ المشاركة";
+"Couldn't save the shared link" = "تعذر حفظ الرابط المشترك";
+"Done" = "تم";
+"Empty text" = "نص فارغ";
+"No content to share" = "لا يوجد محتوى للمشاركة";
+"Open OnDevice LLM to use your shared content. It is saved on this device." = "افتح OnDevice LLM لاستخدام المحتوى المشترك الخاص بك. يتم حفظه على هذا الجهاز.";
+"Saved to OnDevice LLM" = "تم الحفظ في OnDevice LLM";
+"Shared storage is unavailable. Try opening OnDevice LLM first." = "التخزين المشترك غير متوفر. حاول فتح OnDevice LLM أولاً.";
+"Unsupported content type" = "نوع المحتوى غير مدعوم";
+"Your content could not be saved." = "لا يمكن حفظ المحتوى الخاص بك.";
+"Your content could not be saved. Try sharing it again." = "لا يمكن حفظ المحتوى الخاص بك. حاول مشاركته مرة أخرى.";

@@ -13,7 +13,7 @@ struct AttributionsView: View {
 
     private var grouped: [(category: String, items: [Attribution])] {
         let dict = Dictionary(grouping: LegalDocuments.attributions, by: { $0.category })
-        let order = ["Language Model", "Vision–Language", "Object Detection",
+        let order = ["Language Model", "Vision–Language", "Image Generation", "Object Detection",
                      "Text-to-Speech", "Framework", "Service"]
         return order.compactMap { cat in
             guard let items = dict[cat] else { return nil }
@@ -36,6 +36,12 @@ struct AttributionsView: View {
 
                     headerSection
 
+                    if let licenses = Bundle.main.url(forResource: "ThirdPartyLicenses", withExtension: "txt") {
+                        ShareLink("Full licenses and notices", item: licenses)
+                            .padding(14)
+                            .accessibilityIdentifier("thirdPartyLicenseNotices")
+                    }
+
                     ForEach(grouped, id: \.category) { group in
                         KSection(title: group.category.lowercased()
                                     .replacingOccurrences(of: " ", with: "_")) {
@@ -54,7 +60,7 @@ struct AttributionsView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }.foregroundColor(T.ink)
+                    Button("Done", systemImage: "checkmark") { dismiss() }.foregroundColor(T.ink)
                 }
             }
             .background(LiquidPinkBackdrop())
@@ -93,11 +99,11 @@ struct AttributionsView: View {
             VStack(alignment: .leading, spacing: 10) {
                 noteRow(glyph: "●", color: T.accent,
                         title: "apple ml research models",
-                        body: "FastVLM models are distributed by Apple under the Apple Sample Code License / Apple ML Research license. They may only be used as permitted by that license.")
+                        body: "The Apple Sample Code License covers the adapted source code. FastVLM research weights and derived encoders are unavailable in the consumer app.")
                 Rectangle().fill(T.rule).frame(height: 1)
                 noteRow(glyph: "●", color: T.accent,
-                        title: "tongyi qianwen license",
-                        body: "Qwen models permit commercial use with attribution under the Tongyi Qianwen License. Review the license before any commercial redistribution.")
+                        title: "downloaded model licenses",
+                        body: "Licenses vary by model and version, including within the Qwen family. Read the license at the exact download source before use or redistribution.")
             }
             .padding(14)
             .kGlass(cornerRadius: 8, fallbackFill: T.surface)

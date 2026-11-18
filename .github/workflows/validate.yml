@@ -16,6 +16,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Validate repository contents
         run: ./scripts/validate_open_source.sh
+      - name: Validate App Store identity and privacy declarations
+        run: python3 scripts/validate_app_store.py
 
   voice-orb:
     runs-on: macos-15

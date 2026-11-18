@@ -166,10 +166,11 @@ final class HFSearchService: ObservableObject {
                     let t = d["tree"] as? [[String: Any]]   { arr = t }
             else                                            { arr = [] }
 
-            let total = arr.reduce(Int64(0)) { sum, item in
+            let files = arr.compactMap { item -> HFModelDownloadManager.HFFileMeta? in
                 // HF uses "file" / "directory" (not Git's "blob" / "tree")
                 if let type_ = item["type"] as? String,
-                   type_ == "directory" || type_ == "tree" { return sum }
+                   type_ == "directory" || type_ == "tree" { return nil }
+                guard let path = item["path"] as? String else { return nil }
                 // size can be Int, NSNumber, or nested in lfs
                 let s: Int64 = {
                     if let n = item["size"] as? NSNumber { return n.int64Value }
@@ -180,8 +181,12 @@ final class HFSearchService: ObservableObject {
                     }
                     return 0
                 }()
-                return sum + s
+                return .init(path: path, name: URL(fileURLWithPath: path).lastPathComponent, size: s)
             }
+            // Count what a download fetches: one quantization of a GGUF
+            // repo, not the dozen variants it publishes.
+            let total = HFModelDownloadManager.selectingOneGGUFVariant(from: files)
+                .reduce(Int64(0)) { $0 + $1.size }
 
             if total > 0 {
                 Self.sizeCache[repoID] = total

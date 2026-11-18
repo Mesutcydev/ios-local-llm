@@ -23,7 +23,7 @@ final class CloudSyncService: ObservableObject {
     @Published private(set) var isSyncing = false
     @Published private(set) var lastError: String?
 
-    private lazy var container = CKContainer(identifier: "iCloud.com.mesutcydev.ioslocalllm")
+    private lazy var container = CKContainer(identifier: "iCloud.com.codelens")
     private var privateDB: CKDatabase { container.privateCloudDatabase }
 
     private let availability: (() async -> Bool)?
@@ -95,6 +95,27 @@ final class CloudSyncService: ObservableObject {
             cursor = page.1
         } while cursor != nil
         return items
+    }
+
+    /// Deletes every conversation this app stored in the user's private
+    /// iCloud database. The full-data wipe calls it so that turning sync back
+    /// on cannot bring wiped chats back.
+    func deleteAllRemoteConversations() async throws {
+        guard await iCloudAvailable() else { throw CKError(.notAuthenticated) }
+        let query = CKQuery(recordType: "Conversation", predicate: NSPredicate(value: true))
+        query.sortDescriptors = [NSSortDescriptor(key: "updatedAt", ascending: false)]
+        var ids: [CKRecord.ID] = []
+        var page = try await privateDB.records(matching: query, desiredKeys: [], resultsLimit: 200)
+        while true {
+            ids += page.matchResults.map { $0.0 }
+            guard let cursor = page.queryCursor else { break }
+            page = try await privateDB.records(continuingMatchFrom: cursor, desiredKeys: [], resultsLimit: 200)
+        }
+        for start in stride(from: 0, to: ids.count, by: 200) {
+            let batch = Array(ids[start..<min(start + 200, ids.count)])
+            let result = try await privateDB.modifyRecords(saving: [], deleting: batch, atomically: false)
+            for (_, outcome) in result.deleteResults { try outcome.get() }
+        }
     }
 
     // MARK: - Internals
@@ -280,6 +301,9 @@ enum CloudSyncTombstones {
     private static func all() -> [String: Double] {
         UserDefaults.standard.dictionary(forKey: key) as? [String: Double] ?? [:]
     }
+
+    /// Every conversation id currently marked as deleted.
+    static var markedIDs: [UUID] { all().keys.compactMap { UUID(uuidString: $0) } }
 
     /// Stamp a conversation as deleted at the current time.
     static func mark(_ id: UUID) {

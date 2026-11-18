@@ -645,7 +645,12 @@ public class FastVLM: Module, VLMModel, KVCacheDimensionProvider {
 
     // MARK: - LanguageModel protocol
 
-    public func prepare(_ input: LMInput, cache: [any KVCache], windowSize: Int?) throws -> PrepareResult {
+    // mlx-swift-lm 3.32 replaced `windowSize:` with `state:`/`prefill:`. FastVLM
+    // keeps no per-call positional state and always prefills in one forward, so
+    // it ignores both and only reports the terminal progress tick the protocol asks for.
+    public func prepare(
+        _ input: LMInput, cache: [any KVCache], state: LMOutput.State?, prefill: PrefillParameters
+    ) throws -> PrepareResult {
         // API in mlx-swift-examples 2.29.1 uses `frames:` property
         let gridThw = input.image?.frames
         let pixels = input.image?.pixels.asType(.float32)
@@ -656,6 +661,8 @@ public class FastVLM: Module, VLMModel, KVCacheDimensionProvider {
             gridThw: gridThw)
 
         let result = languageModel(nil, cache: cache, inputEmbedding: inputEmbeddings)
+        let positions = inputEmbeddings.dim(1)
+        prefill.progress?(positions, positions)
         return .logits(result)
     }
 

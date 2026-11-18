@@ -33,6 +33,7 @@ struct OnboardingModelPickerView: View {
     /// flaky network can never lock a first launch out of the app.
     private enum Phase { case picking, downloading }
     @State private var phase: Phase = .picking
+    @State private var confirmCellular = false
     private enum Goal: String, CaseIterable { case chat = "Chat", lens = "Lens", voice = "Voice" }
     @State private var goal: Goal = .chat
     private var needsAssistant: Bool { goal != .lens }
@@ -221,6 +222,9 @@ struct OnboardingModelPickerView: View {
                     .foregroundColor(T.accent)
             }
             .padding(.top, 4)
+            // Decorative: VoiceOver otherwise announced "Selected" before
+            // anything had been chosen.
+            .accessibilityHidden(true)
 
             VStack(spacing: 6) {
                 KCaption(text: "STEP · MODEL PICK")
@@ -287,6 +291,12 @@ struct OnboardingModelPickerView: View {
 
     // MARK: - Cards
 
+    /// "Recommended" follows the device-tier default that is pre-selected, so
+    /// the badge never sits on a different model than the highlighted one.
+    private static func marking(_ caps: Set<ModelCapability>, recommended: Bool) -> Set<ModelCapability> {
+        recommended ? caps.union([.recommended]) : caps.subtracting([.recommended])
+    }
+
     @ViewBuilder
     private func assistantCard(_ pick: AssistantPick) -> some View {
         let selected = pickedAssistantID == pick.id
@@ -297,7 +307,7 @@ struct OnboardingModelPickerView: View {
             title: pick.displayName,
             summary: pick.summary,
             sizeLabel: pick.sizeLabel,
-            caps: pick.capabilities,
+            caps: Self.marking(pick.capabilities, recommended: pick.id == tierAwareDefaults().assistantID),
             verdict: verdict
         ) {
             pickedAssistantID = pick.id
@@ -319,7 +329,7 @@ struct OnboardingModelPickerView: View {
             title: pick.displayName,
             summary: pick.summary,
             sizeLabel: pick.sizeLabel,
-            caps: pick.capabilities,
+            caps: Self.marking(pick.capabilities, recommended: pick.id == tierAwareDefaults().visualRepoID),
             verdict: verdict
         ) {
             pickedVisualRepoID = pick.id
@@ -344,6 +354,7 @@ struct OnboardingModelPickerView: View {
             HStack(alignment: .top, spacing: 12) {
                 if !dynamicTypeSize.isAccessibilitySize {
                     KVendorThumb(vendor: vendor, size: .card)
+                        .accessibilityHidden(true)   // avatar letter was read as "Q, Qwen…"
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     let titleLayout = dynamicTypeSize.isAccessibilitySize
@@ -388,8 +399,17 @@ struct OnboardingModelPickerView: View {
                     radius: 10, y: 3)
         }
         .buttonStyle(.plain)
+        // The memory check will refuse to load this model, so it must not be
+        // downloaded. A card that is already the pick stays as it is.
+        .disabled(wontFit(verdict) && !selected)
+        .opacity(wontFit(verdict) && !selected ? 0.55 : 1)
         .accessibilityValue(selected ? "Selected" : "Not selected")
         .animation(.spring(response: 0.25, dampingFraction: 0.85), value: selected)
+    }
+
+    private func wontFit(_ verdict: MemoryAdvisor.Verdict) -> Bool {
+        if case .wontFit = verdict { return true }
+        return false
     }
 
     /// Small inline warning that surfaces marginal/wontFit verdicts on
@@ -443,7 +463,7 @@ struct OnboardingModelPickerView: View {
 
     private var ctaBar: some View {
         VStack(spacing: 6) {
-            Button(action: commit) {
+            Button(action: requestCommit) {
                 Label(needsAnyDownload ? "Download model" : "Continue",
                       systemImage: needsAnyDownload ? "arrow.down.circle" : "arrow.right")
                     .font(T.sans(16, .semibold))
@@ -456,10 +476,40 @@ struct OnboardingModelPickerView: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("onboarding.install")
             .padding(.horizontal, 16)
+
+            // Starting a multi-gigabyte download must not be the only way out
+            // of onboarding; models can be added later from Models.
+            if needsAnyDownload {
+                Button { onComplete() } label: {
+                    Text("Not now")
+                        .font(T.sans(14, .medium))
+                        .foregroundColor(T.ink2)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("onboarding.skip")
+            }
         }
         .padding(.top, 12)
         .padding(.bottom, 14)
         .background(T.bg)
+        .confirmationDialog("Download over cellular data?",
+                            isPresented: $confirmCellular,
+                            titleVisibility: .visible) {
+            Button("Download model") { commit() }
+        }
+    }
+
+    /// "Wi-Fi only downloads" is off by default, so ask before a multi-GB
+    /// download starts on a cellular or hotspot link.
+    private func requestCommit() {
+        if needsAnyDownload, !settings.wifiOnlyDownloads,
+           BackgroundDownloadCoordinator.shared.isOnExpensiveNetwork {
+            confirmCellular = true
+        } else {
+            commit()
+        }
     }
 
     // MARK: - Download gate
@@ -551,10 +601,10 @@ struct OnboardingModelPickerView: View {
             // into a fully opaque surface so the gate copy always reads clean.
             ZStack {
                 T.bg
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
                     .fill(T.surface)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
                             .stroke(T.glassBorder, lineWidth: 0.5)
                     )
                     .padding(.horizontal, 8)

@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 // MARK: - Persistent conversation storage
 // Saves to ~/Documents/conversations.json via Codable.
@@ -9,10 +10,10 @@ final class ConversationStore: ObservableObject {
 
     @Published private(set) var conversations: [StoredConversation] = []
 
-    private let fileURL: URL = {
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        return docs.appendingPathComponent("conversations.json")
-    }()
+    private let fileURL: URL
+    /// True while conversations.json exists but could not be read. Nothing is
+    /// saved over the file until a load succeeds.
+    private var loadBlocked = false
 
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -20,11 +21,22 @@ final class ConversationStore: ObservableObject {
     private var persistRetryCount = 0
     private let retryLock = NSLock()
 
-    init() {
+    init(fileURL: URL? = nil) {
+        self.fileURL = fileURL ?? FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("conversations.json")
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
         decoder.dateDecodingStrategy = .iso8601
         load()
+        // Retry a blocked load once the file can be read again.
+        for name in [UIApplication.protectedDataDidBecomeAvailableNotification,
+                     UIApplication.didBecomeActiveNotification] {
+            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                guard let self, self.loadBlocked else { return }
+                self.load()
+            }
+        }
     }
 
     // MARK: - CRUD
@@ -100,10 +112,28 @@ final class ConversationStore: ObservableObject {
     // MARK: - Persistence
 
     private func load() {
-        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            loadBlocked = false
+            return
+        }
+        let data: Data
+        do {
+            data = try Data(contentsOf: fileURL)
+        } catch {
+            // Unreadable is not corrupt. The file is protected until the
+            // device is unlocked, so a launch while locked (a background
+            // download finishing, for example) cannot read it. Keep the file,
+            // save nothing over it, and retry when it becomes readable.
+            Diagnostics.shared.error(
+                "conversation read failed: \(error.localizedDescription)",
+                category: "conversations"
+            )
+            loadBlocked = true
+            return
+        }
+        loadBlocked = false
         let stored: [StoredConversation]
         do {
-            let data = try Data(contentsOf: fileURL)
             stored = try decoder.decode([StoredConversation].self, from: data)
         } catch {
             Diagnostics.shared.error(
@@ -122,12 +152,21 @@ final class ConversationStore: ObservableObject {
         // output become the conversation title (visible in History / Home).
         // Strip any reasoning so the list reads cleanly.
         var changed = false
-        conversations = stored.map { conv in
+        let loaded: [StoredConversation] = stored.map { conv in
             guard conv.title.contains("<think>") else { return conv }
             var c = conv
             c.title = Self.stripReasoningFromTitle(conv.title)
             changed = true
             return c
+        }
+        // Chats started while the load was blocked exist only in memory.
+        let unsaved = conversations
+        if unsaved.isEmpty {
+            conversations = loaded
+        } else {
+            conversations = (unsaved + loaded.filter { l in !unsaved.contains { $0.id == l.id } })
+                .sorted { $0.updatedAt > $1.updatedAt }
+            changed = true
         }
         if changed { scheduleSave() }
     }
@@ -146,6 +185,7 @@ final class ConversationStore: ObservableObject {
     }
 
     private func scheduleSave() {
+        guard !loadBlocked else { return }
         saveTask?.cancel()
         // Snapshot NOW, on the caller (the main actor, where every create/
         // update/delete/setTitle mutation happens). The debounced write then
@@ -202,6 +242,7 @@ final class ConversationStore: ObservableObject {
     /// background so the user's most recent turn isn't lost if the app is
     /// suspended/terminated within the 500 ms save window.
     func flush() {
+        guard !loadBlocked else { return }
         saveTask?.cancel()
         persist(conversations)
     }
@@ -242,9 +283,13 @@ final class ConversationStore: ObservableObject {
         guard let conv = conversations.first(where: { $0.id == id }) else {
             return ([], false)
         }
-        let all = conv.messages.map(\.chatMessage)
-        if all.count <= pageSize { return (all, false) }
-        return (Array(all.suffix(pageSize)), true)
+        let count = max(0, pageSize)
+        if conv.messages.count <= count {
+            return (conv.messages.map(\.chatMessage), false)
+        }
+        // Slice the stored transcript before restoring display messages. Long
+        // histories should only allocate/convert the page the caller needs.
+        return (conv.messages.suffix(count).map(\.chatMessage), conv.messages.count > count)
     }
 
     /// Returns the next-older window of messages for incremental scroll-back.
@@ -252,10 +297,10 @@ final class ConversationStore: ObservableObject {
     /// can paginate without keeping cursors).
     func olderMessages(for id: UUID, before: Int, pageSize: Int = 200) -> [ChatMessage] {
         guard let conv = conversations.first(where: { $0.id == id }) else { return [] }
-        let all = conv.messages.map(\.chatMessage)
-        let endIdx = Swift.max(0, all.count - before)
-        let startIdx = Swift.max(0, endIdx - pageSize)
-        return Array(all[startIdx..<endIdx])
+        let offset = min(conv.messages.count, max(0, before))
+        let endIdx = conv.messages.count - offset
+        let count = min(endIdx, max(0, pageSize))
+        return conv.messages[(endIdx - count)..<endIdx].map(\.chatMessage)
     }
 }
 
@@ -331,6 +376,9 @@ struct StoredMessage: Codable {
     var generationModelID: String?
     var generationExecutionLocation: ModelExecutionLocation?
     var hitTokenLimit: Bool?
+    /// The reply was stopped, or was still streaming when it was saved.
+    /// Optional keeps conversations written by older builds decodable.
+    var wasInterrupted: Bool?
 
     init(_ msg: ChatMessage) {
         self.id = msg.id
@@ -343,6 +391,7 @@ struct StoredMessage: Codable {
         self.generationModelID = msg.generationModelID
         self.generationExecutionLocation = msg.generationExecutionLocation
         self.hitTokenLimit = msg.hitTokenLimit
+        self.wasInterrupted = (msg.wasInterrupted || msg.isStreaming) ? true : nil
     }
 
     var chatMessage: ChatMessage {
@@ -352,6 +401,7 @@ struct StoredMessage: Codable {
             content: content,
             modelContent: modelContent,
             timestamp: timestamp,
+            wasInterrupted: wasInterrupted ?? false,
             generationTokensPerSecond: generationTokensPerSecond,
             generationDuration: generationDuration,
             generationModelID: generationModelID,

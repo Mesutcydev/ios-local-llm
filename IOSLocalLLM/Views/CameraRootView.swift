@@ -37,7 +37,6 @@ struct CameraRootView: View {
     @State private var panelDetent: PresentationDetent = .fraction(0.55)
     @State private var captureButtonScale: CGFloat = 1.0
     @State private var showHistory = false
-    @State private var showDownloadCenter = false
     @State private var showDocumentScanner = false
     @State private var showVisualModelPicker = false
     @State private var didCopyCaption = false
@@ -58,6 +57,9 @@ struct CameraRootView: View {
     /// hitting on cold launch. Tap-to-start makes the lens tab itself
     /// always safe; the model only runs when the user asks for it.
     @State private var hasStartedLiveLoop: Bool = false
+    /// User-toggled continuous captioning. Unlike the short post-capture
+    /// burst it runs until turned off, with the same interval/thermal gates.
+    @State private var liveMode = false
     @State private var lensPanelState: LensPanelState = .collapsed
     @State private var selectedLensMode: LensMode = .ask
     @FocusState private var lensPromptFocused: Bool
@@ -66,54 +68,63 @@ struct CameraRootView: View {
     private static let liveCaptionFollowUpLimit = 2
     private static let minimumLiveCaptionIntervalMS = 6_000
     private static let maximumLiveCaptionIntervalMS = 30_000
+    /// Pause between Live captions (after the previous one finishes).
+    private static let liveModeGapMS = 1_500
 
     private var activeMode: AnalysisMode {
         AnalysisMode(rawValue: settings.analysisMode) ?? .code
     }
 
-    /// Short label for the HUD's VLM pill — switches from "fastvlm" to the
-    /// downloaded model's short name as soon as the user picks a non-default
-    /// VLM in VisualModelPickerView. Previously the pill was hard-coded to
-    /// "vlm" and always read FastVLM state, so picking SmolVLM gave no
-    /// visible confirmation that the routing had changed.
-    ///
-    /// FastVLM honesty: when the user is on the default (FastVLM) route but
-    /// the decoder/projector/tokenizer aren't actually ready — only the
-    /// encoder is — the pill reads "fastvlm·enc" instead of "fastvlm", so
-    /// users don't think the full visual-language pipeline is online.
+    /// OCR is built in; image descriptions use an explicitly selected model.
     private var activeVLMLabel: String {
         let selectionID = LocalModelRegistry.storedVisionSelectionID(settings.cameraVisualModelID)
         if LocalModelRegistry.isDefaultVisionSelection(selectionID) {
-            let s = analysis.fastVLMStatus
-            // Encoder up, but the decoder side isn't — be honest about it.
-            if s.encoder.isReady && !s.canGenerate { return "fastvlm·enc" }
-            return "fastvlm"
+            return LocalizationService.shared.t("text recognition")
         }
-        let lastComponent = selectionID.split(separator: "/").last.map(String.init) ?? selectionID
-        return lastComponent
-            .lowercased()
-            .replacingOccurrences(of: "-", with: "")
-            .replacingOccurrences(of: "_", with: "")
-            .prefix(12)
-            .description
+        // The catalog's display name; the header truncates it if needed.
+        return selectedVLMEntry?.displayName
+            ?? selectionID.split(separator: "/").last.map(String.init)
+            ?? selectionID
     }
 
-    /// Ready state for whichever VLM `activeVLMLabel` represents. Reads
-    /// MLXVisionService.shared lazily (NOT observed — see the comment on
-    /// the `mlxVision` property removal above).
-    ///
-    /// For FastVLM, "ready" means the full pipeline can generate — not
-    /// merely that the encoder loaded. With an encoder-only build the HUD
-    /// pill stays dim, signalling that visual descriptions won't actually
-    /// stream until the rest of the pipeline lands.
+    /// Catalog entry behind the Lens selection, when it has one.
+    private var selectedVLMEntry: DownloadableModel? {
+        let id = LocalModelRegistry.storedVisionSelectionID(settings.cameraVisualModelID)
+        return ModelDownloadCenter.shared.models.first { $0.id == id || $0.sourceRepoID == id }
+    }
+
+    /// The selected vision model is in the catalog but not on this device.
+    private var activeVLMMissing: Bool {
+        guard let entry = selectedVLMEntry else { return false }
+        return !entry.isReady && !entry.state.isActive
+    }
+
+    /// Built-in OCR is ready for code mode without model residency.
     private var activeVLMReady: Bool {
         if LocalModelRegistry.isDefaultVisionSelection(
             LocalModelRegistry.storedVisionSelectionID(settings.cameraVisualModelID)
         ) {
-            return analysis.fastVLMStatus.canGenerate
+            return activeMode == .code
         }
-        if case .ready = MLXVisionService.shared.state { return true }
+        if case .ready = selectedVisionState { return true }
         return false
+    }
+
+    /// State of the backend the Lens selection actually routes to. GGUF
+    /// models (LFM3 Omni, SmolVLM2) run on llama.cpp, so reading only
+    /// MLXVisionService left their pill grey and hid load failures.
+    private var selectedVisionState: LensInferenceLoop.State {
+        let id = LocalModelRegistry.storedVisionSelectionID(settings.cameraVisualModelID)
+        guard LocalModelRegistry.visionRuntime(
+            forStoredSelectionID: id, catalog: ModelDownloadCenter.shared.models
+        ) == .llamaCpp else { return MLXVisionService.shared.state }
+        switch LlamaCppVLMService.shared.state {
+        case .unloaded: return .unloaded
+        case .loading(let message): return .loading(message)
+        case .ready: return .ready
+        case .generating: return .generating
+        case .failed(let message): return .failed(message)
+        }
     }
 
     /// Compact thumbnail of the exact image MLX last received, with
@@ -166,13 +177,13 @@ struct CameraRootView: View {
                     Label {
                         Text(activeVLMLabel)
                             .lineLimit(1)
-                            .truncationMode(.middle)
+                            .truncationMode(.tail)
                     } icon: {
                         Image(systemName: "cpu")
                     }
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white)
-                    Text(activeVLMReady ? "Ready · On-device" : "On-device")
+                    Text(activeVLMMissing ? "Model not installed" : (activeVLMReady ? "Ready · On-device" : "On-device"))
                         .font(.caption2)
                         .foregroundStyle(.white.opacity(0.72))
                 }
@@ -207,7 +218,7 @@ struct CameraRootView: View {
         let readyVLMs = lensTopStripReadyVLMs()
 
         Section(loc.t("vision model")) {
-            // FastVLM default — always present in the menu, even when
+            // Built-in OCR — always present in the menu, even when
             // not fully installed. Picking it while it's not installed
             // surfaces a toast via applySelection's install-status
             // check; better that than hiding the canonical option.
@@ -216,9 +227,9 @@ struct CameraRootView: View {
                 Task { await VisualModelPickerView.applySelection(LocalModelRegistry.defaultVisionSelectionID) }
             } label: {
                 if LocalModelRegistry.isDefaultVisionSelection(current) {
-                    Label("FastVLM (built-in)", systemImage: "checkmark")
+                    Label("Text recognition (OCR)", systemImage: "checkmark")
                 } else {
-                    Text("FastVLM (built-in)")
+                    Text("Text recognition (OCR)")
                 }
             }
 
@@ -275,12 +286,9 @@ struct CameraRootView: View {
         if LocalModelRegistry.isDefaultVisionSelection(
             LocalModelRegistry.storedVisionSelectionID(settings.cameraVisualModelID)
         ) {
-            let status = analysis.fastVLMStatus
-            if status.canGenerate { return T.good }
-            if status.isLoading   { return T.warn }
-            return T.ink3
+            return activeMode == .code ? T.good : T.ink3
         }
-        switch MLXVisionService.shared.state {
+        switch selectedVisionState {
         case .ready:      return T.good
         case .generating: return T.accent
         case .loading:    return T.warn
@@ -299,7 +307,7 @@ struct CameraRootView: View {
         // false → the .task(id:) is cancelled → its `defer` clears the
         // keep-awake. This is the reliable replacement for the unreliable
         // iOS-18 .onDisappear teardown.
-        "\(activeMode.rawValue)-\(settings.smolVLMIntervalMS)-\(hasStartedLiveLoop)-\(isLensActive)"
+        "\(activeMode.rawValue)-\(settings.smolVLMIntervalMS)-\(hasStartedLiveLoop)-\(liveMode)-\(isLensActive)"
     }
 
     @State private var pinchInitialZoom: CGFloat? = nil
@@ -326,6 +334,15 @@ struct CameraRootView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea(.all)
 
+            if camera.error == nil, let paused = camera.interruptionMessage {
+                Label(paused, systemImage: "pause.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .padding(AppSpacing.large)
+                    .appPanel(cameraSafe: true)
+                    .padding(AppSpacing.xLarge)
+                    .accessibilityIdentifier("lens.camera.paused")
+            }
+
             if let cameraError = camera.error {
                 VStack(spacing: AppSpacing.medium) {
                     Image(systemName: "camera.fill")
@@ -341,7 +358,7 @@ struct CameraRootView: View {
                             guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
                             UIApplication.shared.open(url)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.kPrimary)
                         .controlSize(.large)
                     }
                 }
@@ -437,6 +454,7 @@ struct CameraRootView: View {
             VStack {
                 lensTopBar
                     .padding(.horizontal, 16)
+                    .avoidingDisplayDivision()
                     .padding(.top, 12)
                 Spacer()
             }
@@ -464,17 +482,6 @@ struct CameraRootView: View {
                     .allowsHitTesting(false)
             }
 
-            // Setup banner — only relevant for FastVLM (code-mode default).
-            // The Download Center already toasts on completion, so this is
-            // strictly a "no model yet" affordance.
-            VStack {
-                Spacer().frame(height: 168)
-                SetupBannerView { showDownloadCenter = true }
-                    .padding(.horizontal, 16)
-                Spacer()
-            }
-            .animation(.easeOut(duration: 0.25), value: analysis.fastVLMLoaded)
-
             // Code Mode framing guide — a centred capture rectangle with a
             // "tap to capture" hint, replacing the old detection-count chip.
             // Tells the user to frame the code and shoot; nothing streams
@@ -488,6 +495,7 @@ struct CameraRootView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             lensBottomControls
                 .padding(.horizontal, AppSpacing.medium)
+                .avoidingDisplayDivision()
                 .padding(.bottom, AppSpacing.small)
         }
         .sheet(isPresented: $showAnalysisPanel, onDismiss: {
@@ -513,9 +521,6 @@ struct CameraRootView: View {
         }
         .sheet(isPresented: $showHistory) {
             AnalysisHistoryView(analysis: analysis, openPanel: $showAnalysisPanel)
-        }
-        .sheet(isPresented: $showDownloadCenter) {
-            ModelDownloadCenterView()
         }
         .sheet(isPresented: $showVisualModelPicker) {
             VisualModelPickerView()
@@ -551,7 +556,7 @@ struct CameraRootView: View {
         // some devices. Tap-to-start keeps the lens tab itself always
         // safe — MLX only runs when the user explicitly asks.
         .task(id: liveLoopKey) {
-            guard activeMode == .visual, hasStartedLiveLoop, isLensActive else { return }
+            guard activeMode == .visual, hasStartedLiveLoop || liveMode, isLensActive else { return }
             // Keep the screen awake while the follow-up burst runs — auto-lock
             // would background the app and kill in-flight GPU work. The
             // defer restores it on every exit (tab leave, mode switch,
@@ -559,6 +564,30 @@ struct CameraRootView: View {
             // background observer force-clears it as a backstop.
             DeviceSafetyMonitor.shared.setKeepAwake(true, reason: "lens-live-loop")
             defer { DeviceSafetyMonitor.shared.setKeepAwake(false, reason: "lens-live-loop") }
+            if liveMode {
+                // Back-to-back small captions (AnalysisService.liveSized):
+                // next one starts a short gap after the last finishes, 3×
+                // longer when warm or in Low Power, none while unsafe.
+                while !Task.isCancelled {
+                    let safety = DeviceSafetyMonitor.shared
+                    if !safety.shouldStopHeavyWork, !analysis.isAnalyzing {
+                        analysis.captureAndAnalyzeBest(live: true)
+                    }
+                    while analysis.isAnalyzing, !Task.isCancelled {
+                        try? await Task.sleep(for: .milliseconds(200))
+                    }
+                    // A hard error (no model files, load failure, camera
+                    // denied) won't fix itself; show it once, stop retrying.
+                    if !Task.isCancelled, lensErrorText != nil {
+                        liveMode = false
+                        lensPanelState = .error
+                        return
+                    }
+                    let gap = Self.liveModeGapMS * (safety.shouldThrottle || safety.lowPowerMode ? 3 : 1)
+                    try? await Task.sleep(for: .milliseconds(gap))
+                }
+                return
+            }
             var remainingFollowUps = Self.liveCaptionFollowUpLimit
             while !Task.isCancelled, remainingFollowUps > 0 {
                 let safety = DeviceSafetyMonitor.shared
@@ -626,7 +655,6 @@ struct CameraRootView: View {
         // doesn't stutter speech (see LensVoiceNarrator.swift).
         .onAppear {
             selectedLensMode = currentLensMode
-            ModelPrefetcher.shared.recordCameraOpen()
             if settings.voiceSpeakInLens {
                 LensVoiceNarrator.shared.activate()
             }
@@ -652,11 +680,14 @@ struct CameraRootView: View {
         // old mode owned before the new mode can lazy-load its model.
         .onChange(of: settings.analysisMode) { _, new in
             if new != AnalysisMode.visual.rawValue {
-                hasStartedLiveLoop = false
+                hasStartedLiveLoop = false; liveMode = false
+                // Code mode reviews with the Assistant; keep a shared Omni.
+                CodingAssistantService.shared.adoptLensRuntime()
                 MLXVisionService.shared.unload()
                 LlamaCppVLMService.shared.unload()
                 FastVLMService.shared.unload()
             } else {
+                LlamaCppVLMService.shared.adoptAssistantRuntime()
                 CodingAssistantService.shared.unload()
             }
         }
@@ -667,7 +698,7 @@ struct CameraRootView: View {
         // teardown is the isLensActive change below; this stays as a backstop
         // for the cases where it does fire (app teardown, sheet cover).
         .onDisappear {
-            hasStartedLiveLoop = false
+            hasStartedLiveLoop = false; liveMode = false
             lensPromptFocused = false
             KeyboardDismiss.now()
             analysis.cancelCurrentAnalysis()
@@ -679,7 +710,7 @@ struct CameraRootView: View {
         // and its defer clears the keep-awake — so nothing outlives the tab.
         .onChange(of: isLensActive) { _, active in
             if !active {
-                hasStartedLiveLoop = false
+                hasStartedLiveLoop = false; liveMode = false
                 lensPromptFocused = false
                 KeyboardDismiss.now()
                 analysis.cancelCurrentAnalysis()
@@ -690,6 +721,9 @@ struct CameraRootView: View {
             }
         }
         .onChange(of: analysis.isAnalyzing) { _, analyzing in
+            // Live captions update the overlay in place; no photo-style
+            // processing → answer card flips (or haptics) per refresh.
+            guard !liveMode else { return }
             if analyzing {
                 withAnimation(AppAnimation.state) { lensPanelState = .analyzing }
                 return
@@ -715,8 +749,12 @@ struct CameraRootView: View {
         .onChange(of: photoItem) { _, item in
             guard let item else { return }
             Task {
+                // Decode off the main thread and downsampled: a full-size
+                // 48 MP decode here froze the UI and cost ~190 MB per copy.
                 if let data = try? await item.loadTransferable(type: Data.self),
-                   let img = UIImage(data: data) {
+                   let img = await Task.detached(priority: .userInitiated, operation: {
+                       AnalysisService.downsampledImage(from: data)
+                   }).value {
                     await MainActor.run {
                         if activeMode != .visual {
                             settings.analysisMode = AnalysisMode.visual.rawValue
@@ -751,7 +789,9 @@ struct CameraRootView: View {
     @ViewBuilder
     private var lensBottomControls: some View {
         VStack(spacing: AppSpacing.medium) {
-            if activeMode == .visual {
+            if activeMode == .visual, liveMode {
+                liveCaptionCard
+            } else if activeMode == .visual {
                 LensTaskPanel(
                     state: $lensPanelState,
                     mode: $selectedLensMode,
@@ -793,7 +833,7 @@ struct CameraRootView: View {
                 .appPanel(cameraSafe: true)
             }
 
-            if lensPanelState == .collapsed || activeMode == .code {
+            if (lensPanelState == .collapsed && !liveMode) || activeMode == .code {
                 shutterRow
                     .padding(.horizontal, AppSpacing.large)
                     .transition(.opacity.combined(with: .scale(scale: 0.94)))
@@ -822,12 +862,17 @@ struct CameraRootView: View {
         KeyboardDismiss.now()
         withAnimation(AppAnimation.state) { lensPanelState = .captured }
         HapticManager.capture()
-        analysis.captureAndAnalyzeBest()
+        guard analysis.captureAndAnalyzeBest() else {
+            withAnimation(AppAnimation.state) { lensPanelState = .collapsed }
+            ToastCenter.shared.error("Nothing captured", detail: analysis.statusMessage)
+            return
+        }
         hasStartedLiveLoop = true
         withAnimation(AppAnimation.state) { lensPanelState = .analyzing }
     }
 
     private func cancelLensAnalysis() {
+        liveMode = false   // Cancel means stop, not "skip one caption".
         analysis.cancelCurrentAnalysis()
         lensPromptFocused = false
         KeyboardDismiss.now()
@@ -904,45 +949,12 @@ struct CameraRootView: View {
     }
 
     private func missingVisionModelButtonLabel(hasSelection: Bool) -> String {
-        guard !hasSelection,
-              let model = ModelDownloadCenter.shared.fastvlmModel else {
-            return "open models"
-        }
-        switch model.state {
-        case .ready:
-            return "load fastvlm 0.5b"
-        case .enumerating, .downloading:
-            return "view fastvlm download"
-        case .failed:
-            return "retry fastvlm download"
-        case .idle:
-            return "download fastvlm 0.5b · ~400 mb"
-        }
+        "open models"
     }
 
     private func handleMissingVisionModelAction(hasSelection: Bool) {
-        guard !hasSelection else {
-            AppBridge.shared.requestModels(.lens)
-            return
-        }
-        guard let model = ModelDownloadCenter.shared.fastvlmModel else {
-            ToastCenter.shared.error("FastVLM unavailable",
-                                     detail: "The model catalog could not be loaded.")
-            AppBridge.shared.requestModels(.lens)
-            return
-        }
-        switch model.state {
-        case .ready:
-            Task { await FastVLMService.shared.load() }
-        case .enumerating, .downloading:
-            AppBridge.shared.requestModels(.lens)
-        case .idle, .failed:
-            model.start()
-            AppBridge.shared.requestModels(.lens)
-        }
+        AppBridge.shared.requestModels(.lens)
     }
-
-
 
     /// Hands `text` to the system share sheet. The camera tab is presented
     /// edge-to-edge with no NavigationStack, so we resolve the topmost
@@ -971,18 +983,18 @@ struct CameraRootView: View {
     }
 
     /// True when the active VLM can take natural-language prompts (basically:
-    /// any MLX VLM, or FastVLM when the full decoder is ready). OCR-only
+    /// an explicitly selected vision model). OCR-only
     /// fallback paths get hidden chips since the model can't actually obey.
     private var supportsPromptPresets: Bool {
         if !LocalModelRegistry.isDefaultVisionSelection(
             LocalModelRegistry.storedVisionSelectionID(settings.cameraVisualModelID)
         ) { return true }
-        return analysis.fastVLMStatus.canGenerate
+        return false
     }
 
     /// True when the active visual model has no inference path available
     /// right now — either the selected MLX VLM failed to load, or the user
-    /// is on the FastVLM default and the pipeline isn't ready. In that case
+    /// has selected built-in OCR in image-description mode. In that case
     /// the capture button is disabled and routes to the download/picker
     /// flow instead of swallowing a tap.
     private var visualModelMissing: Bool {
@@ -992,14 +1004,15 @@ struct CameraRootView: View {
             LocalModelRegistry.storedVisionSelectionID(settings.cameraVisualModelID)
         ) {
             // User picked an MLX VLM: must be loaded, or fail honestly.
+            // MLX only: a failed llama.cpp run keeps weights resident and
+            // tryLlamaCppVisionPath retries it, so don't disable capture.
             if case .failed = MLXVisionService.shared.state { return true }
-            if case .ready = MLXVisionService.shared.state { return false }
             // .loading/.unloaded/.generating count as "still warming" — allow
             // taps so users can re-trigger after the model finishes warming.
             return false
         }
-        // Default FastVLM route: needs the full pipeline, not just encoder.
-        return !analysis.fastVLMStatus.canGenerate
+        // OCR cannot provide general image descriptions.
+        return true
     }
 
     // MARK: - Code Mode capture
@@ -1031,8 +1044,94 @@ struct CameraRootView: View {
         HStack(spacing: 10) {
             lensCircleButton("xmark") { onClose() }
             lensTopStrip
+            if activeMode == .visual { liveModeButton }
             lensMoreMenu
         }
+    }
+
+    /// Top bar, not the shutter row: the shutter hides behind every answer
+    /// card, and in live mode an answer card is almost always showing.
+    private var liveModeButton: some View {
+        Button {
+            HapticManager.impact(.light)
+            if liveMode { stopLiveMode(); return }
+            guard !visualModelMissing else {
+                ToastCenter.shared.info("Choose a vision model first",
+                                        detail: "Live mode describes the camera with a vision model.")
+                return
+            }
+            // Drop any photo answer so the overlay starts fresh; the loop
+            // takes the first caption immediately.
+            analysis.cancelCurrentAnalysis()
+            lensPromptFocused = false
+            KeyboardDismiss.now()
+            lastCaption = ""
+            lensPanelState = .collapsed
+            liveMode = true
+        } label: {
+            Image(systemName: "livephoto")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.white)
+                .symbolEffect(.pulse, isActive: liveMode)
+                .frame(width: 44, height: 44)
+                .background(Circle().fill(liveMode ? Color.red : Color.clear))
+                .glassSurface(.toolbarButton, cornerRadius: 22)
+                .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Live mode")
+        .accessibilityValue(liveMode ? "On" : "Off")
+        .accessibilityHint("Keeps describing what the camera sees until you turn it off")
+        .accessibilityIdentifier("lens.live")
+    }
+
+    private func stopLiveMode() {
+        liveMode = false
+        hasStartedLiveLoop = false
+        analysis.cancelCurrentAnalysis()
+        lensPanelState = .collapsed
+    }
+
+    /// Newest caption text: the one streaming now, else the last finished
+    /// one, so the overlay never blanks between refreshes.
+    private var liveCaptionText: String {
+        if let streaming = analysis.activeResult?.extractedCode, !streaming.isEmpty {
+            return String(streaming.prefix(Self.captionMaxChars))
+        }
+        return lastCaption.isEmpty
+            ? (analysis.activeResult?.fallbackReason ?? "")
+            : lastCaption
+    }
+
+    private var liveCaptionCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.small) {
+            HStack {
+                Label("LIVE", systemImage: "circle.fill")
+                    .font(AppTypography.eyebrow)
+                    .foregroundStyle(.red)
+                    .symbolEffect(.pulse)
+                Spacer()
+                Button("Stop", systemImage: "stop.fill") {
+                    HapticManager.impact(.light)
+                    stopLiveMode()
+                }
+                .buttonStyle(.kSecondary)
+                .controlSize(.small)
+                .tint(.white)
+                .accessibilityIdentifier("lens.live.stop")
+            }
+            Text(liveCaptionText.isEmpty ? "Looking…" : liveCaptionText)
+                .font(.headline)
+                .foregroundStyle(.white)
+                .lineLimit(4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentTransition(.opacity)
+                .animation(.easeOut(duration: 0.2), value: liveCaptionText)
+                .accessibilityAddTraits(.updatesFrequently)
+                .accessibilityIdentifier("lens.live.caption")
+        }
+        .padding(AppSpacing.large)
+        .appPanel(cameraSafe: true)
     }
 
     private func lensCircleButton(_ icon: String, action: @escaping () -> Void) -> some View {
@@ -1516,10 +1615,10 @@ enum LensMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var label: String {
         switch self {
-        case .ask: return "Ask"
-        case .translate: return "Translate"
-        case .scan: return "Scan"
-        case .solve: return "Solve"
+        case .ask: return LocalizationService.shared.t("Ask")
+        case .translate: return LocalizationService.shared.t("Translate")
+        case .scan: return LocalizationService.shared.t("Scan")
+        case .solve: return LocalizationService.shared.t("Solve")
         }
     }
     var question: String {

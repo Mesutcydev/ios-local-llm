@@ -65,6 +65,12 @@ final class SnippetStore: ObservableObject {
         persist()
     }
 
+    /// Clears persisted and live user content so a later save cannot restore it.
+    func clearAllForWipe() {
+        snippets.removeAll()
+        UserDefaults.standard.removeObject(forKey: storageKey)
+    }
+
     // MARK: - Persistence
 
     private func load() {

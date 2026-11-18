@@ -152,7 +152,7 @@ final class SpeechAlignmentTests: XCTestCase {
 
     func testStaleAlignmentRejectedByGeneration() {
         let c = SpeechPlaybackCoordinator.shared
-        c.beginUtterance(karaokeSeed: "Old")
+        c.beginUtterance(chunks: ["Old"])
         c.interrupt()
         XCTAssertEqual(c.snapshot.phase, .interrupted)
         XCTAssertNil(c.snapshot.activeUTF16Range)

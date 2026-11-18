@@ -5,6 +5,7 @@ import SwiftUI
 // Results can be downloaded into the app's Documents folder via HFModelDownloadManager.
 
 struct HFSearchView: View {
+    @ObservedObject private var loc = LocalizationService.shared
 
     @StateObject private var search: HFSearchService
     private let estimateSizes: Bool
@@ -41,12 +42,12 @@ struct HFSearchView: View {
             }
             .refreshable { await search.search(query: query, filter: filter) }
             .background(LiquidPinkBackdrop())
-            .navigationTitle("Find Models")
+            .navigationTitle("Find Models".tr)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
+                    Button("Done".tr, systemImage: "checkmark") { dismiss() }
                         .foregroundColor(T.ink)
                 }
             }
@@ -107,18 +108,18 @@ struct HFSearchView: View {
                 // Show "N of M" when the compatibility filter is hiding some,
                 // so filtered-out results aren't silently uncounted.
                 Text(results.count == search.results.count
-                     ? "\(results.count) models"
-                     : "\(results.count) of \(search.results.count)")
+                     ? "\(results.count) \((results.count == 1 ? "model" : "models").tr)"
+                     : "\(results.count) / \(search.results.count)")
                     .font(T.sans(12))
                     .foregroundColor(T.ink3)
             }
 
             Toggle(isOn: $showOnlyCompatible) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Fits this device")
+                    Text("Fits this device".tr)
                         .font(T.sans(14, .medium))
                         .foregroundColor(T.ink)
-                    Text("Hide models that cannot run on this device")
+                    Text("Hide models that cannot run on this device".tr)
                         .font(T.sans(11))
                         .foregroundColor(T.ink3)
                 }
@@ -155,7 +156,7 @@ struct HFSearchView: View {
                     .foregroundColor(T.ink3)
                 KMono(text: "search failed", size: 12, color: T.ink2)
                 Button("Retry") { scheduleSearch() }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.kSecondary)
                 Text(err)
                     .font(T.sans(11))
                     .foregroundColor(T.ink3)
@@ -222,8 +223,8 @@ struct HFSearchView: View {
                         .buttonStyle(.plain)
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .kGlass(cornerRadius: 18, fallbackFill: T.surface, fallbackStroke: T.glassBorder)
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
+                .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.glassBorder)
                 .padding(.horizontal, 16)
 
                 infoBox
@@ -237,7 +238,7 @@ struct HFSearchView: View {
     private let curated: [String] = [
         "mlx-community qwen", "mlx-community llama", "mlx-community mistral",
         "mlx-community gemma", "mlx-community phi", "kokoro tts",
-        "fastvlm", "whisper coreml"
+        "whisper coreml"
     ]
 
     private var infoBox: some View {
@@ -256,7 +257,7 @@ struct HFSearchView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(14)
-        .kGlass(cornerRadius: 18, fallbackFill: T.surface, fallbackStroke: T.glassBorder)
+        .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.glassBorder)
     }
 
     // MARK: - Debounced search
@@ -274,6 +275,7 @@ struct HFSearchView: View {
 // MARK: - HFSearchRow
 
 struct HFSearchRow: View {
+    @ObservedObject private var loc = LocalizationService.shared
     let model: HFModelSummary
     private let estimateSize: Bool
 
@@ -411,7 +413,7 @@ struct HFSearchRow: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .kGlass(cornerRadius: 22, fallbackFill: T.surface, fallbackStroke: T.glassBorder)
+        .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface, fallbackStroke: T.glassBorder)
         .sheet(isPresented: $showPreflight) { installationPreflight }
         .task {
             if estimateSize && !didFetchSize {
@@ -442,29 +444,30 @@ struct HFSearchRow: View {
             Form {
                 Section(model.modelName) {
                     Text(model.id)
-                    LabeledContent("Format", value: chipTags.first ?? "Check repository")
-                    LabeledContent("Estimated download", value: estimatedSize?.formattedBytes ?? "Unknown")
-                    LabeledContent("Available storage", value: HFModelDownloadManager.freeDiskBytes()?.formattedBytes ?? "Unknown")
+                    LabeledContent("Format".tr, value: chipTags.first ?? "Check repository".tr)
+                    LabeledContent("Estimated download".tr, value: estimatedSize?.formattedBytes ?? "Unknown".tr)
+                    LabeledContent("Available storage".tr, value: HFModelDownloadManager.freeDiskBytes()?.formattedBytes ?? "Unknown".tr)
                     if let params = OnDeviceCompatibility.paramCount(repoID: model.id) {
-                        LabeledContent("Estimated memory", value: OnDeviceCompatibility.estimatedFootprint(
+                        LabeledContent("Estimated memory".tr, value: OnDeviceCompatibility.estimatedFootprint(
                             params: params, tags: model.tags, repoID: model.id).formattedBytes)
                     } else {
-                        LabeledContent("Estimated memory", value: "Unknown")
+                        LabeledContent("Estimated memory".tr, value: "Unknown".tr)
                     }
-                    Text("Size is a repository estimate and may include multiple variants. Runtime memory also depends on context length and other active features.")
+                    Text("Size is a repository estimate and may include multiple variants. Runtime memory also depends on context length and other active features.".tr)
                 }
-                Section("Device compatibility") { compatibilityBadge }
-                Section("License") {
-                    Text(model.licenseTag ?? "No license tag supplied. Review the repository's license before downloading.")
-                    if let url = model.hfURL { Link("Review model and license", destination: url) }
+                Section("Device compatibility".tr) { compatibilityBadge }
+                Section("License".tr) {
+                    Text(model.licenseTag ?? "No license tag supplied. Review the repository's license before downloading.".tr)
+                    if let url = model.hfURL { Link("Review model and license".tr, destination: url) }
                 }
                 Section {
-                    Button("Download model") { showPreflight = false; beginDownload() }
-                    Text("Downloads use your network. Installation does not change the active model; choose it in Models once it is ready.")
+                    Button("Download model".tr) { showPreflight = false; beginDownload() }
+                    Text("Downloads use your network. Installation does not change the active model; choose it in Models once it is ready.".tr)
                 }
             }
-            .navigationTitle("Before downloading")
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showPreflight = false } } }
+            .navigationTitle("Before downloading".tr)
+            .accessibilityIdentifier("model.downloadPreflight")
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel".tr, systemImage: "xmark") { showPreflight = false } } }
         }
     }
 
@@ -500,7 +503,7 @@ struct HFSearchRow: View {
                 Image(systemName: symbol)
                     .font(.system(size: 12, weight: .semibold))
                     .padding(.top, 1)
-                Text(text)
+                Text(text.tr)
                     .font(T.sans(12, .medium))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -518,6 +521,10 @@ struct HFSearchRow: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
             .fill(color.opacity(0.09)))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(text.tr)
+        .accessibilityHint(detail.tr)
+        .accessibilityIdentifier("model.compatibility.\(model.id)")
     }
 
     @ViewBuilder
@@ -549,7 +556,7 @@ struct HFSearchRow: View {
                 HStack(spacing: 4) {
                     Image(systemName: isFailed ? "arrow.clockwise" : "arrow.down")
                         .font(.system(size: 12, weight: .semibold))
-                    Text(isFailed ? "retry" : (isBlocked ? "incompatible" : "download"))
+                    Text((isFailed ? "retry" : (isBlocked ? "incompatible" : "download")).tr)
                         .font(T.sans(13, .semibold))
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -560,6 +567,7 @@ struct HFSearchRow: View {
                 .background(Capsule().fill(isBlocked ? T.ink3 : T.accentStrong))
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("model.download.\(model.id)")
             .disabled(isBlocked)
             .opacity(isBlocked ? 0.6 : 1)
         case .enumerating:
@@ -698,6 +706,6 @@ struct SearchRowSkeleton: View {
                 .shimmer(duration: 1.4)
         }
         .padding(16)
-        .kGlass(cornerRadius: 22, fallbackFill: T.surface)
+        .kGlass(cornerRadius: AppRadius.card, fallbackFill: T.surface)
     }
 }

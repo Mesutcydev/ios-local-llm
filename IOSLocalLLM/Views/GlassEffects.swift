@@ -44,13 +44,19 @@ private struct GlassSurfaceModifier: ViewModifier {
     let cornerRadius: CGFloat?
 
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.koduTheme) private var theme
+    @Environment(\.colorSchemeContrast) private var contrast
 
     @ViewBuilder
     func body(content: Content) -> some View {
         let radius = cornerRadius ?? role.radius
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
 
-        if #available(iOS 26.0, *), !reduceTransparency {
+        if theme.isDark || reduceTransparency || contrast == .increased {
+            content
+                .background(theme.isDark ? theme.surface : Color(uiColor: .secondarySystemBackground), in: shape)
+                .overlay(shape.strokeBorder(contrast == .increased ? theme.rule2 : theme.rule, lineWidth: 1))
+        } else if #available(iOS 26.0, *) {
             // Geometry-lock the optical layer so iOS 27 cannot use the glass'
             // ideal bounds to expand a flexible row or button. Only this
             // background is translucent; foreground content stays fully opaque.
@@ -133,10 +139,16 @@ private struct ShapeGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
     let role: GlassRole
 
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.koduTheme) private var theme
+    @Environment(\.colorSchemeContrast) private var contrast
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *), !reduceTransparency {
+        if theme.isDark || reduceTransparency || contrast == .increased {
+            content
+                .background(theme.isDark ? theme.surface : Color(uiColor: .secondarySystemBackground), in: shape)
+                .overlay(shape.strokeBorder(contrast == .increased ? theme.rule2 : theme.rule, lineWidth: 1))
+        } else if #available(iOS 26.0, *) {
             content.background {
                 GeometryReader { geometry in
                     Color.clear

@@ -4,7 +4,7 @@ import AVFoundation
 
 // MARK: - AudioTranscriptionService
 // Transcribes a local audio file using Apple's SFSpeechRecognizer in
-// on-device mode (no Apple Cloud round-trip when the device supports it).
+// on-device mode. Unsupported devices/locales fail without sending audio.
 // Whisper-Core ML can later be wired in here without changing the public API.
 //
 // Usage:
@@ -41,11 +41,9 @@ final class AudioTranscriptionService {
             ])
         }
 
-        let request = SFSpeechURLRecognitionRequest(url: fileURL)
-        request.shouldReportPartialResults = false
-        if #available(iOS 13.0, *), recognizer.supportsOnDeviceRecognition {
-            request.requiresOnDeviceRecognition = true
-        }
+        let request = try OnDeviceSpeechRequests.file(
+            url: fileURL, supportsOnDeviceRecognition: recognizer.supportsOnDeviceRecognition
+        )
 
         return try await withCheckedThrowingContinuation { continuation in
             recognizer.recognitionTask(with: request) { result, error in

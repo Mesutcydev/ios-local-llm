@@ -55,10 +55,10 @@ struct CodeModeView: View {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { showImage.toggle() }
                 } label: {
                     HStack(spacing: 6) {
-                        Image(systemName: showImage ? "chevron.down" : "chevron.right")
+                        Image(systemName: showImage ? "chevron.down" : "chevron.forward")
                             .font(.caption2.weight(.bold))
                         Text("capture")
-                            .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                            .scaledFont(size: 12, weight: .semibold, design: .monospaced)
                         Spacer()
                         if controller.phase == .extracting {
                             ProgressView().controlSize(.mini)
@@ -96,11 +96,11 @@ struct CodeModeView: View {
             }
             HStack(spacing: 6) {
                 Text(controller.selectedTask.hint)
-                    .font(.system(size: 11, design: .monospaced))
+                    .scaledFont(size: 11, design: .monospaced)
                     .foregroundStyle(T.ink3)
                 if controller.autoPickedDebug, controller.selectedTask == .debug {
                     Text("· auto-picked")
-                        .font(.system(size: 11, design: .monospaced))
+                        .scaledFont(size: 11, design: .monospaced)
                         .foregroundStyle(T.warn)
                 }
             }
@@ -115,7 +115,7 @@ struct CodeModeView: View {
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: task.systemImage).font(.system(size: 11, weight: .semibold))
-                Text(task.label).font(.system(size: 12, weight: .semibold, design: .monospaced))
+                Text(task.label).scaledFont(size: 12, weight: .semibold, design: .monospaced)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
@@ -137,17 +137,17 @@ struct CodeModeView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Text("extracted")
-                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .scaledFont(size: 12, weight: .semibold, design: .monospaced)
                     .foregroundStyle(T.ink3)
                 if let lang = controller.detectedLanguage {
                     Text(lang.lowercased())
-                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        .scaledFont(size: 11, weight: .medium, design: .monospaced)
                         .padding(.horizontal, 7).padding(.vertical, 2)
                         .background(Capsule().fill(T.accentSoft))
                         .foregroundStyle(T.accent)
                 }
                 Text("\(controller.lineCount) ln")
-                    .font(.system(size: 11, design: .monospaced))
+                    .scaledFont(size: 11, design: .monospaced)
                     .foregroundStyle(T.ink4)
                 Spacer()
                 Button {
@@ -166,7 +166,7 @@ struct CodeModeView: View {
 
             // Editable so the user can fix the odd OCR slip before reasoning.
             TextEditor(text: $controller.extractedCode)
-                .font(.system(size: 13, design: .monospaced))
+                .scaledFont(size: 13, design: .monospaced)
                 .foregroundStyle(T.ink)
                 .scrollContentBackground(.hidden)
                 .frame(minHeight: 120, maxHeight: 280)
@@ -207,7 +207,7 @@ struct CodeModeView: View {
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(T.accent)
                         Text(controller.selectedTask.label)
-                            .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                            .scaledFont(size: 12, weight: .semibold, design: .monospaced)
                             .foregroundStyle(T.ink3)
                         if controller.isReasoning {
                             ProgressView().controlSize(.mini)
@@ -216,7 +216,7 @@ struct CodeModeView: View {
                     }
                     if controller.taskOutput.isEmpty && controller.isReasoning {
                         Text("Thinking…")
-                            .font(.system(size: 13, design: .monospaced))
+                            .scaledFont(size: 13, design: .monospaced)
                             .foregroundStyle(T.ink3)
                     } else {
                         MarkdownTextView(markdown: controller.taskOutput)
@@ -232,7 +232,7 @@ struct CodeModeView: View {
     private func calloutCard(icon: String, tint: Color, text: String) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon).foregroundStyle(tint)
-            Text(text).font(.system(size: 13)).foregroundStyle(T.ink2)
+            Text(text).scaledFont(size: 13).foregroundStyle(T.ink2)
             Spacer()
         }
         .padding(12)
@@ -275,7 +275,7 @@ struct CodeModeView: View {
         Button(action: action) {
             VStack(spacing: 3) {
                 Image(systemName: systemImage).font(.system(size: 15, weight: .semibold))
-                Text(title).font(.system(size: 10, weight: .semibold))
+                Text(title).scaledFont(size: 10, weight: .semibold)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 9)
@@ -316,7 +316,7 @@ struct CodeFramingGuide: View {
                         .font(.system(size: 18, weight: .semibold))
                         .symbolEffect(.pulse, isActive: busy)
                     Text(busy ? "capturing…" : "frame code · tap to capture")
-                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                        .scaledFont(size: 12, weight: .semibold, design: .monospaced)
                 }
                 .foregroundStyle(.white.opacity(0.85))
                 .padding(.horizontal, 14).padding(.vertical, 8)

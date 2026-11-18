@@ -92,7 +92,7 @@ struct VisualModelComparisonView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }.foregroundColor(T.ink)
+                    Button("Done", systemImage: "checkmark") { dismiss() }.foregroundColor(T.ink)
                 }
             }
             .onChange(of: photoSelection) { _, newValue in
@@ -107,7 +107,7 @@ struct VisualModelComparisonView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             KCaption(text: "CAMERA · A/B")
-            KPageTitle(title: "compare vlms", size: 24)
+            KPageTitle(title: "compare vlms", size: 28)
             KMono(text: "run two models on the same image to see which suits you",
                   size: 11, color: T.ink3)
                 .padding(.top, 2)
@@ -263,9 +263,9 @@ struct VisualModelComparisonView: View {
 
     private func verdictLabel(_ outcome: ModelArenaStore.Outcome) -> String {
         switch outcome {
-        case .aWins: return "\(arenaName(ranLeftID)) wins — recorded to standings"
-        case .bWins: return "\(arenaName(ranRightID)) wins — recorded to standings"
-        case .tie:   return "tie — recorded to standings"
+        case .aWins: return LocalizationService.shared.t("\(arenaName(ranLeftID)) wins — recorded to standings")
+        case .bWins: return LocalizationService.shared.t("\(arenaName(ranRightID)) wins — recorded to standings")
+        case .tie:   return LocalizationService.shared.t("tie — recorded to standings")
         }
     }
 
@@ -426,7 +426,7 @@ struct VisualModelComparisonView: View {
     /// button so the user isn't left wondering why nothing happens. Empty
     /// string means "no blocker".
     private var blockerReason: String {
-        if image == nil { return "Pick an image to compare." }
+        if image == nil { return LocalizationService.shared.t("Pick an image to compare.") }
         if !isSideRunnable(leftID) {
             return leftID.isEmpty
                 ? "FastVLM isn't installed. Pick a downloaded VLM on the left."
@@ -441,7 +441,7 @@ struct VisualModelComparisonView: View {
             // Same MLX/GGUF repo on both sides means two passes of the same
             // model — wastes time and confuses the comparison. (FastVLM on
             // both sides is also pointless but doesn't hurt anything.)
-            return "Pick two different models to compare."
+            return LocalizationService.shared.t("Pick two different models to compare.")
         }
         return ""
     }

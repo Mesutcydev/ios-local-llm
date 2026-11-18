@@ -36,6 +36,7 @@ struct LegalDocumentView: View {
         self.onReadConfirmed = onReadConfirmed
     }
 
+    @ObservedObject private var loc = LocalizationService.shared
     @Environment(\.dismiss) private var dismiss
     @Environment(\.koduTheme) private var T
     /// Flips true once the bottom sentinel scrolls into view (or immediately
@@ -46,17 +47,20 @@ struct LegalDocumentView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 ScrollView {
-                    // LazyVStack so the bottom sentinel's onAppear fires only
-                    // when it actually scrolls into view (a plain VStack would
-                    // fire every child's onAppear up front, defeating the gate).
-                    LazyVStack(spacing: 0) {
-                        MarkdownTextView(markdown: markdown)
+                    VStack(spacing: 0) {
+                        MarkdownTextView(markdown: markdown, isDocument: true)
                             .padding(.horizontal, 18)
                             .padding(.top, 12)
                             .padding(.bottom, 32)
+                        // Bottom sentinel. `onAppear` also fires for rows a lazy
+                        // stack prepares just below the viewport, which let a
+                        // two-page document count as read at the top, so the gate
+                        // listens for actual visibility in the scroll view instead.
                         Color.clear
                             .frame(height: 1)
-                            .onAppear { scrolledToEnd = true }
+                            .onScrollVisibilityChange(threshold: 0.5) { visible in
+                                if visible { scrolledToEnd = true }
+                            }
                     }
                 }
 
@@ -69,17 +73,29 @@ struct LegalDocumentView: View {
                 }
             }
             .background(LiquidPinkBackdrop())
-            .navigationTitle(title.lowercased())
+            .navigationTitle(title.tr)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    if let urlStr = externalURL, let url = URL(string: urlStr) {
+                if let urlStr = externalURL, let url = URL(string: urlStr) {
+                    ToolbarItem(placement: .topBarTrailing) {
                         Link(destination: url) {
                             Image(systemName: "safari").foregroundColor(T.accent)
                         }
-                    } else {
-                        Button("Done") { dismiss() }
+                        .accessibilityLabel("Open in Safari".tr)
+                    }
+                } else if onReadConfirmed == nil {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Done".tr, systemImage: "checkmark") { dismiss() }
+                            .foregroundColor(T.ink)
+                    }
+                }
+                if onReadConfirmed != nil {
+                    // Consent mode: closing is not confirming. A checkmark here
+                    // read as "accept" while the real confirm is the bottom
+                    // button, and URL-bearing sheets had no close control at all.
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Close".tr, systemImage: "xmark") { dismiss() }
                             .foregroundColor(T.ink)
                     }
                 }
@@ -89,9 +105,9 @@ struct LegalDocumentView: View {
                 // would be impossible to close — which blocks the first-launch
                 // legal gate. Add an explicit Done on Mac for those. (No-URL
                 // sheets already have Done in the trailing slot.) iOS unchanged.
-                if externalURL != nil {
+                if externalURL != nil && onReadConfirmed == nil {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button("Done") { dismiss() }
+                        Button("Done".tr, systemImage: "checkmark") { dismiss() }
                             .foregroundColor(T.ink)
                     }
                 }
@@ -109,7 +125,8 @@ struct LegalDocumentView: View {
                     confirm()
                     dismiss()
                 } label: {
-                    Text(scrolledToEnd ? "i have read this" : "scroll to the end to continue")
+                    Text((scrolledToEnd ? "i have read this" : "scroll to the end to continue").tr)
+                        .fixedSize(horizontal: false, vertical: true)
                         .font(T.mono(13, .semibold))
                         .foregroundColor(scrolledToEnd ? T.bg : T.ink3)
                         .frame(maxWidth: .infinity)
@@ -119,6 +136,7 @@ struct LegalDocumentView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!scrolledToEnd)
+                .accessibilityIdentifier("legal.confirmRead")
             }
             if let secondary = secondaryAction {
                 Button(role: .destructive) {

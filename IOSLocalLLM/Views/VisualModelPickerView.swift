@@ -3,9 +3,9 @@ import SwiftUI
 // MARK: - VisualModelPickerView
 // Camera-side picker: choose which vision model the camera tab uses.
 //
-// Default is FastVLM (Apple's built-in). The user can swap in any MLX-format
+// Default is built-in Apple Vision OCR. The user can select a compatible
 // VLM they've downloaded (Qwen2-VL, SmolVLM, Paligemma, Gemma 3 Vision, etc.).
-// Selecting "match camera" reverts to FastVLM.
+// Selecting the default restores text recognition.
 
 struct VisualModelPickerView: View {
 
@@ -108,7 +108,7 @@ struct VisualModelPickerView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(loc.t("Close")) { dismiss() }
+                    Button(loc.t("Close"), systemImage: "xmark") { dismiss() }
                     .foregroundColor(T.ink)
                 }
             }
@@ -164,7 +164,7 @@ struct VisualModelPickerView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
-                Image(systemName: "chevron.right")
+                Image(systemName: "chevron.forward")
                     .font(.system(size: 10))
                     .foregroundColor(T.ink3)
             }
@@ -196,39 +196,17 @@ struct VisualModelPickerView: View {
             Button {
                 Task { await applySelectionAndDismiss(LocalModelRegistry.defaultVisionSelectionID) }
             } label: {
-                HStack(alignment: .top, spacing: 10) {
-                    radio(selected: LocalModelRegistry.isDefaultVisionSelection(selectedID)).padding(.top, 2)
-                    KVendorThumb(vendor: .apple, size: .row)
+                HStack(spacing: 10) {
+                    radio(selected: LocalModelRegistry.isDefaultVisionSelection(selectedID))
+                    Image(systemName: "text.viewfinder")
                     VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 6) {
-                            Text(loc.t("FastVLM (built-in)"))
-                                .font(T.mono(13, .semibold))
-                                .foregroundColor(T.ink)
-                            if LocalModelRegistry.isDefaultVisionSelection(selectedID) {
-                                KActivePill(text: loc.t("active"))
-                            }
-                            if !fastVLMStatus.isFullyInstalled {
-                                statusBadge(text: loc.t(fastVLMStatus.shortLabel), warning: true)
-                            }
-                        }
-                        badgeRow(
-                            formatLabel: "Core ML + MLX",
-                            ramBytes: MemoryAdvisor.estimatedFootprint(for: FastVLMService.modelID),
-                            verdict: fastVLMVerdict,
-                            tokensPerSecond: ModelUsageTracker.shared.avgTPS(for: FastVLMService.modelID)
-                        )
-                        KMono(text: loc.t("Apple's encoder + MLX decoder — runs everywhere"),
-                              size: 10, color: T.ink3)
-                        if !fastVLMStatus.isFullyInstalled {
-                            KMono(text: loc.t(fastVLMStatus.actionMessage),
-                                  size: 10, color: T.bad)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
+                        Text("Text recognition (OCR)").font(T.mono(13, .semibold))
+                        Text("No download. Choose a vision model below for image descriptions.")
+                            .font(T.mono(10)).foregroundStyle(T.ink3)
                     }
                     Spacer()
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
+                .padding(14)
             }
             .buttonStyle(.plain)
             .disabled(isApplyingSelection)
@@ -553,7 +531,7 @@ struct VisualModelPickerView: View {
                 .font(T.mono(9, .semibold))
                 .tracking(0.5)
                 .foregroundColor(T.ink3)
-            Text(loc.t("FastVLM is fastest. Swap in Qwen2-VL or Gemma 3 Vision if you want richer descriptions and have the RAM for it."))
+            Text(loc.t("Apple Vision OCR recognizes text without a download. Choose a compatible vision model for image descriptions if your device has enough memory."))
                 .font(T.sans(11))
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -622,33 +600,13 @@ struct VisualModelPickerView: View {
     static func applySelection(_ selectedID: String) async -> Bool {
         let vision = MLXVisionService.shared
         if LocalModelRegistry.isDefaultVisionSelection(selectedID) {
-            // Default = FastVLM. Re-check install state at apply time so a
-            // delete between picker-open and tap can't drive the camera into
-            // a half-loaded state. Always save the preference (the user's
-            // intent), but only drop any loaded MLX VLM when FastVLM is
-            // actually usable — otherwise we'd leave the app with no working
-            // vision model at all.
-            let status = FastVLMService.installStatus()
-            if status.isFullyInstalled {
-                // Free anything else currently resident. FastVLM owns its
-                // own residency through FastVLMService, so we just drop
-                // the MLX and GGUF VLM containers that the picker might
-                // have started earlier in the session.
-                vision.unload()
-                LlamaCppVLMService.shared.unload()
-                LocalModelRegistry.setVisionSelection(selectedID)
-                // Persist only after a runnable backend is confirmed. Saving a
-                // failed heavy model first made every later Lens entry retry it.
-                AppSettings.shared.hasPickedCameraVisualModel = true
-                ToastCenter.shared.info("FastVLM is now active")
-                return true
-            } else {
-                ToastCenter.shared.error(
-                    "FastVLM needs download",
-                    detail: status.actionMessage
-                )
-                return false
-            }
+            // Apple Vision OCR needs no downloaded research weights.
+            vision.unload()
+            LlamaCppVLMService.shared.unload()
+            LocalModelRegistry.setVisionSelection(selectedID)
+            AppSettings.shared.hasPickedCameraVisualModel = true
+            ToastCenter.shared.info("Text recognition is now active")
+            return true
         } else {
             // Hot-swap to a downloaded VLM. Two checks guard the path:
             //   1. The model must still be in the catalog AND pass the

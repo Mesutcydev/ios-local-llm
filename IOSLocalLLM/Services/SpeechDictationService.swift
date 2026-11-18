@@ -49,7 +49,7 @@ final class SpeechDictationService: ObservableObject {
     ///   3. `en-US` as the universal fallback
     ///   4. the first locale SFSpeechRecognizer actually supports
     ///
-    /// At each step we additionally require `isAvailable == true`. Without
+    /// At each step we require availability and on-device recognition support. Without
     /// the chain, a user on `tr-TR` whose recognizer briefly reports
     /// unavailable would silently fall back to `en-US` and start
     /// transcribing their Turkish as garbled English. With it, we try a
@@ -92,7 +92,8 @@ final class SpeechDictationService: ObservableObject {
 
         var seen = Set<String>()
         for locale in candidates where seen.insert(locale.identifier).inserted {
-            if let rec = SFSpeechRecognizer(locale: locale), rec.isAvailable {
+            if let rec = SFSpeechRecognizer(locale: locale),
+               rec.isAvailable, rec.supportsOnDeviceRecognition {
                 if locale.identifier != deviceLocale.identifier {
                     print("[SpeechDictation] Falling back from \(deviceLocale.identifier) to \(locale.identifier)")
                 }
@@ -226,8 +227,13 @@ final class SpeechDictationService: ObservableObject {
     }
 
     var isAvailable: Bool {
-        recognizer?.isAvailable == true
+        recognizer?.isAvailable == true && recognizer?.supportsOnDeviceRecognition == true
     }
+
+    /// False when iOS stopped the mic graph underneath us (route change,
+    /// Siri, another app taking the input). Voice mode polls this to rebuild
+    /// the mic instead of sitting on a dead "Listening" screen.
+    var isEngineRunning: Bool { audioEngine.isRunning }
 
     // MARK: - Start / Stop
 
@@ -249,15 +255,24 @@ final class SpeechDictationService: ObservableObject {
         // model on disk; missing model → fall back to system so the
         // user isn't silently broken if they enabled the toggle then
         // deleted the model.
+        // Apple SpeechAnalyzer (iOS 26+) reuses the Whisper recorder and
+        // transcribes the clip on stop; conversations stay on SFSpeech.
+        usesAppleTranscriber = false
+        if #available(iOS 26, *), AppSettings.shared.sttProvider == "appleSpeech",
+           !continuous, SpeechTranscriber.isAvailable {
+            usesAppleTranscriber = true
+            try startWhisperSingleShot(onTranscript)
+            return
+        }
         let wantsWhisper = AppSettings.shared.sttProvider == "whisper"
         if wantsWhisper, !continuous, WhisperModelCatalog.isInstalled {
             try startWhisperSingleShot(onTranscript)
             return
         }
 
-        guard let recognizer, recognizer.isAvailable else {
+        guard let recognizer, recognizer.isAvailable, recognizer.supportsOnDeviceRecognition else {
             throw NSError(domain: "SpeechDictation", code: -1, userInfo: [
-                NSLocalizedDescriptionKey: "Speech recognition isn't available right now."
+                NSLocalizedDescriptionKey: "On-device speech recognition is unavailable for this language. Choose a supported language or download the local Whisper model for dictation."
             ])
         }
 
@@ -366,7 +381,11 @@ final class SpeechDictationService: ObservableObject {
     /// Installs a fresh SFSpeechAudioBufferRecognitionRequest + recognitionTask
     /// and points `self.request` at it.
     private func startRecognitionRequest() {
-        guard let recognizer else { return }
+        guard let recognizer, recognizer.supportsOnDeviceRecognition else {
+            lastError = "On-device speech recognition is unavailable. Audio was not sent to a server."
+            cleanup()
+            return
+        }
         // Invalidate in-flight completions before tearing down any prior task
         // so their cancel/isFinal handlers can't cleanup() or double-rotate.
         recognitionGeneration &+= 1
@@ -384,11 +403,9 @@ final class SpeechDictationService: ObservableObject {
             request = nil
             task = nil
         }
-        let req = SFSpeechAudioBufferRecognitionRequest()
-        req.shouldReportPartialResults = true
-        if recognizer.supportsOnDeviceRecognition {
-            req.requiresOnDeviceRecognition = true   // privacy-first
-        }
+        guard let req = try? OnDeviceSpeechRequests.buffer(
+            supportsOnDeviceRecognition: recognizer.supportsOnDeviceRecognition
+        ) else { cleanup(); return }
         request = req
 
         task = recognizer.recognitionTask(with: req) { [weak self] result, error in
@@ -597,7 +614,7 @@ final class SpeechDictationService: ObservableObject {
               "out=\(format), in=\(hwFormat)")
         throw NSError(domain: "SpeechDictation", code: -2, userInfo: [
             NSLocalizedDescriptionKey:
-                "Microphone isn't ready yet. Tap voice mode again in a moment."
+                "Microphone isn't ready yet. Try again in a moment."
         ])
     }
 
@@ -619,6 +636,8 @@ final class SpeechDictationService: ObservableObject {
     /// Accumulated Float32 mono 16 kHz samples for the active Whisper
     /// dictation session. Nil outside an active session.
     private var whisperBuffer: [Float]?
+    /// The recorded clip goes to Apple's SpeechTranscriber instead of Whisper.
+    private var usesAppleTranscriber = false
 
     private func startWhisperSingleShot(_ onTranscript: @escaping (String, Bool) -> Void) throws {
         self.onTranscript = onTranscript
@@ -687,6 +706,20 @@ final class SpeechDictationService: ObservableObject {
             callback?("", true)
             return
         }
+        if usesAppleTranscriber, #available(iOS 26, *) {
+            usesAppleTranscriber = false
+            let locale = recognizer?.locale ?? Locale.current
+            cleanup()
+            Task { @MainActor in
+                do {
+                    callback?(try await AppleSpeechTranscription.transcribe(samples: buffer, locale: locale), true)
+                } catch {
+                    ToastCenter.shared.error("Apple transcription failed", detail: error.localizedDescription)
+                    callback?("", true)
+                }
+            }
+            return
+        }
         guard let modelPath = WhisperModelCatalog.installedModelPath() else {
             cleanup()
             lastError = "No whisper model installed."
@@ -732,5 +765,77 @@ final class SpeechDictationService: ObservableObject {
                 }
             }
         }
+    }
+}
+
+// MARK: - Apple SpeechTranscriber (iOS 26+)
+
+/// One-shot transcription of a recorded 16 kHz mono clip with Apple's
+/// SpeechAnalyzer. Runs on-device; the locale's model is a system asset that
+/// iOS downloads once, announced with a toast.
+@available(iOS 26, *)
+@MainActor
+enum AppleSpeechTranscription {
+
+    static func transcribe(samples: [Float], locale: Locale) async throws -> String {
+        guard let supported = await SpeechTranscriber.supportedLocale(equivalentTo: locale) else {
+            throw failure("Apple speech recognition doesn't support \(locale.identifier).")
+        }
+        let transcriber = SpeechTranscriber(locale: supported, preset: .transcription)
+        if let install = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
+            ToastCenter.shared.info("Downloading Apple speech model",
+                                    detail: "One-time system download for \(supported.identifier).")
+            try await install.downloadAndInstall()
+        }
+        guard let format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber]) else {
+            throw failure("No audio format available for Apple speech recognition.")
+        }
+        let input = try buffer(samples, as: format)
+        let analyzer = SpeechAnalyzer(modules: [transcriber])
+        let collector = Task {
+            try await transcriber.results.reduce(into: "") { text, result in
+                if result.isFinal { text += String(result.text.characters) }
+            }
+        }
+        try await analyzer.start(inputSequence: AsyncStream { continuation in
+            continuation.yield(AnalyzerInput(buffer: input))
+            continuation.finish()
+        })
+        try await analyzer.finalizeAndFinishThroughEndOfInput()
+        return try await collector.value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Wraps the samples in a PCM buffer and converts it to the analyzer's format.
+    private static func buffer(_ samples: [Float], as target: AVAudioFormat) throws -> AVAudioPCMBuffer {
+        guard let source = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16_000,
+                                         channels: 1, interleaved: false),
+              let pcm = AVAudioPCMBuffer(pcmFormat: source, frameCapacity: AVAudioFrameCount(samples.count)),
+              let channel = pcm.floatChannelData?[0] else {
+            throw failure("Couldn't prepare the recorded audio.")
+        }
+        pcm.frameLength = pcm.frameCapacity
+        samples.withUnsafeBufferPointer { channel.update(from: $0.baseAddress!, count: samples.count) }
+        if target == source { return pcm }
+
+        let capacity = AVAudioFrameCount(Double(samples.count) * target.sampleRate / source.sampleRate) + 1_024
+        guard let converter = AVAudioConverter(from: source, to: target),
+              let out = AVAudioPCMBuffer(pcmFormat: target, frameCapacity: capacity) else {
+            throw failure("Couldn't convert the recorded audio.")
+        }
+        var fed = false
+        var error: NSError?
+        converter.convert(to: out, error: &error) { _, status in
+            if fed { status.pointee = .endOfStream; return nil }
+            fed = true
+            status.pointee = .haveData
+            return pcm
+        }
+        if let error { throw error }
+        return out
+    }
+
+    private static func failure(_ message: String) -> NSError {
+        NSError(domain: "AppleSpeechTranscription", code: -1,
+                userInfo: [NSLocalizedDescriptionKey: message])
     }
 }

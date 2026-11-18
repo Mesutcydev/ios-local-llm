@@ -38,7 +38,7 @@ struct LensPromptPresetSheet: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
+                    Button("Done", systemImage: "checkmark") { dismiss() }
                         .foregroundColor(T.ink)
                 }
             }

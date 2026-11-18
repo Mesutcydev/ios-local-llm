@@ -121,7 +121,7 @@ public final class LocalAIController {
                                     onToken: { token in
                                         continuation.yield(.token(token))
                                     },
-                                    onComplete: { rate in
+                                    onComplete: { [self] rate in
                                         continuation.yield(.usage(
                                             tokensPerSecond: rate,
                                             inputTokens: nil,
@@ -164,7 +164,7 @@ public final class LocalAIController {
                 }
             }
 
-            continuation.onTermination = { @Sendable _ in
+            continuation.onTermination = { @Sendable [self] _ in
                 task.cancel()
                 Task { @MainActor [weak self] in
                     self?.cancelGeneration()
@@ -205,6 +205,8 @@ public final class LocalAIController {
                             Task { @MainActor in
                                 do {
                                     switch target.runtime {
+                                    case .coreAI:
+                                        throw RuntimeError.unsupportedOperation("Core AI image input is unavailable.")
                                     case .llamaCpp:
                                         if LlamaCppVLMService.shared.activeRepoID != target.repoID {
                                             throw RuntimeError.modelNotLoaded(target.repoID)
@@ -255,7 +257,7 @@ public final class LocalAIController {
                 }
             }
 
-            continuation.onTermination = { @Sendable _ in
+            continuation.onTermination = { @Sendable [self] _ in
                 task.cancel()
                 Task { @MainActor [weak self] in
                     self?.cancelGeneration()
@@ -286,6 +288,9 @@ public final class LocalAIController {
             )
             let repoID = LocalModelRegistry.persistedVisionRepoID(for: modelID)
             switch runtime {
+            case .coreAI:
+                preheatStatus = .failed("Core AI image input is unavailable.")
+                return
             case .llamaCpp:
                 await LlamaCppVLMService.shared.switchTo(repoID: repoID)
                 if case .failed(let message) = LlamaCppVLMService.shared.state {
@@ -470,10 +475,11 @@ private final class LocalAICompletionBox: @unchecked Sendable {
     func fireAfterCancellationDelay() {
         Task {
             try? await Task.sleep(for: .seconds(5))
-            self.lock.lock()
-            let body = self.fire
-            self.fire = nil
-            self.lock.unlock()
+            let body = self.lock.withLock {
+                let body = self.fire
+                self.fire = nil
+                return body
+            }
             body?()
         }
     }

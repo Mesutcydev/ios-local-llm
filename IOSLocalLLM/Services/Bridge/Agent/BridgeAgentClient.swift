@@ -35,7 +35,7 @@ final class BridgeAgentClient: ObservableObject {
             case .noPairedMac:
                 return "No paired Mac with agent support. Pair (or re-pair) from the Mac tab first."
             case .malformedTarget:
-                return "Paired Mac record is missing host/port info. Re-pair to fix."
+                return "Paired Mac record is missing its encrypted connection details. Update the Mac app and re-pair."
             case .macUnreachable(let m):
                 return "Could not reach Mac: \(m)"
             case .httpStatus(let code, let body):
@@ -173,8 +173,8 @@ final class BridgeAgentClient: ObservableObject {
         let bearer:     String
         let host:       String
         let port:       UInt16
-        /// Pinned Mac TLS leaf fingerprint; nil for legacy plaintext Macs.
-        let pinnedFingerprint: String?
+        /// Pinned Mac TLS leaf fingerprint; required for every request.
+        let pinnedFingerprint: String
     }
 
     private func resolveTarget() throws -> Target {
@@ -183,12 +183,14 @@ final class BridgeAgentClient: ObservableObject {
         }
         guard let bearer = client.macBearerToken,
               let host = client.macHost,
-              let port = client.macAgentPort else {
+              let port = client.macAgentPort,
+              let fingerprint = client.macCertFingerprint,
+              BridgePinningDelegate.isValidFingerprint(fingerprint) else {
             throw AgentClientError.malformedTarget
         }
         return Target(clientName: client.clientName, bearer: bearer,
                       host: host, port: port,
-                      pinnedFingerprint: client.macCertFingerprint)
+                      pinnedFingerprint: fingerprint)
     }
 
     // MARK: - HTTP plumbing
@@ -213,10 +215,7 @@ final class BridgeAgentClient: ObservableObject {
         target:   Target,
         timeout:  TimeInterval = 15
     ) async throws -> AgentEnvelope<Out> {
-        // HTTPS + cert-pinning when the Mac advertised a TLS fingerprint
-        // at pairing; plaintext http only for legacy Macs that didn't.
-        let scheme = target.pinnedFingerprint != nil ? "https" : "http"
-        guard let url = URL(string: "\(scheme)://\(target.host):\(target.port)\(path)") else {
+        guard let url = URL(string: "https://\(target.host):\(target.port)\(path)") else {
             throw AgentClientError.malformedTarget
         }
         let body: Data
@@ -229,22 +228,16 @@ final class BridgeAgentClient: ObservableObject {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.setValue("Bearer \(target.bearer)", forHTTPHeaderField: "Authorization")
 
-        let pinDelegate = target.pinnedFingerprint.map { BridgePinningDelegate(expectedFingerprint: $0) }
-        let session: URLSession = pinDelegate.map {
-            URLSession(configuration: .ephemeral, delegate: $0, delegateQueue: nil)
-        } ?? .shared
-        // Per-call pinned sessions would otherwise linger with their
-        // delegate/connection pool for the life of the process.
-        defer {
-            if pinDelegate != nil { session.finishTasksAndInvalidate() }
-        }
+        let pinDelegate = BridgePinningDelegate(expectedFingerprint: target.pinnedFingerprint)
+        let session = URLSession(configuration: .ephemeral, delegate: pinDelegate, delegateQueue: nil)
+        defer { session.finishTasksAndInvalidate() }
 
         let data: Data
         let resp: URLResponse
         do {
             (data, resp) = try await session.data(for: req)
         } catch {
-            if pinDelegate?.pinFailed == true {
+            if pinDelegate.pinFailed {
                 throw AgentClientError.macUnreachable("Mac TLS certificate changed since pairing — re-pair from the Mac tab.")
             }
             throw AgentClientError.macUnreachable(error.localizedDescription)

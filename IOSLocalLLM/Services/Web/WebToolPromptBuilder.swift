@@ -60,6 +60,22 @@ public enum WebToolPromptBuilder {
         return out
     }
 
+    /// The answer to show and the sources to list under it. Small models often
+    /// cite no [n] and end with their own "Sources: Britannica, Wikipedia."
+    /// line; then every fetched source is listed and that line is dropped.
+    /// ponytail: strips a one-line trailing Sources only; a multi-line Sources
+    /// list stays, extend the pattern if models start writing those.
+    public static func finalizedAnswer(_ answer: String, validIndices: Set<Int>) -> (answer: String, shownIndices: Set<Int>) {
+        let used = citedIndices(in: answer).intersection(validIndices)
+        let cleaned = filterFakeCitations(answer: answer, validIndices: validIndices)
+            .replacingOccurrences(
+                of: #"(?:\n\s*|(?<=[.!?])[ \t]*)\**Sources?\**:[^\n]*\s*\z"#,
+                with: "",
+                options: .regularExpression
+            )
+        return (cleaned, used.isEmpty ? validIndices : used)
+    }
+
     /// Cited indices the model actually used. Returned to UI so we only show
     /// sources that ended up referenced.
     public static func citedIndices(in answer: String) -> Set<Int> {

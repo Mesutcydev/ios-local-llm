@@ -1,3 +1,4 @@
+import ImageIO
 import Foundation
 import CoreImage
 import CoreML
@@ -60,6 +61,20 @@ final class AnalysisService: ObservableObject {
     private var latestPixelBuffer: CVPixelBuffer?
     private var latestFrameIndex: Int = 0
 
+    /// The in-flight request is a Live caption (one runs at a time).
+    private var liveRequest = false
+    /// ponytail: fixed 512 px long side, one encoder tile; full 1080×1920
+    /// frames took LFM3-VL ~15 s per caption. Raise if live text reading matters.
+    static let liveMaxSide: CGFloat = 512
+    static let liveMaxTokens = 48
+
+    static func liveSized(_ image: CIImage) -> CIImage {
+        let side = max(image.extent.width, image.extent.height)
+        guard side > liveMaxSide else { return image }
+        let scale = liveMaxSide / side
+        return image.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
+    }
+
     // MARK: - Init
 
     init(camera: CameraService) {
@@ -102,11 +117,9 @@ final class AnalysisService: ObservableObject {
             statusMessage = "Custom VLM active"
             return
         }
-        fastVLMStatus = fastVLM.componentStatus
-        fastVLMLoaded = fastVLM.componentStatus.canGenerate
-        statusMessage = fastVLMLoaded
-            ? "FastVLM ready"
-            : "FastVLM standby — first capture will load it"
+        fastVLMStatus = FastVLMComponentStatus()
+        fastVLMLoaded = false
+        statusMessage = "On-device text recognition ready"
     }
 
     // MARK: - Capture source
@@ -141,6 +154,7 @@ final class AnalysisService: ObservableObject {
     /// Converts it to a pixel buffer and routes through the normal pipeline.
     func analyzeImportedImage(_ image: UIImage) {
         guard !isAnalyzing else { return }
+        liveRequest = false
         guard let pb = AnalysisService.pixelBuffer(from: image) else {
             ToastCenter.shared.error("Couldn't decode image")
             return
@@ -152,6 +166,30 @@ final class AnalysisService: ObservableObject {
             classIndex: -1
         )
         triggerAnalysis(detection: detection, pixelBuffer: pb, source: .imported)
+    }
+
+    /// An empty caption means the request was refused (device too hot or low
+    /// on memory), not completed.
+    private func completionStatus(for caption: String) -> String {
+        guard caption.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return "Analysis complete" }
+        return DeviceSafetyMonitor.shared.stopReason?.title ?? "Analysis complete"
+    }
+
+    /// Decodes picked photo data to at most `maxPixel` on its long edge, with
+    /// the EXIF orientation applied. A 48 MP photo decoded whole is about
+    /// 190 MB per copy, next to a loaded vision model.
+    nonisolated static func downsampledImage(from data: Data, maxPixel: CGFloat = 2048) -> UIImage? {
+        guard let source = CGImageSourceCreateWithData(
+            data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary
+        ) else { return nil }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixel
+        ]
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
+            .map { UIImage(cgImage: $0) }
     }
 
     /// Converts a UIImage to a CVPixelBuffer for FastVLM/OCR consumption.
@@ -245,11 +283,21 @@ final class AnalysisService: ObservableObject {
     /// Live VISUAL caption capture — always feeds the whole frame to the VLM
     /// (SmolVLM describes the scene, not a text region). The only camera-side
     /// caller now that Code Mode owns its own tap-to-capture pipeline.
-    func captureAndAnalyzeBest() {
-        guard !isAnalyzing else { return }
+    /// Returns false when nothing was captured, so callers can leave their
+    /// "analyzing" UI instead of spinning on a request that never started.
+    @discardableResult
+    func captureAndAnalyzeBest(live: Bool = false) -> Bool {
+        guard !isAnalyzing else { return false }
+        liveRequest = live
+        // The last buffer predates the interruption; answering about it
+        // while the preview is frozen would describe an old scene.
+        if let paused = camera.interruptionMessage {
+            statusMessage = paused
+            return false
+        }
         guard let liveBuffer = latestPixelBuffer else {
             statusMessage = "No frame available"
-            return
+            return false
         }
         // Snapshot out of the capture pool before the multi-second analysis
         // pins it (see deepCopyPixelBuffer). Fall back to the live buffer if
@@ -266,6 +314,7 @@ final class AnalysisService: ObservableObject {
             classIndex: -1
         )
         triggerAnalysis(detection: detection, pixelBuffer: pixelBuffer, source: .camera)
+        return true
     }
 
     // MARK: - Analysis pipeline
@@ -340,7 +389,6 @@ final class AnalysisService: ObservableObject {
         // its native captures before dispatching this frame. This closes the
         // rapid tab-switch path where no VLM `switchTo` call was needed.
         await CodingAssistantService.shared.unloadAndWaitForCleanup()
-        let genSettings = Self.fastVLMGenerationSettings(for: mode)
 
         // MLX-VLM path — takes precedence when the user has selected a
         // downloaded VLM (cameraVisualModelID non-empty). Falls through to
@@ -400,127 +448,23 @@ final class AnalysisService: ObservableObject {
             return
         }
 
-        // FastVLM path
-        //
-        // Lazy load: AnalysisService.start() no longer warms FastVLM on
-        // tab open (it used to SIGABRT inside Metal before the user could
-        // do anything). The first capture is now the trigger — if weights
-        // are on disk but not in memory yet, kick the load before trying
-        // to analyze.
-        if AppSettings.shared.fastVLMEnabled, !fastVLM.componentStatus.canGenerate {
-            await MainActor.run { self.statusMessage = "Loading FastVLM…" }
-            await fastVLM.load()
-            await MainActor.run {
-                self.fastVLMStatus = self.fastVLM.componentStatus
-                self.fastVLMLoaded = self.fastVLM.componentStatus.canGenerate
-            }
-        }
-        if fastVLM.componentStatus.canGenerate, AppSettings.shared.fastVLMEnabled {
-            do {
-                var generatedText = ""
-                let task: FastVLMTask = (mode == .visual) ? .describeImage : .extractCode
-                let stream = fastVLM.analyze(pixelBuffer: pixelBuffer, task: task, settings: genSettings)
-                for try await chunk in stream {
-                    generatedText += chunk
-                    let snapshot = generatedText
-                    await MainActor.run {
-                        self.updateResult(id: resultID) { r in
-                            r.extractedCode = snapshot
-                        }
-                    }
-                }
-                // Done: finalize result
-                if mode == .code {
-                    let review = generatedText.isEmpty
-                        ? "" : ocr.generateBasicReview(for: generatedText)
-                    await MainActor.run {
-                        self.updateResult(id: resultID) { r in
-                            r.isStreaming = false
-                            r.reviewMarkdown = review
-                        }
-                        self.isAnalyzing = false
-                        self.statusMessage = "Analysis complete"
-                    }
-                } else {
-                    await MainActor.run {
-                        self.updateResult(id: resultID) { r in
-                            r.isStreaming = false
-                        }
-                        self.isAnalyzing = false
-                        self.statusMessage = "Visual analysis complete"
-                    }
-                }
-                return
-
-            } catch {
-                // Visual mode has no OCR equivalent
-                if mode == .visual || !AppSettings.shared.useOCRFallback {
-                    let msg = mode == .visual
-                        ? "FastVLM required for Visual mode. Error: \(error.localizedDescription)"
-                        : "FastVLM generation failed:\n\(error.localizedDescription)"
-                    await MainActor.run {
-                        self.updateResult(id: resultID) { r in
-                            r.extractedCode = msg
-                            r.isStreaming = false
-                        }
-                        self.isAnalyzing = false
-                        self.statusMessage = "Analysis failed"
-                    }
-                    return
-                }
-                // Fall through to OCR replacement on the full frame (the
-                // detection-crop path was removed). Suggest the visual-model
-                // picker as the recovery path — a clearer next step than
-                // "FastVLM error: ..." alone.
-                let reason = "OCR fallback — FastVLM error: \(error.localizedDescription)"
-                await replaceWithOCR(resultID: resultID,
-                                     pixelBuffer: ocrBuffer,
-                                     reason: reason,
-                                     suggestedAction: .pickVisualModel)
-                return
-            }
-        }
-
-        // No FastVLM path
+        // No licensed visual model is selected. OCR needs no downloaded
+        // weights; general image descriptions require an explicit model pick.
         if mode == .visual {
-            let missing = fastVLM.componentStatus.missingComponentsDescription
-            // Action prioritisation:
-            //   • disabled in Settings → toggle it back on (.enableFastVLM)
-            //   • enabled but encoder missing → guide them to pick a VLM
-            //     from the onboarding picker (faster path — SmolVLM2 ships
-            //     bundled, no extra download) rather than offering only
-            //     the FastVLM download.
-            let isEnabled = AppSettings.shared.fastVLMEnabled
-            let reason = isEnabled
-                ? "FastVLM \(missing) not available. Pick a visual model to enable Visual mode."
-                : "FastVLM is disabled. Enable it in Settings, or pick a visual model below."
-            let action: AnalysisResult.SuggestedAction = isEnabled
-                ? .pickVisualModel
-                : .enableFastVLM
             await MainActor.run {
                 self.updateResult(id: resultID) { r in
                     r.isStreaming = false
-                    r.fallbackReason = reason
-                    r.suggestedAction = action
+                    r.fallbackReason = "Choose a compatible vision model in Models to describe images."
+                    r.suggestedAction = .pickVisualModel
                 }
                 self.isAnalyzing = false
-                self.statusMessage = "Visual mode unavailable"
+                self.statusMessage = "Choose a vision model"
             }
             return
         }
-
-        // Code mode → OCR fallback on the full frame (no crop). The OCR
-        // result is still useful, and we surface the FastVLM-missing reason +
-        // suggested action so the user can upgrade the experience.
-        let missing = fastVLM.componentStatus.missingComponentsDescription
-        let isEnabled = AppSettings.shared.fastVLMEnabled
-        let reason = isEnabled
-            ? "OCR fallback — FastVLM \(missing) not available.\nPick a visual model for better-quality extraction."
-            : "OCR fallback — FastVLM disabled in settings."
-        let action: AnalysisResult.SuggestedAction = isEnabled
-            ? .pickVisualModel
-            : .enableFastVLM
-        await replaceWithOCR(resultID: resultID, pixelBuffer: ocrBuffer, reason: reason, suggestedAction: action)
+        await replaceWithOCR(resultID: resultID, pixelBuffer: ocrBuffer,
+                             reason: "On-device text recognition. Choose a vision model for AI analysis.",
+                             suggestedAction: .pickVisualModel)
     }
 
     /// Resolve an unsafe MLX visual selection to a small installed Lens model.
@@ -570,7 +514,7 @@ final class AnalysisService: ObservableObject {
         )
         ToastCenter.shared.info(
             "Lens switched to a safe model",
-            detail: "\(descriptor.displayName) remains available in Assistant. Lens is using \(fallbackSelection == bundled ? "SmolVLM2" : "FastVLM") to avoid an out-of-memory restart."
+            detail: "\(descriptor.displayName) remains available in Assistant. Lens is using \(fallbackSelection == bundled ? "SmolVLM2" : "text recognition") to avoid an out-of-memory restart."
         )
         return fallbackSelection
     }
@@ -1022,9 +966,10 @@ extension AnalysisService: CameraServiceDelegate {
                     : .up
             }
         }()
-        let renderCtx = CIContext()
+        let renderCtx = Self.renderContext
         let oriented = (cgOrient == .up) ? ciImage : ciImage.oriented(cgOrient)
-        guard let cg = renderCtx.createCGImage(oriented, from: oriented.extent) else {
+        let input = liveRequest ? Self.liveSized(oriented) : oriented
+        guard let cg = renderCtx.createCGImage(input, from: input.extent) else {
             return false
         }
         let uiImage = UIImage(cgImage: cg)
@@ -1037,7 +982,7 @@ extension AnalysisService: CameraServiceDelegate {
         // model emits raw code rather than narrative. Visual mode reads the
         // user's LensPromptPreset so "Detailed", "Find errors", etc. actually
         // steer the model instead of always emitting a one-line description.
-        let prompt: String = {
+        let basePrompt: String = {
             if mode == .code {
                 return "Transcribe ALL visible code/text exactly as shown. Use fenced code blocks. No explanation."
             }
@@ -1058,7 +1003,8 @@ extension AnalysisService: CameraServiceDelegate {
         // a 1–3 sentence caption (the live UI hides anything past 5 lines
         // anyway) and bounds the worst-case KV cache. Code mode still gets
         // the user's full setting since it's a one-shot, not a loop.
-        let safeMaxTokens = Self.maxTokens(for: mode)
+        let prompt = liveRequest ? basePrompt + " Answer in one short sentence." : basePrompt
+        let safeMaxTokens = liveRequest ? Self.liveMaxTokens : Self.maxTokens(for: mode)
         await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
             final class Acc: @unchecked Sendable { var value = "" }
             let acc = Acc()
@@ -1066,7 +1012,7 @@ extension AnalysisService: CameraServiceDelegate {
                 image: uiImage,
                 prompt: prompt,
                 maxTokens: safeMaxTokens,
-                onToken: { token in
+                onToken: { [self] token in
                     acc.value += token
                     let snapshot = acc.value
                     Task { @MainActor [weak self] in
@@ -1075,10 +1021,14 @@ extension AnalysisService: CameraServiceDelegate {
                         }
                     }
                 },
-                onComplete: { _ in
+                onComplete: { [self] _ in
                     Task { @MainActor [weak self] in
                         guard let self else { cont.resume(); return }
                         let final = acc.value
+                        // A cancelled request is already marked as such; its late
+                        // completion must not report success or clear the busy
+                        // state of a newer request.
+                        if self.cancelledResultIDs.contains(snapID) { cont.resume(); return }
                         let review = (mode == .code && !final.isEmpty)
                             ? self.ocr.generateBasicReview(for: final)
                             : ""
@@ -1087,7 +1037,7 @@ extension AnalysisService: CameraServiceDelegate {
                             r.reviewMarkdown = review
                         }
                         self.isAnalyzing = false
-                        self.statusMessage = "Analysis complete"
+                        self.statusMessage = self.completionStatus(for: final)
                         cont.resume()
                     }
                 }
@@ -1095,6 +1045,10 @@ extension AnalysisService: CameraServiceDelegate {
         }
         return true
     }
+
+    /// CIContext is thread-safe and expensive to build (Metal device +
+    /// caches); one per capture was pure churn on every live-loop tick.
+    private static let renderContext = CIContext()
 
     // MARK: - llama.cpp VLM routing (GGUF models via mtmd)
     //
@@ -1145,15 +1099,16 @@ extension AnalysisService: CameraServiceDelegate {
                     : .up
             }
         }()
-        let renderCtx = CIContext()
+        let renderCtx = Self.renderContext
         let oriented = (cgOrient == .up) ? ciImage : ciImage.oriented(cgOrient)
-        guard let cg = renderCtx.createCGImage(oriented, from: oriented.extent) else {
+        let input = liveRequest ? Self.liveSized(oriented) : oriented
+        guard let cg = renderCtx.createCGImage(input, from: input.extent) else {
             return false
         }
         let uiImage = UIImage(cgImage: cg)
         print("[AnalysisService][llama] orient: raw=\(Int(ciImage.extent.width))×\(Int(ciImage.extent.height)) source=\(source) device=\(UIDevice.current.orientation.rawValue) cgOrient=\(cgOrient.rawValue) → out=\(cg.width)×\(cg.height)")
 
-        let prompt: String = {
+        let basePrompt: String = {
             if mode == .code {
                 return "Transcribe ALL visible code/text exactly as shown. Use fenced code blocks. No explanation."
             }
@@ -1165,7 +1120,8 @@ extension AnalysisService: CameraServiceDelegate {
         }()
 
         let snapID = resultID
-        let safeMaxTokens = Self.maxTokens(for: mode)
+        let prompt = liveRequest ? basePrompt + " Answer in one short sentence." : basePrompt
+        let safeMaxTokens = liveRequest ? Self.liveMaxTokens : Self.maxTokens(for: mode)
         let modelName = desiredRepoID.components(separatedBy: "/").last ?? desiredRepoID
 
         await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
@@ -1175,7 +1131,7 @@ extension AnalysisService: CameraServiceDelegate {
                 image: uiImage,
                 prompt: prompt,
                 maxTokens: safeMaxTokens,
-                onToken: { token in
+                onToken: { [self] token in
                     acc.value += token
                     let snapshot = acc.value
                     Task { @MainActor [weak self] in
@@ -1184,10 +1140,14 @@ extension AnalysisService: CameraServiceDelegate {
                         }
                     }
                 },
-                onComplete: { _ in
+                onComplete: { [self] _ in
                     Task { @MainActor [weak self] in
                         guard let self else { cont.resume(); return }
                         let final = acc.value
+                        // A cancelled request is already marked as such; its late
+                        // completion must not report success or clear the busy
+                        // state of a newer request.
+                        if self.cancelledResultIDs.contains(snapID) { cont.resume(); return }
                         if final.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                            case .failed(let msg) = llama.state {
                             self.updateResult(id: snapID) { r in
@@ -1207,7 +1167,7 @@ extension AnalysisService: CameraServiceDelegate {
                             r.reviewMarkdown = review
                         }
                         self.isAnalyzing = false
-                        self.statusMessage = "Analysis complete"
+                        self.statusMessage = self.completionStatus(for: final)
                         cont.resume()
                     }
                 }

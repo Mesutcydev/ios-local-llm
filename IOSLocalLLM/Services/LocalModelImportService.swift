@@ -41,7 +41,11 @@ final class LocalModelImportService: ObservableObject {
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
 
         // Destination under Documents/HFModels/local_<name>
-        let cleaned = url.deletingPathExtension().lastPathComponent
+        // Only a file has an extension to strip. A folder named
+        // "Llama-3.2-1B-Instruct" would otherwise become "Llama-3".
+        var isDir: ObjCBool = false
+        FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir)
+        let cleaned = (isDir.boolValue ? url : url.deletingPathExtension()).lastPathComponent
             .replacingOccurrences(of: " ", with: "-")
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let hfModelsRoot = docs.appendingPathComponent("HFModels", isDirectory: true)
@@ -58,9 +62,18 @@ final class LocalModelImportService: ObservableObject {
             suffix += 1
         }
 
+        // The document picker (asCopy) has already written its own copy into
+        // this app's temporary folder. Moving that copy into place avoids a
+        // second multi-GB copy and leaves nothing behind in tmp.
+        let ownsSource: Bool = {
+            let tmp = FileManager.default.temporaryDirectory.resolvingSymlinksInPath().path
+            return url.resolvingSymlinksInPath().path.hasPrefix(tmp.hasSuffix("/") ? tmp : tmp + "/")
+        }()
+
         // Free-space gate before copying: importing a multi-GB folder with
-        // no room used to fail halfway with an opaque copy error.
-        let importBytes: Int64 = {
+        // no room used to fail halfway with an opaque copy error. A move
+        // needs no extra room.
+        let importBytes: Int64 = ownsSource ? 0 : {
             var srcIsDir: ObjCBool = false
             FileManager.default.fileExists(atPath: url.path, isDirectory: &srcIsDir)
             if srcIsDir.boolValue {
@@ -80,9 +93,6 @@ final class LocalModelImportService: ObservableObject {
                                                  withIntermediateDirectories: true)
 
         // Branch on input type
-        var isDir: ObjCBool = false
-        FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir)
-
         if url.pathExtension.lowercased() == "zip" {
             // Unzip into dest
             try await unzip(url, to: dest)
@@ -95,14 +105,25 @@ final class LocalModelImportService: ObservableObject {
             let sourceIsDirectory = isDir.boolValue
             try await Task.detached(priority: .userInitiated) {
                 let fm = FileManager.default
+                func place(_ from: URL, at to: URL) throws {
+                    if ownsSource, (try? fm.moveItem(at: from, to: to)) != nil { return }
+                    try fm.copyItem(at: from, to: to)
+                }
                 if sourceIsDirectory {
-                    try fm.copyItem(at: source, to: destination)
+                    do {
+                        try place(source, at: destination)
+                    } catch {
+                        // A copy that fails partway leaves a half folder that
+                        // no screen lists; remove it like the file branch does.
+                        try? fm.removeItem(at: destination)
+                        throw error
+                    }
                 } else {
                     try fm.createDirectory(at: destination, withIntermediateDirectories: true)
                     do {
-                        try fm.copyItem(
-                            at: source,
-                            to: destination.appendingPathComponent(source.lastPathComponent)
+                        try place(
+                            source,
+                            at: destination.appendingPathComponent(source.lastPathComponent)
                         )
                     } catch {
                         try? fm.removeItem(at: destination)
@@ -156,9 +177,10 @@ final class LocalModelImportService: ObservableObject {
         // assumption hid imported VLMs from the vision picker.
         let category = LocalModelRegistry.category(in: dest)
 
-        let runtime: ModelRuntime? = LocalModelFileValidator.hasValidGGUFTextModel(in: dest)
-            ? .llamaCpp
-            : nil
+        let runtime: ModelRuntime? = (
+            LocalModelFileValidator.hasValidGGUFTextModel(in: dest)
+                || LocalModelFileValidator.hasCompleteGGUFVLMPair(in: dest)
+        ) ? .llamaCpp : nil
 
         ModelDownloadCenter.shared.registerCustom(
             repoID: repoID,

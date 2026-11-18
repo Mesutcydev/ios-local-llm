@@ -7,6 +7,7 @@ import SwiftUI
 
 struct LegalAcceptanceView: View {
 
+    @ObservedObject private var loc = LocalizationService.shared
     @StateObject private var legal = LegalAcceptanceManager.shared
     @State private var didReadPrivacy = false
     @State private var didReadEULA    = false
@@ -17,6 +18,7 @@ struct LegalAcceptanceView: View {
     @State private var showEULA    = false
     @State private var showDisclaimer = false
     @State private var showDeviceSafety = false
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.koduTheme) private var T
 
     let onAccepted: () -> Void
@@ -45,14 +47,14 @@ struct LegalAcceptanceView: View {
                            tint: T.accent,
                            accepted: $didReadEULA,
                            openAction: { showEULA = true })
-                    rowFor(title: "ai output disclaimer",
-                           subtitle: "ai can be wrong — always verify",
+                    rowFor(title: "AI output disclaimer",
+                           subtitle: "AI can be wrong — always verify",
                            icon: "exclamationmark.triangle",
                            tint: T.warn,
                            accepted: $didReadDisclaimer,
                            openAction: { showDisclaimer = true })
                     rowFor(title: "device safety notice",
-                           subtitle: "on-device ai heats the device — what to know",
+                           subtitle: "on-device AI heats the device — what to know",
                            icon: "thermometer.medium",
                            tint: T.bad,
                            accepted: $didReadDeviceSafety,
@@ -68,7 +70,8 @@ struct LegalAcceptanceView: View {
                         onAccepted()
                     } label: {
                         HStack {
-                            Text("agree and continue")
+                            Text("agree and continue".tr)
+                                .fixedSize(horizontal: false, vertical: true)
                                 .font(T.mono(14, .semibold))
                                 .tracking(0.3)
                             Spacer()
@@ -78,14 +81,17 @@ struct LegalAcceptanceView: View {
                         }
                         .foregroundColor(canContinue ? T.bg : T.ink3)
                         .padding(.horizontal, 16)
-                        .frame(height: 50)
+                        .padding(.vertical, 12)
+                        .frame(minHeight: 50)
                         .background(RoundedRectangle(cornerRadius: 10)
                             .fill(canContinue ? T.ink : T.surface2))
                     }
                     .buttonStyle(.plain)
                     .disabled(!canContinue)
+                    .accessibilityLabel("agree and continue".tr)
+                    .accessibilityIdentifier("legal.agree")
 
-                    Text("By tapping Agree, you confirm that you have read and accepted all four documents above. You can review them any time in Settings → Legal.")
+                    Text("By tapping Agree, you confirm that you have read and accepted all four documents above. You can review them any time in Settings → Legal.".tr)
                         .font(T.sans(11))
                         .foregroundColor(T.ink3)
                         .multilineTextAlignment(.center)
@@ -133,10 +139,12 @@ struct LegalAcceptanceView: View {
 
     private var headerView: some View {
         VStack(alignment: .leading, spacing: 8) {
-            KWordmark(name: "iOS Local LLM", logoAsset: "app_logo_small")
+            if !dynamicTypeSize.isAccessibilitySize {
+                KWordmark(name: "OnDevice LLM", logoAsset: "app_logo_small")
+            }
             VStack(alignment: .leading, spacing: 4) {
-                KCaption(text: "first launch")
-                Text("Before\nyou start.")
+                KCaption(text: "first launch".tr)
+                Text("Before\nyou start.".tr)
                     .font(T.display(34, .semibold))
                     .tracking(-1.2)
                     .foregroundColor(T.ink)
@@ -144,7 +152,7 @@ struct LegalAcceptanceView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.top, 8)
-            Text("Review the four documents below. Tap each to read.")
+            Text("Review the four documents below. Tap each to read.".tr)
                 .font(T.sans(13))
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -170,8 +178,10 @@ struct LegalAcceptanceView: View {
                     .background(RoundedRectangle(cornerRadius: 6).fill(tint.opacity(0.12)))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    KMono(text: title, size: 13, weight: .semibold, color: T.ink)
-                    KMono(text: subtitle, size: 10, color: T.ink3)
+                    KMono(text: title.tr, size: 13, weight: .semibold, color: T.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    KMono(text: subtitle.tr, size: 10, color: T.ink3)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer()
@@ -181,7 +191,7 @@ struct LegalAcceptanceView: View {
                         .font(T.mono(13))
                         .foregroundColor(T.good)
                 } else {
-                    Image(systemName: "chevron.right")
+                    Image(systemName: "chevron.forward")
                         .foregroundColor(T.ink3)
                         .font(.system(size: 12, weight: .medium))
                 }
@@ -193,5 +203,9 @@ struct LegalAcceptanceView: View {
                 .stroke(accepted.wrappedValue ? T.good.opacity(0.5) : Color.clear, lineWidth: 1))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(title.tr)
+        .accessibilityHint(subtitle.tr)
+        .accessibilityValue(accepted.wrappedValue ? "Read".tr : "Not read".tr)
+        .accessibilityIdentifier("legal.document.\(icon)")
     }
 }

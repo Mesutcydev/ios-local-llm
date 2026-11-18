@@ -1,42 +1,16 @@
 import SwiftUI
 
 // MARK: - LiquidPinkBackdrop
-// Historical name retained for compatibility. This is backdrop content, not a
-// tint inside the glass: restrained detail gives the native material live
-// pixels to sample and makes its clarity/refraction visible in both modes.
-
+// Historical name retained for call-site compatibility. A quiet, solid canvas
+// keeps content readable and preserves true black in OLED appearance.
 struct LiquidPinkBackdrop: View {
     @Environment(\.koduTheme) private var T
 
     var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                T.bg
-
-                Circle()
-                    .fill(T.accent.opacity(T.isDark ? 0.18 : 0.10))
-                    .frame(width: proxy.size.width * 1.05)
-                    .blur(radius: 38)
-                    .offset(x: -proxy.size.width * 0.42, y: -proxy.size.height * 0.26)
-
-                Circle()
-                    .fill(Color(red: 0.42, green: 0.78, blue: 0.72)
-                        .opacity(T.isDark ? 0.13 : 0.12))
-                    .frame(width: proxy.size.width * 0.86)
-                    .blur(radius: 46)
-                    .offset(x: proxy.size.width * 0.42, y: proxy.size.height * 0.04)
-
-                RoundedRectangle(cornerRadius: 64, style: .continuous)
-                    .fill(Color(red: 0.72, green: 0.62, blue: 0.96)
-                        .opacity(T.isDark ? 0.12 : 0.10))
-                    .frame(width: proxy.size.width * 1.15, height: proxy.size.height * 0.34)
-                    .rotationEffect(.degrees(-18))
-                    .blur(radius: 52)
-                    .offset(x: proxy.size.width * 0.18, y: proxy.size.height * 0.39)
-            }
-        }
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
+        T.bg
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 }
 

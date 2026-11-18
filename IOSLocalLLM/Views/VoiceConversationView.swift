@@ -23,6 +23,13 @@ struct VoiceConversationView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.koduTheme) private var T
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
+    /// Follow the app's Appearance setting — voice mode used to force light
+    /// and flash white at dark-mode users (often at night / in the car).
+    @AppStorage("appearance") private var appearance = "light"
+    /// Set when we paused for the background; foregrounding resumes.
+    @State private var resumeOnActive = false
 
     @State private var showModelPicker = false
     @State private var showVoiceSettings = false
@@ -76,10 +83,13 @@ struct VoiceConversationView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 4)
                     .frame(minHeight: proxy.size.height - 100)
+                    .frame(maxWidth: AppLayout.readingWidth)
+                    .frame(maxWidth: .infinity)
                 }
                 .safeAreaInset(edge: .bottom) {
                     controlDock
                         .padding(.horizontal, 20)
+                        .avoidingDisplayDivision()
                         .padding(.bottom, 10)
                         .padding(.top, 8)
                         .background(.ultraThinMaterial.opacity(0.92))
@@ -95,6 +105,25 @@ struct VoiceConversationView: View {
         .onDisappear {
             conv.stop()
             playbackCoord.reset()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .background:
+                // Only a live conversation auto-resumes; a failure stays on
+                // screen until the user retries.
+                switch conv.phase {
+                case .listening, .thinking, .speaking, .paused:
+                    conv.suspend()
+                    resumeOnActive = true
+                case .idle, .failed:
+                    break
+                }
+            case .active where resumeOnActive:
+                resumeOnActive = false
+                Task { _ = await conv.start() }
+            default:
+                break
+            }
         }
         .onChange(of: voiceAnswerEnabled) { _, enabled in
             playbackCoord.setMuted(!enabled)
@@ -149,7 +178,7 @@ struct VoiceConversationView: View {
         } message: {
             Text(loc.t("End conversation"))
         }
-        .preferredColorScheme(.light)
+        .preferredColorScheme(appearance == "light" ? .light : .dark)
     }
 
     // MARK: - Backdrop
@@ -225,20 +254,11 @@ struct VoiceConversationView: View {
         .accessibilityLabel("Conversation model: \(assistant.activeModel.displayName)")
     }
 
-    /// Explicit LLM vs TTS identity so Ternary Bonsai is never mistaken for a voice.
+    /// TTS identity under the model strip, so the conversation LLM (shown in
+    /// the strip) is never mistaken for a voice. The strip already names the
+    /// model; repeating it here was redundant chrome.
     private var identityRows: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Text("Conversation model")
-                    .font(T.mono(9, .semibold))
-                    .foregroundStyle(T.ink3)
-                Text(assistant.activeModel.displayName)
-                    .font(T.mono(10.5, .semibold))
-                    .foregroundStyle(T.ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                Spacer(minLength: 0)
-            }
             HStack(spacing: 6) {
                 Text("Voice")
                     .font(T.mono(9, .semibold))
@@ -252,15 +272,13 @@ struct VoiceConversationView: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(
-            "Conversation model \(assistant.activeModel.displayName). Voice \(activeVoiceLabel)"
-        )
+        .accessibilityLabel("Voice \(activeVoiceLabel)")
     }
 
     @ViewBuilder
     private var modelStripMenuContent: some View {
         let activeOverride = conv.voiceModelID
-        let presets = AssistantModelCatalog.presets
+        let presets = voicePresets()
         let downloaded = voiceTabDownloadedLLMs()
         let currentLiveID = assistant.activeModel.id
 
@@ -279,14 +297,34 @@ struct VoiceConversationView: View {
 
         Section(loc.t("presets")) {
             ForEach(presets, id: \.id) { preset in
-                Button {
-                    HapticManager.impact(.light)
-                    Task { await conv.setVoiceModel(preset.id) }
-                } label: {
-                    if currentLiveID == preset.id {
-                        Label(preset.displayName, systemImage: "checkmark")
-                    } else {
-                        Text(preset.displayName)
+                if CodingAssistantService.isInstalled(preset) {
+                    Button {
+                        HapticManager.impact(.light)
+                        Task { await conv.setVoiceModel(preset.id) }
+                    } label: {
+                        if currentLiveID == preset.id {
+                            Label(preset.displayName, systemImage: "checkmark")
+                        } else {
+                            Text(preset.displayName)
+                        }
+                    }
+                } else {
+                    // A tap used to start a multi-GB download with no size
+                    // shown. Not on disk → a submenu whose only action names
+                    // the size. (A dialog presented from a Menu action is
+                    // dropped while the menu dismisses.)
+                    let size = downloadSizeText(preset)
+                    Menu {
+                        Button {
+                            HapticManager.impact(.light)
+                            Task { await conv.setVoiceModel(preset.id) }
+                        } label: {
+                            Label(size.map { loc.t("Download \($0)") } ?? loc.t("Download"),
+                                  systemImage: "arrow.down.circle")
+                        }
+                    } label: {
+                        Label([preset.displayName, size].compactMap { $0 }.joined(separator: " · "),
+                              systemImage: "arrow.down.circle")
                     }
                 }
             }
@@ -362,12 +400,14 @@ struct VoiceConversationView: View {
             HStack(spacing: 8) {
                 readinessChip
                 engineChip
-                if voiceControls.isFallbackEngine {
+                if !assistant.activeModel.supportsNativeAudio && voiceControls.isFallbackEngine {
                     fallbackChip
                 }
                 Spacer(minLength: 0)
-                testAudioButton
+                if !assistant.activeModel.supportsNativeAudio { testAudioButton }
             }
+
+            if isLargeVoiceModel { largeModelHint }
 
             HStack(spacing: 8) {
                 VoiceRouteControl(sessionManager: routeManager)
@@ -387,6 +427,34 @@ struct VoiceConversationView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: voice.isPlaying)
         .animation(.easeInOut(duration: 0.2), value: routeManager.route.uid)
+    }
+
+    /// ~3B+ models answer slowly in a spoken back-and-forth and heat the
+    /// phone over a long session (user reports of voice stopping after a
+    /// few turns came from 3–4B models). Say so up front, with the fix.
+    private var isLargeVoiceModel: Bool {
+        !assistant.activeModel.supportsNativeAudio
+            && assistant.activeModel.approxRAMBytes >= 2_000_000_000
+    }
+
+    private var largeModelHint: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "tortoise.fill")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(T.warn)
+            Text(loc.t("Large model: replies will be slower and the phone may warm up. A model of 1.5B or smaller works best for voice."))
+                .font(T.sans(11.5))
+                .foregroundStyle(T.ink2)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            Button(loc.t("Change")) { showModelPicker = true }
+                .font(T.mono(10.5, .semibold))
+                .foregroundStyle(T.accent)
+                .padding(.vertical, 6)
+                .contentShape(Rectangle())   // the bare label was an ~11 pt tap target
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(T.warn.opacity(0.08)))
     }
 
     #if DEBUG
@@ -438,6 +506,7 @@ struct VoiceConversationView: View {
 
     private var readinessChip: some View {
         let label: String = {
+            if assistant.activeModel.supportsNativeAudio { return engineReady ? "Ready" : "Loading" }
             switch voiceSettings.availabilityState {
             case .loading: return "Loading"
             case .failed: return "Unavailable"
@@ -450,10 +519,13 @@ struct VoiceConversationView: View {
     }
 
     private var engineReady: Bool {
+        if assistant.activeModel.supportsNativeAudio { return assistant.state == .ready || assistant.state == .generating }
         switch voiceSettings.selectedEngine {
         case .appleSystem: return true
         case .kittenTTS: return voice.kittenState == .ready
         case .kokoro: return voice.kokoroState == .ready
+        case .paradee: return voice.paradeeState == .ready
+        case .supertonic: return voice.supertonicState == .ready
         }
     }
 
@@ -518,41 +590,50 @@ struct VoiceConversationView: View {
     }
 
     private var engineSymbol: String {
+        if assistant.activeModel.supportsNativeAudio { return "waveform" }
         // Show preferred store selection; live engine may differ on fallback.
         switch voiceSettings.selectedEngine {
         case .appleSystem: return "applelogo"
         case .kittenTTS:   return "pawprint.fill"
         case .kokoro:      return "leaf.fill"
+        case .paradee:     return "bird.fill"
+        case .supertonic:  return "globe"
         }
     }
 
     private var engineLabel: String {
+        if assistant.activeModel.supportsNativeAudio { return assistant.activeModel.displayName }
         if voiceControls.isFallbackEngine {
-            return "Apple TTS"
+            return LocalizationService.shared.t("Apple TTS")
         }
         switch voice.currentEngineKind {
         case .appleSystem:
             // Prefer store selection name when Apple is intentional.
-            if voiceSettings.selectedEngine == .appleSystem { return "Apple TTS" }
-            return "Apple TTS"
-        case .kittenTTS: return "KittenTTS"
-        case .kokoro: return "Kokoro"
+            if voiceSettings.selectedEngine == .appleSystem { return LocalizationService.shared.t("Apple TTS") }
+            return LocalizationService.shared.t("Apple TTS")
+        case .kittenTTS: return LocalizationService.shared.t("KittenTTS")
+        case .kokoro: return LocalizationService.shared.t("Kokoro")
+        case .paradee: return LocalizationService.shared.t("Paradee")
+        case .supertonic: return LocalizationService.shared.t("Supertonic")
         }
     }
 
     private var activeVoiceLabel: String {
+        if assistant.activeModel.supportsNativeAudio { return assistant.activeModel.displayName }
         let id = voiceSettings.selectedVoiceID
         if let match = voice.availableVoices.first(where: { $0.id == id }) {
             return "\(match.name) · \(voiceSettings.selectedEngine.shortName)"
         }
         if voiceSettings.selectedEngine == .appleSystem {
-            return "System voice · Apple TTS"
+            return LocalizationService.shared.t("System voice · Apple TTS")
         }
-        return "\(voiceSettings.selectedEngine.shortName) voice"
+        return LocalizationService.shared.t("\(voiceSettings.selectedEngine.shortName) voice")
     }
 
     private var fallbackDetail: String? {
-        voiceControls.isFallbackEngine ? "Fallback active" : nil
+        if case .loading(let message) = assistant.state, !message.isEmpty { return message }
+        if conv.phase == .paused { return loc.t("Tap the orb to resume") }
+        return !assistant.activeModel.supportsNativeAudio && voiceControls.isFallbackEngine ? "Fallback active" : nil
     }
 
     private var orbAccent: Color {
@@ -576,10 +657,7 @@ struct VoiceConversationView: View {
 
             KaraokeTranscriptContainer(
                 karaoke: SpeechPlaybackCoordinator.shared.karaoke,
-                // Skip the strip pass while speakable text exists — the
-                // fallback is only read when karaoke.text is empty, and
-                // computing it per body eval was O(n²) over the reply.
-                fallbackText: karaokeText.isEmpty ? fallbackKaraokeText : "",
+                fallbackText: transcriptFallback,
                 isExpanded: false,
                 onToggleExpand: { isTranscriptExpanded = true },
                 onCopy: { UIPasteboard.general.string = displayKaraokeText },
@@ -609,6 +687,21 @@ struct VoiceConversationView: View {
         return stripped.isEmpty ? conv.liveReply : stripped
     }
 
+    /// What the transcript shows while the coordinator has no spoken text.
+    /// A reply the app's voice is about to speak shows nothing until its first
+    /// sentence starts: the transcript is built from what is spoken, so the raw
+    /// reply would flash up and then shrink to that sentence. Silent replies,
+    /// native-audio models and anything left unspoken still show the reply.
+    private var transcriptFallback: String {
+        // Skip the strip pass while speakable text exists — computing it per
+        // body eval was O(n²) over the reply.
+        guard karaokeText.isEmpty else { return "" }
+        let awaitingVoice = voiceAnswerEnabled
+            && !assistant.activeModel.supportsNativeAudio
+            && (conv.phase == .thinking || conv.phase == .speaking)
+        return awaitingVoice ? "" : fallbackKaraokeText
+    }
+
     private var canReplay: Bool {
         !displayKaraokeText.isEmpty && conv.phase != .speaking && conv.phase != .thinking
     }
@@ -617,7 +710,7 @@ struct VoiceConversationView: View {
         NavigationStack {
             KaraokeTranscriptContainer(
                 karaoke: SpeechPlaybackCoordinator.shared.karaoke,
-                fallbackText: karaokeText.isEmpty ? fallbackKaraokeText : "",
+                fallbackText: transcriptFallback,
                 isExpanded: true,
                 onToggleExpand: { isTranscriptExpanded = false },
                 onCopy: { UIPasteboard.general.string = displayKaraokeText },
@@ -628,7 +721,7 @@ struct VoiceConversationView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(loc.t("Done")) { isTranscriptExpanded = false }
+                    Button(loc.t("Done"), systemImage: "checkmark") { isTranscriptExpanded = false }
                 }
             }
             // Keep interrupt reachable while expanded via toolbar.
@@ -650,11 +743,24 @@ struct VoiceConversationView: View {
                 .font(T.sans(13))
                 .foregroundColor(T.bad)
                 .multilineTextAlignment(.center)
-            Button("Retry") {
-                Task { _ = await conv.start() }
+            if msg.localizedCaseInsensitiveContains("permission") {
+                // Retry can't fix a denied permission — only Settings can.
+                Button(loc.t("Open Settings")) {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                }
+                .font(T.mono(11, .semibold))
+                .foregroundStyle(T.accent)
+                .padding(.horizontal, 16).padding(.vertical, 10)
+                .contentShape(Rectangle())
+            } else {
+                Button(loc.t("Retry")) {
+                    Task { _ = await conv.start() }
+                }
+                .font(T.mono(11, .semibold))
+                .foregroundStyle(T.accent)
+                .padding(.horizontal, 16).padding(.vertical, 10)
+                .contentShape(Rectangle())
             }
-            .font(T.mono(11, .semibold))
-            .foregroundStyle(T.accent)
         }
         .padding()
         .frame(maxWidth: .infinity)
@@ -702,30 +808,55 @@ struct VoiceConversationView: View {
                     interruptNow()
                 }
                 .transition(.scale.combined(with: .opacity))
+            } else if conv.phase == .listening {
+                // Status, not a button: listening is automatic. The old
+                // greyed-out disabled mic read as "mic is off".
+                VStack(spacing: 6) {
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(T.accent)
+                        .frame(width: 48, height: 48)
+                        .background(Circle().fill(T.accent.opacity(0.14)))
+                    Text(loc.t("listening"))
+                        .font(T.mono(10, .semibold))
+                        .foregroundStyle(T.ink2)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+                .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(loc.t("listening"))
             } else {
                 dockButton(
                     systemImage: "mic.fill",
-                    label: loc.t("listening"),
-                    tint: T.ink3,
-                    accessibility: loc.t("listening")
+                    label: dockStartLabel,
+                    tint: T.accent,
+                    accessibility: dockStartLabel
                 ) {
-                    // No-op visual balance; listening is automatic.
+                    HapticManager.impact(.medium)
+                    Task { _ = await conv.start() }
                 }
-                .opacity(0.45)
-                .disabled(true)
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
                 .fill(.ultraThinMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
                         .stroke(T.rule.opacity(0.6), lineWidth: 0.5)
                 )
         )
         .animation(.spring(duration: 0.3), value: conv.phase)
+    }
+
+    private var dockStartLabel: String {
+        switch conv.phase {
+        case .idle:   return loc.t("Start")
+        case .paused: return loc.t("Resume")
+        default:      return loc.t("Retry")
+        }
     }
 
     private func dockButton(
@@ -844,6 +975,7 @@ struct VoiceConversationView: View {
             // Keep `.speaking` even before the first buffer is audible so the
             // orb opens its output gate and reacts as soon as levels arrive.
             return .speaking
+        case .paused: return .paused
         case .failed(let msg): return .failed(msg)
         }
     }
@@ -865,7 +997,7 @@ struct VoiceConversationView: View {
             case .idle, .failed, .paused: return true
             default: return false
             }
-        case .idle, .failed:
+        case .idle, .paused, .failed:
             return true
         }
     }
@@ -881,6 +1013,7 @@ private struct VoiceModelPickerSheet: View {
     @ObservedObject private var loc = LocalizationService.shared
     @Environment(\.dismiss) private var dismiss
     @Environment(\.koduTheme) private var T
+    @State private var confirmDownload: AssistantModel?
 
     private var downloadedModels: [DownloadableModel] {
         let candidates = center.models.filter { m in
@@ -910,10 +1043,33 @@ private struct VoiceModelPickerSheet: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(loc.t("Done")) { dismiss() }.foregroundColor(T.ink)
+                    Button(loc.t("Done"), systemImage: "checkmark") { dismiss() }.foregroundColor(T.ink)
                 }
             }
+            .confirmationDialog(
+                loc.t("Download \(confirmDownload?.displayName ?? "")"),
+                isPresented: Binding(
+                    get: { confirmDownload != nil },
+                    set: { if !$0 { confirmDownload = nil } }
+                ),
+                titleVisibility: .visible,
+                presenting: confirmDownload
+            ) { model in
+                Button(downloadSizeText(model).map { loc.t("Download \($0)") } ?? loc.t("Download")) {
+                    pick(model.id)
+                }
+                Button(loc.t("Cancel"), role: .cancel) {}
+            } message: { _ in
+                Text(loc.t("This model isn't on your device yet. Voice mode switches to it when the download finishes."))
+            }
         }
+    }
+
+    /// Close first: awaiting setVoiceModel kept the sheet up for the whole
+    /// download + load with no feedback. Progress shows under the orb.
+    private func pick(_ modelID: String?) {
+        dismiss()
+        Task { await conv.setVoiceModel(modelID) }
     }
 
     private var header: some View {
@@ -937,10 +1093,7 @@ private struct VoiceModelPickerSheet: View {
         let isMatching = conv.voiceModelID == nil
         return KSection(title: loc.t("default")) {
             Button {
-                Task {
-                    await conv.setVoiceModel(nil)
-                    dismiss()
-                }
+                pick(nil)
             } label: {
                 HStack(spacing: 10) {
                     radio(isSelected: isMatching)
@@ -962,9 +1115,10 @@ private struct VoiceModelPickerSheet: View {
 
     private var presetsSection: some View {
         KSection(title: loc.t("presets")) {
-            ForEach(Array(AssistantModelCatalog.presets.enumerated()), id: \.offset) { i, m in
+            ForEach(Array(voicePresets().enumerated()), id: \.offset) { i, m in
                 if i > 0 { Rectangle().fill(T.rule).frame(height: 1) }
-                row(id: m.id, name: m.displayName, subtitle: m.subtitle)
+                row(id: m.id, name: m.displayName, subtitle: m.subtitle,
+                    needsDownload: CodingAssistantService.isInstalled(m) ? nil : m)
             }
         }
     }
@@ -982,12 +1136,14 @@ private struct VoiceModelPickerSheet: View {
     }
 
     @ViewBuilder
-    private func row(id modelID: String, name: String, subtitle: String) -> some View {
+    private func row(id modelID: String, name: String, subtitle: String,
+                     needsDownload: AssistantModel? = nil) -> some View {
         let isSelected = conv.voiceModelID == modelID
         Button {
-            Task {
-                await conv.setVoiceModel(modelID)
-                dismiss()
+            if let needsDownload {
+                confirmDownload = needsDownload
+            } else {
+                pick(modelID)
             }
         } label: {
             HStack(spacing: 10) {
@@ -1001,6 +1157,12 @@ private struct VoiceModelPickerSheet: View {
                         .truncationMode(.tail)
                 }
                 Spacer()
+                if needsDownload != nil {
+                    Image(systemName: "arrow.down.circle")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(T.ink3)
+                        .accessibilityLabel(loc.t("Download"))
+                }
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
             .contentShape(Rectangle())
@@ -1027,4 +1189,30 @@ private struct VoiceModelPickerSheet: View {
         .padding(.horizontal, 16)
         .padding(.top, 14)
     }
+}
+
+// MARK: - Voice model menu helpers
+
+/// Presets offered in voice mode. Same fit rule as the chat picker: a model
+/// this device can't hold is not offered (users were picking 4B+ models that
+/// then failed or ran hot).
+@MainActor
+private func voicePresets() -> [AssistantModel] {
+    AssistantModelCatalog.presets.filter { model in
+        guard model.platformCompatibility?.supportsCurrentPlatform ?? true else { return false }
+        switch MemoryAdvisor.fit(forFootprint: MemoryAdvisor.estimatedFootprint(for: model.id)) {
+        case .fits:  return true
+        case .tight: return AppSettings.shared.showEdgeModels
+        case .over:  return false
+        }
+    }
+}
+
+/// Download size from the catalog, else parsed from the subtitle
+/// ("4-bit · 2.3 GB · …"), formatted the same locale-aware way either way.
+private func downloadSizeText(_ model: AssistantModel) -> String? {
+    if let bytes = model.downloadSizeBytes { return bytes.formattedBytes }
+    guard let match = model.subtitle.firstMatch(of: /([\d.]+)\s?([GM])B/),
+          let value = Double(match.1) else { return nil }
+    return Int64(value * (match.2 == "G" ? 1e9 : 1e6)).formattedBytes
 }

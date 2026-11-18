@@ -214,8 +214,10 @@ final class SystemSpeechPCMTests: XCTestCase {
     /// Flo, …) voices in speechVoices(). They are robotic by design and must
     /// never be offered or auto-picked — the "synthetic robotic voice for
     /// everything" bug was Albert winning the alphabetical tie-break.
-    func test_roboticSynthVoicesNeverOffered() {
+    func test_roboticSynthVoicesNeverOffered() async {
         let service = SystemSpeechService()
+        await service.refreshVoices()
+        XCTAssertFalse(service.availableVoices.isEmpty)
         for v in service.availableVoices {
             let id = v.id.lowercased()
             XCTAssertFalse(id.contains("eloquence"), "Eloquence voice offered: \(v.id)")
@@ -227,6 +229,96 @@ final class SystemSpeechPCMTests: XCTestCase {
                 XCTAssertFalse(SystemSpeechService.isRoboticSynth(av),
                                "Default voice is a robotic synth: \(def.id)")
             }
+        }
+    }
+}
+
+@MainActor
+final class OnnxTTSEngineTests: XCTestCase {
+
+    func test_supertonicPreprocessMatchesReference() {
+        XCTAssertEqual(SupertonicTTSService.preprocess("Hello — world", lang: "en"), "<en>Hello - world.</en>")
+        XCTAssertEqual(SupertonicTTSService.preprocess("Merhaba 😀  dünya!", lang: "tr"),
+                       "<tr>Merhaba du\u{0308}nya!</tr>")
+    }
+
+    func test_supertonicLanguageAndChunks() {
+        XCTAssertEqual(SupertonicTTSService.language(for: "Bugün hava çok güzel, dışarı çıkalım mı?"), "tr")
+        let chunks = SupertonicTTSService.chunks(String(repeating: "One short sentence here. ", count: 40), maxLength: 300)
+        XCTAssertGreaterThan(chunks.count, 1)
+        XCTAssertTrue(chunks.allSatisfy { $0.count <= 300 })
+    }
+
+    /// Downloads the pinned models into the test host and speaks with both
+    /// engines. Opt-in: `TEST_RUNNER_ONNX_TTS_E2E=1 xcodebuild test …`.
+    func test_enginesSpeakEndToEnd() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["ONNX_TTS_E2E"] == "1")
+        try await fetch("sahilmahendrakar/Paradee-8M-v1.2", "ed2934d4df8a4fd891e29584c5e1104649409765",
+                        ["onnx/paradee_int8.onnx", "config.json"], into: ParadeeTTSService.directory)
+        try await fetch("Supertone/supertonic-3", "3cadd1ee6394adea1bd021217a0e650ede09a323",
+                        ["onnx/duration_predictor.onnx", "onnx/text_encoder.onnx", "onnx/vector_estimator.onnx",
+                         "onnx/vocoder.onnx", "onnx/tts.json", "onnx/unicode_indexer.json",
+                         "voice_styles/F1.json", "voice_styles/M1.json"], into: SupertonicTTSService.directory)
+
+        let paradee = ParadeeTTSService()
+        await paradee.load()
+        XCTAssertEqual(paradee.modelState, .ready)
+        let english = try await paradee.synthesize(text: Self.englishProbe,
+                                                   voice: ParadeeTTSService.paradeeVoices[0], settings: .init())
+        XCTAssertGreaterThan(english.duration, 1.0)
+
+        let supertonic = SupertonicTTSService()
+        await supertonic.load()
+        XCTAssertEqual(supertonic.modelState, .ready)
+        let turkish = try await supertonic.synthesize(text: "Merhaba, bugün hava çok güzel.",
+                                                      voice: SupertonicTTSService.supertonicVoices[0], settings: .init())
+        XCTAssertGreaterThan(turkish.duration, 1.0)
+        XCTAssertEqual(turkish.sampleRate, 44_100)
+
+        // Kokoro shares KokoroPhonemizer with Paradee.
+        try await fetchTree("aufklarer/Kokoro-82M-CoreML", "f8ff771e4cab0bb3368e8af3a090a7e847485401",
+                            prefixes: ["kokoro_5s.mlmodelc/", "G2PEncoder.mlmodelc/", "G2PDecoder.mlmodelc/",
+                                       "voices/af_heart.json", "config.json", "pipeline_config.json",
+                                       "g2p_vocab.json", "vocab_index.json"],
+                            into: VoiceModelBundleValidator.voiceModelsRoot().appendingPathComponent("Kokoro"))
+        let kokoro = KokoroTTSService()
+        await kokoro.load()
+        XCTAssertEqual(kokoro.modelState, .ready)
+        let kokoroVoice = try XCTUnwrap(KokoroTTSService.kokoroVoices.first { $0.id.hasSuffix("af_heart") })
+        let kokoroEnglish = try await kokoro.synthesize(text: Self.englishProbe, voice: kokoroVoice, settings: .init())
+        XCTAssertGreaterThan(kokoroEnglish.duration, 1.0)
+
+        // Optional listening copies: TEST_RUNNER_ONNX_TTS_WAV_DIR=/some/dir
+        if let dir = ProcessInfo.processInfo.environment["ONNX_TTS_WAV_DIR"] {
+            for (name, result) in [("paradee-en", english), ("supertonic-tr", turkish), ("kokoro-en", kokoroEnglish)] {
+                guard let buffer = result.pcmBuffer else { continue }
+                let file = try AVAudioFile(forWriting: URL(fileURLWithPath: dir).appendingPathComponent("\(name).wav"),
+                                           settings: buffer.format.settings)
+                try file.write(from: buffer)
+            }
+        }
+    }
+
+    /// Diphthongs (tiny, voice, cold, now, day) and r-coloured vowels (her, bird, water).
+    private static let englishProbe = "Hello from Paradee, the tiny voice. Her bird likes cold water today, right now."
+
+    private func fetchTree(_ repo: String, _ revision: String, prefixes: [String], into dir: URL) async throws {
+        let api = URL(string: "https://huggingface.co/api/models/\(repo)/tree/\(revision)?recursive=true")!
+        let (data, _) = try await URLSession.shared.data(from: api)
+        let entries = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] ?? []
+        let files = entries.compactMap { $0["type"] as? String == "file" ? $0["path"] as? String : nil }
+            .filter { path in prefixes.contains { path == $0 || path.hasPrefix($0) } }
+        try await fetch(repo, revision, files, into: dir)
+    }
+
+    private func fetch(_ repo: String, _ revision: String, _ files: [String], into dir: URL) async throws {
+        for file in files {
+            let target = dir.appendingPathComponent(file)
+            guard !FileManager.default.fileExists(atPath: target.path) else { continue }
+            let url = URL(string: "https://huggingface.co/\(repo)/resolve/\(revision)/\(file)")!
+            let (temp, _) = try await URLSession.shared.download(from: url)
+            try FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try FileManager.default.moveItem(at: temp, to: target)
         }
     }
 }

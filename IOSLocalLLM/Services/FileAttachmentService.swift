@@ -17,9 +17,12 @@ public enum FileAttachmentService {
 
     /// Maximum decoded text per file in bytes. ~64 KB is roughly 16K tokens
     /// for ASCII, which is half a typical 1.5B–3B model's working window.
-    public static let perFileByteCap = 64 * 1024
-    public static let maxAttachmentsPerSend = 3
-    public static let totalByteCap = 128 * 1024
+    nonisolated public static let perFileByteCap = 64 * 1024
+    nonisolated public static let maxAttachmentsPerSend = 3
+    nonisolated public static let totalByteCap = 128 * 1024
+
+    nonisolated private static let maxPDFBytes = 32 * 1024 * 1024
+    nonisolated private static let maxPDFPages = 200
 
     // MARK: - Attachment model
 
@@ -43,7 +46,7 @@ public enum FileAttachmentService {
 
     /// Extracts text from `url`. Caller must have called `startAccessingSecurityScopedResource`
     /// on the URL OR be operating inside the document picker's callback.
-    public static func read(_ url: URL) async throws -> Attachment {
+    nonisolated public static func read(_ url: URL) async throws -> Attachment {
         let didStart = url.startAccessingSecurityScopedResource()
         defer { if didStart { url.stopAccessingSecurityScopedResource() } }
 
@@ -60,25 +63,31 @@ public enum FileAttachmentService {
 
     // MARK: - PDF
 
-    private static func readPDF(at url: URL) throws -> Attachment {
+    nonisolated private static func readPDF(at url: URL) throws -> Attachment {
+        try Task.checkCancellation()
+        let fileBytes = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        guard fileBytes <= maxPDFBytes else {
+            throw AttachmentError.readFailed("PDF exceeds the 32 MB on-device limit. Split it or export the pages you need.")
+        }
         guard let doc = PDFDocument(url: url) else {
             throw AttachmentError.decodeFailed("PDFKit couldn't open the document")
         }
         var collected = ""
         var truncated = false
         let cap = perFileByteCap
-        for i in 0..<doc.pageCount {
+        for i in 0..<min(doc.pageCount, maxPDFPages) {
+            try Task.checkCancellation()
             guard let page = doc.page(at: i), let text = page.string else { continue }
-            if collected.utf8.count + text.utf8.count > cap {
-                let remaining = cap - collected.utf8.count
-                if remaining > 0 {
-                    collected += String(text.prefix(remaining / 2))   // chars ≈ utf8 bytes/2 for safety
-                }
-                truncated = true
-                break
-            }
-            collected += text
-            if !text.hasSuffix("\n") { collected += "\n" }
+            let remaining = max(0, cap - collected.utf8.count)
+            let pageText = text + (text.hasSuffix("\n") ? "" : "\n")
+            let (prefix, clipped) = capToBytes(pageText, cap: remaining)
+            collected += prefix
+            if clipped { truncated = true; break }
+        }
+        var warning = truncated ? "Truncated to \(perFileByteCap / 1024) KB" : nil
+        if doc.pageCount > maxPDFPages {
+            let note = "First \(maxPDFPages) of \(doc.pageCount) pages"
+            warning = warning.map { "\($0) · \(note)" } ?? note
         }
         let displayName = url.lastPathComponent
         return Attachment(
@@ -86,16 +95,24 @@ public enum FileAttachmentService {
             byteSize: collected.utf8.count,
             extractedText: collected,
             kind: .pdf,
-            warning: truncated ? "Truncated to \(perFileByteCap / 1024) KB" : nil
+            warning: warning
         )
     }
 
     // MARK: - Text / code
 
-    private static func readText(at url: URL) throws -> Attachment {
+    nonisolated private static func readText(at url: URL) throws -> Attachment {
+        try Task.checkCancellation()
         let data: Data
+        let truncatedRead: Bool
         do {
-            data = try Data(contentsOf: url, options: .mappedIfSafe)
+            let handle = try FileHandle(forReadingFrom: url)
+            defer { try? handle.close() }
+            // Bound I/O before decoding; the output cap must also bound input work.
+            let readLimit = perFileByteCap + 16 * 1024
+            let prefix = try handle.read(upToCount: readLimit + 1) ?? Data()
+            truncatedRead = prefix.count > readLimit
+            data = Data(prefix.prefix(readLimit))
         } catch {
             throw AttachmentError.readFailed(error.localizedDescription)
         }
@@ -107,9 +124,8 @@ public enum FileAttachmentService {
             throw AttachmentError.binaryFile
         }
 
-        let raw = String(data: data, encoding: .utf8)
-            ?? String(data: data, encoding: .isoLatin1)
-            ?? ""
+        try Task.checkCancellation()
+        let raw = decodeTextPrefix(data, truncated: truncatedRead)
         guard !raw.isEmpty else {
             throw AttachmentError.decodeFailed("Could not decode as UTF-8 or Latin-1")
         }
@@ -126,19 +142,46 @@ public enum FileAttachmentService {
         )
     }
 
-    /// UTF-8 byte-safe trimming. Walks back to a character boundary so we
-    /// don't slice a multi-byte sequence in half.
-    private static func capToBytes(_ s: String, cap: Int) -> (String, Bool) {
-        guard s.utf8.count > cap else { return (s, false) }
-        var working = s
-        while working.utf8.count > cap, !working.isEmpty {
-            working.removeLast()
+    /// A bounded read can end inside a UTF-8 scalar. Repair only that tail
+    /// before considering Latin-1, preserving Unicode earlier in the prefix.
+    nonisolated static func decodeTextPrefix(_ data: Data, truncated: Bool = false) -> String {
+        if let text = String(data: data, encoding: .utf8) { return text }
+        let bytes = Array(data.suffix(4))
+        if truncated, let lead = bytes.lastIndex(where: { $0 & 0xc0 != 0x80 }) {
+            let byte = bytes[lead]
+            let expected = byte >= 0xc2 && byte <= 0xdf ? 2
+                : byte >= 0xe0 && byte <= 0xef ? 3
+                : byte >= 0xf0 && byte <= 0xf4 ? 4 : 0
+            let tailCount = bytes.count - lead
+            if expected > tailCount,
+               let text = String(data: data.dropLast(tailCount), encoding: .utf8) {
+                return text
+            }
         }
-        working += "\n\n[…truncated…]"
-        return (working, true)
+        return String(data: data, encoding: .isoLatin1) ?? ""
     }
 
-    private static func inferKind(filename: String) -> Attachment.Kind {
+    /// Preserve complete characters and count the truncation marker inside
+    /// the byte cap. Unlike the reference, keep a complete final UTF-8 scalar.
+    nonisolated static func capToBytes(_ text: String, cap: Int) -> (String, Bool) {
+        let limit = max(0, cap)
+        guard text.utf8.count > limit else { return (text, false) }
+        let marker = "\n\n[…truncated…]"
+        let suffix = marker.utf8.count <= limit ? marker : ""
+        let budget = limit - suffix.utf8.count
+        var end = text.startIndex
+        var used = 0
+        while end < text.endIndex {
+            let next = text.index(after: end)
+            let count = text[end..<next].utf8.count
+            guard count <= budget - used else { break }
+            used += count
+            end = next
+        }
+        return (String(text[..<end]) + suffix, true)
+    }
+
+    nonisolated private static func inferKind(filename: String) -> Attachment.Kind {
         let ext = (filename as NSString).pathExtension.lowercased()
         switch ext {
         case "md", "markdown": return .markdown

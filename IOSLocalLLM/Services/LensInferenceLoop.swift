@@ -259,6 +259,10 @@ final class LensInferenceLoop: ObservableObject {
     }
 
     func switchTo(repoID: String, preserveMatchingAssistant: Bool = false) async {
+        guard ConsumerModelPolicy.allows(repoID: repoID) else {
+            state = .failed("This research-only model is unavailable in the consumer app.")
+            return
+        }
         // Lifecycle guard: refuse loads during .inactive/.background transitions.
         guard !newRequestsSuspended else {
             Diagnostics.shared.breadcrumb(
@@ -507,7 +511,7 @@ final class LensInferenceLoop: ObservableObject {
 
             do {
                 let candidateProfile = MLXVLMExecutionProfile.resolve(repoID: candidate)
-                let loaded = try await MLXGenerationGate.shared.run {
+                let loaded = try await MLXGenerationGate.shared.run { [self] in
                     try await Self.withMLXMemoryCap(
                         cacheLimitBytes: candidateProfile.cacheLimitBytes
                     ) {

@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import CryptoKit
 
 extension Notification.Name {
     static let hfModelDownloadCompleted = Notification.Name("hfModelDownloadCompleted")
@@ -49,6 +48,9 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
     @Published private(set) var currentFile: String = ""
     @Published private(set) var filesDone: Int = 0
     @Published private(set) var filesTotal: Int = 0
+    /// True after `pause()`: the files downloaded so far are still on disk
+    /// and `start()` continues from them.
+    @Published private(set) var isPaused = false
 
     /// Structured category for the most-recent failure. Cleared when
     /// a new run starts. Catalog UI branches on this to decide whether
@@ -92,6 +94,12 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
     private var cleanupError: Error?
     private var isDeleting = false
     private var generation = UUID()
+    /// File the background session is writing right now, so `pause()` can
+    /// stop exactly that transfer (several catalog entries share a folder).
+    private var currentFileDestination: URL?
+    /// Revision used for requests. Starts as `branch`; falls back to "main"
+    /// when a pinned commit no longer exists upstream.
+    private var requestBranch: String
     private let fetchData: (URLRequest) async throws -> (Data, URLResponse)
 
     // MARK: - Init
@@ -108,6 +116,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         self.id          = repoID
         self.repoID      = repoID
         self.branch      = branch
+        self.requestBranch = branch
         self.destination = destination
         self.fileAllowlist = fileAllowlist
         self.fetchData = fetchData
@@ -116,12 +125,17 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
     // MARK: - Public API
 
     func start() {
+        guard ConsumerModelPolicy.allows(repoID: repoID) else {
+            state = .failed("This model's research-only license excludes use in a consumer product. Choose a different model.")
+            return
+        }
         guard !state.isActive, !isDeleting else { return }
         let pendingCleanup = cleanupTask
         let runID = UUID()
         generation = runID
         // Claim the slot synchronously: two taps must not enqueue two runs.
         state = .enumerating
+        isPaused = false
         downloadTask = Task {
             await pendingCleanup?.value
             guard !Task.isCancelled, generation == runID else { return }
@@ -141,29 +155,44 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         )
     }
 
-    func cancel() {
+    /// Stops the download and deletes everything it wrote.
+    func cancel() { stop(keepingFiles: false) }
+
+    /// Stops the download but keeps every byte on disk. `start()` skips the
+    /// finished files and resumes the interrupted one where it stopped.
+    func pause() {
+        guard state.isActive else { return }
+        stop(keepingFiles: true)
+        isPaused = true
+    }
+
+    private func stop(keepingFiles: Bool) {
         generation = UUID()
         let cancellationGeneration = generation
         let identifier = UUID()
         cleanupID = identifier
         let previous = downloadTask
         let previousCleanup = cleanupTask
+        if keepingFiles, let file = currentFileDestination {
+            // Ask URLSession for resume data before the task is torn down.
+            BackgroundDownloadCoordinator.shared.pause(destination: file)
+        }
         previous?.cancel()
         downloadTask = nil
-        // A cancelled download must not leave its Live Activity pinned on the
-        // Lock Screen until the system cap. Safe when none is running.
-        DownloadLiveActivityManager.shared.finish(repoID: repoID)
+        isPaused = false
         cleanupTask = Task {
             await previousCleanup?.value
             // URLSession cancellation is scoped to the exact file task. Wait
             // for its delegate/continuation and the old run before deleting.
             await previous?.value
-            do {
-                try removeTrackedFiles()
-                cleanupError = nil
-            } catch {
-                cleanupError = error
-                if generation == cancellationGeneration { state = .failed(error.localizedDescription) }
+            if !keepingFiles {
+                do {
+                    try removeTrackedFiles()
+                    cleanupError = nil
+                } catch {
+                    cleanupError = error
+                    if generation == cancellationGeneration { state = .failed(error.localizedDescription) }
+                }
             }
             if cleanupID == identifier { cleanupID = nil }
         }
@@ -195,11 +224,6 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             try FileManager.default.removeItem(at: destination)
         }
         reset()
-    }
-
-    func redownload() {
-        cancel()
-        start()
     }
 
     func checkIfReady() {
@@ -235,7 +259,9 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
                       let size = attrs[.size] as? Int64 else { return false }
                 return size > 0
             }
-            state = allPresent ? .ready : .idle
+            let readiness: DownloadState = allPresent ? .ready : .idle
+            if state != readiness { state = readiness }
+            if allPresent { removeSupersededProjectors() }
         } else if fm.fileExists(atPath: destination.path) {
             // For repos without an allowlist we expect a marker file.
             //   • MLX layout has `config.json` at the root — primary signal.
@@ -248,7 +274,10 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             //     users to re-download it.
             //   • Bare partial downloads with just a stray .tmp still
             //     don't trigger a false ready.
-            state = Self.looksReady(in: destination) ? .ready : .idle
+            let readiness: DownloadState = Self.looksReady(in: destination) ? .ready : .idle
+            if state != readiness { state = readiness }
+        } else if state != .idle {
+            state = .idle
         }
     }
 
@@ -264,6 +293,16 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
     /// partially-downloaded repo from flipping to a false "ready".
     static func looksReady(in dir: URL) -> Bool {
         let fm = FileManager.default
+        // Same tokenizer rule as InstalledModelRegistry: an MLX folder
+        // (config.json, not GGUF) without tokenizer files isn't loadable.
+        // Otherwise a download cut off after the weights showed as installed
+        // in Models but never appeared in the assistant picker.
+        if fm.fileExists(atPath: dir.appendingPathComponent("config.json").path),
+           !fm.fileExists(atPath: dir.appendingPathComponent("tokenizer.json").path),
+           !fm.fileExists(atPath: dir.appendingPathComponent("tokenizer_config.json").path),
+           !hasGGUFPair(in: dir), !LocalModelFileValidator.hasValidGGUFTextModel(in: dir) {
+            return false
+        }
         // Sharded safetensors: when the index file is present, require EVERY
         // shard it references. config.json lands long before the multi-GB
         // shards finish, so the bare config.json check below marked partial
@@ -303,6 +342,16 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         return hasWeights && hasCompanion
     }
 
+    /// `model_type` of a repo whose config.json names its own loader
+    /// (`requires_runtime`, e.g. Prism's Hadamard packs). MLX Swift can't load
+    /// those, so downloading the weights would only waste gigabytes.
+    static func customRuntimeModelType(in dir: URL) -> String? {
+        guard let data = try? Data(contentsOf: dir.appendingPathComponent("config.json")),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              json["requires_runtime"] != nil else { return nil }
+        return json["model_type"] as? String ?? "custom"
+    }
+
     private static func isNonEmptyFile(_ url: URL) -> Bool {
         guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
               let size = attrs[.size] as? NSNumber else { return false }
@@ -336,17 +385,93 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         LocalModelFileValidator.hasCompleteGGUFVLMPair(in: dir)
     }
 
+    // MARK: - Interrupted-download bookkeeping
+    //
+    // The file loop below lives in memory. When iOS terminates the app
+    // mid-download the remaining files were never queued, and the model sat
+    // half-installed until the user found it and tapped Download again. Each
+    // run records itself here while it is transferring; a key still present
+    // at the next launch means the run never finished, and
+    // ModelDownloadCenter restarts it.
+
+    private static let inFlightDefaultsKey = "hfDownloadsInFlight"
+
+    /// Identifies this download across launches. Catalog entries can share a
+    /// repo (the Whisper variants), so the allowlist is part of the key.
+    var resumeKey: String {
+        ([repoID, branch] + (fileAllowlist ?? [])).joined(separator: "|")
+    }
+
+    static func inFlightKeys() -> Set<String> {
+        Set(UserDefaults.standard.stringArray(forKey: inFlightDefaultsKey) ?? [])
+    }
+
+    private func markInFlight(_ inFlight: Bool) {
+        var keys = Self.inFlightKeys()
+        if inFlight { keys.insert(resumeKey) } else { keys.remove(resumeKey) }
+        UserDefaults.standard.set(Array(keys), forKey: Self.inFlightDefaultsKey)
+    }
+
+    // MARK: - GGUF variant selection
+
+    /// A GGUF repository usually publishes one model in a dozen
+    /// quantizations. A download without an allowlist used to fetch all of
+    /// them — tens of gigabytes for a model that needs one file. Keeps one
+    /// model variant (4-bit preferred), one matching projector, and every
+    /// non-GGUF file.
+    static func selectingOneGGUFVariant(from files: [HFFileMeta]) -> [HFFileMeta] {
+        func isGGUF(_ file: HFFileMeta) -> Bool { file.name.lowercased().hasSuffix(".gguf") }
+        func isProjector(_ file: HFFileMeta) -> Bool { file.name.lowercased().hasPrefix("mmproj") }
+        // Split files ("-00001-of-00003.gguf") are one variant.
+        func variant(_ file: HFFileMeta) -> String {
+            file.path.lowercased().replacingOccurrences(
+                of: #"-\d{5}-of-\d{5}\.gguf$"#, with: ".gguf", options: .regularExpression)
+        }
+        func choose(_ group: [HFFileMeta], preferring tag: String?) -> String? {
+            let variants = Dictionary(grouping: group, by: variant)
+            if let tag, let match = variants.keys.sorted().first(where: { $0.contains(tag) }) {
+                return match
+            }
+            return variants.min { lhs, rhs in
+                let lhsRank = LocalModelFileValidator.ggufQuantizationRank(lhs.key)
+                let rhsRank = LocalModelFileValidator.ggufQuantizationRank(rhs.key)
+                if lhsRank != rhsRank { return lhsRank < rhsRank }
+                let lhsBytes = lhs.value.reduce(0) { $0 + $1.size }
+                let rhsBytes = rhs.value.reduce(0) { $0 + $1.size }
+                return lhsBytes != rhsBytes ? lhsBytes < rhsBytes : lhs.key < rhs.key
+            }?.key
+        }
+        let ggufs = files.filter(isGGUF)
+        let model = choose(ggufs.filter { !isProjector($0) }, preferring: nil)
+        let modelTag = model.flatMap(LocalModelFileValidator.ggufQuantizationTag)
+        let projector = choose(ggufs.filter(isProjector), preferring: modelTag)
+        return files.filter { !isGGUF($0) || variant($0) == model || variant($0) == projector }
+    }
+
     // MARK: - Core download loop
 
     private func run() async {
         state = .enumerating
         reset(keepState: true)
         lastFailureKind = .none
+        // Cleared on every exit; a key that survives means the app was
+        // terminated mid-run (see "Interrupted-download bookkeeping").
+        defer { markInFlight(false) }
 
         do {
             // 1. List files from HF API (retried — the tree endpoint is
             //    rate-limited and 429s/5xxs under load like the LFS hosts).
-            let allFiles = try await withRetries { try await self.fetchFileList() }
+            let allFiles: [HFFileMeta]
+            do {
+                allFiles = try await withRetries { try await self.fetchFileList() }
+            } catch let error as NSError
+                        where error.domain == "HFDownload" && error.code == 404 && requestBranch != "main" {
+                // The pinned commit is gone upstream (history rewritten).
+                // Follow the default branch rather than leave the model
+                // impossible to download.
+                requestBranch = "main"
+                allFiles = try await withRetries { try await self.fetchFileList() }
+            }
             try Task.checkCancellation()
             let files: [HFFileMeta]
             if let allowlist = fileAllowlist {
@@ -359,7 +484,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
                     }
                 }
             } else {
-                files = allFiles
+                files = Self.selectingOneGGUFVariant(from: allFiles)
             }
 
             guard !files.isEmpty else {
@@ -373,10 +498,17 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             let pending = files.filter { !isComplete($0) }
 
             if pending.isEmpty {
+                // Still recorded as in flight: the background session
+                // delivered the last file while the app was not running.
+                // Announce it like any completion so storage totals and
+                // pickers refresh.
+                let finishedWhileAway = Self.inFlightKeys().contains(resumeKey)
                 state = .ready
+                removeSupersededProjectors()
                 filesDone = files.count
                 filesTotal = files.count
                 progress = 1.0
+                if finishedWhileAway { announceCompletion() }
                 return
             }
 
@@ -391,7 +523,18 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             // Disk space pre-check: refuse if not enough room. Headroom
             // scales with the download — max(200 MB, 5% of pending bytes) —
             // so a 40 GB fetch doesn't squeak by on a 200 MB margin.
-            let pendingBytes = pending.map { max(0, $0.size) }.reduce(0, +)
+            // A file URLSession will resume already has part of its bytes on
+            // disk (the system holds them), so its full size must not refuse
+            // the resume: a 40 GB file paused at 36 GB needs 4 GB, not 40.
+            // ponytail: such a file counts as 0 here because the fetched byte
+            // count sits in opaque resume data; a real shortfall still fails
+            // at the per-file write. Parse the resume data if an exact figure
+            // is ever needed.
+            let pendingBytes = pending
+                .filter { meta in
+                    fileURL(for: meta.path).map { !BackgroundDownloadCoordinator.willResume($0) } ?? true
+                }
+                .map { max(0, $0.size) }.reduce(0, +)
             if pendingBytes >= 1_000_000_000 {
                 ToastCenter.shared.info(
                     "Large model download",
@@ -424,9 +567,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             }
 
             state = .downloading
-
-            // Start a Dynamic Island / Lock Screen Live Activity for this download
-            _ = DownloadLiveActivityManager.shared.start(repoID: repoID)
+            markInFlight(true)
 
             // 4. Create destination directory
             try FileManager.default.createDirectory(
@@ -445,9 +586,18 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             try? repoID.data(using: .utf8)?
                 .write(to: sidecar, options: [.atomic])
 
-            // 5. Download each pending file
-            for meta in pending {
+            // 5. Download each pending file, smallest first: config and
+            //    tokenizer land before multi-GB weights, so an interrupted
+            //    download can't look complete without its tokenizer, and an
+            //    unloadable repo is refused before the big files.
+            for meta in pending.sorted(by: { $0.size < $1.size }) {
                 guard !Task.isCancelled else { return }
+                if let modelType = Self.customRuntimeModelType(in: destination) {
+                    throw NSError(domain: "HFDownload", code: -5, userInfo: [
+                        NSLocalizedDescriptionKey:
+                            "This model (\(modelType)) needs its publisher's own runtime and can't run in this app. Delete it in Models to free the space."
+                    ])
+                }
                 currentFile = meta.path     // show full path, not just filename
                 guard let dest = Self.containedDestination(
                     for: meta.path, in: destination
@@ -480,39 +630,20 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
                 } else {
                     progress = Double(filesDone) / Double(max(filesTotal, 1))
                 }
-
-                // Push update to the Live Activity
-                DownloadLiveActivityManager.shared.update(
-                    repoID: repoID,
-                    progress: progress,
-                    downloadedBytes: downloadedBytes,
-                    totalBytes: totalBytes,
-                    currentFile: meta.name,
-                    filesDone: filesDone,
-                    filesTotal: filesTotal
-                )
             }
 
             state = .ready
+            removeSupersededProjectors()
             progress = 1.0
             currentFile = ""
-            DownloadLiveActivityManager.shared.finish(repoID: repoID)
-            ToastCenter.shared.success("Downloaded \(repoID)")
-            NotificationCenter.default.post(
-                name: .hfModelDownloadCompleted,
-                object: self,
-                userInfo: ["repoID": repoID]
-            )
+            announceCompletion()
 
         } catch is CancellationError {
-            // Leave state as-is so resume is possible, but end the Live
-            // Activity — cancellation is deliberate.
-            DownloadLiveActivityManager.shared.finish(repoID: repoID)
+            // Pause or cancel: stop() already set the state.
         } catch let error where Self.isUserCancellation(error) {
             // URLSession surfaces a user cancel as NSURLErrorCancelled, not
             // CancellationError — treat it the same so a Cancel tap doesn't
             // show a "Download failed" toast.
-            DownloadLiveActivityManager.shared.finish(repoID: repoID)
         } catch let authErr as HFAuthError {
             guard !Task.isCancelled else { return }
             // Auth-specific failure: tag the kind so the catalog UI
@@ -525,24 +656,27 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             case .tokenRejected: lastFailureKind = .tokenRejected
             }
             state = .failed(authErr.errorDescription ?? "Authentication required")
-            DownloadLiveActivityManager.shared.fail(
-                repoID: repoID,
-                reason: authErr.errorDescription ?? "Authentication required"
-            )
         } catch {
             guard !Task.isCancelled else { return }
             lastFailureKind = .generic
             state = .failed(error.localizedDescription)
-            DownloadLiveActivityManager.shared.fail(repoID: repoID,
-                                                     reason: error.localizedDescription)
             ToastCenter.shared.error("Download failed: \(repoID)",
                                       detail: error.localizedDescription)
         }
     }
 
+    private func announceCompletion() {
+        ToastCenter.shared.success("Downloaded \(repoID)")
+        NotificationCenter.default.post(
+            name: .hfModelDownloadCompleted,
+            object: self,
+            userInfo: ["repoID": repoID]
+        )
+    }
+
     // MARK: - HF file-tree API
 
-    private struct HFFileMeta {
+    struct HFFileMeta {
         let path: String    // e.g. "model.safetensors" or "subfolder/file.bin"
         let name: String    // last path component
         let size: Int64
@@ -559,86 +693,109 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         }
     }
 
-    private func fetchFileList() async throws -> [HFFileMeta] {
+    func fetchFileList() async throws -> [HFFileMeta] {
         // HF tree API with recursive=true to enumerate subdirectories
         // (mlpackage repos have files nested under <model>.mlpackage/...).
         // Also append &expand=true for richer metadata where supported.
-        let urlString = "https://huggingface.co/api/models/\(repoID)/tree/\(branch)?recursive=true&expand=true"
+        let urlString = "https://huggingface.co/api/models/\(repoID)/tree/\(requestBranch)?recursive=true&expand=true"
         guard let url = URL(string: urlString) else { throw URLError(.badURL) }
 
-        var request = URLRequest(url: url)
-        request.setValue("ios-local-llm/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.timeoutInterval = 30
-        HFTokenStore.authorize(&request)
+        var json: [[String: Any]] = []
+        var cursor: String?
+        var seenCursors = Set<String>()
+        repeat {
+            try Task.checkCancellation()
+            guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+                throw URLError(.badURL)
+            }
+            if let cursor {
+                components.queryItems = (components.queryItems ?? []) + [URLQueryItem(name: "cursor", value: cursor)]
+            }
+            guard let pageURL = components.url else { throw URLError(.badURL) }
+            var request = URLRequest(url: pageURL)
+            request.setValue("ios-local-llm/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            request.timeoutInterval = 30
+            HFTokenStore.authorize(&request)
 
-        let (data, response) = try await fetchData(request)
-        guard let http = response as? HTTPURLResponse else {
-            throw NSError(domain: "HFDownload", code: -1, userInfo: [
-                NSLocalizedDescriptionKey: "No HTTP response from huggingface.co"
-            ])
-        }
+            let (data, response) = try await fetchData(request)
+            guard let http = response as? HTTPURLResponse else {
+                throw NSError(domain: "HFDownload", code: -1, userInfo: [
+                    NSLocalizedDescriptionKey: "No HTTP response from huggingface.co"
+                ])
+            }
 
-        // Remote error bodies can contain account details; log only status.
-        if http.statusCode != 200 {
-            print("[HFDownload] File listing failed with HTTP \(http.statusCode)")
-        }
+            // Remote error bodies can contain account details; log only status.
+            if http.statusCode != 200 {
+                print("[HFDownload] File listing failed with HTTP \(http.statusCode)")
+            }
 
-        guard http.statusCode == 200 else {
-            // Auth-specific paths surface as a structured `HFAuthError`
-            // so the catalog UI can offer a "Set Token" CTA instead of
-            // a generic failure toast. The distinction:
-            //   • token absent + 401  → .tokenRequired (asks for token)
-            //   • token present + 401 → .tokenRejected (token invalid/no access)
-            //   • 403                 → .tokenRejected (terms-acceptance gated)
-            if http.statusCode == 401 || http.statusCode == 403 {
-                let tokenPresent = HFTokenStore.authorizationHeaderValue() != nil
-                if tokenPresent {
-                    throw HFAuthError.tokenRejected(repoID: repoID)
-                } else {
-                    throw HFAuthError.tokenRequired(repoID: repoID)
+            guard http.statusCode == 200 else {
+                // Auth-specific paths surface as a structured `HFAuthError`
+                // so the catalog UI can offer a "Set Token" CTA instead of
+                // a generic failure toast. The distinction:
+                //   • token absent + 401  → .tokenRequired (asks for token)
+                //   • token present + 401 → .tokenRejected (token invalid/no access)
+                //   • 403                 → .tokenRejected (terms-acceptance gated)
+                if http.statusCode == 401 || http.statusCode == 403 {
+                    let tokenPresent = HFTokenStore.authorizationHeaderValue() != nil
+                    if tokenPresent {
+                        throw HFAuthError.tokenRejected(repoID: repoID)
+                    } else {
+                        throw HFAuthError.tokenRequired(repoID: repoID)
+                    }
                 }
+                let reason: String
+                switch http.statusCode {
+                case 404: reason = "Repo \(repoID) not found (404). Verify it exists at huggingface.co/\(repoID)"
+                case 429: reason = "Rate limited by huggingface.co (429). Wait a minute and retry."
+                case 500...599: reason = "huggingface.co server error (\(http.statusCode)). Retry shortly."
+                default:  reason = "huggingface.co returned HTTP \(http.statusCode) for \(repoID)"
+                }
+                throw NSError(domain: "HFDownload", code: http.statusCode,
+                              userInfo: [NSLocalizedDescriptionKey: reason])
             }
-            let reason: String
-            switch http.statusCode {
-            case 404: reason = "Repo \(repoID) not found (404). Verify it exists at huggingface.co/\(repoID)"
-            case 429: reason = "Rate limited by huggingface.co (429). Wait a minute and retry."
-            case 500...599: reason = "huggingface.co server error (\(http.statusCode)). Retry shortly."
-            default:  reason = "huggingface.co returned HTTP \(http.statusCode) for \(repoID)"
+
+            guard let raw = try? JSONSerialization.jsonObject(with: data) else {
+                print("[HFDownload] File listing JSON could not be decoded")
+                throw NSError(domain: "HFDownload", code: -2, userInfo: [
+                    NSLocalizedDescriptionKey: "Could not parse file tree from huggingface.co"
+                ])
             }
-            throw NSError(domain: "HFDownload", code: http.statusCode,
-                          userInfo: [NSLocalizedDescriptionKey: reason])
-        }
 
-        guard let raw = try? JSONSerialization.jsonObject(with: data) else {
-            print("[HFDownload] File listing JSON could not be decoded")
-            throw NSError(domain: "HFDownload", code: -2, userInfo: [
-                NSLocalizedDescriptionKey: "Could not parse file tree from huggingface.co"
-            ])
-        }
+            // Tree API can return either a top-level array OR a {tree: [...]} dict
+            // depending on endpoint version. Handle both.
+            let page: [[String: Any]]
+            if let arr = raw as? [[String: Any]] {
+                page = arr
+            } else if let dict = raw as? [String: Any], let tree = dict["tree"] as? [[String: Any]] {
+                page = tree
+            } else if let dict = raw as? [String: Any], let siblings = dict["siblings"] as? [[String: Any]] {
+                page = siblings    // /api/models/{repo} returns "siblings" with {rfilename}
+            } else {
+                print("[HFDownload] Unexpected file listing JSON shape")
+                throw NSError(domain: "HFDownload", code: -3, userInfo: [
+                    NSLocalizedDescriptionKey: "Unexpected response shape from huggingface.co"
+                ])
+            }
 
-        // Tree API can return either a top-level array OR a {tree: [...]} dict
-        // depending on endpoint version. Handle both.
-        let json: [[String: Any]]
-        if let arr = raw as? [[String: Any]] {
-            json = arr
-        } else if let dict = raw as? [String: Any], let tree = dict["tree"] as? [[String: Any]] {
-            json = tree
-        } else if let dict = raw as? [String: Any], let siblings = dict["siblings"] as? [[String: Any]] {
-            json = siblings    // /api/models/{repo} returns "siblings" with {rfilename}
-        } else {
-            print("[HFDownload] Unexpected file listing JSON shape")
-            throw NSError(domain: "HFDownload", code: -3, userInfo: [
-                NSLocalizedDescriptionKey: "Unexpected response shape from huggingface.co"
-            ])
-        }
+            try Task.checkCancellation()
+            json.append(contentsOf: page)
+            cursor = HFHubMetadata.nextCursor(fromLinkHeader: http.value(forHTTPHeaderField: "Link"))
+            if let cursor, !seenCursors.insert(cursor).inserted {
+                throw NSError(domain: "HFDownload", code: -4, userInfo: [
+                    NSLocalizedDescriptionKey: "Hugging Face returned a repeated file-list cursor. Retry the download."
+                ])
+            }
+        } while cursor != nil
 
-        var blobs = json.compactMap { item -> HFFileMeta? in
+        var seenPaths = Set<String>()
+        var blobs = try json.compactMap { item -> HFFileMeta? in
             // HF returns:
             //   tree API     → {path, type:"file"|"directory", size, lfs?}
             //   models API   → {rfilename, size?}
             let path = (item["path"] as? String) ?? (item["rfilename"] as? String)
-            guard let path else { return nil }
+            guard let path, seenPaths.insert(path).inserted else { return nil }
             // Reject directories (type-based or trailing slash)
             if let type_ = item["type"] as? String, type_ == "directory" || type_ == "tree" {
                 return nil
@@ -657,8 +814,14 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
             // LFS blobs carry their sha256 as `lfs.oid` — captured so the
             // download can be integrity-checked after it completes.
             let oid = (item["lfs"] as? [String: Any])?["oid"] as? String
+            let checksum = oid.flatMap(HFHubMetadata.normalizedSHA256)
+            if oid != nil, checksum == nil {
+                throw NSError(domain: "HFDownload", code: -5, userInfo: [
+                    NSLocalizedDescriptionKey: "Hugging Face returned an invalid LFS checksum. Retry the download."
+                ])
+            }
             let name = URL(fileURLWithPath: path).lastPathComponent
-            return HFFileMeta(path: path, name: name, size: size, sha256: oid)
+            return HFFileMeta(path: path, name: name, size: size, sha256: checksum)
         }
 
         // Diagnostic — log what we found
@@ -798,7 +961,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
     private func headSize(for path: String) async -> Int64? {
         let encoded = path
             .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path
-        let urlString = "https://huggingface.co/\(repoID)/resolve/\(branch)/\(encoded)"
+        let urlString = "https://huggingface.co/\(repoID)/resolve/\(requestBranch)/\(encoded)"
         guard let url = URL(string: urlString) else { return nil }
         var request = URLRequest(url: url)
         request.httpMethod = "HEAD"
@@ -826,12 +989,16 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
     // not support partial-file Range resume directly, but it handles its own
     // resume data internally across app launches.
 
-    private func downloadFile(meta: HFFileMeta, to destination: URL) async throws -> Int64 {
+    /// Download URL for one repo file. Also the key its resume data is stored under.
+    private func fileURL(for path: String) -> URL? {
         // Percent-encode each path component so files with spaces, '+', etc work
-        let encoded = meta.path
-            .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? meta.path
-        let hfURL = "https://huggingface.co/\(repoID)/resolve/\(branch)/\(encoded)"
-        guard let url = URL(string: hfURL) else { throw URLError(.badURL) }
+        let encoded = path
+            .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path
+        return URL(string: "https://huggingface.co/\(repoID)/resolve/\(requestBranch)/\(encoded)")
+    }
+
+    private func downloadFile(meta: HFFileMeta, to destination: URL) async throws -> Int64 {
+        guard let url = fileURL(for: meta.path) else { throw URLError(.badURL) }
 
         // Skip if file is already fully present (requires real known size).
         if meta.size > 0,
@@ -843,6 +1010,8 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
 
         let snapshot = alreadyDownloadedBytesSnapshot
         let runID = generation
+        currentFileDestination = destination
+        defer { if generation == runID { currentFileDestination = nil } }
 
         // Retry transient failures (dropped connection, timeout, 5xx, 429)
         // with exponential backoff + jitter (Retry-After honored when the
@@ -990,13 +1159,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
     /// weights don't stall the UI. Reads in 4 MB chunks via CryptoKit.
     private static nonisolated func sha256Hex(of url: URL) async throws -> String {
         try await Task.detached(priority: .utility) {
-            let handle = try FileHandle(forReadingFrom: url)
-            defer { try? handle.close() }
-            var hasher = SHA256()
-            while let chunk = try handle.read(upToCount: 4 << 20), !chunk.isEmpty {
-                hasher.update(data: chunk)
-            }
-            return hasher.finalize().map { String(format: "%02x", $0) }.joined()
+            try HFHubMetadata.sha256Hex(ofFileAt: url)
         }.value
     }
 
@@ -1023,6 +1186,20 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         // Exact match: an oversized file (error body appended, truncated
         // retry merge, …) is just as wrong as a short one.
         return size == meta.size
+    }
+
+    /// A pinned revision can swap its projector (LFM3 Q8_0 → Q4_K_M). Once the
+    /// allowlisted one is on disk, delete the others: the loader takes the
+    /// first `mmproj*.gguf` it finds, and the old file wastes hundreds of MB.
+    private func removeSupersededProjectors() {
+        let isProjector = { (name: String) in
+            name.lowercased().hasPrefix("mmproj") && name.lowercased().hasSuffix(".gguf")
+        }
+        guard let wanted = fileAllowlist?.filter(isProjector), !wanted.isEmpty,
+              let names = try? FileManager.default.contentsOfDirectory(atPath: destination.path) else { return }
+        for name in names where isProjector(name) && !wanted.contains(name) {
+            try? FileManager.default.removeItem(at: destination.appendingPathComponent(name))
+        }
     }
 
     private func removeTrackedFiles() throws {
@@ -1070,7 +1247,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
     }
 
     private func reset(keepState: Bool = false) {
-        if !keepState { state = .idle }
+        if !keepState { state = .idle; isPaused = false }
         progress = 0
         downloadedBytes = 0
         totalBytes = 0

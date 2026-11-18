@@ -16,6 +16,23 @@ final class URLSafetyValidatorTests: XCTestCase {
         XCTAssertTrue(URLSafetyValidator.isPrivateOrReserved("fd12:3456:789a:1::1"))
     }
 
+    func testIPv6ParsingBlocksAlternatePrivateAndReservedRepresentations() {
+        for ip in ["0:0:0:0:0:0:0:1", "::ffff:7f00:1", "::ffff:a00:1",
+                   "2001:db8::1", "3fff::1", "100::1", "64:ff9b:1::a00:1",
+                   "2002:7f00:1::", "not-an-ipv6::literal", "fe80::1%en0"] {
+            XCTAssertTrue(URLSafetyValidator.isPrivateOrReserved(ip), ip)
+        }
+        for ip in ["2606:4700:4700::1111", "2001:4860:4860::8888", "::ffff:808:808"] {
+            XCTAssertFalse(URLSafetyValidator.isPrivateOrReserved(ip), ip)
+        }
+    }
+
+    func testIPv4ProtectionsRemainIntact() {
+        for ip in ["198.51.100.1", "192.88.99.1", "1..2.3.4", "1.2.3.4.extra", "256.0.0.1"] {
+            XCTAssertTrue(URLSafetyValidator.isPrivateOrReserved(ip), ip)
+        }
+    }
+
     func test_isPrivateOrReserved_allowsPublicIPv4() {
         XCTAssertFalse(URLSafetyValidator.isPrivateOrReserved("8.8.8.8"))
         XCTAssertFalse(URLSafetyValidator.isPrivateOrReserved("1.1.1.1"))

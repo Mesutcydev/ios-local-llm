@@ -23,6 +23,11 @@ struct AssistantModel: Identifiable, Hashable, Codable {
     /// so they provide their published package size explicitly.
     var downloadSizeBytes: Int64? = nil
 
+    /// Curated GGUF repositories contain multiple full quantizations.
+    /// Pin the reviewed revision and fetch only the selected artifacts.
+    var downloadRevision: String? = nil
+    var downloadFiles: [String]? = nil
+
     /// Explicit platform support when the publisher documents a constraint
     /// that RAM-fit inference alone cannot represent. Nil means the normal
     /// live `MemoryAdvisor` result is authoritative.
@@ -50,10 +55,7 @@ struct AssistantModel: Identifiable, Hashable, Codable {
     /// as a plain "tools" tag where relevant.
     var supportsTools: Bool = false
 
-    /// Inference engine that executes this model. Every assistant preset
-    /// is MLX today (the chat tab loads through LLMModelFactory); the
-    /// field exists so result cards can label runtime honestly and a
-    /// future GGUF text path slots in without a model-shape change.
+    /// Inference engine that executes this model (MLX or llama.cpp GGUF).
     var runtime: ModelRuntime = .mlx
 
     // MARK: - Derived conveniences
@@ -66,6 +68,10 @@ struct AssistantModel: Identifiable, Hashable, Codable {
     /// True when the model emits a reasoning trace (Qwen3 /think,
     /// DeepSeek-R1, Qwen3-Thinking, SmolLM3 think mode, Phi-4).
     var supportsThinking: Bool { capabilities.contains(.thinking) }
+
+    var supportsNativeAudio: Bool {
+        runtime == .llamaCpp && (repoID.lowercased().contains("lfm3-audio") || repoID.lowercased().contains("lfm3-omni"))
+    }
 
     /// Capabilities in canonical display order for the picker pill row.
     var displayCapabilities: [ModelCapability] {
@@ -93,7 +99,7 @@ struct AssistantModel: Identifiable, Hashable, Codable {
     /// True when this model uses a ChatML-compatible template (Qwen family).
     var usesChatML: Bool {
         chatTemplate.format == "chatml" || chatTemplate.format == "qwen35"
-            || chatTemplate.format == "generic"
+            || chatTemplate.format == "generic" || chatTemplate.format.hasPrefix("lfm3")
     }
 }
 
@@ -101,17 +107,13 @@ struct AssistantModel: Identifiable, Hashable, Codable {
 
 enum AssistantModelCatalog {
 
-    /// Built-in models known to work with MLX `LLMModelFactory` on iOS.
+    /// Built-in models routed through their explicit MLX or GGUF runtime.
     /// Order = priority (first entry is the default).
     ///
-    /// Curation rule: every preset must be a **text** model whose
-    /// architecture is loadable by `LLMModelFactory` (the chat tab's
-    /// runtime). Multimodal models (Qwen3-VL, Gemma 3 vision, SmolVLM2)
-    /// run through a different factory and live in the VLM catalog
-    /// (`ModelDownloadCenter.buildCatalog`), not here. New entries below
-    /// share an architecture already proven by an existing preset
-    /// (Qwen3, Qwen2.5, Llama 3.x) so a refresh can't silently 404 or
-    /// hit an unsupported-arch load failure.
+    /// Every preset must support text generation in its declared runtime.
+    /// Vision-only entries live in `ModelDownloadCenter.buildCatalog`.
+    /// New architectures require runtime support as well as a valid download;
+    /// LFM3 uses the pinned llama.cpp implementation, not MLX Swift.
     static let presets: [AssistantModel] = [
         // ── Qwen3 4B 2507 refresh ─────────────────────────────────────────
         // The "2507" Instruct/Thinking refresh is a large quality jump over
@@ -129,6 +131,43 @@ enum AssistantModelCatalog {
             contextWindowTokens: 32768,
             capabilities: [.recommended, .best, .newRelease],
             supportsTools: true
+        ),
+        // LFM3 needs the new llama.cpp architecture; MLX Swift does not yet
+        // register it. Keep the existing default first and bound context to 4K.
+        AssistantModel(
+            id: "lfm3-1.7b-gguf",
+            repoID: "LiquidAI/LFM3-1.7B-GGUF",
+            displayName: "LFM3 1.7B",
+            subtitle: "QAD 4-bit · 1.05 GB · LFM Open License v1.0",
+            approxRAMBytes: 2_000_000_000,
+            tags: ["chat", "thinking", "multilingual"],
+            contextWindowTokens: 4_096,
+            downloadSizeBytes: 1_049_615_680,
+            downloadRevision: "b3f2ae5d73cd3c91bf40e8ba752c648aa05dffdf",
+            downloadFiles: ["LFM3-1.7B-QAD-Q4_0.gguf", "LICENSE"],
+            capabilities: [.newRelease, .thinking, .multilingual, .tools],
+            supportsTools: true,
+            runtime: .llamaCpp
+        ),
+        AssistantModel(
+            id: "lfm3-audio-2b-gguf", repoID: "LiquidAI/LFM3-Audio-2B-GGUF",
+            displayName: "LFM3 Audio 2B", subtitle: "Q4_K_M · 1.3 GB · LFM Open License v1.0",
+            approxRAMBytes: 3_330_000_000, tags: ["chat", "audio", "speech", "multilingual"],
+            contextWindowTokens: 4_096, downloadSizeBytes: 1_272_054_638,
+            // Q4_K_M projector (QAT codec decoder, 2026-10-29): 166 MB smaller
+            // than Q8_0; verified on the bundled llama.cpp (19ff817).
+            downloadRevision: "02355c1a141e464a064f2ab2c276638dbcb7f38a",
+            downloadFiles: ["LFM3-Audio-2B-Q4_K_M.gguf", "mmproj-LFM3-Audio-2B-Q4_K_M.gguf", "LICENSE"],
+            capabilities: [.newRelease, .multilingual, .tools], supportsTools: true, runtime: .llamaCpp
+        ),
+        AssistantModel(
+            id: "lfm3-omni-2b-gguf", repoID: "LiquidAI/LFM3-Omni-2B-GGUF",
+            displayName: "LFM3 Omni 2B", subtitle: "Q4_K_M · 1.4 GB · LFM Open License v1.0",
+            approxRAMBytes: 3_750_000_000, tags: ["chat", "audio", "speech", "multilingual"],
+            contextWindowTokens: 4_096, downloadSizeBytes: 1_391_227_374,
+            downloadRevision: "3d29af2ad166f8299c2d820937e47dc0add20ffc",
+            downloadFiles: ["LFM3-Omni-2B-Q4_K_M.gguf", "mmproj-LFM3-Omni-2B-Q4_K_M.gguf", "LICENSE"],
+            capabilities: [.newRelease, .vision, .multilingual, .tools], supportsTools: true, runtime: .llamaCpp
         ),
         // Thinking-2507 — emits a reasoning trace; best for hard reasoning
         // / math / multi-step code on capable devices.
@@ -221,7 +260,7 @@ enum AssistantModelCatalog {
         // weights. The 1-bit variants require PrismML's MLX kernels; the app's
         // mlx-swift dependency points at that compatible fork. Bonsai 27B is
         // based on Qwen3.5's hybrid-attention architecture, which is available
-        // in mlx-swift-lm 3.31.4. Smaller variants remain Qwen3 text models.
+        // in mlx-swift-lm 3.32.3. Smaller variants remain Qwen3 text models.
         AssistantModel(
             id: "bonsai-27b-1bit",
             repoID: "prism-ml/Bonsai-27B-mlx-1bit",
@@ -477,7 +516,11 @@ enum AssistantModelCatalog {
     /// downloaded/imported) or synthesizing one from the bare repoID (custom).
     @MainActor
     private static func resolveNonPreset(id stored: String) -> AssistantModel? {
-        LocalModelRegistry
+        if stored.hasPrefix("coreai:") {
+            return CoreAIModelStore.shared.installedModel(id: stored)?.assistantModel
+                ?? CoreAIZooCatalog.assistantModel(forSelectionID: stored)
+        }
+        return LocalModelRegistry
             .descriptor(forStoredAssistantID: stored, catalog: ModelDownloadCenter.shared.models)?
             .assistantModel
     }

@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 @testable import IOSLocalLLM
 
 // MARK: - StoredConversationTests
@@ -380,6 +381,76 @@ final class StoredConversationTests: XCTestCase {
             store.conversations.first(where: { $0.id == id })?.assistantModelID,
             "llama-3.2-1b"
         )
+    }
+
+    // MARK: - Unreadable history file
+
+    /// A directory at the file's path fails to read without being corrupt
+    /// data, like a protected file while the device is locked.
+    private func blockedStore() throws -> (store: ConversationStore, file: URL, dir: URL) {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("conv-\(UUID().uuidString)")
+        let file = dir.appendingPathComponent("conversations.json")
+        try FileManager.default.createDirectory(at: file, withIntermediateDirectories: true)
+        return (ConversationStore(fileURL: file), file, dir)
+    }
+
+    func test_unreadableFile_isKeptAndNeverSavedOver() throws {
+        let (store, file, dir) = try blockedStore()
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        _ = store.create(title: "typed while blocked")
+        store.flush()
+
+        var isDirectory: ObjCBool = false
+        XCTAssertTrue(FileManager.default.fileExists(atPath: file.path, isDirectory: &isDirectory))
+        XCTAssertTrue(isDirectory.boolValue, "The unreadable file must not be replaced")
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: dir.path),
+                       ["conversations.json"], "An unreadable file is not corrupt: no quarantine")
+    }
+
+    func test_blockedLoad_retriesAndKeepsChatsStartedMeanwhile() throws {
+        let (store, file, dir) = try blockedStore()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let fresh = store.create(title: "started while blocked")
+
+        try FileManager.default.removeItem(at: file)
+        var old = StoredConversation()
+        old.title = "old history"
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        try encoder.encode([old]).write(to: file)
+        NotificationCenter.default.post(
+            name: UIApplication.protectedDataDidBecomeAvailableNotification, object: nil)
+
+        XCTAssertEqual(Set(store.conversations.map(\.id)), [fresh.id, old.id])
+    }
+
+    func test_corruptFile_isStillQuarantined() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("conv-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let file = dir.appendingPathComponent("conversations.json")
+        try Data("not json".utf8).write(to: file)
+
+        _ = ConversationStore(fileURL: file)
+
+        let names = try FileManager.default.contentsOfDirectory(atPath: dir.path)
+        XCTAssertEqual(names.count, 1)
+        XCTAssertTrue(names[0].hasPrefix("conversations-corrupt-"))
+    }
+
+    // MARK: - Stopped replies
+
+    func test_storedMessage_keepsStoppedMarker_andTreatsStreamingAsStopped() {
+        let streaming = ChatMessage(role: .assistant, content: "partial", isStreaming: true)
+        XCTAssertTrue(StoredMessage(streaming).chatMessage.wasInterrupted)
+        let stopped = ChatMessage(role: .assistant, content: "cut", wasInterrupted: true)
+        XCTAssertTrue(StoredMessage(stopped).chatMessage.wasInterrupted)
+        let finished = ChatMessage(role: .assistant, content: "done")
+        XCTAssertFalse(StoredMessage(finished).chatMessage.wasInterrupted)
+        XCTAssertNil(StoredMessage(finished).wasInterrupted, "Finished replies add no field to the file")
     }
 
 }

@@ -11,7 +11,7 @@ import UniformTypeIdentifiers
 
 enum SpotlightIndexer {
 
-    static let domain = "com.mesutcydev.ioslocalllm.conversation"
+    static let domain = "com.codelens.conversation"
 
     /// Rebuild the whole index from the current conversation list. Cheap —
     /// runs on a background queue inside CoreSpotlight.

@@ -80,7 +80,7 @@ struct VoiceValidationView: View {
                     }
                     if !report.isEmpty {
                         Text(report)
-                            .font(.system(size: 10, design: .monospaced))
+                            .scaledFont(size: 10, design: .monospaced)
                             .textSelection(.enabled)
                         ShareLink(item: report) {
                             Label("Share report", systemImage: "square.and.arrow.up")
@@ -90,7 +90,7 @@ struct VoiceValidationView: View {
 
                 Section("Physical checklist") {
                     Text(Self.checklist)
-                        .font(.system(size: 11, design: .monospaced))
+                        .scaledFont(size: 11, design: .monospaced)
                         .textSelection(.enabled)
                 }
             }
@@ -98,7 +98,7 @@ struct VoiceValidationView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
+                    Button("Done", systemImage: "checkmark") { dismiss() }
                 }
             }
             .onAppear {

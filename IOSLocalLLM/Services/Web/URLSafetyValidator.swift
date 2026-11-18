@@ -1,5 +1,6 @@
 import Foundation
 import Network
+import Darwin
 
 // MARK: - URLSafetyValidator
 // Blocks SSRF, localhost, link-local, and private-network targets BEFORE
@@ -129,7 +130,9 @@ public actor URLSafetyValidator {
     }
 
     private static func isPrivateIPv4(_ ip: String) -> Bool {
-        let parts = ip.split(separator: ".").compactMap { UInt8($0) }
+        let fields = ip.split(separator: ".", omittingEmptySubsequences: false)
+        guard fields.count == 4, fields.allSatisfy({ !$0.isEmpty && $0.utf8.allSatisfy { (48...57).contains($0) } }) else { return true }
+        let parts = fields.compactMap { UInt8($0) }
         guard parts.count == 4 else { return true }   // malformed → treat as unsafe
         let a = parts[0], b = parts[1], c = parts[2]
         switch a {
@@ -151,39 +154,53 @@ public actor URLSafetyValidator {
         }
     }
 
+    // Adapted from OnDevice Core; retain the stricter IPv4 ranges above.
     private static func isPrivateIPv6(_ ip: String) -> Bool {
-        let lower = ip.lowercased()
-        if lower == "::1" || lower == "::" { return true }              // loopback / unspecified
-        if lower.hasPrefix("fe") { return true }   // fe80::/10 link-local + fec0::/10 site-local
-        if lower.hasPrefix("fc") || lower.hasPrefix("fd") { return true }         // fc00::/7 ULA
-        if lower.hasPrefix("ff") { return true }                                  // multicast
-        // 6to4 (2002:AABB:CCDD::/48) embeds an arbitrary IPv4 address.
-        if lower.hasPrefix("2002:") {
-            let groups = lower.split(separator: ":")
-            if groups.count >= 3,
-               let hi = UInt16(groups[1], radix: 16),
-               let lo = UInt16(groups[2], radix: 16) {
-                return isPrivateIPv4("\(hi >> 8).\(hi & 0xFF).\(lo >> 8).\(lo & 0xFF)")
-            }
-            return true   // malformed 6to4 → unsafe
+        var address = in6_addr()
+        let parsed = ip.withCString { inet_pton(AF_INET6, $0, &address) }
+        guard parsed == 1 else { return true } // malformed or scoped literal → unsafe
+
+        let bytes = withUnsafeBytes(of: address) { Array($0) }
+        guard bytes.count == 16 else { return true }
+
+        if bytes.allSatisfy({ $0 == 0 }) { return true }                  // unspecified
+        if bytes.dropLast().allSatisfy({ $0 == 0 }), bytes[15] == 1 { return true } // loopback
+        if bytes[0] & 0xfe == 0xfc { return true }                        // fc00::/7 ULA
+        if bytes[0] == 0xfe, bytes[1] & 0xc0 == 0x80 { return true }       // fe80::/10 link-local
+        if bytes[0] == 0xfe, bytes[1] & 0xc0 == 0xc0 { return true }       // fec0::/10 site-local
+        if bytes[0] == 0xff { return true }                               // multicast
+
+        // Non-public special-use ranges that must not be usable as SSRF
+        // escape hatches.
+        if bytes[0...3].elementsEqual([0x20, 0x01, 0x0d, 0xb8]) { return true } // documentation
+        if bytes[0...5].elementsEqual([0x20, 0x01, 0x00, 0x02, 0x00, 0x00]) { return true } // benchmark
+        if bytes[0] == 0x3f, bytes[1] & 0xf0 == 0xf0 { return true }       // 3fff::/20 docs
+        if bytes[0...7].elementsEqual([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]) {
+            return true                                                    // 100::/64 discard-only
         }
-        // NAT64 (64:ff9b::/96) embeds an IPv4 address in the last 32 bits.
-        if lower.hasPrefix("64:ff9b:") {
-            let groups = lower.split(separator: ":").map(String.init)
-            if let last = groups.last, last.contains(".") {
-                return isPrivateIPv4(last)
-            }
-            if groups.count >= 2,
-               let hi = UInt16(groups[groups.count - 2], radix: 16),
-               let lo = UInt16(groups[groups.count - 1], radix: 16) {
-                return isPrivateIPv4("\(hi >> 8).\(hi & 0xFF).\(lo >> 8).\(lo & 0xFF)")
-            }
-            return true   // malformed NAT64 → unsafe
+
+        // IPv4-compatible, IPv4-mapped, and NAT64 literals can otherwise
+        // disguise a private IPv4 destination inside a globally-shaped IPv6
+        // address. Re-run the embedded address through the IPv4 table.
+        let firstTenZero = bytes[0..<10].allSatisfy { $0 == 0 }
+        let firstTwelveZero = bytes[0..<12].allSatisfy { $0 == 0 }
+        let isMapped = firstTenZero && bytes[10] == 0xff && bytes[11] == 0xff
+        let isWellKnownNAT64 = bytes[0...11].elementsEqual([
+            0x00, 0x64, 0xff, 0x9b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        ])
+        let isLocalNAT64 = bytes[0...5].elementsEqual([0x00, 0x64, 0xff, 0x9b, 0x00, 0x01])
+        if isLocalNAT64 { return true }
+        if firstTwelveZero || isMapped || isWellKnownNAT64 {
+            let embedded = bytes[12...15].map(String.init).joined(separator: ".")
+            return isPrivateIPv4(embedded)
         }
-        // IPv4-mapped (::ffff:10.0.0.1) — re-check the IPv4 portion
-        if let v4 = lower.split(separator: ":").last, v4.contains(".") {
-            return isPrivateIPv4(String(v4))
+
+        // 6to4 carries its target IPv4 address in bytes 2...5.
+        if bytes[0] == 0x20, bytes[1] == 0x02 {
+            let embedded = bytes[2...5].map(String.init).joined(separator: ".")
+            return isPrivateIPv4(embedded)
         }
+
         return false
     }
 }

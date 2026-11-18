@@ -1,9 +1,10 @@
 import SwiftUI
 
 // MARK: - KaraokeTranscriptView
-// Phrase-level highlighting with a prepared transcript.
+// The phrase being spoken is tinted and fills in word by word.
 // No full AttributedString rebuild on amplitude ticks.
-// Auto-scroll only when the active phrase changes.
+// The text arrives one spoken chunk at a time, so following speech is just
+// staying pinned to the bottom whenever it grows.
 
 struct KaraokeTranscriptView: View {
     let text: String
@@ -20,8 +21,6 @@ struct KaraokeTranscriptView: View {
     @State private var showFollowButton = false
     @State private var prepared = KaraokePreparedTranscript.empty
     @State private var displayAttributed = AttributedString()
-    @State private var lastScrollPhraseID: UUID?
-    @State private var lastScrollAt = Date.distantPast
 
     private let collapsedMin: CGFloat = 150
     private let collapsedMax: CGFloat = 220
@@ -71,13 +70,14 @@ struct KaraokeTranscriptView: View {
                 .onChange(of: highlightToken) { _, _ in
                     // Phrase + spoken end land together — one highlight pass.
                     refreshHighlight()
-                    autoScroll(proxy: proxy, phraseID: activePhraseID)
                 }
                 .onChange(of: text) { _, newText in
                     rebuildPrepared(text: newText)
-                    if followSpeech {
-                        autoScroll(proxy: proxy, phraseID: activePhraseID)
-                    }
+                }
+                // Keyed on the text actually on screen (set by rebuildPrepared),
+                // so the scroll runs after the new chunk has been laid out.
+                .onChange(of: prepared.utf16Length) { _, _ in
+                    followBottom(proxy)
                 }
             }
 
@@ -113,7 +113,6 @@ struct KaraokeTranscriptView: View {
             if empty {
                 followSpeech = true
                 showFollowButton = false
-                lastScrollPhraseID = nil
             }
         }
     }
@@ -167,14 +166,8 @@ struct KaraokeTranscriptView: View {
         )
     }
 
-    private func autoScroll(proxy: ScrollViewProxy, phraseID: UUID?) {
+    private func followBottom(_ proxy: ScrollViewProxy) {
         guard followSpeech else { return }
-        guard phraseID != lastScrollPhraseID else { return }
-        // Cap scroll rate (~3/s).
-        let now = Date()
-        guard now.timeIntervalSince(lastScrollAt) >= 0.34 else { return }
-        lastScrollPhraseID = phraseID
-        lastScrollAt = now
         VoicePerformanceMonitor.shared.noteAutoScroll()
         // Instant scroll — animated scroll transactions contend with the orb TimelineView.
         var transaction = Transaction()
@@ -237,8 +230,15 @@ struct KaraokePreparedTranscript {
            active.location >= 0,
            active.location + active.length <= utf16Length,
            let range = Range(active, in: result) {
-            result[range].foregroundColor = accent
+            // The phrase being spoken gets the tint; inside it only the words
+            // already spoken turn accent. Painting the whole phrase accent
+            // (the old behaviour) hid the word-by-word progress completely.
             result[range].backgroundColor = accent.opacity(0.14)
+            let lit = min(spokenLen, active.location + active.length) - active.location
+            if lit > 0,
+               let litRange = Range(NSRange(location: active.location, length: lit), in: result) {
+                result[litRange].foregroundColor = accent
+            }
         }
         return result
     }

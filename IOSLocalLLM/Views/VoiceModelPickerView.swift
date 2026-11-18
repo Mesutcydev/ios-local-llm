@@ -30,17 +30,22 @@ struct VoiceModelPickerView: View {
     @ObservedObject private var center = ModelDownloadCenter.shared
     @ObservedObject private var voiceService = VoiceService.shared
     @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var loc = LocalizationService.shared
     @Environment(\.dismiss) private var dismiss
     @Environment(\.koduTheme) private var T
     @State private var query = ""
     @State private var selectedCatalogEntry: VoiceCatalogEntry?
+    @State private var confirmDownload: VoiceCatalogEntry?
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 0) {
                     header
-                    catalogSearch
+                    KSearchField(placeholder: "Search voice models", text: $query)
+                        .accessibilityIdentifier("voiceCatalogSearch")
+                        .padding(.horizontal, 16)
+                        .padding(.top, 16)
                     catalogSections
                     hintCard
                 }
@@ -51,7 +56,7 @@ struct VoiceModelPickerView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }.foregroundColor(T.ink)
+                    Button("Done", systemImage: "checkmark") { dismiss() }.foregroundColor(T.ink)
                 }
             }
             .onAppear { center.refreshAllStates() }
@@ -63,6 +68,24 @@ struct VoiceModelPickerView: View {
             .sheet(item: $selectedCatalogEntry) { entry in
                 VoiceCatalogDetailView(entry: entry)
             }
+            .confirmationDialog(
+                loc.t("Download \(confirmDownload?.name ?? "")"),
+                isPresented: Binding(
+                    get: { confirmDownload != nil },
+                    set: { if !$0 { confirmDownload = nil } }
+                ),
+                titleVisibility: .visible,
+                presenting: confirmDownload
+            ) { entry in
+                Button(sizeText(for: entry).map { loc.t("Download \($0)") } ?? loc.t("Download")) {
+                    startDownload(entry)
+                }
+                Button(loc.t("Cancel"), role: .cancel) {}
+            } message: { entry in
+                if entry.task == .textToSpeech {
+                    Text(loc.t("This model isn't on your device yet. Voice mode switches to it when the download finishes."))
+                }
+            }
         }
     }
 
@@ -71,31 +94,16 @@ struct VoiceModelPickerView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             KCaption(text: "VOICE")
-            KPageTitle(title: "model catalog", size: 28)
-            KMono(text: "all speech model families — unavailable runtimes remain visible",
-                  size: 11, color: T.ink3)
-                .padding(.top, 2)
+            KPageTitle(title: "Voice engines", size: 28)
+            Text(loc.t("Choose the voice that reads replies aloud. Downloaded voices run offline on this iPhone."))
+                .font(T.sans(13))
+                .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
-        .padding(.top, 4)
-    }
-
-    private var catalogSearch: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass").foregroundColor(T.ink3)
-            TextField("Search voice models", text: $query)
-                .textInputAutocapitalization(.never)
-                .accessibilityIdentifier("voiceCatalogSearch")
-            if !query.isEmpty {
-                Button { query = "" } label: { Image(systemName: "xmark.circle.fill") }
-                    .buttonStyle(.plain)
-            }
-        }
-        .padding(12)
-        .kGlass(cornerRadius: 10, fallbackFill: T.surface)
-        .padding(.horizontal, 16)
+        .padding(.top, 8)
     }
 
     private var visibleCatalogEntries: [VoiceCatalogEntry] {
@@ -106,93 +114,265 @@ struct VoiceModelPickerView: View {
     private var catalogSections: some View {
         switch catalog.loadState {
         case .idle, .loading:
-            ProgressView("Loading complete voice catalog…").padding(30)
+            ProgressView(loc.t("Loading…")).padding(30)
         case .loaded, .failed:
             if catalog.loadState == .failed, let error = catalog.loadError {
                 VStack(spacing: 8) {
-                    Text(error).font(T.sans(11)).foregroundColor(T.bad)
-                    Button("Retry") { catalog.load() }
-                }.padding()
+                    Text(error).font(T.sans(12)).foregroundColor(T.bad)
+                    Button(loc.t("Retry")) { catalog.load() }.buttonStyle(.kSecondary)
+                }
+                .padding()
             }
-            catalogSection(title: "text to speech", task: .textToSpeech)
-            catalogSection(title: "speech recognition", task: .speechRecognition)
-        }
-    }
-
-    private func catalogSection(title: String, task: VoiceCatalogTask) -> some View {
-        let entries = visibleCatalogEntries.filter { $0.task == task }
-        return Group {
-            if !entries.isEmpty {
-                KSection(title: title) {
-                    ForEach(entries) { entry in
-                        catalogCard(entry)
-                        if entry.id != entries.last?.id {
-                            Rectangle().fill(T.rule).frame(height: 1)
+            let usable = visibleCatalogEntries.filter(isUsableOnDevice)
+            catalogSection(title: "text to speech", entries: usable.filter { $0.task == .textToSpeech })
+            catalogSection(title: "speech recognition", entries: usable.filter { $0.task == .speechRecognition })
+            let unavailable = visibleCatalogEntries.filter { !isUsableOnDevice($0) }
+            if !unavailable.isEmpty {
+                // Every model family stays visible, but the ones this iPhone
+                // can't run sit behind one row instead of pushing the usable
+                // engines off screen. A search opens it.
+                KCollapsibleSection(title: "Unavailable",
+                                    rowTitle: "\(loc.t("More models")) · \(unavailable.count)",
+                                    defaultExpanded: !query.isEmpty) {
+                    ForEach(unavailable) { entry in
+                        unavailableRow(entry)
+                        if entry.id != unavailable.last?.id {
+                            Rectangle().fill(T.rule).frame(height: 1).padding(.leading, 15)
                         }
                     }
                 }
-                .padding(.top, 12)
+                .id(query.isEmpty)
             }
         }
     }
 
-    private func catalogCard(_ entry: VoiceCatalogEntry) -> some View {
-        let downloadable = entry.legacyDownloadID.flatMap(downloadModel)
-        return VStack(alignment: .leading, spacing: 9) {
-            Button { selectedCatalogEntry = entry } label: {
-                HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: entry.task == .textToSpeech ? "waveform" : "mic")
-                        .frame(width: 32, height: 32)
-                        .foregroundColor(T.accent)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(entry.name).font(T.mono(13, .semibold)).foregroundColor(T.ink)
-                        Text(entry.summary).font(T.sans(11)).foregroundColor(T.ink3)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text(entry.statusLabel.uppercased())
-                            .font(T.mono(9, .semibold))
-                            .foregroundColor(entry.isDownloadEnabled ? T.good : T.warn)
+    private func catalogSection(title: String, entries: [VoiceCatalogEntry]) -> some View {
+        Group {
+            if !entries.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        KCaption(text: title)
+                        Rectangle().fill(T.rule).frame(height: 1)
                     }
-                    Spacer()
-                    Image(systemName: "chevron.right").foregroundColor(T.ink3)
+                    LazyVStack(spacing: 12) {
+                        ForEach(entries) { entry in catalogCard(entry) }
+                    }
                 }
-                .contentShape(Rectangle())
+                .padding(.horizontal, 16)
+                .padding(.top, 22)
             }
-            .buttonStyle(.plain)
-
-            HStack(spacing: 10) {
-                if entry.id == "tts.apple.system" {
-                    Button("Select") { choose(.appleSystem, model: nil) }
-                        .buttonStyle(.borderedProminent)
-                } else if entry.isDownloadEnabled, let model = downloadable {
-                    Button(primaryTitle(for: model)) { activate(entry, model: model) }
-                        .buttonStyle(.borderedProminent)
-                } else {
-                    Button(entry.statusLabel) {}
-                        .buttonStyle(.bordered)
-                        .disabled(true)
-                }
-                Button("Details") { selectedCatalogEntry = entry }.buttonStyle(.bordered)
-                if let source = entry.sourceURL, let url = URL(string: source) {
-                    Link("Open Project", destination: url).font(T.sans(11, .semibold))
-                }
-            }
-            .font(T.sans(11, .semibold))
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+    }
+
+    // MARK: - Rows
+
+    private enum RowState: Equatable {
+        case builtIn
+        case ready
+        case notDownloaded
+        case downloading(Double)
+        case failed
+        case unavailable
+    }
+
+    private func isUsableOnDevice(_ entry: VoiceCatalogEntry) -> Bool {
+        entry.id == "tts.apple.system" || entry.isDownloadEnabled
+    }
+
+    private func rowState(_ entry: VoiceCatalogEntry, model: DownloadableModel?) -> RowState {
+        if entry.id == "tts.apple.system" { return .builtIn }
+        guard entry.isDownloadEnabled, let model else { return .unavailable }
+        switch model.state {
+        case .ready: return .ready
+        case .downloading, .enumerating: return .downloading(model.progress)
+        case .failed: return .failed
+        case .idle: return .notDownloaded
+        }
+    }
+
+    /// The engine voice mode reads with. Kitten variants share one engine,
+    /// so they also match on the saved variant.
+    private func isActive(_ entry: VoiceCatalogEntry, model: DownloadableModel?) -> Bool {
+        guard entry.task == .textToSpeech else { return false }
+        if entry.id == "tts.apple.system" { return voiceSettings.selectedEngine == .appleSystem }
+        guard let model, let kind = LocalModelRegistry.voiceEngine(for: model),
+              voiceSettings.selectedEngine == kind else { return false }
+        if kind == .kittenTTS { return voiceSettings.selectedKittenVariant.rawValue == model.id }
+        return true
+    }
+
+    private func sizeText(for entry: VoiceCatalogEntry) -> String? {
+        if let label = entry.sizeLabel, label.lowercased() != "built in" { return label }
+        return entry.legacyDownloadID.flatMap(downloadModel)?.sizeLabel
+    }
+
+    private func catalogCard(_ entry: VoiceCatalogEntry) -> some View {
+        let model = entry.legacyDownloadID.flatMap(downloadModel)
+        let state = rowState(entry, model: model)
+        let active = isActive(entry, model: model)
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                Button { cardTapped(entry, model: model, state: state) } label: {
+                    HStack(alignment: .top, spacing: 12) {
+                        engineTile(entry, active: active)
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 6) {
+                                Text(entry.name)
+                                    .font(T.display(17, .semibold))
+                                    .foregroundColor(T.ink)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                if active { KActivePill(text: "active") }
+                            }
+                            Text(LocalizedStringKey(entry.summary))
+                                .font(T.sans(12))
+                                .foregroundColor(T.ink2)
+                                .fixedSize(horizontal: false, vertical: true)
+                            // The Download button below already names the
+                            // size, so a not-downloaded row needs no chip.
+                            if state != .notDownloaded || entry.supportLevel == .experimental {
+                                KFlowLayout(horizontalSpacing: 6, verticalSpacing: 6) {
+                                    if state != .notDownloaded { statusChip(state) }
+                                    if entry.supportLevel == .experimental {
+                                        KTag(text: "Experimental", size: 9)
+                                    }
+                                }
+                                .padding(.top, 4)
+                            }
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(active ? .isSelected : [])
+
+                Button { selectedCatalogEntry = entry } label: {
+                    Image(systemName: "info.circle")
+                        .font(.body)
+                        .foregroundStyle(T.ink3)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.top, -10)
+                .padding(.trailing, -10)
+                .accessibilityLabel(loc.t("Details"))
+            }
+
+            switch state {
+            case .notDownloaded:
+                Button {
+                    confirmDownload = entry
+                } label: {
+                    Label(sizeText(for: entry).map { loc.t("Download \($0)") } ?? loc.t("Download"),
+                          systemImage: "arrow.down")
+                }
+                .buttonStyle(.kPrimary)
+            case .downloading(let progress):
+                VStack(alignment: .leading, spacing: 6) {
+                    ProgressView(value: progress).tint(T.accent)
+                    Text(loc.t("Downloading \(progress.formatted(.percent.precision(.fractionLength(0))))"))
+                        .font(T.mono(10))
+                        .foregroundColor(T.ink3)
+                }
+            case .failed:
+                Button(loc.t("Retry")) { model?.start() }
+                    .buttonStyle(.kSecondary)
+            case .builtIn, .ready, .unavailable:
+                EmptyView()
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .kGlass(cornerRadius: AppRadius.card)
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                .stroke(active ? T.accent.opacity(0.35) : Color.clear, lineWidth: 1)
+        )
         .accessibilityIdentifier("voiceCatalogCard.\(entry.id)")
+    }
+
+    private func engineTile(_ entry: VoiceCatalogEntry, active: Bool) -> some View {
+        Image(systemName: active ? "checkmark" : (entry.task == .textToSpeech ? "waveform" : "mic"))
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundStyle(active ? T.bg : T.accent)
+            .frame(width: 44, height: 44)
+            .background(
+                active ? T.accent : T.accentSoft,
+                in: RoundedRectangle(cornerRadius: AppRadius.control, style: .continuous)
+            )
+            .accessibilityHidden(true)
+    }
+
+    /// One plain word per state, so "Available" no longer means both
+    /// "installed" and "not downloaded yet".
+    @ViewBuilder
+    private func statusChip(_ state: RowState) -> some View {
+        switch state {
+        case .builtIn, .ready:
+            KStatusBadge(glyph: .ready, label: state == .builtIn ? "ready" : "Downloaded", color: T.good)
+        case .notDownloaded:
+            KStatusBadge(glyph: .download, label: "Download", color: T.ink3)
+        case .downloading:
+            KStatusBadge(glyph: .streaming, label: "Downloading…", color: T.accent)
+        case .failed:
+            KStatusBadge(glyph: .remote, label: "Unavailable", color: T.bad)
+        case .unavailable:
+            KStatusBadge(glyph: .remote, label: "Unavailable", color: T.ink3)
+        }
+    }
+
+    private func unavailableRow(_ entry: VoiceCatalogEntry) -> some View {
+        Button { selectedCatalogEntry = entry } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(entry.name).font(T.sans(14, .semibold)).foregroundColor(T.ink)
+                    Text(loc.t(entry.statusLabel)).font(T.sans(12)).foregroundColor(T.ink3)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "info.circle").foregroundStyle(T.ink3).accessibilityHidden(true)
+            }
+            .padding(.horizontal, 15)
+            .padding(.vertical, 11)
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("voiceCatalogCard.\(entry.id)")
+    }
+
+    // MARK: - Actions
+
+    private func cardTapped(_ entry: VoiceCatalogEntry, model: DownloadableModel?, state: RowState) {
+        switch state {
+        case .builtIn:
+            choose(.appleSystem, model: nil)
+        case .ready:
+            if entry.task == .textToSpeech, let model {
+                activate(entry, model: model)
+            } else {
+                selectedCatalogEntry = entry
+            }
+        case .notDownloaded:
+            confirmDownload = entry
+        case .failed:
+            model?.start()
+        case .downloading, .unavailable:
+            selectedCatalogEntry = entry
+        }
+    }
+
+    private func startDownload(_ entry: VoiceCatalogEntry) {
+        guard let model = entry.legacyDownloadID.flatMap(downloadModel) else { return }
+        if entry.task == .textToSpeech {
+            activate(entry, model: model)   // commits the pick, then downloads
+        } else {
+            model.start()
+        }
     }
 
     private func downloadModel(id: String) -> DownloadableModel? {
         center.models.first { $0.id == id }
-    }
-
-    private func primaryTitle(for model: DownloadableModel) -> String {
-        switch model.state {
-        case .ready: return "Select"
-        case .downloading, .enumerating: return "Downloading…"
-        case .idle, .failed: return "Download"
-        }
     }
 
     private func activate(_ entry: VoiceCatalogEntry, model: DownloadableModel) {
@@ -213,7 +393,17 @@ struct VoiceModelPickerView: View {
         // that's still downloading/loading never breaks playback — and the
         // download-complete observer keys off `voiceEngine`, so we must set
         // it BEFORE kicking the download.
-        voiceSettings.selectEngine(kind)
+        // Kitten variants share one engine: record WHICH variant was picked,
+        // and reload when it changes, or voice keeps the old (maybe missing)
+        // variant and silently falls back to System.
+        let variantChanged: Bool
+        if kind == .kittenTTS, let id = model?.id, let variant = KittenVariant(rawValue: id) {
+            variantChanged = voiceSettings.selectedKittenVariant != variant
+            voiceSettings.selectKittenVariant(variant)
+        } else {
+            variantChanged = false
+            voiceSettings.selectEngine(kind)
+        }
         let voices = voiceList(for: kind)
         if !voices.contains(where: { $0.id == settings.voiceID }),
            let first = voices.first {
@@ -235,8 +425,9 @@ struct VoiceModelPickerView: View {
             // Not downloaded → start it here. The download-complete
             // observer auto-loads the now-preferred engine.
             model?.start()
-        } else if case .failed = engineState(for: kind) {
-            // On disk but the last load failed → clear and retry.
+        } else if variantChanged || { if case .failed = engineState(for: kind) { return true }; return false }() {
+            // On disk but the last load failed (or a different Kitten
+            // variant was picked) → clear and reload.
             voiceService.unloadAll()
             Task { await voiceService.load() }
         } else if engineState(for: kind) != .ready {
@@ -252,6 +443,8 @@ struct VoiceModelPickerView: View {
         case .appleSystem: return true
         case .kittenTTS:   return VoiceModelBundleValidator.isKittenTTSAvailable()
         case .kokoro:      return VoiceModelBundleValidator.isKokoroAvailable()
+        case .paradee:     return ParadeeTTSService.isAvailable
+        case .supertonic:  return SupertonicTTSService.isAvailable
         }
     }
 
@@ -260,6 +453,8 @@ struct VoiceModelPickerView: View {
         case .appleSystem: return voiceService.systemState
         case .kittenTTS:   return voiceService.kittenState
         case .kokoro:      return voiceService.kokoroState
+        case .paradee:     return voiceService.paradeeState
+        case .supertonic:  return voiceService.supertonicState
         }
     }
 
@@ -268,6 +463,8 @@ struct VoiceModelPickerView: View {
         case .appleSystem: return voiceService.systemEngine.availableVoices
         case .kittenTTS:   return KittenTTSService.kittenVoices
         case .kokoro:      return KokoroTTSService.kokoroVoices
+        case .paradee:     return ParadeeTTSService.paradeeVoices
+        case .supertonic:  return SupertonicTTSService.supertonicVoices
         }
     }
 
@@ -284,17 +481,18 @@ struct VoiceModelPickerView: View {
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(12)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .kGlass(cornerRadius: 8, fallbackFill: T.surface)
+        .kGlass(cornerRadius: AppRadius.card)
         .padding(.horizontal, 16)
-        .padding(.top, 12)
+        .padding(.top, 22)
     }
 
 }
 
 struct VoiceCatalogDetailView: View {
     let entry: VoiceCatalogEntry
+    @ObservedObject private var loc = LocalizationService.shared
     @Environment(\.dismiss) private var dismiss
     @Environment(\.koduTheme) private var T
 
@@ -302,19 +500,56 @@ struct VoiceCatalogDetailView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text(entry.name).font(T.display(28, .bold)).foregroundColor(T.ink)
-                    Text(entry.summary).font(T.sans(15)).foregroundColor(T.ink2)
-                    LabeledContent("Task", value: entry.task == .textToSpeech ? "Text to Speech" : "Speech Recognition")
-                    LabeledContent("Support", value: entry.statusLabel)
+                    VStack(alignment: .leading, spacing: 4) {
+                        KCaption(text: "Model Details")
+                        Text(entry.name)
+                            .font(T.display(28, .semibold))
+                            .foregroundColor(T.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(LocalizedStringKey(entry.summary))
+                            .font(T.sans(15))
+                            .foregroundColor(T.ink2)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 2)
+                    }
+                    VStack(spacing: 0) {
+                        detailRow("Task", entry.task == .textToSpeech ? "Text to Speech" : "Speech Recognition")
+                        Rectangle().fill(T.rule).frame(height: 1)
+                        detailRow("Support", entry.statusLabel)
+                        if let size = entry.sizeLabel, size.lowercased() != "built in" {
+                            Rectangle().fill(T.rule).frame(height: 1)
+                            detailRow("Storage", size)
+                        }
+                    }
+                    .kGlass(cornerRadius: AppRadius.card)
                     if let source = entry.sourceURL, let url = URL(string: source) {
-                        Link("Open Project", destination: url)
-                            .buttonStyle(.borderedProminent)
+                        Link(destination: url) {
+                            Label(loc.t("Open Project"), systemImage: "arrow.up.right")
+                        }
+                        .buttonStyle(.kSecondary)
                     }
                 }
-                .padding(20)
+                .padding(16)
             }
-            .navigationTitle("Model Details")
-            .toolbar { Button("Done") { dismiss() } }
+            .background(LiquidPinkBackdrop())
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done", systemImage: "checkmark") { dismiss() }.foregroundColor(T.ink)
+                }
+            }
         }
+    }
+
+    private func detailRow(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(loc.t(label)).font(T.sans(14)).foregroundColor(T.ink2)
+            Spacer(minLength: 12)
+            Text(loc.t(value)).font(T.sans(14, .semibold)).foregroundColor(T.ink)
+                .multilineTextAlignment(.trailing)
+        }
+        .padding(.horizontal, 16)
+        .frame(minHeight: 48)
     }
 }

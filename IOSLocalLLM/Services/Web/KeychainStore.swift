@@ -14,7 +14,7 @@ public enum KeychainStore {
 
     /// Account name namespace — keep it scoped to the web-tool so other parts
     /// of the app can use their own keychain space if they want one.
-    public static let service = "com.mesutcydev.ioslocalllm.webtool"
+    public static let service = "com.codelens.webtool"
 
     public static func set(_ value: String, account: String) {
         guard let data = value.data(using: .utf8) else { return }

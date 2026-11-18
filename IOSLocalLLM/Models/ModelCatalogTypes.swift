@@ -178,6 +178,7 @@ public enum ModelCapability: String, CaseIterable, Codable, Hashable, Sendable {
 
 public enum ModelRuntime: String, Codable, Hashable, CaseIterable, Sendable {
     case mlx        // Apple MLX (MLXLLM / MLXVLM) — safetensors
+    case coreAI     // Optional, physical iOS 27 devices only
     case llamaCpp   // llama.cpp + GGUF (LlamaCppBridge / mtmd)
 
     /// Short badge label shown on picker rows and result cards.
@@ -185,6 +186,7 @@ public enum ModelRuntime: String, Codable, Hashable, CaseIterable, Sendable {
         switch self {
         case .mlx:      return "MLX"
         case .llamaCpp: return "GGUF"
+        case .coreAI: return "Core AI"
         }
     }
 }
@@ -348,12 +350,33 @@ enum DualRoleModelPolicy {
 
     @MainActor
     static func selectionsMatch(repoID: String) -> Bool {
-        let assistantRepo = AssistantModelCatalog.currentSelection().repoID
+        isTextAndVision(repoID: repoID) && bothRolesSelect(repoID)
+    }
+
+    /// GGUF text+vision packages (LFM3 Omni). One llama.cpp instance serves
+    /// chat, voice and Lens: its LFM3 path clears the KV cache per request
+    /// and rejects overlapping calls, so the two tabs can hand it back and
+    /// forth instead of reloading ~1.4 GB on every switch.
+    static func isSharedGGUF(repoID: String) -> Bool {
+        AssistantModelCatalog.presets.contains {
+            $0.repoID.caseInsensitiveCompare(repoID) == .orderedSame
+                && $0.runtime == .llamaCpp
+                && $0.capabilities.contains(.vision)
+        }
+    }
+
+    @MainActor
+    static func sharesGGUFRuntime(repoID: String) -> Bool {
+        isSharedGGUF(repoID: repoID) && bothRolesSelect(repoID)
+    }
+
+    @MainActor
+    private static func bothRolesSelect(_ repoID: String) -> Bool {
         let visionSelection = LocalModelRegistry.storedVisionSelectionID(
             AppSettings.shared.cameraVisualModelID
         )
-        return isTextAndVision(repoID: repoID)
-            && assistantRepo.caseInsensitiveCompare(repoID) == .orderedSame
+        return AssistantModelCatalog.currentSelection().repoID
+                .caseInsensitiveCompare(repoID) == .orderedSame
             && visionSelection.caseInsensitiveCompare(repoID) == .orderedSame
     }
 
@@ -440,7 +463,7 @@ struct LocalModelDescriptor: Identifiable, Hashable {
 
 enum LocalModelRegistry {
     static let assistantSelectionPrefixes = ["downloaded:", "imported:", "custom:"]
-    static let defaultVisionSelectionID = FastVLMService.modelID
+    static let defaultVisionSelectionID = "vision-ocr"
 
     /// Repository IDs that shipped as selectable visual models in older
     /// builds but now have a safer, API-compatible runtime representation.
@@ -452,7 +475,7 @@ enum LocalModelRegistry {
     ]
 
     private static let voiceKeywords = [
-        "kitten", "kokoro", "kittentts", "kitten-tts", "kitten_tts",
+        "kitten", "kokoro", "kittentts", "kitten-tts", "kitten_tts", "paradee", "supertonic",
         "whisper", "tts", "voicedesign", "voice-design", "voice_design",
         "speecht5", "speech-t5", "bark", "vits", "styletts", "style-tts",
         "parakeet", "moonshine", "piper",
@@ -506,7 +529,7 @@ enum LocalModelRegistry {
     }
 
     static func storedVisionSelectionID(_ storedRepoID: String) -> String {
-        guard !storedRepoID.isEmpty else { return defaultVisionSelectionID }
+        guard !storedRepoID.isEmpty, ConsumerModelPolicy.allows(repoID: storedRepoID) else { return defaultVisionSelectionID }
         return legacyVisionSelectionAliases[storedRepoID.lowercased()] ?? storedRepoID
     }
 
@@ -546,15 +569,15 @@ enum LocalModelRegistry {
             }
             return LocalModelDescriptor(
                 id: defaultVisionSelectionID,
-                repoID: "apple/FastVLM-0.5B-MLX",
-                displayName: "FastVLM (built-in)",
-                subtitle: "Apple's encoder + MLX decoder — runs everywhere",
+                repoID: "",
+                displayName: "Text recognition (OCR)",
+                subtitle: "Apple Vision · no model download",
                 role: .vision,
                 origin: .bundled,
                 vendor: .apple,
                 capabilities: [.vision],
                 runtime: .mlx,
-                approxRAMBytes: 1_400_000_000,
+                approxRAMBytes: 0,
                 contextWindowTokens: 0,
                 supportsTools: false,
                 voiceEngine: nil
@@ -700,6 +723,8 @@ enum LocalModelRegistry {
         let haystack = "\(repoID) \(displayName)".lowercased()
         if haystack.contains("kitten") { return .kittenTTS }
         if haystack.contains("kokoro") { return .kokoro }
+        if haystack.contains("paradee") { return .paradee }
+        if haystack.contains("supertonic") { return .supertonic }
         return nil
     }
 
@@ -791,6 +816,10 @@ enum LocalModelRegistry {
                     return repoID.lowercased().contains("mini") ? 700_000_000 : 250_000_000
                 case .kokoro:
                     return 400_000_000
+                case .paradee:
+                    return 60_000_000
+                case .supertonic:
+                    return 900_000_000
                 }
             }
             return 0
@@ -1145,8 +1174,9 @@ final class InstalledModelRegistry: ObservableObject {
     /// Does NOT delete existing records that still validate — it's a
     /// reconciliation, not a wipe-and-rebuild.
     func reconcileWithDisk() {
-        let existingByRepo = Dictionary(grouping: records, by: { $0.repoID.lowercased() })
-        var updated = records
+        let recovered = records.compactMap { Self.reanchoredRecord($0) }
+        let existingByRepo = Dictionary(grouping: recovered, by: { $0.repoID.lowercased() })
+        var updated = recovered
 
         // 1. Rescan LLMModels directory (catalog presets)
         let fm = FileManager.default
@@ -1289,17 +1319,10 @@ final class InstalledModelRegistry: ObservableObject {
             let hasSafetensors = names.contains { $0.hasSuffix(".safetensors") }
             let hasWeightIndex = names.contains("model.safetensors.index.json")
             return hasSafetensors || hasWeightIndex
+        case .coreAI: return false
         case .llamaCpp:
-            // Require the GGUF magic bytes, not just the suffix — a stray
-            // `.gguf`-named file (a cancelled download placeholder, a text
-            // file renamed by mistake) shouldn't count as a usable model.
-            let hasValidGGUF = names.contains { name in
-                LocalModelFileValidator.isValidGGUFFile(
-                    dir.appendingPathComponent(name)
-                )
-            }
-            let hasVLMProjector = LocalModelFileValidator.hasCompleteGGUFVLMPair(in: dir)
-            return hasValidGGUF || hasVLMProjector
+            return LocalModelFileValidator.hasValidGGUFTextModel(in: dir)
+                || LocalModelFileValidator.hasCompleteGGUFVLMPair(in: dir)
         }
     }
 
@@ -1320,7 +1343,31 @@ final class InstalledModelRegistry: ObservableObject {
               let decoded = try? JSONDecoder().decode([InstalledModelRecord].self, from: data) else {
             return
         }
-        records = decoded
+        records = decoded.compactMap { Self.reanchoredRecord($0) }
+    }
+
+    /// Never pass a previous container URL to a downloader. Revalidate the
+    /// current copy and retain the installation identity during recovery.
+    static func reanchoredRecord(
+        _ record: InstalledModelRecord, roots: [URL] = ModelStoragePaths.modelRoots
+    ) -> InstalledModelRecord? {
+        guard let directory = ModelStoragePaths.recoveredModelDirectory(for: record.localURL, roots: roots) else {
+            return nil
+        }
+        let sidecar = directory.appendingPathComponent(".repoID")
+        if FileManager.default.fileExists(atPath: sidecar.path) {
+            guard let repoID = try? String(contentsOf: sidecar, encoding: .utf8)
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+                  repoID.caseInsensitiveCompare(record.repoID) == .orderedSame else { return nil }
+        }
+        guard let validated = validateDirectory(directory, repoID: record.repoID) else { return nil }
+        return InstalledModelRecord(
+            id: record.id, repoID: record.repoID, displayName: record.displayName,
+            localURL: directory, engine: validated.engine, capabilities: validated.capabilities,
+            architecture: validated.architecture, quantization: validated.quantization,
+            parameterCount: record.parameterCount, installedAt: record.installedAt,
+            validationState: validated.validationState, downloadBytes: validated.downloadBytes
+        )
     }
 
     private func saveToDisk() {

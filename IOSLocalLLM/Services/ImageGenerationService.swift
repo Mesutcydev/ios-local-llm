@@ -43,6 +43,14 @@ final class ImageGenerationService: ObservableObject {
         let preset: StableDiffusionConfiguration.Preset
 
         var config: StableDiffusionConfiguration { preset.configuration }
+        /// Keep future Turbo downloads on the versions whose terms we ship.
+        var revision: String {
+            switch id {
+            case "stabilityai/sd-turbo": return "b261bac6fd2cf515557d5d0707481eafa0485ec2"
+            case "stabilityai/sdxl-turbo": return "71153311d3dbb46851df1931d3ca6e939de83304"
+            default: return "main"
+            }
+        }
         /// 8× the latent edge — the pixel dimension of the generated image.
         var pixelEdge: Int { latentEdge * 8 }
 
@@ -153,6 +161,7 @@ final class ImageGenerationService: ObservableObject {
         case loading
         case ready
         case generating(Double)         // 0–1 over denoise steps
+        case checking                   // local content check, before publication
         case failed(String)
     }
 
@@ -165,6 +174,16 @@ final class ImageGenerationService: ObservableObject {
 
     var selectedModel: Model {
         Self.model(forID: selectedModelID) ?? Self.catalog[0]
+    }
+
+    /// True from generate() until its task ends; set before any state is.
+    var isRunning: Bool { genTask != nil }
+
+    var isBusy: Bool {
+        switch state {
+        case .downloading, .loading, .generating, .checking: return true
+        default: return false
+        }
     }
 
     // MARK: - Private
@@ -180,15 +199,30 @@ final class ImageGenerationService: ObservableObject {
     }
     private var genTask: Task<Void, Never>?
     private var directDownloadTasks: [String: Task<Void, Never>] = [:]
+    typealias FileDownloader = (URL, URL, @escaping (Int64, Int64) -> Void) async throws -> URL
+    private let downloadFile: FileDownloader
+    private let repositoryRoot: URL?
+    private let parentalControls: ImageGenerationParentalControls
 
-    private init() {}
+    init(repositoryRoot: URL? = nil,
+         parentalControls: ImageGenerationParentalControls = .shared,
+         downloadFile: @escaping FileDownloader = { url, destination, progress in
+             try await BackgroundDownloadCoordinator.shared.download(
+                 from: url, to: destination, expectedSize: 0, progress: progress
+             )
+         }) {
+        self.repositoryRoot = repositoryRoot
+        self.parentalControls = parentalControls
+        self.downloadFile = downloadFile
+    }
 
     // MARK: - Installed-state helpers
 
     /// Local directory HubApi downloads this repo into
     /// (`Documents/huggingface/models/<repo>`).
     func repoDirectory(_ repoID: String) -> URL {
-        hub.localRepoLocation(Hub.Repo(id: repoID))
+        if let repositoryRoot { return repositoryRoot.appendingPathComponent(repoID) }
+        return hub.localRepoLocation(Hub.Repo(id: repoID))
     }
 
     /// True when every file the StableDiffusion preset needs is present.
@@ -232,11 +266,9 @@ final class ImageGenerationService: ObservableObject {
     // MARK: - Selection
 
     func select(_ id: String) {
-        guard id != selectedModelID else { return }
+        guard genTask == nil, Self.model(forID: id) != nil, id != selectedModelID else { return }
         selectedModelID = id
-        if case .generating = state { } else {
-            state = isInstalled(selectedModel) ? .ready : .idle
-        }
+        state = isInstalled(selectedModel) ? .ready : .idle
     }
 
     // MARK: - Download
@@ -245,7 +277,11 @@ final class ImageGenerationService: ObservableObject {
     /// an image. The Models screen uses this for setup cards, where "Get"
     /// should mean exactly that and should not require a prompt.
     func startDownload(_ model: Model) {
-        guard !isInstalled(model), directDownloadProgress[model.id] == nil else { return }
+        guard parentalControls.canGenerate else {
+            ToastCenter.shared.info("Image generation is locked", detail: "Ask a parent or guardian to enter the parental PIN.")
+            return
+        }
+        guard genTask == nil, !isInstalled(model), directDownloadTasks[model.id] == nil else { return }
 
         directDownloadErrors[model.id] = nil
         directDownloadProgress[model.id] = 0
@@ -264,17 +300,23 @@ final class ImageGenerationService: ObservableObject {
         directDownloadProgress[model.id] ?? 0
     }
 
+    func cancelDownload(_ model: Model) {
+        directDownloadTasks[model.id]?.cancel()
+    }
+
     private func downloadOnly(_ model: Model) async {
+        defer { directDownloadProgress[model.id] = nil }
         do {
             try await downloadViaCoordinator(model) { [weak self] fraction in
                 self?.directDownloadProgress[model.id] = fraction
             }
-            directDownloadProgress[model.id] = nil
+            try Task.checkCancellation()
             directDownloadErrors[model.id] = nil
+            if model.id == selectedModelID && genTask == nil { state = .ready }
             objectWillChange.send()
             ToastCenter.shared.success("Downloaded \(model.displayName)")
         } catch {
-            directDownloadProgress[model.id] = nil
+            guard !Task.isCancelled, !(error is CancellationError) else { return }
             directDownloadErrors[model.id] = Self.downloadFailureMessage(for: model, error: error)
             ToastCenter.shared.error(
                 "Download failed",
@@ -284,6 +326,7 @@ final class ImageGenerationService: ObservableObject {
     }
 
     func deleteModel(_ model: Model) {
+        guard genTask == nil, !isDownloading(model) else { return }
         let dir = repoDirectory(model.id)
         try? FileManager.default.removeItem(at: dir)
         if model.id == selectedModelID { state = .idle }
@@ -292,12 +335,21 @@ final class ImageGenerationService: ObservableObject {
 
     // MARK: - Generation
 
+    func clearForParentalLock() {
+        cancel()
+        if !parentalControls.canGenerate {
+            for task in directDownloadTasks.values { task.cancel() }
+        }
+        image = nil
+    }
+
     func cancel() {
         genTask?.cancel()
         genTask = nil
         Task { await MLXGenerationGate.shared.cancelAll() }
         if case .generating = state { state = isInstalled(selectedModel) ? .ready : .idle }
         if case .loading = state { state = isInstalled(selectedModel) ? .ready : .idle }
+        if case .checking = state { state = isInstalled(selectedModel) ? .ready : .idle }
         if case .downloading = state { state = .idle }
     }
 
@@ -306,13 +358,33 @@ final class ImageGenerationService: ObservableObject {
                   negativePrompt: String = "",
                   steps: Int? = nil,
                   seed: UInt64? = nil) {
+        guard parentalControls.canGenerate else {
+            clearForParentalLock()
+            ToastCenter.shared.info("Image generation is locked", detail: "Ask a parent or guardian to enter the parental PIN.")
+            return
+        }
         let trimmed = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             ToastCenter.shared.info("Enter a prompt first")
             return
         }
         guard genTask == nil else { return }
+        guard !ConsumerContentPolicy.blocksImagePrompt(trimmed) else {
+            image = nil
+            state = .failed(ConsumerContentPolicy.imageRefusal)
+            ToastCenter.shared.info("Prompt not supported", detail: ConsumerContentPolicy.imageRefusal)
+            return
+        }
+        guard GeneratedImageSafety.modelURL != nil else {
+            image = nil
+            state = .failed(GeneratedImageSafety.Failure.unavailable.localizedDescription)
+            return
+        }
         let model = selectedModel
+        guard !isDownloading(model) else {
+            ToastCenter.shared.info("Model is downloading", detail: "Wait for the download to finish, then tap Generate.")
+            return
+        }
         genTask = Task { [weak self] in
             await self?.runGeneration(model: model,
                                        prompt: trimmed,
@@ -364,6 +436,8 @@ final class ImageGenerationService: ObservableObject {
         // but the explicit gated clear + the assistant await reclaim the
         // bulk of the memory before measurement.
         await CodingAssistantService.shared.unloadAndWaitForCleanup()
+        // Also the Lens's GGUF: a shared LFM3 Omni would otherwise stay resident.
+        await LlamaCppVLMService.shared.unloadAndWaitForCleanup()
         MLXVisionService.shared.unload()
         FastVLMService.shared.unload()
         // Flush MLX's idle buffer pool now. The clear shares the global gate,
@@ -419,6 +493,10 @@ final class ImageGenerationService: ObservableObject {
                     if case .downloading = self.state { self.state = .downloading(frac) }
                 }
             } catch {
+                if Task.isCancelled || error is CancellationError {
+                    state = isInstalled(model) ? .ready : .idle
+                    return
+                }
                 let ns = error as NSError
                 if ns.domain == NSURLErrorDomain,
                    ns.code == NSURLErrorNotConnectedToInternet,
@@ -495,7 +573,7 @@ final class ImageGenerationService: ObservableObject {
             // Return PNG Data (Sendable) from the gate — CGImage / UIImage are
             // not reliably Sendable across the actor boundary.
             let availForCap = avail
-            let pngData = try await MLXGenerationGate.shared.run { () -> Data in
+            let pngData = try await MLXGenerationGate.shared.run { [self] () -> Data in
                 // Bound MLX's allocator for the duration of THIS generation only.
                 // IOSLocalLLMApp deliberately leaves the cache unbounded globally —
                 // a low global cap starves the resident LLM and triggers Metal
@@ -596,6 +674,11 @@ final class ImageGenerationService: ObservableObject {
                                 self?.state = .generating(frac)
                             }
                         }
+                        // A cancelled run (Stop, or the app going to the
+                        // background) must not go on to the decode: iOS aborts
+                        // a backgrounded app that submits GPU work, and the
+                        // crash guard would count that as a failed run.
+                        if Task.isCancelled { throw MLXGenerationGate.Cancelled() }
                         guard let lastXt else { throw MLXGenerationGate.Cancelled() }
                         eval(lastXt)
                         return (decoder, lastXt)
@@ -619,6 +702,14 @@ final class ImageGenerationService: ObservableObject {
                 return data
             }
 
+            try Task.checkCancellation()
+            guard parentalControls.canGenerate else { throw CancellationError() }
+            state = .checking
+            statusMessage = "Checking image locally"
+            await MLXGenerationGate.shared.clearCacheWhenIdle()
+            try await GeneratedImageSafety.shared.check(pngData: pngData)
+            try Task.checkCancellation()
+            guard parentalControls.canGenerate else { throw CancellationError() }
             image = UIImage(data: pngData)
             state = .ready
             statusMessage = ""
@@ -633,6 +724,7 @@ final class ImageGenerationService: ObservableObject {
             Diagnostics.shared.breadcrumb("imagegen cancelled", category: "imagegen")
             state = isInstalled(model) ? .ready : .idle
         } catch {
+            image = nil
             Diagnostics.shared.error("imagegen failed · \(error.localizedDescription)", category: "imagegen")
             state = .failed(error.localizedDescription)
             ToastCenter.shared.error("Image generation failed",
@@ -692,10 +784,9 @@ final class ImageGenerationService: ObservableObject {
         }
 
         for rel in relPaths {
-            // A user cancel returns between files (the in-flight URLSession
-            // transfer keeps going in the background and is reused next time);
-            // the caller's `Task.isCancelled` check then takes the cancel path.
-            if Task.isCancelled { return }
+            // Cancellation also reaches the coordinator's current transfer.
+            // Completed files stay available for the next download attempt.
+            try Task.checkCancellation()
 
             let dest = dir.appendingPathComponent(rel)
             // Already on disk → count and skip. The coordinator only writes to
@@ -709,7 +800,7 @@ final class ImageGenerationService: ObservableObject {
             }
 
             let encoded = rel.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? rel
-            guard let url = URL(string: "https://huggingface.co/\(model.id)/resolve/main/\(encoded)") else {
+            guard let url = URL(string: "https://huggingface.co/\(model.id)/resolve/\(model.revision)/\(encoded)") else {
                 throw URLError(.badURL)
             }
 
@@ -718,23 +809,23 @@ final class ImageGenerationService: ObservableObject {
             var attempt = 0
             while true {
                 do {
-                    _ = try await BackgroundDownloadCoordinator.shared.download(
-                        from: url, to: dest, expectedSize: 0
-                    ) { written, expected in
+                    _ = try await downloadFile(url, dest) { written, expected in
                         let inFile = expected > 0 ? min(Double(written) / Double(expected), 1) : 0
                         report((Double(fileIndex) + inFile) / Double(total))
                     }
                     break
                 } catch {
-                    if Task.isCancelled { return }
+                    try Task.checkCancellation()
+                    if error is CancellationError { throw error }
                     attempt += 1
                     guard attempt < maxAttempts, Self.isRetryableDownloadError(error) else { throw error }
                     Diagnostics.shared.breadcrumb(
                         "imagegen download retry \(attempt)/\(maxAttempts - 1) · \(model.id) · \(rel) · \(error.localizedDescription)",
                         category: "imagegen")
-                    try? await Task.sleep(nanoseconds: Self.downloadRetryDelayNs(attempt: attempt))
+                    try await Task.sleep(nanoseconds: Self.downloadRetryDelayNs(attempt: attempt))
                 }
             }
+            try Task.checkCancellation()
             done += 1
             report(Double(done) / Double(total))
         }
@@ -838,9 +929,9 @@ final class ImageGenerationService: ObservableObject {
     // keys, only read/written on this path) and is inert until an actual crash
     // occurs — so it changes no other feature and no first-run behaviour.
 
-    private static let inFlightKey = "ioslocalllmImgGenInFlight"            // "<modelID>|<latentEdge>"
-    private static func safeLatentKey(_ id: String) -> String { "ioslocalllmImgSafeLatent_\(id)" }
-    private static func blockedKey(_ id: String) -> String { "ioslocalllmImgBlocked_\(id)" }
+    private static let inFlightKey = "codelensImgGenInFlight"            // "<modelID>|<latentEdge>"
+    private static func safeLatentKey(_ id: String) -> String { "codelensImgSafeLatent_\(id)" }
+    private static func blockedKey(_ id: String) -> String { "codelensImgBlocked_\(id)" }
 
     /// Descending latent rungs (all multiples of 8 — the VAE upsamples 8×, so
     /// the output edge is 8× these: 512², 320², 192²). A crash at one rung drops
@@ -876,7 +967,7 @@ final class ImageGenerationService: ObservableObject {
         return v > 0 ? v : nil
     }
 
-    private func isCrashBlocked(_ id: String) -> Bool {
+    func isCrashBlocked(_ id: String) -> Bool {
         UserDefaults.standard.bool(forKey: Self.blockedKey(id))
     }
 
@@ -910,9 +1001,10 @@ final class ImageGenerationService: ObservableObject {
     }
 
     /// Forget everything learned from prior crashes (safe caps + blocks) so every
-    /// model gets a clean retry — e.g. after the user frees up the device. Not
-    /// called automatically; wire to a Settings affordance if desired.
+    /// model gets a clean retry — e.g. after the user frees up the device.
+    /// Offered by the "Try Again" button under a crash-blocked message.
     func resetImageModelLimits() {
+        if case .failed = state { state = .idle }
         let d = UserDefaults.standard
         d.removeObject(forKey: Self.inFlightKey)
         for model in Self.catalog {

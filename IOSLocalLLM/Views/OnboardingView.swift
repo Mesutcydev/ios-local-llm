@@ -57,20 +57,26 @@ struct OnboardingView: View {
                     KMono(text: "v\(appVersion)", size: 10, color: T.ink3)
                     }
                     if dynamicTypeSize.isAccessibilitySize { Spacer() }
-                    if page < pages.count - 1 {
+                    // Informational pages only: the picker page has its own
+                    // "Not now". (This used to compare against `pages.count - 1`,
+                    // which hid skip on the second information page.)
+                    if page < pickerIndex {
                         Button {
                             settings.hasSeenOnboarding = true
                         } label: {
                             Text("skip")
                                 .font(T.mono(11))
                                 .foregroundColor(T.ink3)
+                                // 44 pt touch target without changing the look.
+                                .frame(minWidth: 44, minHeight: 44, alignment: .trailing)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .padding(.leading, 12)
                     }
                 }
+                .frame(minHeight: 44)   // same header height with or without skip
                 .padding(.horizontal, 22)
-                .padding(.top, 18)
+                .padding(.top, 8)
 
                 TabView(selection: $page) {
                     ForEach(Array(pages.enumerated()), id: \.offset) { idx, p in

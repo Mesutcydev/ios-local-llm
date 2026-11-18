@@ -53,7 +53,10 @@ final class CodingAssistantService: ObservableObject {
     /// Output budget the chrome should advertise: user setting, thermal
     /// advisor, and (for imported GGUF) the compact-profile 128-token cap.
     var effectiveOutputTokenCap: Int {
-        GGUFGenerationProfile.outputTokenCap(
+        if activeModel.runtime == .coreAI {
+            return coreAIOutputCap(requested: effectiveGenerationSettings.maxTokens)
+        }
+        return GGUFGenerationProfile.outputTokenCap(
             isGGUF: activeModel.runtime == .llamaCpp,
             profile: ggufProfile,
             requested: effectiveGenerationSettings.maxTokens,
@@ -91,15 +94,17 @@ final class CodingAssistantService: ObservableObject {
                 maximumResponseTokens: AppSettings.shared.assistantMaxTokens
             )
         }
+        if activeModel.runtime == .coreAI {
+            return max(128, coreAIContextTokens - effectiveOutputTokenCap - 64)
+        }
         if activeModel.runtime == .llamaCpp {
             return ggufProfile.inputBudget(
-                requestedOutputTokens: effectiveGenerationSettings.maxTokens
+                requestedOutputTokens: effectiveGenerationSettings.maxTokens,
+                contextTokens: ggufModel?.contextSize ?? ggufProfile.contextTokens
             )
         }
-        let executionProfile = MLXAssistantExecutionProfile.resolve(
-            repoID: activeModel.repoID
-        )
-        let deviceContextCap = (DeviceTierAdvisor.current == .max) ? 16_384 : 8_192
+        let executionProfile = sizedExecutionProfile()
+        let deviceContextCap = Self.deviceContextCap
         let requestedOutput = min(
             effectiveGenerationSettings.maxTokens,
             DeviceSafetyMonitor.shared.recommendedMaxTokens
@@ -158,6 +163,10 @@ final class CodingAssistantService: ObservableObject {
     /// nominally a VLM.
     @MainActor
     private func refreshVisionChatCapability() {
+        if activeModel.runtime == .llamaCpp {
+            isVisionChatCapable = ggufModel?.supportsVision == true
+            return
+        }
         isVisionChatCapable =
             activeModel.supportsVision && activeModel.runtime == .mlx
             && container == nil
@@ -172,6 +181,7 @@ final class CodingAssistantService: ObservableObject {
     }
     private var ggufModel: LlamaCppVLM?
     private var generateTask: Task<Void, Never>?
+    private var coreAIGenerateTask: Task<Void, Never>?
     private var pccGenerateTask: Task<Void, Never>?
     private var activePCCRequestID: UUID?
     /// Identity of the MLX load currently allowed to publish a container.
@@ -179,6 +189,53 @@ final class CodingAssistantService: ObservableObject {
     /// switch invalidates this token and lets the stale load finish without
     /// committing its result over the newly-selected model.
     private var activeLoadID: UUID?
+    /// Kernel-peak probe for the resident model; see MemoryAdvisor.recordPeak.
+    private var peakProbe: MemoryAdvisor.PeakProbe?
+    private var kvShapeCache: (modelID: String, shape: KVCacheShape?)?
+
+    /// Context ceiling. Phones keep the per-tier caps: MLX re-reads the whole
+    /// history every turn (fresh KV cache per generation), so prefill time and
+    /// heat bind before memory does. Memory sizing can still lower it.
+    static var deviceContextCap: Int {
+        #if targetEnvironment(macCatalyst)
+        return 32_768
+        #else
+        return DeviceTierAdvisor.current == .max ? 16_384 : 8_192
+        #endif
+    }
+
+    /// Core AI context: the window the Core AI catalog declares for the pack;
+    /// packs it doesn't list keep the conservative 1K.
+    private var coreAIContextTokens: Int {
+        CoreAIZooCatalog.model(forSelectionID: activeModel.id)?.contextWindow
+            ?? min(1_024, activeModel.contextWindowTokens)
+    }
+
+    /// Core AI reply cap: user setting, heat, the pack manifest, and half the
+    /// window so the prompt keeps room.
+    private func coreAIOutputCap(requested: Int) -> Int {
+        min(max(1, requested),
+            DeviceSafetyMonitor.shared.recommendedMaxTokens,
+            CoreAIModelStore.shared.manifest?.maximumOutputTokens ?? 512,
+            max(1, coreAIContextTokens / 2))
+    }
+
+    /// Room kept for prefill activations on top of the load reserve.
+    private static let activationReserveBytes: Int64 = 300_000_000
+
+    /// The family profile with its context window sized to live memory.
+    private func sizedExecutionProfile() -> MLXAssistantExecutionProfile {
+        if kvShapeCache?.modelID != activeModel.id {
+            kvShapeCache = (activeModel.id, Self.preStagedDirectory(for: activeModel)
+                .flatMap(KVCacheShape.init(modelDirectory:)))
+        }
+        return MLXAssistantExecutionProfile.resolve(repoID: activeModel.repoID).sized(
+            shape: kvShapeCache?.shape,
+            headroomBytes: MemoryAdvisor.availableMemoryForModel
+                - MemoryAdvisor.loadHeadroomReserve - Self.activationReserveBytes,
+            contextCap: min(Self.deviceContextCap, activeModel.contextWindowTokens)
+        )
+    }
     /// Identifies the GGUF task currently allowed to mutate service state.
     /// A late completion from a cancelled/unloaded task must never mark a
     /// newer generation ready.
@@ -244,6 +301,28 @@ final class CodingAssistantService: ObservableObject {
         activeExecutionLocation == .applePrivateCloud
             ? ApplePrivateCloud.displayName
             : activeModel.displayName
+    }
+
+    /// Uses the same validated storage probe as the loader. API controls must
+    /// never turn a Load action into an implicit network download.
+    var selectedModelIsInstalled: Bool {
+        if activeModel.runtime == .coreAI { return Self.isInstalled(activeModel) }
+        return activeExecutionLocation == .localDownloaded && Self.isInstalled(activeModel)
+    }
+
+    /// The same storage probe for any catalog model, so pickers can tell
+    /// "switch" from "download first" before the user taps.
+    static func isInstalled(_ model: AssistantModel) -> Bool {
+        if model.runtime == .coreAI { return CoreAIModelStore.shared.installedModel(id: model.id) != nil }
+        guard let directory = preStagedDirectory(for: model) else { return false }
+        return model.runtime != .llamaCpp
+            || LocalModelFileValidator.ggufLLM(in: directory) != nil
+    }
+
+    var isSelectedLocalModelResident: Bool {
+        if activeModel.runtime == .coreAI { return CoreAIInferenceService.shared.isLoaded(as: activeModel.id) }
+        guard activeExecutionLocation == .localDownloaded else { return false }
+        return activeModel.runtime == .llamaCpp ? ggufModel != nil : resolvedMLXContainer != nil
     }
 
     var canGenerateSelectedTarget: Bool {
@@ -495,17 +574,160 @@ final class CodingAssistantService: ObservableObject {
     paragraphs. When presenting multiple fields, choices, steps, or facts, use
     a Markdown bullet or numbered list with one item per line. Never concatenate
     a heading, label, sentence, or list item directly into the next one.
+    For an explanation longer than one short paragraph, open with a `##`
+    heading, answer directly in one or two sentences, then group the details
+    under `###` headings with bullet points.
     """
+
+    private func loadSelectedCoreAI() async {
+        switch state {
+        case .loading, .generating: return
+        default: break
+        }
+
+        if let reason = CoreAIInferenceService.availabilityReason {
+            state = .failed(reason)
+            return
+        }
+        guard ConsumerModelPolicy.allows(repoID: activeModel.repoID) else {
+            state = .failed("This research-only model is unavailable in the consumer app.")
+            return
+        }
+        let store = CoreAIModelStore.shared
+        store.refresh()
+        let installed: CoreAIInstalledModel
+        do {
+            installed = try store.selectModel(id: activeModel.id)
+        } catch {
+            let detail = "Download \(activeModel.displayName) from the Models tab first."
+            state = .failed(detail)
+            ToastCenter.shared.error("Core AI model not installed", detail: detail)
+            return
+        }
+        let selected: AssistantModel
+        guard let chatModel = installed.assistantModel else {
+            let detail = "\(activeModel.displayName) is not a chat model. Choose an official or chat Core AI pack."
+            state = .failed(detail)
+            ToastCenter.shared.error("Core AI pack is not a chat model", detail: detail)
+            return
+        }
+        selected = chatModel
+        if case .ready = state,
+           CoreAIInferenceService.shared.isLoaded(as: installed.assistantSelectionID) {
+            return
+        }
+
+        let loadID = UUID()
+        activeLoadID = loadID
+        state = .loading("Preparing \(selected.displayName) with Core AI…")
+        defer { if activeLoadID == loadID { activeLoadID = nil } }
+        if ggufModel != nil || container != nil || generateTask != nil {
+            let oldGeneration = generateTask
+            oldGeneration?.cancel()
+            ggufModel?.cancelCurrent()
+            if let oldGeneration { _ = await oldGeneration.value }
+            ggufModel = nil
+            container = nil
+            generateTask = nil
+        }
+        ModelResidency.shared.cancelPrefetch()
+
+        // One heavy runtime at a time. Lens/voice stay part of the workbench,
+        // but their resident model must leave before Core AI specializes a
+        // multi-gigabyte pack.
+        MLXVisionService.shared.unload()
+        FastVLMService.shared.unload()
+        await LlamaCppVLMService.shared.unloadAndWaitForCleanup()
+        await MLXGenerationGate.shared.clearCacheWhenIdle()
+        await CoreAIInferenceService.shared.unload()
+        guard activeLoadID == loadID else { return }
+        guard !Task.isCancelled else {
+            state = .unloaded
+            return
+        }
+
+        // Core AI is local and heavy — it must pass the same live
+        // RAM/thermal/low-power admission policy as MLX instead of bypassing
+        // residency protection merely because its executor is different.
+        if let block = MemoryAdvisor.safetyBlocker(
+            for: activeModel.id,
+            allowTightFit: AppSettings.shared.largeModelLowMemoryEnabled,
+            runtime: .coreAI
+        ) {
+            state = .failed(block)
+            ToastCenter.shared.error("Can’t load selected Core AI model", detail: block)
+            return
+        }
+
+        guard activeLoadID == loadID else { return }
+        guard !Task.isCancelled else {
+            state = .unloaded
+            return
+        }
+        tokenRate = 0
+        estimatedInputTokens = 0
+        do {
+            _ = try store.selectModel(id: selected.id)
+            try await CoreAIInferenceService.shared.load()
+            guard activeLoadID == loadID,
+                  CoreAIInferenceService.shared.isLoaded(as: selected.id),
+                  activeExecutionLocation == .localDownloaded && activeModel.runtime == .coreAI,
+                  activeModel.id == selected.id else {
+                await CoreAIInferenceService.shared.unload()
+                if activeLoadID == loadID {
+                    activeLoadID = nil
+                    if case .loading = state { state = .unloaded }
+                }
+                return
+            }
+            activeLoadID = nil
+            state = .ready
+            isVisionChatCapable = false
+            Diagnostics.shared.breadcrumb(
+                "assistant Core AI ready · \(installed.manifest.id) · \(installed.manifest.totalDownloadBytes) bytes",
+                category: "assistant"
+            )
+        } catch is CancellationError {
+            if activeLoadID == loadID {
+                await CoreAIInferenceService.shared.unload()
+                activeLoadID = nil
+                state = .unloaded
+            }
+        } catch {
+            guard activeLoadID == loadID else { return }
+            await CoreAIInferenceService.shared.unload()
+            activeLoadID = nil
+            let detail = String(describing: error)
+            state = .failed(detail)
+            ToastCenter.shared.error(
+                "Couldn’t load \(selected.displayName)",
+                detail: detail
+            )
+        }
+    }
+
 
     // MARK: - Load
 
     func load(
         allowStorageFallback: Bool = true,
         reselectFromSettings: Bool = true,
-        allowUnsafeMemoryLoad: Bool = false
+        allowTightMemoryFit: Bool = false,
+        allowDownload: Bool = true
     ) async {
+        guard allowDownload || activeExecutionLocation == .localDownloaded else { return }
         if activeExecutionLocation == .applePrivateCloud {
             await refreshApplePrivateCloudStatus()
+            return
+        }
+
+        if case .loading = state { return }
+        if case .generating = state { return }
+        if reselectFromSettings {
+            activeModel = Self.loadTarget(activeModel: activeModel, savedDefault: AssistantModelCatalog.currentSelection(), reselectFromSettings: true)
+        }
+        if activeModel.runtime == .coreAI {
+            await loadSelectedCoreAI()
             return
         }
 
@@ -531,6 +753,16 @@ final class CodingAssistantService: ObservableObject {
             reselectFromSettings: reselectFromSettings
         )
 
+        let installedDirectory = allowDownload ? nil : Self.preStagedDirectory(for: activeModel)
+        if !allowDownload, installedDirectory == nil {
+            state = .failed("Download this model in Models before loading it for the local API.")
+            return
+        }
+
+        guard ConsumerModelPolicy.allows(repoID: activeModel.repoID) else {
+            state = .failed("This research-only model is unavailable in the consumer app.")
+            return
+        }
         let runtimeIsResident = activeModel.runtime == .llamaCpp
             ? ggufModel != nil
             : resolvedMLXContainer != nil
@@ -551,7 +783,7 @@ final class CodingAssistantService: ObservableObject {
         // GGUF followed by Qwen briefly exceeds the iOS process limit and is
         // terminated by Jetsam. `switchTo` already drains explicitly; this
         // closes the direct retry/load path as well.
-        if ggufModel != nil || container != nil || generateTask != nil {
+        if ggufModel != nil || container != nil || generateTask != nil || CoreAIInferenceService.shared.isReady {
             Diagnostics.shared.breadcrumb(
                 "assistant reload draining resident runtime · footprint=\(MemoryAdvisor.physFootprint) · headroom=\(MemoryAdvisor.availableMemoryForModel)",
                 category: "assistant"
@@ -574,6 +806,17 @@ final class CodingAssistantService: ObservableObject {
             return
         }
 
+        // LFM3 Omni equivalent for llama.cpp: borrow the Lens's instance.
+        if activeModel.runtime == .llamaCpp,
+           DualRoleModelPolicy.sharesGGUFRuntime(repoID: activeModel.repoID),
+           let shared = LlamaCppVLMService.shared.residentModel(for: activeModel.repoID) {
+            await LlamaCppVLMService.shared.drainInference()
+            MLXVisionService.shared.unload()
+            FastVLMService.shared.unload()
+            attachSharedGGUF(shared)
+            return
+        }
+
         // Assistant is a single-runtime surface. Drain every visual backend,
         // including llama.cpp/mtmd (which does not share the MLX gate), before
         // measuring or loading the chat model. This makes rapid Lens →
@@ -592,23 +835,23 @@ final class CodingAssistantService: ObservableObject {
         if activeModel.runtime != .llamaCpp,
            let block = MemoryAdvisor.safetyBlocker(
                 for: activeModel.id,
-                allowTightFit: AppSettings.shared.largeModelLowMemoryEnabled,
-                runtime: activeModel.runtime,
-                allowUnsafeMemoryLoad: allowUnsafeMemoryLoad
+                allowTightFit: AppSettings.shared.largeModelLowMemoryEnabled || allowTightMemoryFit,
+                runtime: activeModel.runtime
             ) {
             state = .failed(block)
             ToastCenter.shared.error("Can't load selected model",
                                       detail: block)
             return
         }
-        if allowUnsafeMemoryLoad {
+        let loadPeakProbe = MemoryAdvisor.beginPeakProbe(modelID: activeModel.id)
+        if allowTightMemoryFit {
             Diagnostics.shared.breadcrumb(
-                "user-confirmed unsafe memory load · \(activeModel.id)",
+                "user-confirmed tight memory fit · \(activeModel.id)",
                 category: "assistant"
             )
             ToastCenter.shared.info(
-                "Experimental load started",
-                detail: "iOS may close the app if this model exceeds its memory limit."
+                "Loading with a smaller memory margin",
+                detail: "Memory limits, recovery cooldowns and thermal protection remain active."
             )
         }
 
@@ -675,22 +918,26 @@ final class CodingAssistantService: ObservableObject {
                 return
             }
             do {
-                // Gemma 4 E4B uses recurrent + sliding-window state and its
-                // community quants abort while reserving the advertised 128K
-                // context on iOS, so only that family keeps the compact
-                // 512-token context (matching the upstream llama-simple
-                // execution path). Every other imported GGUF gets a bounded
-                // 4K window — the previous blanket 512 truncated all replies
-                // to ~128 tokens mid-sentence.
-                let context = UInt32(ggufProfile.contextTokens)
-                let fileBytes = ((try? FileManager.default.attributesOfItem(atPath: modelURL.path))?[.size] as? NSNumber)?.int64Value ?? 0
+                // Recurrent Gemma 4 E4B uses a 512-token compact context;
+                // every other imported GGUF gets a bounded 4K window. Native
+                // audio needs a wider window because 30 s of 16 kHz audio is
+                // about 4.5K audio tokens before the system prompt and reply.
+                let audioModel = activeModel.supportsNativeAudio
+                let context = UInt32(audioModel
+                    ? max(ggufProfile.contextTokens, 8_192)
+                    : ggufProfile.contextTokens)
+                let projectorURL = audioModel ? LocalModelFileValidator.ggufProjector(in: directory) : nil
+                if audioModel && projectorURL == nil { throw LlamaCppError.mmprojLoadFailed(directory.path) }
+                let fileBytes = ([modelURL] + [projectorURL].compactMap { $0 }).reduce(Int64(0)) { total, url in
+                    total + (((try? FileManager.default.attributesOfItem(atPath: url.path))?[.size] as? NSNumber)?.int64Value ?? 0)
+                }
                 let available = MemoryAdvisor.availableMemoryForModel
                 let loadPolicy = GGUFLoadPolicy.resolve(
                     fileBytes: fileBytes,
                     pagingEnabled: AppSettings.shared.largeModelLowMemoryEnabled
                 )
-                let minimumNeeded = loadPolicy.minimumAvailableBytes
-                guard fileBytes == 0 || available == 0 || available >= minimumNeeded else {
+                let minimumNeeded = max(loadPolicy.minimumAvailableBytes, audioModel ? activeModel.approxRAMBytes : 0)
+                guard loadPolicy.admits(availableBytes: available), available >= minimumNeeded else {
                     throw RuntimeError.modelLoadBlocked(reason: String(
                         format: "This GGUF needs about %.1f GB available in the selected loading mode; the app currently has %.1f GB. Close other apps, enable storage-backed paging, or use a smaller quantization.",
                         Double(minimumNeeded) / 1_000_000_000,
@@ -698,6 +945,11 @@ final class CodingAssistantService: ObservableObject {
                     ))
                 }
                 let gpuLayers = loadPolicy.gpuLayers
+                // Standard text GGUFs grow past the 4K floor into whatever the
+                // admission check leaves over (8-bit KV, see LlamaCppVLM).
+                let maxContext: UInt32? = (audioModel || ggufProfile == .compact)
+                    ? nil : UInt32(Self.deviceContextCap)
+                let kvBudget = max(0, available - minimumNeeded)
                 Diagnostics.shared.breadcrumb(
                     "GGUF assistant load · \(modelURL.lastPathComponent) · bytes=\(fileBytes) · available=\(available) · gpuLayers=\(gpuLayers) · storageBacked=\(loadPolicy.storageBacked)",
                     category: "assistant"
@@ -705,16 +957,22 @@ final class CodingAssistantService: ObservableObject {
                 ggufModel = try await Task.detached(priority: .userInitiated) {
                     try LlamaCppVLM(
                         llmPath: modelURL.path,
+                        mmprojPath: projectorURL?.path,
                         nThreads: 4,
                         contextSize: context,
-                        gpuLayers: gpuLayers
+                        gpuLayers: gpuLayers,
+                        enableAudio: audioModel,
+                        maxContextSize: maxContext,
+                        kvBudgetBytes: kvBudget
                     )
                 }.value
                 Diagnostics.shared.breadcrumb(
-                    "GGUF assistant loaded · footprint=\(MemoryAdvisor.physFootprint) · headroom=\(MemoryAdvisor.availableMemoryForModel) · gpuLayers=\(gpuLayers)",
+                    "GGUF assistant loaded · footprint=\(MemoryAdvisor.physFootprint) · headroom=\(MemoryAdvisor.availableMemoryForModel) · gpuLayers=\(gpuLayers) · context=\(ggufModel?.contextSize ?? 0)",
                     category: "assistant"
                 )
                 state = .ready
+                peakProbe = loadPeakProbe
+                MemoryAdvisor.recordPeak(since: loadPeakProbe)
                 refreshVisionChatCapability()
                 let elapsedMs = Date().timeIntervalSince(loadStart) * 1_000
                 ModelUsageTracker.shared.recordLoadTime(modelID: activeModel.id, ms: elapsedMs)
@@ -762,7 +1020,9 @@ final class CodingAssistantService: ObservableObject {
             availableBytes: availableBytes
         )
 
-        if shouldShareVisionRuntime {
+        // The API may reuse an already resident shared container, but its
+        // local-only load must not ask Lens to fetch another runtime.
+        if shouldShareVisionRuntime && (allowDownload || LensInferenceLoop.shared.sharedContainer(for: loadingModel.repoID) != nil) {
             await LensInferenceLoop.shared.switchTo(
                 repoID: loadingModel.repoID,
                 preserveMatchingAssistant: true
@@ -795,7 +1055,9 @@ final class CodingAssistantService: ObservableObject {
         do {
             // Snapshot self-derived values up here so the gate's @Sendable
             // closure doesn't have to capture self for them.
-            let modelConfig = Self.modelConfig(for: loadingModel)
+            let modelConfig = installedDirectory.map {
+                ModelConfiguration(directory: $0, defaultPrompt: "Hello", extraEOSTokens: ["<|im_end|>"])
+            } ?? Self.modelConfig(for: loadingModel)
             let lowMemoryPolicy = MLXLowMemoryPolicy.resolve(
                 enabled: AppSettings.shared.largeModelLowMemoryEnabled,
                 physicalMemoryBytes: ProcessInfo.processInfo.physicalMemory,
@@ -874,6 +1136,8 @@ final class CodingAssistantService: ObservableObject {
             activeLoadID = nil
             container = loadedContainer
             state = .ready
+            peakProbe = loadPeakProbe
+            MemoryAdvisor.recordPeak(since: loadPeakProbe)
             refreshVisionChatCapability()
             let elapsedMs = Date().timeIntervalSince(loadStart) * 1000
             Diagnostics.shared.breadcrumb("assistant loaded · \(loadingModel.id) · \(String(format: "%.1fs", elapsedMs / 1000)) · visionChat=\(isVisionChatCapable)", category: "assistant")
@@ -1083,6 +1347,24 @@ final class CodingAssistantService: ObservableObject {
     /// `maxTokensOverride` bypasses `AppSettings.assistantMaxTokens` for
     /// lightweight background calls (e.g. conversation titling) so they don't
     /// clobber the user's preferred response length.
+    /// The active model's thinking mode for a local turn: model capability,
+    /// per-model or global setting, and the caller's override.
+    func thinkingEnabled(forceNoThinking: Bool = false) -> Bool {
+        let wants = AssistantModelSettingsStore.shared.settings(for: activeModel.repoID)?.thinkingEnabled
+            ?? AppSettings.shared.assistantThinking
+        return activeModel.supportsThinking && wants && !forceNoThinking
+    }
+
+    /// True when the next prompt ends inside an opened `<think>` block (LFM3,
+    /// Qwen 3.5), so streamed output starts with reasoning and never contains
+    /// the opening tag. Tool parsers must treat that prefix as reasoning.
+    func promptOpensReasoning(forceNoThinking: Bool = false) -> Bool {
+        let template = activeModel.chatTemplate
+        return thinkingEnabled(forceNoThinking: forceNoThinking)
+            && template.supportsThinking
+            && template.thinkTag?.hasPrefix("<think>") == true
+    }
+
     func generate(
         messages: [ChatMessage],
         maxTokensOverride: Int? = nil,
@@ -1093,6 +1375,13 @@ final class CodingAssistantService: ObservableObject {
         collectLogprobs: Bool = false,
         forceNoThinking: Bool = false,
         resumeTruncatedReply: Bool = false,
+        audioInput: [Float]? = nil,
+        generateSpeech: Bool = false,
+        letModelChooseAudio: Bool = false,
+        onAudio: (@Sendable ([Float], Double) -> Void)? = nil,
+        // Native speech as the codec emits it, so playback can start before
+        // the reply finishes. Called off the main actor, in order.
+        onAudioChunk: (@Sendable ([Float], Double) -> Void)? = nil,
         onToken: @escaping @Sendable (String) -> Void,
         // Optional logprob stream sits before onComplete so call sites that
         // pass it (the chat view) match declaration order; callers that omit
@@ -1105,6 +1394,20 @@ final class CodingAssistantService: ObservableObject {
         // cancellation deliberately does not.
         onError: (@Sendable (String) -> Void)? = nil
     ) {
+        let messages = ConsumerContentPolicy.messagesWithSafetyInstructions(messages)
+        if (audioInput != nil || generateSpeech)
+            && (activeExecutionLocation != .localDownloaded || !activeModel.supportsNativeAudio) {
+            onError?("Select an installed LFM3 Audio or Omni model for native audio.")
+            onComplete(0)
+            return
+        }
+        if activeExecutionLocation == .localDownloaded, activeModel.runtime == .coreAI {
+            generateWithCoreAI(messages: messages, maxTokensOverride: maxTokensOverride,
+                temperatureOverride: temperatureOverride, jsonMode: jsonMode,
+                forceNoThinking: forceNoThinking, onToken: onToken,
+                onComplete: onComplete, onError: onError)
+            return
+        }
         if activeExecutionLocation == .applePrivateCloud {
             generateWithApplePrivateCloud(
                 messages: messages,
@@ -1151,6 +1454,8 @@ final class CodingAssistantService: ObservableObject {
                     collectLogprobs: collectLogprobs,
                     forceNoThinking: forceNoThinking,
                     resumeTruncatedReply: resumeTruncatedReply,
+                    audioInput: audioInput, generateSpeech: generateSpeech,
+                    letModelChooseAudio: letModelChooseAudio, onAudio: onAudio, onAudioChunk: onAudioChunk,
                     onToken: onToken,
                     onLogprobToken: onLogprobToken,
                     onComplete: onComplete,
@@ -1190,7 +1495,10 @@ final class CodingAssistantService: ObservableObject {
                         try? await Task.sleep(nanoseconds: 100_000_000)
                     }
                 } else if state != .ready {
-                    await self.load()
+                    // Keep the conversation's chosen model. Reloading through
+                    // the saved default would revert a per-chat LFM3 selection
+                    // after a vision tool or Lens handoff unloaded it.
+                    await self.load(reselectFromSettings: false)
                 }
                 let isLoaded = self.activeModel.runtime == .llamaCpp
                     ? self.ggufModel != nil
@@ -1206,6 +1514,8 @@ final class CodingAssistantService: ObservableObject {
                         collectLogprobs: collectLogprobs,
                         forceNoThinking: forceNoThinking,
                         resumeTruncatedReply: resumeTruncatedReply,
+                        audioInput: audioInput, generateSpeech: generateSpeech,
+                        letModelChooseAudio: letModelChooseAudio, onAudio: onAudio, onAudioChunk: onAudioChunk,
                         onToken: onToken,
                         onLogprobToken: onLogprobToken,
                         onComplete: onComplete,
@@ -1251,9 +1561,7 @@ final class CodingAssistantService: ObservableObject {
 
         let s = AppSettings.shared
         // Clamp max output tokens by the user's setting and the thermal advisor.
-        let executionProfile = MLXAssistantExecutionProfile.resolve(
-            repoID: activeModel.repoID
-        )
+        let executionProfile = sizedExecutionProfile()
         let lowMemoryPolicy = MLXLowMemoryPolicy.resolve(
             enabled: s.largeModelLowMemoryEnabled,
             physicalMemoryBytes: ProcessInfo.processInfo.physicalMemory,
@@ -1272,7 +1580,9 @@ final class CodingAssistantService: ObservableObject {
             runtime: activeModel.runtime,
             requested: requestedMaxTokens,
             thermalCap: safety.recommendedMaxTokens,
-            backendCap: executionProfile.maxOutputTokens
+            backendCap: executionProfile.outputCap(contextLimit: executionProfile.contextLimit(
+                modelContextWindowTokens: activeModel.contextWindowTokens,
+                deviceContextCap: Self.deviceContextCap))
         )
 
         // --- Full Sampler Control (Feature #1) ---
@@ -1381,9 +1691,11 @@ final class CodingAssistantService: ObservableObject {
         let messagesForRuntime = isImportedGGUF
             ? ggufProfile.messagesForRuntime(effectiveMessages)
             : effectiveMessages
-        let deviceContextCap = (DeviceTierAdvisor.current == .max) ? 16_384 : 8_192
+        let deviceContextCap = Self.deviceContextCap
         let inputBudget = isImportedGGUF
-            ? ggufProfile.inputBudget(requestedOutputTokens: safeMaxTokens)
+            ? ggufProfile.inputBudget(
+                requestedOutputTokens: safeMaxTokens,
+                contextTokens: ggufModel?.contextSize ?? ggufProfile.contextTokens)
             : executionProfile.inputBudget(
                 modelContextWindowTokens: activeModel.contextWindowTokens,
                 deviceContextCap: deviceContextCap,
@@ -1400,10 +1712,7 @@ final class CodingAssistantService: ObservableObject {
         // Use the model's resolved chat template instead of hardcoded Qwen3 template.
         // Non-ChatML models (Llama, Gemma, Phi) now get proper formatting.
         let template = activeModel.chatTemplate
-        let wantsThinking = modelSettings?.thinkingEnabled ?? s.assistantThinking
-        let enableThinking = activeModel.supportsThinking
-            && wantsThinking
-            && !forceNoThinking
+        let enableThinking = thinkingEnabled(forceNoThinking: forceNoThinking)
         let manualPrompt: String? = template.supportsThinking
             ? trimmedMessages.formattedWithTemplate(
                 template,
@@ -1468,12 +1777,37 @@ final class CodingAssistantService: ObservableObject {
                 repetitionPenalty: Float(repPenalty),
                 seed: seed.map { UInt32(truncatingIfNeeded: $0) }
             )
+            let nativeAudio = activeModel.supportsNativeAudio
+            // Audio-only checkpoints have an audio projector without vision.
+            // Never forward an attached thumbnail to a runtime that would
+            // reject it; Omni keeps image support through the same pipeline.
+            let nativeImage = nativeAudio && ggufModel.supportsVision
+                ? trimmedMessages.last(where: { $0.role == .user })?
+                    .imageThumbnails.first.flatMap { UIImage(data: $0.data) }
+                : nil
             let reuseGGUFContext = ggufProfile == .standard
             Diagnostics.shared.breadcrumb(
                 "GGUF generation start · footprint=\(MemoryAdvisor.physFootprint) · headroom=\(MemoryAdvisor.availableMemoryForModel)",
                 category: "assistant"
             )
+            // This branch returns before the MLX watcher is installed.
+            // Read ProcessInfo directly to avoid observer-order races with
+            // DeviceSafetyMonitor's asynchronously published thermal state.
+            let ggufThermalTask = Task { @MainActor [weak self] in
+                let events = NotificationCenter.default.notifications(
+                    named: ProcessInfo.thermalStateDidChangeNotification
+                ).map({ _ in () })
+                try? await InferenceThermalGuard.monitor(events) { [weak self] in
+                    guard let self, self.activeGGUFGenerationID == generationID else { return }
+                    self.stopGeneration()
+                    ToastCenter.shared.error(
+                        "Stopped — device too hot",
+                        detail: "Set the device down to cool, then continue."
+                    )
+                }
+            }
             generateTask = Task.detached(priority: .userInitiated) {
+                defer { ggufThermalTask.cancel() }
                 do {
                     let emitToken: (String) -> Void = { token in
                         let isFirst = loggedFirstToken.withLock { logged -> Bool in
@@ -1493,6 +1827,16 @@ final class CodingAssistantService: ObservableObject {
                         && reuseGGUFContext
                         && ggufModel.hasContinuableCache
                     let result = try {
+                        if nativeAudio {
+                            return try ggufModel.generateLFM3(
+                                prompt: ggufPrompt, audio: audioInput, image: nativeImage,
+                                generateSpeech: generateSpeech,
+                                letModelChooseAudio: letModelChooseAudio,
+                                template: template,
+                                maxTokens: ggufMaxTokens,
+                                sampler: ggufSampler, onToken: emitToken,
+                                onAudioChunk: onAudioChunk)
+                        }
                         if resumeFromCache {
                             return try ggufModel.continueText(
                                 maxTokens: ggufMaxTokens,
@@ -1524,8 +1868,10 @@ final class CodingAssistantService: ObservableObject {
                             if case .generating = service.state { service.state = .ready }
                         }
                         if ownsState {
+                            service.recordResidentPeak()
                             service.tokenRate = rate
                             service.lastGenerationHitTokenLimit = result.hitTokenLimit
+                            if !result.audioSamples.isEmpty { onAudio?(result.audioSamples, result.audioSampleRate) }
                             service.canResumeFromCache = reuseGGUFContext && result.hitTokenLimit
                             service.lastPromptTokens = result.promptTokens
                             service.lastOutputTokens = result.outputTokens
@@ -1588,7 +1934,7 @@ final class CodingAssistantService: ObservableObject {
             return
         }
 
-        generateTask = Task {
+        generateTask = Task { [self] in
             // Watch for iOS memory warnings — bail out gracefully instead of
             // getting Jetsam-killed silently.
             let memoryWarningTask = Task { @MainActor in
@@ -1708,7 +2054,7 @@ final class CodingAssistantService: ObservableObject {
                             userInput = UserInput(chat: chatMessages)
                         }
                         let lmInput = try await context.processor.prepare(input: userInput)
-                        let cache = context.model.newCache(parameters: params)
+                        let cache = try context.model.newCache(parameters: params)
 
                         var tokenIndex = 0
                         for await generation in try MLXLMCommon.generate(
@@ -1770,6 +2116,7 @@ final class CodingAssistantService: ObservableObject {
                     // have torn the container down mid-flight, and flipping
                     // back to .ready would show "ready" with nothing loaded.
                     if case .generating = self?.state { self?.state = .ready }
+                    self?.recordResidentPeak()
                     self?.lastPromptTokens = usage.prompt
                     self?.lastOutputTokens = usage.output
                     self?.lastGenerationHitTokenLimit = usage.hitLimit
@@ -1812,6 +2159,201 @@ final class CodingAssistantService: ObservableObject {
     }
 
     // MARK: - Apple Private Cloud generation
+
+    private func generateWithCoreAI(
+        messages: [ChatMessage],
+        maxTokensOverride: Int?,
+        temperatureOverride: Double?,
+        jsonMode: Bool,
+        forceNoThinking: Bool,
+        onToken: @escaping @Sendable (String) -> Void,
+        onComplete: @escaping @Sendable (Double) -> Void,
+        onError: (@Sendable (String) -> Void)?
+    ) {
+        guard coreAIGenerateTask == nil else {
+            onError?("Core AI is already generating")
+            onComplete(0)
+            return
+        }
+
+        coreAIGenerateTask = Task { [weak self] in
+            guard let self else {
+                onError?("Service unavailable")
+                onComplete(0)
+                return
+            }
+
+            // Core AI specialization and prompt prefill are heavy work too.
+            // Apply the same admission policy used by MLX/GGUF before either
+            // stage begins, rather than bypassing it through this early branch.
+            if let reason = DeviceSafetyMonitor.shared.stopReason {
+                ToastCenter.shared.error(reason.title, detail: reason.detail)
+                self.coreAIGenerateTask = nil
+                onError?("\(reason.title). \(reason.detail)")
+                onComplete(0)
+                return
+            }
+
+            // Same lazy-load contract as MLX/GGUF: selecting a pack is cheap;
+            // the first Send performs specialization and then generation.
+            if self.state != .ready
+                || !CoreAIInferenceService.shared.isLoaded(as: self.activeModel.id) {
+                await self.loadSelectedCoreAI()
+            }
+            guard !Task.isCancelled else {
+                self.coreAIGenerateTask = nil
+                onComplete(0)
+                return
+            }
+            guard self.activeExecutionLocation == .localDownloaded && self.activeModel.runtime == .coreAI,
+                  self.state == .ready,
+                  CoreAIInferenceService.shared.isLoaded(as: self.activeModel.id) else {
+                let message: String
+                if case .failed(let detail) = self.state {
+                    message = detail
+                } else {
+                    message = "The selected Core AI pack is not ready."
+                }
+                self.coreAIGenerateTask = nil
+                onError?(message)
+                onComplete(0)
+                return
+            }
+
+            if let reason = DeviceSafetyMonitor.shared.stopReason {
+                ToastCenter.shared.error(reason.title, detail: reason.detail)
+                self.coreAIGenerateTask = nil
+                onError?("\(reason.title). \(reason.detail)")
+                onComplete(0)
+                return
+            }
+
+            let appSettings = AppSettings.shared
+            let maxTokens = self.coreAIOutputCap(requested: maxTokensOverride ?? self.effectiveOutputTokenCap)
+            let temperature = min(
+                2,
+                max(0, temperatureOverride ?? self.effectiveGenerationSettings.temperature)
+            )
+            let catalogModel = CoreAIZooCatalog.model(forSelectionID: self.activeModel.id)
+            let requiresThinking = catalogModel?.requiresThinking == true
+            let wantsThinking = self.effectiveGenerationSettings.thinkingEnabled
+                && !forceNoThinking
+            let thinkingEnabled: Bool? = self.activeModel.supportsThinking
+                ? (requiresThinking || wantsThinking)
+                : nil
+            let toolsEnabled = appSettings.toolsEnabled && self.activeModel.supportsTools
+            var effectiveMessages = CoreAIConversationPlanner.applyingCompactPromptPolicy(
+                to: messages,
+                toolsEnabled: toolsEnabled
+            )
+            if forceNoThinking && !requiresThinking {
+                effectiveMessages.insert(
+                    ChatMessage(role: .system, content: "Answer directly. Do not include a hidden reasoning trace."),
+                    at: 0
+                )
+            }
+            if jsonMode || appSettings.jsonModeEnabled {
+                let hint = appSettings.jsonSchemaHint.isEmpty
+                    ? "Respond with valid JSON only. No markdown fences or commentary."
+                    : "Respond with valid JSON matching this schema. No markdown fences or commentary:\n\(appSettings.jsonSchemaHint)"
+                effectiveMessages.insert(
+                    ChatMessage(role: .system, content: "[JSON MODE] \(hint)"),
+                    at: 0
+                )
+            }
+            let unboundedInputEstimate = CoreAIConversationPlanner.estimatedTokens(
+                in: effectiveMessages
+            )
+            let trimmed = CoreAIConversationPlanner.boundedRuntimeMessages(
+                effectiveMessages,
+                maxTokens: max(128, min(1_024, self.activeModel.contextWindowTokens) - maxTokens - 64)
+            )
+            self.estimatedInputTokens = trimmed.reduce(0) {
+                $0 + $1.contentForModel.count / 4 + 4
+            }
+            self.lastPromptTokens = self.estimatedInputTokens
+            self.lastOutputTokens = 0
+            self.lastGenerationHitTokenLimit = false
+            self.canResumeFromCache = false
+            self.state = .generating
+            self.tokenRate = 0
+            let systemTokens = trimmed
+                .filter { $0.role == .system }
+                .reduce(0) { $0 + $1.contentForModel.count / 4 + 4 }
+            Diagnostics.shared.breadcrumb(
+                "Core AI prompt ready · input≈\(self.estimatedInputTokens)/\(self.currentInputBudget) · source≈\(unboundedInputEstimate) · bounded=\(unboundedInputEstimate > self.estimatedInputTokens) · system≈\(systemTokens) · turns=\(trimmed.filter { $0.role != .system }.count) · output=\(maxTokens)",
+                category: "coreai"
+            )
+
+            struct CoreAIStreamMetrics {
+                var outputTokens = 0
+                var firstTokenAt: Date?
+            }
+            let streamMetrics = OSAllocatedUnfairLock(initialState: CoreAIStreamMetrics())
+            let started = Date()
+            // If thermal state escalates to critical while Core AI is inside
+            // an SDK await, cancel its tracked session. The package-level
+            // cancellation now reaches and drains the GPU producer.
+            let thermalTask = Task { @MainActor in
+                try? await InferenceThermalGuard.monitor(
+                    NotificationCenter.default.notifications(named: ProcessInfo.thermalStateDidChangeNotification).map { _ in () },
+                    onCritical: { CoreAIInferenceService.shared.cancel() }
+                )
+            }
+            defer { thermalTask.cancel() }
+            do {
+                try await CoreAIInferenceService.shared.generate(
+                    messages: trimmed,
+                    maxTokens: maxTokens,
+                    temperature: temperature,
+                    thinkingEnabled: thinkingEnabled,
+                    onToken: { delta in
+                        streamMetrics.withLock {
+                            if $0.firstTokenAt == nil { $0.firstTokenAt = Date() }
+                            $0.outputTokens += max(1, delta.count / 4)
+                        }
+                        onToken(delta)
+                    }
+                )
+                let finished = Date()
+                let metrics = streamMetrics.withLock { $0 }
+                let decodeStarted = metrics.firstTokenAt ?? started
+                let decodeElapsed = max(0.001, finished.timeIntervalSince(decodeStarted))
+                self.lastOutputTokens = metrics.outputTokens
+                self.tokenRate = Double(metrics.outputTokens) / decodeElapsed
+                Diagnostics.shared.breadcrumb(
+                    "Core AI generation complete · ttft=\(String(format: "%.2f", decodeStarted.timeIntervalSince(started)))s · decode=\(String(format: "%.1f", self.tokenRate)) tok/s · output≈\(metrics.outputTokens)",
+                    category: "coreai"
+                )
+                if case .generating = self.state {
+                    self.state = CoreAIInferenceService.shared.isReady ? .ready : .unloaded
+                }
+                self.coreAIGenerateTask = nil
+                onComplete(self.tokenRate)
+            } catch is CancellationError {
+                if case .generating = self.state {
+                    self.state = CoreAIInferenceService.shared.isReady ? .ready : .unloaded
+                }
+                self.coreAIGenerateTask = nil
+                onComplete(0)
+            } catch {
+                // The model remains resident after a generation rejection.
+                // Treating this as a load failure replaced the Ready status
+                // with a misleading Load button even though retry was safe.
+                if case .generating = self.state {
+                    self.state = CoreAIInferenceService.shared.isReady ? .ready : .unloaded
+                }
+                self.coreAIGenerateTask = nil
+                ToastCenter.shared.error(
+                    "Core AI generation failed",
+                    detail: error.localizedDescription
+                )
+                onError?(error.localizedDescription)
+                onComplete(0)
+            }
+        }
+    }
+
 
     func refreshApplePrivateCloudStatus() async {
         guard ApplePrivateCloud.isSupportedOnCurrentOS else {
@@ -1927,7 +2469,7 @@ final class CodingAssistantService: ObservableObject {
 
             let maximumResponseTokens = max(
                 1,
-                min(maxTokensOverride ?? settings.assistantMaxTokens, contextSize - 1)
+                min(maxTokensOverride ?? settings.assistantMaxTokens, max(1, contextSize / 2))
             )
             let inputBudget = ApplePrivateCloud.inputBudget(
                 contextSize: contextSize,
@@ -2183,6 +2725,8 @@ final class CodingAssistantService: ObservableObject {
     // MARK: - Stop
 
     func stopGeneration() {
+        CoreAIInferenceService.shared.cancel()
+        coreAIGenerateTask?.cancel()
         if let activePCCRequestID {
             ApplePrivateCloud.cancel(activePCCRequestID)
         }
@@ -2203,6 +2747,7 @@ final class CodingAssistantService: ObservableObject {
     func cancelAndDrainInference() async {
         let inflight = generateTask
         let pccInflight = pccGenerateTask
+        let coreAIInflight = coreAIGenerateTask
         stopGeneration()
         Diagnostics.shared.breadcrumb(
             "assistant inference cancel requested · slot=assistant · model=\(activeModel.id)",
@@ -2218,15 +2763,59 @@ final class CodingAssistantService: ObservableObject {
         if let pccInflight {
             _ = await pccInflight.value
         }
+        if let coreAIInflight { _ = await coreAIInflight.value }
         Diagnostics.shared.breadcrumb(
             "assistant inference drained · slot=assistant · model=\(activeModel.id)",
             category: "lifecycle"
         )
     }
 
+    // MARK: - Shared LFM3 Omni runtime
+
+    /// The resident GGUF when it is `repoID`, for the Lens to borrow.
+    func residentGGUF(for repoID: String) -> LlamaCppVLM? {
+        guard activeModel.repoID.caseInsensitiveCompare(repoID) == .orderedSame else { return nil }
+        return ggufModel
+    }
+
+    /// Synchronous so leaving the Lens can take its Omni before the Lens
+    /// releases it. No-op unless both roles select it and nothing is running.
+    func adoptLensRuntime() {
+        let target = AssistantModelCatalog.currentSelection()
+        guard activeExecutionLocation == .localDownloaded,
+              target.runtime == .llamaCpp,
+              ggufModel == nil, container == nil, generateTask == nil,
+              !CoreAIInferenceService.shared.isReady,
+              DualRoleModelPolicy.sharesGGUFRuntime(repoID: target.repoID),
+              let shared = LlamaCppVLMService.shared.residentModel(for: target.repoID) else { return }
+        switch state {
+        case .loading, .generating: return
+        case .unloaded, .ready, .failed: break
+        }
+        activeModel = target
+        attachSharedGGUF(shared)
+    }
+
+    private func attachSharedGGUF(_ model: LlamaCppVLM) {
+        ggufModel = model
+        state = .ready
+        refreshVisionChatCapability()
+        Diagnostics.shared.breadcrumb(
+            "assistant attached to shared GGUF runtime · \(activeModel.id)",
+            category: "assistant"
+        )
+    }
+
     // MARK: - Unload
 
+    /// Folds the resident model's latest kernel peak into its measurement.
+    func recordResidentPeak() {
+        guard let peakProbe, peakProbe.modelID == activeModel.id else { return }
+        MemoryAdvisor.recordPeak(since: peakProbe)
+    }
+
     func unload() {
+        peakProbe = nil
         // Same drain-before-clear pattern as MLXVisionService.unload():
         // calling mlxClearCache() while a generate task is mid-Metal
         // command-buffer raced the completion handler into
@@ -2243,9 +2832,16 @@ final class CodingAssistantService: ObservableObject {
     /// Async variant for callers that need deterministic memory
     /// reclamation before proceeding with another large model load.
     func unloadAndWaitForCleanup() async {
+        let coreAIInflight = coreAIGenerateTask
+        CoreAIInferenceService.shared.cancel()
+        coreAIInflight?.cancel()
+        if let coreAIInflight { _ = await coreAIInflight.value }
+        await CoreAIInferenceService.shared.unload()
         let footprintBefore = MemoryAdvisor.physFootprint
         let headroomBefore = MemoryAdvisor.availableMemoryForModel
+        // A runtime the Lens still holds frees nothing; skip the settle wait.
         let releasedGGUF = ggufModel != nil
+            && ggufModel !== LlamaCppVLMService.shared.residentModel(for: activeModel.repoID)
         Diagnostics.shared.breadcrumb(
             "assistant unload begin · gguf=\(releasedGGUF) · footprint=\(footprintBefore) · headroom=\(headroomBefore)",
             category: "assistant"
@@ -2300,7 +2896,8 @@ final class CodingAssistantService: ObservableObject {
     /// opt into making the choice the default. No-op when already active.
     func switchTo(
         _ model: AssistantModel,
-        persistAsDefault: Bool = true
+        persistAsDefault: Bool = true,
+        allowDownload: Bool = true
     ) async {
         // MLX package loading is intentionally non-interruptible: invalidating
         // activeLoadID only prevents a late result from publishing; it does
@@ -2334,7 +2931,9 @@ final class CodingAssistantService: ObservableObject {
             activeExecutionLocation = .localDownloaded
             applePrivateCloudGenerationState = .idle
         }
-        let hasLoadedModel = model.runtime == .llamaCpp
+        let hasLoadedModel = model.runtime == .coreAI
+            ? CoreAIInferenceService.shared.isLoaded(as: model.id)
+            : model.runtime == .llamaCpp
             ? ggufModel != nil
             : resolvedMLXContainer != nil
         if model.id == activeModel.id, hasLoadedModel {
@@ -2378,7 +2977,7 @@ final class CodingAssistantService: ObservableObject {
         // intentionally do not persist that choice as the default, so a
         // settings reselect here would immediately replace `model` with the
         // saved default before loading it.
-        await load(reselectFromSettings: false)
+        await load(allowStorageFallback: allowDownload, reselectFromSettings: false, allowDownload: allowDownload)
     }
 
     /// Loads a small model for a one-shot background analysis without changing

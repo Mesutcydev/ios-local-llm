@@ -39,7 +39,7 @@ struct CodePanelView: View {
             .navigationTitle("\(language) Code")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .topBarTrailing) { Button("Done", systemImage: "checkmark") { dismiss() } }
             }
         }
     }
@@ -55,7 +55,7 @@ struct SyntaxHighlightedText: View {
 
     var body: some View {
         Text(highlighted)
-            .font(.system(size: 13, design: .monospaced))
+            .scaledFont(size: 13, design: .monospaced)
             .frame(maxWidth: .infinity, alignment: .leading)
             .textSelection(.enabled)
     }

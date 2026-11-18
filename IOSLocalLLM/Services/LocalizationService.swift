@@ -4,7 +4,7 @@ import Combine
 
 // MARK: - LocalizationService
 //
-// Live-switchable bilingual layer. iOS's built-in Bundle localization
+// Live-switchable interface localization layer. iOS's built-in Bundle localization
 // only updates at app launch (when AppleLanguages is read), so for a
 // truly live "tap to switch" UX we keep translations in-process and
 // expose a published `language` that views can observe.
@@ -14,12 +14,11 @@ import Combine
 //     Text(loc.t("Settings"))
 //     Text("Settings".tr)        // sugar
 //
-// and translations come from a single dictionary below. Missing keys
-// fall back to the English key string (so a partial translation never
-// renders empty UI).
+// Translations ship in localized resource catalogs, shared with native SwiftUI
+// controls. Missing keys fall back to the English interface string.
 //
-// Adding a new language: extend `AppLanguage`, add another column in
-// `translations`, and the settings picker picks it up automatically.
+// When adding interface text, run scripts/audit_localizations.py and update
+// every supported catalog. The legacy tables below remain a fallback.
 
 enum AppLanguage: String, CaseIterable, Identifiable {
     /// Follow the device's preferred language. If the system language
@@ -112,6 +111,7 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
     private init() {
         let raw = UserDefaults.standard.string(forKey: "uiLanguage") ?? AppLanguage.system.rawValue
         self.language = AppLanguage(rawValue: raw) ?? .system
+        UserDefaults(suiteName: "group.com.codelens.shared")?.set(self.language.rawValue, forKey: "uiLanguage")
     }
 
     /// Programmatically change the active language. Persists to
@@ -122,6 +122,7 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
     func setLanguage(_ new: AppLanguage) {
         guard new != language else { return }
         UserDefaults.standard.set(new.rawValue, forKey: "uiLanguage")
+        UserDefaults(suiteName: "group.com.codelens.shared")?.set(new.rawValue, forKey: "uiLanguage")
         if Thread.isMainThread {
             language = new
         } else {
@@ -131,46 +132,144 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
         }
     }
 
-    /// Resolves an English source string to the user's chosen language.
-    /// Falls back to the English source if no translation is registered,
-    /// so the UI never goes blank for a missing key. Safe to call from
-    /// any thread — reads an immutable lookup table.
-    func t(_ key: String) -> String {
-        let effective: AppLanguage = {
-            if language != .system { return language }
-            let preferred = Locale.preferredLanguages.first ?? "en"
-            if preferred.hasPrefix("de") { return .german }
-            if preferred.hasPrefix("fr") { return .french }
-            if preferred.hasPrefix("es") { return .spanish }
-            if preferred.hasPrefix("pt") { return .portuguese }
-            if preferred.hasPrefix("it") { return .italian }
-            if preferred.hasPrefix("el") { return .greek }
-            if preferred.hasPrefix("ro") { return .romanian }
-            if preferred.hasPrefix("ru") { return .russian }
-            if preferred.hasPrefix("tr") { return .turkish }
-            if preferred.hasPrefix("ar") { return .arabic }
-            if preferred.hasPrefix("hi") { return .hindi }
-            if preferred.hasPrefix("zh") { return .chinese }
-            if preferred.hasPrefix("ja") { return .japanese }
-            if preferred.hasPrefix("ko") { return .korean }
-            return .english
-        }()
-        switch effective {
-        case .english, .system: return key
-        case .german:           return Self.de[key] ?? key
-        case .french:           return Self.fr[key] ?? key
-        case .spanish:          return Self.es[key] ?? key
-        case .portuguese:       return Self.pt[key] ?? key
-        case .italian:          return Self.it[key] ?? key
-        case .greek:            return Self.el[key] ?? key
-        case .romanian:         return Self.ro[key] ?? key
-        case .russian:          return Self.ru[key] ?? key
-        case .turkish:          return Self.tr[key] ?? key
-        case .arabic:           return Self.ar[key] ?? key
-        case .hindi:            return Self.hi[key] ?? key
-        case .chinese:          return Self.zh[key] ?? key
-        case .japanese:         return Self.ja[key] ?? key
-        case .korean:           return Self.ko[key] ?? key
+    /// A shared locale drives native SwiftUI text, dates, and system controls.
+    /// Changing it does not replace the view tree or discard drafts.
+    var effectiveLanguage: AppLanguage {
+        language == .system ? Self.resolve(preferredLanguages: Locale.preferredLanguages) : language
+    }
+
+    var resolvedLocale: Locale { Locale(identifier: effectiveLanguage.rawValue) }
+    var resolvedLayoutDirection: LayoutDirection { effectiveLanguage == .arabic ? .rightToLeft : .leftToRight }
+
+    static func resolve(preferredLanguages: [String]) -> AppLanguage {
+        for identifier in preferredLanguages {
+            let code = identifier.replacingOccurrences(of: "_", with: "-").lowercased()
+            if code.hasPrefix("zh") { return .chinese }
+            if let match = AppLanguage.allCases.first(where: {
+                $0 != .system && (code == $0.rawValue.lowercased() || code.hasPrefix($0.rawValue.lowercased() + "-"))
+            }) { return match }
+        }
+        return .english
+    }
+
+    /// Only interface strings enter this lookup. User drafts, documents, and
+    /// model output remain untouched. All translations ship with the app.
+    func t(_ key: String) -> String { t(key, language: effectiveLanguage) }
+
+    func t(_ key: String, language: AppLanguage) -> String {
+        let selected = language == .system ? effectiveLanguage : language
+        guard selected != .english else { return key }
+        let catalog = Self.interfaceCatalog(for: selected)
+        let table = catalog.table
+        if let value = table[key] { return value }
+        if let value = catalog.aliases[Self.normalized(key)] { return value }
+        // Interpolated interface messages keep their values verbatim and allow
+        // each translation to place them in its own grammatical order.
+        for template in Self.interfaceTemplates {
+            guard key.hasPrefix(template.prefix),
+                  let match = template.expression.firstMatch(in: key, range: NSRange(key.startIndex..., in: key)),
+                  let translated = table[template.key] else { continue }
+            var result = translated
+            for index in (1..<match.numberOfRanges).reversed() {
+                guard let range = Range(match.range(at: index), in: key) else { continue }
+                result = result.replacingOccurrences(of: "{{\(index - 1)}}", with: String(key[range]))
+            }
+            return result
+        }
+        return Self.legacyTable(for: selected)[key] ?? key
+    }
+
+    private static func normalized(_ value: String) -> String {
+        value.replacingOccurrences(of: "_", with: " ")
+            .split(whereSeparator: \.isWhitespace).joined(separator: " ")
+            .lowercased(with: Locale(identifier: "en_US_POSIX"))
+    }
+
+    static let interfaceKeys: [String] = {
+        guard let url = Bundle.main.url(forResource: "InterfaceStringManifest", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let manifest = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return [] }
+        return manifest["keys"] as? [String] ?? []
+    }()
+
+    private final class InterfaceCatalog {
+        let table: [String: String]
+        let aliases: [String: String]
+        init(table: [String: String]) {
+            self.table = table
+            self.aliases = Dictionary(table.sorted(by: { $0.key < $1.key }).map {
+                (LocalizationService.normalized($0.key), $0.value)
+            }, uniquingKeysWith: { first, _ in first })
+        }
+    }
+
+    // Keep only recently used locales resident. Loading every language's table
+    // would waste memory reserved for local model inference.
+    private static let catalogs: NSCache<NSString, InterfaceCatalog> = {
+        let cache = NSCache<NSString, InterfaceCatalog>()
+        cache.countLimit = 2
+        return cache
+    }()
+
+    private static func interfaceCatalog(for language: AppLanguage) -> InterfaceCatalog {
+        let key = language.rawValue as NSString
+        if let catalog = catalogs.object(forKey: key) { return catalog }
+        let table: [String: String]
+        if let url = Bundle.main.url(forResource: "Localizable", withExtension: "strings", subdirectory: nil, localization: language.rawValue),
+           let data = try? Data(contentsOf: url),
+           let loaded = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: String] {
+            table = loaded
+        } else { table = [:] }
+        let catalog = InterfaceCatalog(table: table)
+        catalogs.setObject(catalog, forKey: key)
+        return catalog
+    }
+
+    private struct InterfaceTemplate {
+        let key: String
+        let prefix: String
+        let expression: NSRegularExpression
+    }
+
+    private static let interfaceTemplates: [InterfaceTemplate] = {
+        let token = try! NSRegularExpression(pattern: #"\{\{\d+\}\}"#)
+        return interfaceKeys.sorted { $0.count > $1.count }.compactMap { key in
+            let matches = token.matches(in: key, range: NSRange(key.startIndex..., in: key))
+            guard !matches.isEmpty else { return nil }
+            var pattern = "^"
+            var cursor = key.startIndex
+            var prefix = ""
+            for (index, match) in matches.enumerated() {
+                guard let range = Range(match.range, in: key) else { return nil }
+                let literal = String(key[cursor..<range.lowerBound])
+                if index == 0 { prefix = literal }
+                pattern += NSRegularExpression.escapedPattern(for: literal) + "(.*?)"
+                cursor = range.upperBound
+            }
+            pattern += NSRegularExpression.escapedPattern(for: String(key[cursor...])) + "$"
+            guard let expression = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators]) else { return nil }
+            return InterfaceTemplate(key: key, prefix: prefix, expression: expression)
+        }
+    }()
+
+    private static func legacyTable(for language: AppLanguage) -> [String: String] {
+        switch language {
+        case .english, .system: return [:]
+        case .german: return de
+        case .french: return fr
+        case .spanish: return es
+        case .portuguese: return pt
+        case .italian: return it
+        case .greek: return el
+        case .romanian: return ro
+        case .russian: return ru
+        case .turkish: return tr
+        case .arabic: return ar
+        case .hindi: return hi
+        case .chinese: return zh
+        case .japanese: return ja
+        case .korean: return ko
         }
     }
 
@@ -191,6 +290,70 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
     private static let tr: [String: String] = Dictionary(trEntries, uniquingKeysWith: { first, _ in first })
 
     private static let trEntries: [(String, String)] = [
+        ("runs on this iPhone", "bu iPhone’da çalışır"),
+        ("tight fit", "bellek sınırına yakın"),
+        ("won't run on this iPhone", "bu iPhone’da çalışmaz"),
+        ("incompatible", "uyumsuz"),
+        // — Release safety and model-download screens
+        ("Image generation parental controls", "Görsel üretimi için ebeveyn denetimleri"),
+        ("A parent or guardian can restrict image generation with a separate PIN. Keep this PIN private. Access locks again when the app backgrounds.", "Ebeveyn veya vasi, görsel üretimini ayrı bir PIN ile kısıtlayabilir. Bu PIN’i gizli tutun. Uygulama arka plana geçtiğinde erişim yeniden kilitlenir."),
+        ("Lock image generation now", "Görsel üretimini şimdi kilitle"),
+        ("Remove parental restriction", "Ebeveyn kısıtlamasını kaldır"),
+        ("Parental PIN", "Ebeveyn PIN’i"),
+        ("Unlock image generation", "Görsel üretiminin kilidini aç"),
+        ("New parental PIN (6–12 digits)", "Yeni ebeveyn PIN’i (6–12 rakam)"),
+        ("Confirm parental PIN", "Ebeveyn PIN’ini doğrulayın"),
+        ("Restrict image generation", "Görsel üretimini kısıtla"),
+        ("This feature lock does not verify age or replace content safeguards. Use Screen Time to restrict access to the entire app.", "Bu özellik kilidi, yaş doğrulaması yapmaz ve içerik güvenlik önlemlerinin yerini almaz. Uygulamanın tamamına erişimi kısıtlamak için Ekran Süresi’ni kullanın."),
+        ("The parental PIN could not be read. Access remains locked.", "Ebeveyn PIN’i okunamadı. Erişim kilitli kalacak."),
+        ("Enter the current parental PIN before changing it.", "PIN’i değiştirmeden önce mevcut ebeveyn PIN’ini girin."),
+        ("Use matching PINs with 6–12 digits.", "Birbiriyle eşleşen, 6–12 rakamdan oluşan PIN’ler kullanın."),
+        ("Could not securely create the PIN.", "PIN güvenli bir şekilde oluşturulamadı."),
+        ("No readable parental PIN is available.", "Okunabilir bir ebeveyn PIN’i bulunamadı."),
+        ("Too many attempts. Try again after five minutes.", "Çok fazla deneme yapıldı. Beş dakika sonra tekrar deneyin."),
+        ("Incorrect parental PIN.", "Ebeveyn PIN’i yanlış."),
+        ("Enter the parental PIN before removing the restriction.", "Kısıtlamayı kaldırmadan önce ebeveyn PIN’ini girin."),
+        ("Could not remove the parental PIN. Access remains restricted.", "Ebeveyn PIN’i kaldırılamadı. Erişim kısıtlı kalacak."),
+        ("Could not save the parental PIN.", "Ebeveyn PIN’i kaydedilemedi."),
+        ("privacy policy", "gizlilik politikası"),
+        ("how your data is (not) handled", "verilerinizin nasıl işlendiği"),
+        ("open-source license & safety", "açık kaynak lisansı ve güvenlik"),
+        ("MIT license and important notices", "MIT lisansı ve önemli bildirimler"),
+        ("ai output disclaimer", "yapay zekâ çıktıları hakkında uyarı"),
+        ("ai can be wrong — always verify", "yapay zekâ yanılabilir — her zaman doğrulayın"),
+        ("device safety notice", "cihaz güvenliği bildirimi"),
+        ("on-device ai heats the device — what to know", "cihazda çalışan yapay zekâ cihazı ısıtır — bilmeniz gerekenler"),
+        ("agree and continue", "kabul et ve devam et"),
+        ("By tapping Agree, you confirm that you have read and accepted all four documents above. You can review them any time in Settings → Legal.", "Kabul et’e dokunarak yukarıdaki dört belgeyi okuduğunuzu ve kabul ettiğinizi onaylarsınız. Belgeleri Ayarlar → Yasal bölümünden istediğiniz zaman inceleyebilirsiniz."),
+        ("first launch", "ilk açılış"),
+        ("Before\nyou start.", "Başlamadan\nönce."),
+        ("Review the four documents below. Tap each to read.", "Aşağıdaki dört belgeyi inceleyin. Okumak için her birine dokunun."),
+        ("Read", "Okundu"),
+        ("Not read", "Okunmadı"),
+        ("Open in Safari", "Safari’de aç"),
+        ("i have read this", "okudum"),
+        ("scroll to the end to continue", "devam etmek için sonuna kadar kaydırın"),
+        ("Privacy Policy", "Gizlilik Politikası"),
+        ("License & Safety", "Lisans ve Güvenlik"),
+        ("AI Disclaimer", "Yapay Zekâ Uyarısı"),
+        ("Device Safety", "Cihaz Güvenliği"),
+        ("Find Models", "Model Bul"),
+        ("Fits this device", "Bu cihaza uygun"),
+        ("Hide models that cannot run on this device", "Bu cihazda çalışamayan modelleri gizle"),
+        ("Format", "Biçim"),
+        ("Estimated download", "Tahmini indirme boyutu"),
+        ("Available storage", "Kullanılabilir depolama"),
+        ("Estimated memory", "Tahmini bellek"),
+        ("Device compatibility", "Cihaz uyumluluğu"),
+        ("License", "Lisans"),
+        ("Review model and license", "Modeli ve lisansı incele"),
+        ("Download model", "Modeli indir"),
+        ("Before downloading", "İndirmeden önce"),
+        ("Size is a repository estimate and may include multiple variants. Runtime memory also depends on context length and other active features.", "Boyut, model deposuna ait bir tahmindir ve birden fazla varyant içerebilir. Çalışma sırasında bellek kullanımı, bağlam uzunluğuna ve diğer etkin özelliklere de bağlıdır."),
+        ("Downloads use your network. Installation does not change the active model; choose it in Models once it is ready.", "İndirmeler ağ bağlantınızı kullanır. Kurulum etkin modeli değiştirmez; model hazır olduğunda Modeller bölümünden seçin."),
+        ("No license tag supplied. Review the repository's license before downloading.", "Lisans etiketi belirtilmemiş. İndirmeden önce model deposunun lisansını inceleyin."),
+        ("Check repository", "Model deposunu kontrol edin"),
+        ("Unknown", "Bilinmiyor"),
         // — Tab bar / navigation
         ("assistant", "asistan"),
         ("lens", "lens"),
@@ -504,14 +667,7 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
         ("Shared text received", "Paylaşılan metin alındı"),
         ("Shared link received", "Paylaşılan bağlantı alındı"),
 
-        // — Review prompt
-        ("Enjoying iOS Local LLM?", "iOS Local LLM'i beğendiniz mi?"),
-        ("A quick rating helps other people find the app. We're a tiny team — your feedback shapes what's next.",
-         "Kısa bir puanlama uygulamayı diğer insanların bulmasına yardımcı olur. Biz küçük bir ekibiz — geri bildiriminiz sıradakini şekillendiriyor."),
-        ("Love it — rate on App Store", "Bayıldım — App Store'da puanla"),
-        ("Send feedback instead", "Bunun yerine geri bildirim gönder"),
         ("Not now", "Şimdi değil"),
-        ("Don't ask again", "Bir daha sorma"),
 
         // — Voice tab redesign extras
         ("voice settings", "ses ayarları"),
@@ -819,12 +975,7 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
         ("Shared image received", "Geteiltes Bild empfangen"),
         ("Shared text received", "Geteilten Text empfangen"),
         ("Shared link received", "Geteilten Link empfangen"),
-        ("Enjoying iOS Local LLM?", "Gefällt Ihnen iOS Local LLM?"),
-        ("A quick rating helps other people find the app. We're a tiny team — your feedback shapes what's next.", "Eine kurze Bewertung hilft anderen, die App zu finden. Wir sind ein kleines Team — Ihr Feedback bestimmt, was als Nächstes kommt."),
-        ("Love it — rate on App Store", "Super — im App Store bewerten"),
-        ("Send feedback instead", "Stattdessen Feedback senden"),
         ("Not now", "Jetzt nicht"),
-        ("Don't ask again", "Nicht mehr fragen"),
         ("audio out", "Audioausgabe"),
         ("test audio", "Audio testen"),
         ("Audio test. If you hear this, voice replies will play.", "Audiotest. Wenn Sie dies hören, werden Sprachantworten abgespielt."),
@@ -1116,12 +1267,7 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
         ("Shared image received", "Image partagée reçue"),
         ("Shared text received", "Texte partagé reçu"),
         ("Shared link received", "Lien partagé reçu"),
-        ("Enjoying iOS Local LLM?", "Vous aimez iOS Local LLM ?"),
-        ("A quick rating helps other people find the app. We're a tiny team — your feedback shapes what's next.", "Une note rapide aide les autres à trouver l'application. Nous sommes une petite équipe — vos commentaires déterminent la suite."),
-        ("Love it — rate on App Store", "J'adore — noter sur l'App Store"),
-        ("Send feedback instead", "Envoyer un commentaire à la place"),
         ("Not now", "Pas maintenant"),
-        ("Don't ask again", "Ne plus demander"),
         ("audio out", "sortie audio"),
         ("test audio", "tester l'audio"),
         ("Audio test. If you hear this, voice replies will play.", "Test audio. Si vous entendez ceci, les réponses vocales seront diffusées."),
@@ -1413,12 +1559,7 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
         ("Shared image received", "Imagen compartida recibida"),
         ("Shared text received", "Texto compartido recibido"),
         ("Shared link received", "Enlace compartido recibido"),
-        ("Enjoying iOS Local LLM?", "¿Disfrutando iOS Local LLM?"),
-        ("A quick rating helps other people find the app. We're a tiny team — your feedback shapes what's next.", "Una calificación rápida ayuda a otros a encontrar la aplicación. Somos un equipo pequeño — sus comentarios definen lo que sigue."),
-        ("Love it — rate on App Store", "Me encanta — calificar en App Store"),
-        ("Send feedback instead", "Enviar comentarios en su lugar"),
         ("Not now", "Ahora no"),
-        ("Don't ask again", "No preguntar de nuevo"),
         ("audio out", "salida de audio"),
         ("test audio", "probar audio"),
         ("Audio test. If you hear this, voice replies will play.", "Prueba de audio. Si escucha esto, las respuestas de voz se reproducirán."),
@@ -1710,12 +1851,7 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
         ("Shared image received", "Immagine condivisa ricevuta"),
         ("Shared text received", "Testo condiviso ricevuto"),
         ("Shared link received", "Link condiviso ricevuto"),
-        ("Enjoying iOS Local LLM?", "Ti piace iOS Local LLM?"),
-        ("A quick rating helps other people find the app. We're a tiny team — your feedback shapes what's next.", "Una valutazione rapida aiuta altre persone a trovare l'app. Siamo un piccolo team — il tuo feedback determina il futuro."),
-        ("Love it — rate on App Store", "Lo adoro — valuta su App Store"),
-        ("Send feedback instead", "Invia feedback invece"),
         ("Not now", "Non ora"),
-        ("Don't ask again", "Non chiedere più"),
         ("audio out", "uscita audio"),
         ("test audio", "test audio"),
         ("Audio test. If you hear this, voice replies will play.", "Test audio. Se senti questo, le risposte vocali verranno riprodotte."),
@@ -2007,12 +2143,7 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
         ("Shared image received", "Imagem compartilhada recebida"),
         ("Shared text received", "Texto compartilhado recebido"),
         ("Shared link received", "Link compartilhado recebido"),
-        ("Enjoying iOS Local LLM?", "Gostando do iOS Local LLM?"),
-        ("A quick rating helps other people find the app. We're a tiny team — your feedback shapes what's next.", "Uma avaliação rápida ajuda outras pessoas a encontrarem o app. Somos uma equipe pequena — seu feedback define o que vem a seguir."),
-        ("Love it — rate on App Store", "Adorei — avaliar na App Store"),
-        ("Send feedback instead", "Enviar feedback em vez disso"),
         ("Not now", "Agora não"),
-        ("Don't ask again", "Não perguntar novamente"),
         ("audio out", "saída de áudio"),
         ("test audio", "testar áudio"),
         ("Audio test. If you hear this, voice replies will play.", "Teste de áudio. Se você ouvir isto, as respostas de voz serão reproduzidas."),
@@ -2304,12 +2435,7 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
         ("Shared image received", "Получено общее изображение"),
         ("Shared text received", "Получен общий текст"),
         ("Shared link received", "Получена общая ссылка"),
-        ("Enjoying iOS Local LLM?", "Нравится iOS Local LLM?"),
-        ("A quick rating helps other people find the app. We're a tiny team — your feedback shapes what's next.", "Быстрая оценка помогает другим найти приложение. Мы маленькая команда — ваш отзыв определяет будущее."),
-        ("Love it — rate on App Store", "Супер — оценить в App Store"),
-        ("Send feedback instead", "Отправить отзыв вместо этого"),
         ("Not now", "Не сейчас"),
-        ("Don't ask again", "Больше не спрашивать"),
         ("audio out", "вывод звука"),
         ("test audio", "тест звука"),
         ("Audio test. If you hear this, voice replies will play.", "Тест звука. Если вы это слышите, голосовые ответы будут воспроизводиться."),
@@ -2601,12 +2727,7 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
         ("Shared image received", "साझा इमेज प्राप्त"),
         ("Shared text received", "साझा टेक्स्ट प्राप्त"),
         ("Shared link received", "साझा लिंक प्राप्त"),
-        ("Enjoying iOS Local LLM?", "iOS Local LLM पसंद आ रहा है?"),
-        ("A quick rating helps other people find the app. We're a tiny team — your feedback shapes what's next.", "एक त्वरित रेटिंग दूसरों को ऐप ढूंढने में मदद करती है। हम एक छोटी टीम हैं — आपकी प्रतिक्रिया आगे की दिशा तय करती है।"),
-        ("Love it — rate on App Store", "बहुत पसंद — App Store पर रेट करें"),
-        ("Send feedback instead", "इसके बजाय प्रतिक्रिया भेजें"),
         ("Not now", "अभी नहीं"),
-        ("Don't ask again", "दोबारा न पूछें"),
         ("audio out", "ऑडियो आउट"),
         ("test audio", "ऑडियो परीक्षण"),
         ("Audio test. If you hear this, voice replies will play.", "ऑडियो परीक्षण। यदि आप यह सुनते हैं, तो आवाज़ उत्तर चलेंगे।"),
@@ -2898,12 +3019,7 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
         ("Shared image received", "共有画像を受信"),
         ("Shared text received", "共有テキストを受信"),
         ("Shared link received", "共有リンクを受信"),
-        ("Enjoying iOS Local LLM?", "iOS Local LLMをお楽しみですか？"),
-        ("A quick rating helps other people find the app. We're a tiny team — your feedback shapes what's next.", "簡単な評価で他の人がアプリを見つけやすくなります。私たちは小さなチームです — あなたのフィードバックが次を形作ります。"),
-        ("Love it — rate on App Store", "気に入った — App Storeで評価"),
-        ("Send feedback instead", "代わりにフィードバックを送信"),
         ("Not now", "後で"),
-        ("Don't ask again", "今後表示しない"),
         ("audio out", "音声出力"),
         ("test audio", "音声テスト"),
         ("Audio test. If you hear this, voice replies will play.", "音声テスト。これが聞こえたら、音声応答が再生されます。"),
@@ -2959,7 +3075,7 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
         ("Storage used", "Χρησιμοποιείται αποθήκευση"),
         ("Total installed", "Συνολικά εγκατεστημένα"),
         ("Cancel download", "Ακύρωση λήψης"),
-        ("Resume", "Περίληψη"),
+        ("Resume", "Συνέχεια"),
         ("Pause", "Παύση"),
         ("Delete model", "Διαγραφή μοντέλου"),
         ("Are you sure?", "Είσαι σίγουρος;"),
@@ -3195,12 +3311,7 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
         ("Shared image received", "Λήφθηκε κοινόχρηστη εικόνα"),
         ("Shared text received", "Λήφθηκε κοινόχρηστο κείμενο"),
         ("Shared link received", "Λήφθηκε κοινόχρηστος σύνδεσμος"),
-        ("Enjoying iOS Local LLM?", "Απολαμβάνετε το iOS Local LLM;"),
-        ("A quick rating helps other people find the app. We're a tiny team — your feedback shapes what's next.", "Μια γρήγορη αξιολόγηση βοηθά άλλους ανθρώπους να βρουν την εφαρμογή. Είμαστε μια μικρή ομάδα - τα σχόλιά σας διαμορφώνουν τη συνέχεια."),
-        ("Love it — rate on App Store", "Λατρεύω - βαθμολογήστε στο App Store"),
-        ("Send feedback instead", "Αντ' αυτού, στείλτε σχόλια"),
         ("Not now", "Όχι τώρα"),
-        ("Don't ask again", "Μην ξαναρωτήσεις"),
         ("audio out", "έξοδος ήχου"),
         ("test audio", "δοκιμή ήχου"),
         ("Audio test. If you hear this, voice replies will play.", "Δοκιμή ήχου. Αν το ακούσετε αυτό, θα παίζουν φωνητικές απαντήσεις."),
@@ -3492,12 +3603,7 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
         ("Shared image received", "Imagine partajată primită"),
         ("Shared text received", "Primit text partajat"),
         ("Shared link received", "Link partajat primit"),
-        ("Enjoying iOS Local LLM?", "Îți place iOS Local LLM?"),
-        ("A quick rating helps other people find the app. We're a tiny team — your feedback shapes what's next.", "O evaluare rapidă îi ajută pe ceilalți să găsească aplicația. Suntem o echipă mică – feedback-ul tău influențează ceea ce urmează."),
-        ("Love it — rate on App Store", "Iubește-l - evaluează pe App Store"),
-        ("Send feedback instead", "Trimiteți feedback în schimb"),
         ("Not now", "Nu acum"),
-        ("Don't ask again", "Nu mai întreba"),
         ("audio out", "ieșire audio"),
         ("test audio", "test audio"),
         ("Audio test. If you hear this, voice replies will play.", "Test audio. Dacă auziți asta, vor fi redate răspunsurile vocale."),
@@ -3789,12 +3895,7 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
         ("Shared image received", "تم استلام صورة مشتركة"),
         ("Shared text received", "تم استلام نص مشترك"),
         ("Shared link received", "تم استلام رابط مشترك"),
-        ("Enjoying iOS Local LLM?", "هل تستمتع بـ iOS Local LLM؟"),
-        ("A quick rating helps other people find the app. We're a tiny team — your feedback shapes what's next.", "تقييم سريع يساعد الآخرين في العثور على التطبيق. نحن فريق صغير — ملاحظاتك تشكل ما هو قادم."),
-        ("Love it — rate on App Store", "أحبه — قيم على App Store"),
-        ("Send feedback instead", "إرسال ملاحظات بدلاً من ذلك"),
         ("Not now", "ليس الآن"),
-        ("Don't ask again", "لا تسأل مرة أخرى"),
         ("audio out", "إخراج الصوت"),
         ("test audio", "اختبار الصوت"),
         ("Audio test. If you hear this, voice replies will play.", "اختبار الصوت. إذا سمعت هذا، فسيتم تشغيل الردود الصوتية."),
@@ -4086,12 +4187,7 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
         ("Shared image received", "공유 이미지 수신됨"),
         ("Shared text received", "공유 텍스트 수신됨"),
         ("Shared link received", "공유 링크 수신됨"),
-        ("Enjoying iOS Local LLM?", "iOS Local LLM를 즐기고 계신가요?"),
-        ("A quick rating helps other people find the app. We're a tiny team — your feedback shapes what's next.", "빠른 평가는 다른 사람들이 앱을 찾는 데 도움이 됩니다. 우리는 작은 팀입니다 — 피드백이 다음을 만듭니다."),
-        ("Love it — rate on App Store", "최고예요 — App Store에서 평가하기"),
-        ("Send feedback instead", "대신 피드백 보내기"),
         ("Not now", "나중에"),
-        ("Don't ask again", "다시 묻지 않기"),
         ("audio out", "오디오 출력"),
         ("test audio", "오디오 테스트"),
         ("Audio test. If you hear this, voice replies will play.", "오디오 테스트. 이것이 들리면 음성 응답이 재생됩니다."),
@@ -4439,14 +4535,7 @@ final class LocalizationService: ObservableObject, @unchecked Sendable {
         ("Shared text received", "已接收共享文本"),
         ("Shared link received", "已接收共享链接"),
 
-        // — Review prompt
-        ("Enjoying iOS Local LLM?", "喜欢 iOS Local LLM 吗？"),
-        ("A quick rating helps other people find the app. We're a tiny team — your feedback shapes what's next.",
-         "快速评分有助于其他人发现该应用。我们是一个小团队 — 您的反馈决定下一步。"),
-        ("Love it — rate on App Store", "超喜欢 — 在 App Store 上评分"),
-        ("Send feedback instead", "改为发送反馈"),
         ("Not now", "稍后再说"),
-        ("Don't ask again", "不再询问"),
 
         // — Voice tab redesign extras
         ("voice settings", "语音设置"),

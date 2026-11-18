@@ -71,7 +71,7 @@ struct VoiceStatusPill: View {
 
                 if let flag = Self.flagEmoji(forBCP47: audioQueue.currentLanguage), !flag.isEmpty {
                     Text(flag)
-                        .font(.system(size: 11))
+                        .scaledFont(size: 11)
                         .accessibilityLabel(audioQueue.currentLanguage ?? "")
                 }
             }

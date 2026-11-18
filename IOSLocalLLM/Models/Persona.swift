@@ -297,6 +297,12 @@ final class PersonaStore: ObservableObject {
         persistUserPersonas()
     }
 
+    func clearAllForWipe() {
+        personas = Self.builtIns
+        activeID = "general"
+        UserDefaults.standard.removeObject(forKey: Self.userPersonasKey)
+    }
+
     private func persistUserPersonas() {
         let custom = personas.filter { !$0.isBuiltIn }
         if let data = try? JSONEncoder().encode(custom) {

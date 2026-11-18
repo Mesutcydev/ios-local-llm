@@ -13,6 +13,7 @@ import SwiftUI
 //   KCapabilityPill(.thinking, size: .compact)
 
 struct KCapabilityPill: View {
+    @ObservedObject private var localization = LocalizationService.shared
 
     enum Size { case standard, compact }
 
@@ -25,7 +26,7 @@ struct KCapabilityPill: View {
         HStack(spacing: glyphSpacing) {
             Image(systemName: capability.symbol)
                 .font(.system(size: glyphSize, weight: .bold))
-            Text(capability.label.uppercased())
+            Text(localization.t(capability.label).uppercased(with: localization.resolvedLocale))
                 .font(T.mono(textSize, .semibold))
                 .tracking(0.6)
         }

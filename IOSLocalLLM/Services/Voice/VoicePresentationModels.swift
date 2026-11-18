@@ -20,15 +20,15 @@ final class KaraokePresentationModel: ObservableObject {
     @Published var text: String = ""
     @Published var activePhraseID: UUID?
     @Published var activePhraseUTF16Range: NSRange?
-    /// Spoken cursor advances every display tick — NOT `@Published`.
-    /// Publishing it rebuilt VoiceConversationView at 30–60 Hz and made the
-    /// screen visibly flutter. Karaoke UI polls this via a capped TimelineView.
-    private(set) var spokenUTF16End: Int = 0
+    /// Steps once per spoken word (a few Hz), so it can simply be published.
+    /// The old per-frame cursor could not — at 30–60 Hz it made the screen
+    /// flutter — and had to be polled instead.
+    @Published private(set) var spokenUTF16End: Int = 0
     @Published var timingSource: SpeechAlignmentAccuracy?
     @Published var alignmentDetail: String?
 
     func setSpokenUTF16End(_ value: Int) {
-        spokenUTF16End = value
+        if value != spokenUTF16End { spokenUTF16End = value }
     }
 }
 

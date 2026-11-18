@@ -15,25 +15,27 @@ final class VoiceCatalogTests: XCTestCase {
             "tts.apple.system", "tts.kokoro.82m.official",
             "tts.kitten.micro.0_8", "tts.kitten.nano.0_8.int8",
             "tts.kitten.nano.0_8.fp32", "tts.kitten.mini.0_8",
+            "tts.paradee.8m", "tts.supertonic.3",
             "tts.piper.family", "tts.melotts.family",
             "tts.parler.mini.v1_1", "tts.parler.mini.multilingual.v1_1",
             "tts.outetts.family", "tts.qwen.family", "tts.f5.family",
             "tts.chatterbox.family", "tts.xtts.v2", "tts.styletts2.family",
             "stt.whisper.tiny", "stt.whisper.tiny.en", "stt.whisper.base",
             "stt.whisper.base.en", "stt.whisper.small", "stt.whisper.small.en",
+            "stt.whisper.large-v3-turbo",
             "stt.moonshine.base", "stt.moonshine.streaming-tiny",
             "stt.moonshine.streaming-medium"
         ]
         XCTAssertEqual(store.loadState, .loaded)
         XCTAssertTrue(required.isSubset(of: Set(store.allEntries.map(\.id))))
-        XCTAssertEqual(store.allEntries.count, 25)
+        XCTAssertEqual(store.allEntries.count, 28)
     }
 
     func testExactJSONIsBundledAndUsesSchemaTwo() throws {
         let url = try XCTUnwrap(Bundle.main.url(forResource: "VoiceModelCatalog", withExtension: "json"))
         let document = try JSONDecoder().decode(VoiceCatalogDocument.self, from: Data(contentsOf: url))
         XCTAssertEqual(document.schemaVersion, 2)
-        XCTAssertEqual(document.entries.count, 25)
+        XCTAssertEqual(document.entries.count, 28)
     }
 
     func testDefaultPresentationRetainsCatalogOnlyAndUnavailableEntries() {
@@ -53,13 +55,15 @@ final class VoiceCatalogTests: XCTestCase {
         XCTAssertEqual(Set(enabled.map(\.id)), [
             "tts.kokoro.82m.official", "tts.kitten.micro.0_8",
             "tts.kitten.nano.0_8.int8",
-            "tts.kitten.mini.0_8", "stt.whisper.base", "stt.whisper.base.en"
+            "tts.kitten.mini.0_8", "stt.whisper.base", "stt.whisper.base.en",
+            "stt.whisper.small", "stt.whisper.large-v3-turbo",
+            "tts.paradee.8m", "tts.supertonic.3"
         ])
         XCTAssertFalse(store.entries().contains { !$0.runtimeAvailable && $0.isDownloadEnabled })
     }
 
     func testCompleteFallbackCannotRegressToLegacyFourCards() {
-        XCTAssertEqual(VoiceCatalogStore.completeFallback.count, 25)
+        XCTAssertEqual(VoiceCatalogStore.completeFallback.count, 28)
         XCTAssertTrue(VoiceCatalogStore.completeFallback.contains { $0.id == "tts.piper.family" })
         XCTAssertTrue(VoiceCatalogStore.completeFallback.contains { $0.id == "stt.moonshine.base" })
     }
@@ -79,8 +83,8 @@ final class VoiceCatalogTests: XCTestCase {
     func testCatalogTaskFiltersDoNotDiscardUnsupportedModels() {
         let tts = store.entries(task: .textToSpeech)
         let stt = store.entries(task: .speechRecognition)
-        XCTAssertEqual(tts.count, 16)
-        XCTAssertEqual(stt.count, 9)
+        XCTAssertEqual(tts.count, 18)
+        XCTAssertEqual(stt.count, 10)
         XCTAssertTrue(tts.contains { $0.id == "tts.melotts.family" })
         XCTAssertTrue(stt.contains { $0.id == "stt.moonshine.streaming-medium" })
     }

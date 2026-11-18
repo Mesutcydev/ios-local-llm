@@ -23,7 +23,7 @@ import Foundation
 //
 // User overrides (rate / pitch / engine / chunking strategy) are
 // applied ON TOP of the base profile, keyed under
-// `com.mesutcydev.ioslocalllm.voice.profile.<modelId>.<field>` in UserDefaults.
+// `com.codelens.voice.profile.<modelId>.<field>` in UserDefaults.
 // They beat built-in defaults but never replace the structural
 // fields (`usesReasoningTokens`, `reasoningTokenPattern`,
 // `dominantLanguages`) — those are model-architecture facts, not
@@ -195,7 +195,7 @@ enum VoiceProfileRegistry {
     // it." UserDefaults.standard.double(forKey:) returns 0.0 for
     // missing keys, which would silently zero out the rate.
 
-    private static let overridePrefix = "com.mesutcydev.ioslocalllm.voice.profile."
+    private static let overridePrefix = "com.codelens.voice.profile."
 
     /// Set or clear the user's rate override for `modelId`. `nil`
     /// removes the override (reverting to the profile default).
@@ -292,15 +292,28 @@ enum VoiceProfileRegistry {
 
     // MARK: - Override layering
 
-    private static func applyOverrides(_ base: VoiceProfile, modelId: String) -> VoiceProfile {
-        let defaults = UserDefaults.standard
-        let prefix = "\(overridePrefix)\(modelId)"
+    /// The key prefix before the rename. An override still stored under it
+    /// moves to the current key on first read, so upgrades keep their voice
+    /// tuning and a later reset cannot resurrect it.
+    private static let legacyOverridePrefix = "com.mesutcydev.ioslocalllm.voice.profile."
 
-        let rate    = (defaults.object(forKey: "\(prefix).rate")  as? Double) ?? base.defaultTTSRate
-        let pitch   = (defaults.object(forKey: "\(prefix).pitch") as? Double) ?? base.defaultTTSPitch
+    private static func storedOverride(_ modelId: String, _ field: String) -> Any? {
+        let defaults = UserDefaults.standard
+        let key = "\(overridePrefix)\(modelId).\(field)"
+        if let value = defaults.object(forKey: key) { return value }
+        let legacy = "\(legacyOverridePrefix)\(modelId).\(field)"
+        guard let value = defaults.object(forKey: legacy) else { return nil }
+        defaults.set(value, forKey: key)
+        defaults.removeObject(forKey: legacy)
+        return value
+    }
+
+    private static func applyOverrides(_ base: VoiceProfile, modelId: String) -> VoiceProfile {
+        let rate    = (storedOverride(modelId, "rate")  as? Double) ?? base.defaultTTSRate
+        let pitch   = (storedOverride(modelId, "pitch") as? Double) ?? base.defaultTTSPitch
 
         let engine: VoiceEngineKind?
-        if let raw = defaults.string(forKey: "\(prefix).engine"),
+        if let raw = storedOverride(modelId, "engine") as? String,
            let kind = VoiceEngineKind(rawValue: raw) {
             engine = kind
         } else {
@@ -308,7 +321,7 @@ enum VoiceProfileRegistry {
         }
 
         let strategy: SemanticChunker.Strategy
-        if let raw = defaults.string(forKey: "\(prefix).chunkingStrategy"),
+        if let raw = storedOverride(modelId, "chunkingStrategy") as? String,
            let decoded = decode(strategy: raw) {
             strategy = decoded
         } else {

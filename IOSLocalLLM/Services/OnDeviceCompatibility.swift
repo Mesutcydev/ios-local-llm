@@ -20,7 +20,7 @@ enum OnDeviceCompatibility {
     enum Format: String {
         case mlx       // first-class on Apple silicon
         case coreml    // also good
-        case gguf      // supported for VLMs via llama.cpp + mtmd
+        case gguf      // chat and vision models via llama.cpp (+ mtmd)
         case ggml      // legacy gguf
         case onnx      // not supported
         case pytorch   // raw weights — too big and slow
@@ -194,6 +194,7 @@ enum OnDeviceCompatibility {
                 || l.contains("8bit") || l.contains("8-bit")
                 || l.contains("q4") || l.contains("q8")
         }
+        || tags.contains { $0.lowercased() == "gguf" }   // the download keeps a 4-bit file
         || r.contains("4bit") || r.contains("4-bit")
         || r.contains("8bit") || r.contains("8-bit")
         || r.contains("-q4") || r.contains("_q4")
@@ -248,9 +249,13 @@ enum OnDeviceCompatibility {
 
         // 1. Format gate
         switch f {
-        case .gguf, .ggml:
-            if k != .vlm {
-                return .blocked(reason: "GGUF / GGML is only supported for vision models in this app right now.")
+        case .ggml:
+            return .blocked(reason: "Legacy GGML files can't be loaded. Look for a GGUF version of this model.")
+        case .gguf:
+            // llama.cpp runs chat and vision GGUFs; the download keeps one
+            // quantization (see HFModelDownloadManager.selectingOneGGUFVariant).
+            if k != .vlm && k != .text {
+                return .blocked(reason: "GGUF is supported for chat and vision models only.")
             }
         case .onnx:
             return .blocked(reason: "ONNX format — no on-device runtime in this app.")

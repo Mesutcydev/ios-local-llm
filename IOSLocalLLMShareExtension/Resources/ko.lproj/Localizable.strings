@@ -1,0 +1,21 @@
+// Original app interface translations. Copyright 2026 Mesut and contributors; MIT.
+// Preserve interpolation tokens. Regenerate from the reviewed interface catalog.
+"App Group container missing. Configure entitlements." = "앱 그룹 컨테이너가 누락되었습니다. 자격을 구성합니다.";
+"Couldn't decode image" = "이미지를 디코딩할 수 없습니다.";
+"Couldn't encode image" = "이미지를 인코딩할 수 없습니다.";
+"Couldn't prepare image" = "이미지를 준비할 수 없습니다.";
+"Couldn't read URL" = "URL을 읽을 수 없습니다.";
+"Couldn't read image" = "이미지를 읽을 수 없습니다.";
+"Couldn't read text" = "텍스트를 읽을 수 없습니다.";
+"Couldn't resize image" = "이미지 크기를 조정할 수 없습니다.";
+"Couldn't save share" = "공유를 저장할 수 없습니다.";
+"Couldn't save the shared link" = "공유 링크를 저장할 수 없습니다.";
+"Done" = "완료";
+"Empty text" = "빈 텍스트";
+"No content to share" = "공유할 콘텐츠가 없습니다.";
+"Open OnDevice LLM to use your shared content. It is saved on this device." = "OnDevice LLM을 열어 공유 콘텐츠를 사용하세요. 이 기기에 저장되어 있습니다.";
+"Saved to OnDevice LLM" = "OnDevice LLM에 저장됨";
+"Shared storage is unavailable. Try opening OnDevice LLM first." = "공유 저장장치를 사용할 수 없습니다. 먼저 OnDevice LLM을 열어보세요.";
+"Unsupported content type" = "지원되지 않는 콘텐츠 유형";
+"Your content could not be saved." = "콘텐츠를 저장할 수 없습니다.";
+"Your content could not be saved. Try sharing it again." = "콘텐츠를 저장할 수 없습니다. 다시 공유해 보세요.";

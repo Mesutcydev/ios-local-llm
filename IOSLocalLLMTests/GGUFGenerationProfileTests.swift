@@ -1,9 +1,111 @@
 import XCTest
+import UIKit
+import CoreImage
 @testable import IOSLocalLLM
 
 final class GGUFGenerationProfileTests: XCTestCase {
+    /// Opt-in integration check against separately downloaded, licensed weights.
+    /// Normal source-only test runs skip this and never access the network.
+    func test_nativeLFM3AudioAndSpeechWithExternalWeights() throws {
+        guard let path = ProcessInfo.processInfo.environment["LFM3_NATIVE_SMOKE_DIR"] else {
+            throw XCTSkip("Set LFM3_NATIVE_SMOKE_DIR to a reviewed model.gguf + mmproj.gguf pair.")
+        }
+        let runtime = try LlamaCppVLM(
+            llmPath: path + "/model.gguf", mmprojPath: path + "/mmproj.gguf",
+            nThreads: 4, contextSize: 2_048, gpuLayers: 0, enableAudio: true)
+        let template: ChatTemplate = runtime.supportsVision ? .lfm3Omni : .lfm3Audio
+        var text = ""
+        let prompt = template.format(messages: [
+            ChatMessage(role: .system, content: "Respond in text."),
+            ChatMessage(role: .user, content: "Say hello."),
+        ])
+        let response = try runtime.generateLFM3(prompt: prompt, template: template, maxTokens: 32, sampler: .init(temperature: 0), onToken: { text += $0 })
+        XCTAssertFalse(text.isEmpty)
+        XCTAssertTrue(response.audioSamples.isEmpty)
+        let asrPrompt = template.format(messages: [
+            ChatMessage(role: .system, content: "Perform ASR in English. Respond in text."),
+            ChatMessage(role: .user, content: ""),
+        ])
+        _ = try runtime.generateLFM3(prompt: asrPrompt, audio: Array(repeating: 0, count: 8_000), template: template, maxTokens: 16, onToken: { _ in })
+        var streamed = 0
+        let speech = try runtime.generateLFM3(prompt: prompt, generateSpeech: true, template: template, maxTokens: 192, onToken: { _ in },
+                                              onAudioChunk: { samples, _ in streamed += samples.count })
+        XCTAssertFalse(speech.audioSamples.isEmpty)
+        // Voice plays these chunks as they arrive; together they are the reply.
+        XCTAssertEqual(streamed, speech.audioSamples.count)
+        XCTAssertEqual(speech.audioSampleRate, 24_000)
+        XCTAssertTrue(speech.audioSamples.allSatisfy { $0.isFinite })
+        if runtime.supportsVision {
+            let image = UIGraphicsImageRenderer(size: CGSize(width: 32, height: 32)).image { context in
+                UIColor.red.setFill(); context.fill(CGRect(x: 0, y: 0, width: 32, height: 32))
+            }
+            _ = try runtime.generateLFM3(prompt: prompt, image: image, template: template, maxTokens: 16, onToken: { _ in })
+            _ = try runtime.generateLFM3(prompt: prompt, audio: Array(repeating: 0, count: 8_000), image: image, template: template, maxTokens: 16, onToken: { _ in })
+        }
+    }
+
+    func test_nativeLFM3ToolsWithExternalAudioWeights() throws {
+        guard let path = ProcessInfo.processInfo.environment["LFM3_NATIVE_SMOKE_DIR"] else {
+            throw XCTSkip("Set LFM3_NATIVE_SMOKE_DIR to reviewed Audio/Omni weights.")
+        }
+        let runtime = try LlamaCppVLM(llmPath: path + "/model.gguf", mmprojPath: path + "/mmproj.gguf", nThreads: 4, contextSize: 2_048, gpuLayers: 0, enableAudio: true)
+        let template: ChatTemplate = runtime.supportsVision ? .lfm3Omni : .lfm3Audio
+        let tool = try XCTUnwrap(LFM3ToolCodec.localTools.first { $0.name == "calculator" })
+        let toolMessages = LocalAPIToolCalling.messages(from: [
+            ChatMessage(role: .user, content: "Use calculator to calculate 351 times 27. Call the function; do not calculate it yourself."),
+        ], tools: [tool], choice: .function("calculator"), parallelToolCalls: false, nativeLFM3: true)
+        var nativeCall = ""
+        _ = try runtime.generateLFM3(prompt: template.format(messages: toolMessages), template: template, maxTokens: 192, sampler: .init(temperature: 0), onToken: { nativeCall += $0 })
+        XCTAssertTrue(nativeCall.contains("<function=calculator>"))
+        XCTAssertEqual(ToolRunner.extractCall(from: nativeCall)?.name, "calculator",
+            "closed=\(nativeCall.contains("</tool_call>")), parameter=\(nativeCall.contains("<parameter=expression>")), anyParameter=\(nativeCall.contains("<parameter=")), reasoning=\(nativeCall.contains("</think>")), bytes=\(nativeCall.utf8.count)")
+    }
+
+    func test_nativeLFM3TextToolsWithExternalWeights() throws {
+        guard let path = ProcessInfo.processInfo.environment["LFM3_NATIVE_TEXT_SMOKE_DIR"] else {
+            throw XCTSkip("Set LFM3_NATIVE_TEXT_SMOKE_DIR to reviewed LFM3 text weights.")
+        }
+        let runtime = try LlamaCppVLM(llmPath: path + "/model.gguf", nThreads: 4, contextSize: 2_048, gpuLayers: 0)
+        let tool = try XCTUnwrap(LFM3ToolCodec.localTools.first { $0.name == "calculator" })
+        let messages = LocalAPIToolCalling.messages(from: [
+            ChatMessage(role: .user, content: "Use calculator to calculate 351 times 27. Call the function; do not calculate it yourself."),
+        ], tools: [tool], choice: .function("calculator"), parallelToolCalls: false, nativeLFM3: true)
+        var output = ""
+        _ = try runtime.generateText(prompt: ChatTemplate.lfm3.format(messages: messages), maxTokens: 192, sampler: .init(temperature: 0), reuseContext: true, onToken: { output += $0 })
+        XCTAssertTrue(output.contains("<function=calculator>"))
+        XCTAssertEqual(ToolRunner.extractCall(from: output)?.name, "calculator")
+    }
 
     // MARK: - Profile resolution
+
+    func test_lfm3VisionUsesSingleResidencyBoundedProfile() {
+        let profile = LlamaCppVLMExecutionProfile.resolve(repoID: "LiquidAI/LFM3-VL-2B-GGUF")
+        XCTAssertEqual(profile.contextSize, 4_096)
+        XCTAssertEqual(profile.maxOutputTokens, 256)
+        XCTAssertTrue(profile.requiresSingleResidency)
+    }
+
+    /// Only a GGUF text+vision preset is shared across Assistant and Lens, and
+    /// a Lens-loaded copy must cover the Assistant's 8K audio window.
+    func test_lfm3OmniIsSharedGGUFWithAssistantContext() {
+        XCTAssertTrue(DualRoleModelPolicy.isSharedGGUF(repoID: "LiquidAI/LFM3-Omni-2B-GGUF"))
+        XCTAssertFalse(DualRoleModelPolicy.isSharedGGUF(repoID: "LiquidAI/LFM3-Audio-2B-GGUF"))
+        XCTAssertFalse(DualRoleModelPolicy.isSharedGGUF(repoID: "mlx-community/Qwen3-4B-Instruct-2507-4bit"))
+        XCTAssertEqual(
+            LlamaCppVLMExecutionProfile.resolve(repoID: "LiquidAI/LFM3-Omni-2B-GGUF").contextSize, 8_192)
+    }
+
+    /// Live captions send one small tile instead of the 1080×1920 frame.
+    @MainActor
+    func test_liveCaptionFrameIsCappedTo512LongSide() {
+        let frame = CIImage(color: CIColor(red: 1, green: 0, blue: 0))
+            .cropped(to: CGRect(x: 0, y: 0, width: 1080, height: 1920))
+        let live = AnalysisService.liveSized(frame)
+        XCTAssertEqual(live.extent.height, 512, accuracy: 0.5)
+        XCTAssertEqual(live.extent.width, 288, accuracy: 0.5)
+        let small = frame.cropped(to: CGRect(x: 0, y: 0, width: 300, height: 400))
+        XCTAssertEqual(AnalysisService.liveSized(small).extent, small.extent)
+    }
 
     func test_recurrentGemma4ByRepoID_getsCompactProfile() {
         let profile = GGUFGenerationProfile.resolve(
@@ -94,8 +196,10 @@ final class GGUFGenerationProfileTests: XCTestCase {
     func test_compactProfile_keepsBoundedBudgets() {
         let profile = GGUFGenerationProfile.compact
         XCTAssertEqual(profile.contextTokens, 512)
-        XCTAssertEqual(profile.inputBudget(requestedOutputTokens: 2_048), 320)
-        XCTAssertEqual(profile.clampedOutputTokens(2_048), 128)
+        XCTAssertEqual(profile.inputBudget(requestedOutputTokens: 2_048), 240)
+        XCTAssertEqual(profile.clampedOutputTokens(2_048), 448)
+        // Prompt budget + the bridge's half-window reply reserve fit in 512.
+        XCTAssertLessThanOrEqual(240 + profile.contextTokens / 2, profile.contextTokens)
     }
 
     func test_standardProfile_allowsFullUserOutputSetting() {
@@ -122,7 +226,7 @@ final class GGUFGenerationProfileTests: XCTestCase {
                 requested: 2_048,
                 thermalCap: 4_096
             ),
-            128
+            448
         )
     }
 

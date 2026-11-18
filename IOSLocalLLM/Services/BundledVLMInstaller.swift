@@ -96,19 +96,24 @@ enum BundledVLMInstaller {
             return false
         }
 
+        let fm = FileManager.default
         let dest = hfModelsURL(forRepo: bundledRepoID)
-        do {
-            try FileManager.default.createDirectory(
-                at: dest, withIntermediateDirectories: true
-            )
-        } catch {
-            print("[BundledVLMInstaller] Failed to create HFModels dir: \(error)")
+        // Builds without the weights still ship the (empty) bundle folder.
+        // That used to create an empty model folder and report success, so
+        // Lens pointed at a model that was never installed.
+        guard let files = try? fm.contentsOfDirectory(atPath: bundleRoot.path),
+              files.contains(where: { $0.lowercased().hasSuffix(".gguf") }) else {
+            print("[BundledVLMInstaller] No bundled weights — Lens needs a vision model downloaded from Models")
+            // Remove the empty folder earlier builds left behind.
+            if (try? fm.contentsOfDirectory(atPath: dest.path))?.isEmpty == true {
+                try? fm.removeItem(at: dest)
+            }
             return false
         }
-
-        let fm = FileManager.default
-        guard let files = try? fm.contentsOfDirectory(atPath: bundleRoot.path) else {
-            print("[BundledVLMInstaller] Empty bundle directory")
+        do {
+            try fm.createDirectory(at: dest, withIntermediateDirectories: true)
+        } catch {
+            print("[BundledVLMInstaller] Failed to create HFModels dir: \(error)")
             return false
         }
 

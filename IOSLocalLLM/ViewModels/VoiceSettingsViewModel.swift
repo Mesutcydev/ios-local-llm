@@ -113,6 +113,8 @@ final class VoiceSettingsViewModel: ObservableObject {
         case .appleSystem: return voiceService.systemState
         case .kittenTTS:   return voiceService.kittenState
         case .kokoro:      return voiceService.kokoroState
+        case .paradee:     return voiceService.paradeeState
+        case .supertonic:  return voiceService.supertonicState
         }
     }
 
@@ -123,6 +125,8 @@ final class VoiceSettingsViewModel: ObservableObject {
         case .appleSystem: return true
         case .kittenTTS:   return VoiceModelBundleValidator.isKittenTTSAvailable()
         case .kokoro:      return VoiceModelBundleValidator.isKokoroAvailable()
+        case .paradee:     return ParadeeTTSService.isAvailable
+        case .supertonic:  return SupertonicTTSService.isAvailable
         }
     }
 
@@ -133,6 +137,8 @@ final class VoiceSettingsViewModel: ObservableObject {
             return "KittenTTS model not installed. Open Models → Download to fetch it (~61 MB)."
         case .kokoro:
             return "Kokoro is no longer available on this device. Voice Mode can use Apple TTS until it is downloaded again."
+        case .paradee, .supertonic:
+            return "\(selectedEngineKind.shortName) is not installed. Download it from the Voice library; Voice Mode uses Apple TTS until then."
         }
     }
 
@@ -156,6 +162,8 @@ final class VoiceSettingsViewModel: ObservableObject {
         case .appleSystem: return voiceService.systemEngine.availableVoices
         case .kittenTTS:   return KittenTTSService.kittenVoices
         case .kokoro:      return KokoroTTSService.kokoroVoices
+        case .paradee:     return ParadeeTTSService.paradeeVoices
+        case .supertonic:  return SupertonicTTSService.supertonicVoices
         }
     }
 }
