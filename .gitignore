@@ -45,6 +45,7 @@ IOSLocalLLM/Models/merges.txt
 IOSLocalLLM/Models/preprocessor_config.json
 IOSLocalLLM/Resources/BundledVLM/
 IOSLocalLLM/Resources/BundledVoiceModels/
+IOSLocalLLM/Resources/BundledSafety/
 GeneratedFastVLMModels/
 VoiceModels/
 scripts/.fastvlm_work/
@@ -52,6 +53,7 @@ scripts/.fastvlm_work/
 *.safetensors
 *.mlmodelc/
 *.mlpackage/
+*.mlmodel
 *.onnx
 *.npz
 
@@ -103,3 +105,7 @@ tmp/
 
 # Local splash animation preview; the app uses source views and asset colors.
 /splash_preview.mp4
+
+# Python bytecode
+__pycache__/
+*.pyc
