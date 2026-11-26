@@ -268,10 +268,17 @@ struct GGUFLoadPolicy: Equatable, Sendable {
         }
 
         let minimum = Int64(Double(fileBytes) * 1.15) + 500_000_000
+        #if targetEnvironment(macCatalyst)
+        // Mac Metal holds the whole model; 12 of 64 layers would leave a
+        // 27B GGUF mostly on the CPU. The 12-layer cap is an iPhone limit.
+        let gpuLayers: Int32 = 999
+        #else
         let threeGiB = Int64(3 * 1_024 * 1_024 * 1_024)
+        let gpuLayers: Int32 = fileBytes > threeGiB ? 12 : 999
+        #endif
         return .init(
             minimumAvailableBytes: minimum,
-            gpuLayers: fileBytes > threeGiB ? 12 : 999,
+            gpuLayers: gpuLayers,
             storageBacked: false
         )
     }

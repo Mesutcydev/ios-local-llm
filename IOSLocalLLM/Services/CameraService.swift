@@ -218,9 +218,12 @@ final class CameraService: NSObject, ObservableObject {
         captureSession.sessionPreset = .hd1920x1080
         // The app is no longer full-screen-only, so Split View / multi-window
         // would otherwise interrupt the camera on every side-by-side layout.
+        // The API does not exist on Mac Catalyst, where the camera is shared.
+        #if !targetEnvironment(macCatalyst)
         if captureSession.isMultitaskingCameraAccessSupported {
             captureSession.isMultitaskingCameraAccessEnabled = true
         }
+        #endif
 
         if captureSession.canAddInput(input) {
             captureSession.addInput(input)

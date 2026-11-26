@@ -174,10 +174,15 @@ final class VoiceService: ObservableObject {
     private func validatePersistedSelection() {
         let restored = VoiceSettingsStore.shared.selectedEngine
         var available: Set<VoiceEngineKind> = [.appleSystem]
-        if VoiceModelBundleValidator.isKittenTTSAvailable() { available.insert(.kittenTTS) }
+        // ONNX voices have no Mac Catalyst runtime, so their files (KittenTTS
+        // ships bundled) must not keep a dead engine selected on Mac.
+        if VoiceEngineKind.kittenTTS.isSupportedOnThisPlatform,
+           VoiceModelBundleValidator.isKittenTTSAvailable() { available.insert(.kittenTTS) }
         if VoiceModelBundleValidator.isKokoroAvailable() { available.insert(.kokoro) }
-        if ParadeeTTSService.isAvailable { available.insert(.paradee) }
-        if SupertonicTTSService.isAvailable { available.insert(.supertonic) }
+        if VoiceEngineKind.paradee.isSupportedOnThisPlatform,
+           ParadeeTTSService.isAvailable { available.insert(.paradee) }
+        if VoiceEngineKind.supertonic.isSupportedOnThisPlatform,
+           SupertonicTTSService.isAvailable { available.insert(.supertonic) }
         print("[VoiceService] installed neural engines discovered=\(available.map(\.rawValue).sorted())")
         VoiceSettingsStore.shared.completeAvailabilityCheck(availableEngines: available)
         if restored != .appleSystem,
@@ -191,7 +196,8 @@ final class VoiceService: ObservableObject {
 
     /// Loads all downloaded engines eagerly.
     func loadAll() async {
-        if VoiceModelBundleValidator.isKittenTTSAvailable() {
+        if VoiceEngineKind.kittenTTS.isSupportedOnThisPlatform,
+           VoiceModelBundleValidator.isKittenTTSAvailable() {
             kittenState = .loading
             await kittenEngine.load()
             kittenState = kittenEngine.modelState

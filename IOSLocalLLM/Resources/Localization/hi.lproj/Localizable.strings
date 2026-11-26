@@ -38,6 +38,7 @@
 "2-bit · 1.1 GB · balanced" = "2-बिट · 1.1 जीबी · संतुलित";
 "2-bit · 2.3 GB · quality low-bit" = "2-बिट · 2.3 जीबी · गुणवत्ता निम्न-बिट";
 "2-bit · 510 MB · ultralight" = "2-बिट · 510 एमबी · अल्ट्रालाइट";
+"2-bit · 7.7 GB download · Mac only" = "2-बिट · 7.7 जीबी डाउनलोड · केवल मैक";
 "2-bit · 8.5 GB download · Mac only" = "2-बिट · 8.5 जीबी डाउनलोड · केवल मैक";
 "20 steps · 512px" = "20 चरण · 512px";
 "3 B class · sweet spot on 6 GB" = "3 बी क्लास · 6 जीबी पर बढ़िया स्थान";
@@ -181,6 +182,7 @@
 "Assistant is thinking…" = "सहायक सोच रहा है...";
 "Assistant response transcript" = "सहायक प्रतिक्रिया प्रतिलेख";
 "Assistant, %@" = "सहायक, %1$@";
+"Assistant, API keys, models" = "सहायक, एपीआई कुंजी, मॉडल";
 "Assistant, {{0}}" = "सहायक, {{0}}";
 "Assistants" = "सहायकों";
 "Audio must be mono PCM at 16 kHz for whisper.cpp" = "व्हिस्पर.सीपीपी के लिए ऑडियो 16 किलोहर्ट्ज़ पर मोनो पीसीएम होना चाहिए";
@@ -284,6 +286,7 @@
 "Choose file" = "फाइलें चुनें";
 "Choose installed model" = "स्थापित मॉडल चुनें";
 "Choose model" = "मॉडल चुनें";
+"Choose the voice that reads replies aloud. Downloaded voices run offline on this Mac." = "वह आवाज़ चुनें जो जवाब पढ़कर सुनाती है। डाउनलोड की गई आवाज़ें इस Mac पर ऑफ़लाइन चलती हैं।";
 "Choose the voice that reads replies aloud. Downloaded voices run offline on this iPhone." = "वह आवाज़ चुनें जो जवाब पढ़कर सुनाती है। डाउनलोड की गई आवाज़ें इस iPhone पर ऑफ़लाइन चलती हैं।";
 "Choose what you want to try first. Download only the model you need now; add the others later in Models." = "चुनें कि आप पहले क्या आज़माना चाहते हैं। अभी केवल वही मॉडल डाउनलोड करें जिसकी आपको आवश्यकता है; अन्य को बाद में मॉडल में जोड़ें।";
 "Choose your models" = "अपने मॉडल चुनें";
@@ -674,7 +677,7 @@
 "Generating · shared runtime is busy" = "जनरेट करना · साझा रनटाइम व्यस्त है";
 "Generating · {{0}}%" = "उत्पन्न हो रहा है · {{0}}%";
 "Generating…" = "जनरेट हो रहा है…";
-"Get" = "पाना";
+"Get" = "प्राप्त करें";
 "Get a fast on-device answer from the built-in system model — no app launch, fully private." = "अंतर्निहित सिस्टम मॉडल से त्वरित ऑन-डिवाइस उत्तर प्राप्त करें - कोई ऐप लॉन्च नहीं, पूरी तरह से निजी।";
 "Get the Mac bridge" = "Mac ब्रिज प्राप्त करें";
 "Good afternoon" = "शुभ दोपहर";
@@ -744,6 +747,7 @@
 "Import model" = "आयात मॉडल";
 "Imported {{0}}" = "आयातित {{0}}";
 "In progress" = "प्रगति पर है";
+"In use" = "उपयोग में";
 "Incompatible LoRA" = "असंगत लोरा";
 "Incorrect parental PIN." = "गलत पैतृक पिन.";
 "Indexing…" = "अनुक्रमणिका...";
@@ -854,6 +858,7 @@
 "Loading {{0}}…" = "लोड हो रहा है {{0}}…";
 "Loading…" = "लोड हो रहा है…";
 "Loads the selected on-device model" = "चयनित ऑन-डिवाइस मॉडल को लोड करता है";
+"Local AI, code, chat & images" = "लोकल AI, चैट, आवाज़ व चित्र";
 "Local AI. Optional connected features." = "स्थानीय ए.आई. वैकल्पिक कनेक्टेड सुविधाएँ.";
 "Local API" = "स्थानीय एपीआई";
 "Local API Server" = "स्थानीय एपीआई सर्वर";
@@ -899,6 +904,7 @@
 "Max tokens" = "अधिकतम टोकन";
 "Maximum {{0}} attachments per message." = "प्रति संदेश अधिकतम {{0}} अनुलग्नक.";
 "May not fit this device. Available memory is checked before generation." = "हो सकता है कि यह डिवाइस फिट न हो. जनरेशन से पहले उपलब्ध मेमोरी की जाँच की जाती है।";
+"Memory" = "मेमोरी";
 "Memory estimates vary with context length and other active apps. Choose a smaller model if loading is refused." = "मेमोरी का अनुमान संदर्भ लंबाई और अन्य सक्रिय ऐप्स के साथ भिन्न होता है। यदि लोडिंग से इनकार कर दिया जाता है तो एक छोटा मॉडल चुनें।";
 "Memory margin" = "मेमोरी मार्जिन";
 "Memory safety" = "स्मृति सुरक्षा";
@@ -1030,6 +1036,7 @@
 "Normal" = "सामान्य";
 "Not Now" = "अभी नहीं";
 "Not chat models — embedding, rerank, and transcription." = "Not chat models — embedding, rerank, and transcription.";
+"Not downloaded" = "डाउनलोड नहीं हुआ";
 "Not enabled for this build" = "इस निर्माण के लिए सक्षम नहीं है";
 "Not enough storage: this pack needs about {{0}} (including install headroom) but only {{1}} is free." = "Not enough storage: this pack needs about {{0}} (including install headroom) but only {{1}} is free.";
 "Not loaded" = "लोड नहीं";
@@ -1044,6 +1051,7 @@
 "OFFICIAL RECIPE" = "OFFICIAL RECIPE";
 "OK" = "ठीक है";
 "OLED" = "ओएलईडी";
+"ONNX Runtime has no Mac Catalyst build, so this voice runs on iPhone and iPad only." = "ONNX Runtime का Mac Catalyst बिल्ड नहीं है, इसलिए यह आवाज़ केवल iPhone और iPad पर चलती है।";
 "OPEN GUIDE" = "गाइड खोलें";
 "OPEN_SOURCE" = "खुला स्त्रोत";
 "Off" = "बंद";
@@ -1054,6 +1062,8 @@
 "Official higher-quality KittenML ONNX · 8 English voices." = "आधिकारिक उच्च गुणवत्ता वाली किटनएमएल ओएनएनएक्स · 8 अंग्रेजी आवाजें।";
 "Official quantized KittenML ONNX · 8 English voices." = "आधिकारिक परिमाणित किटनएमएल ओएनएनएक्स · 8 अंग्रेजी आवाजें।";
 "Offline" = "ऑफलाइन";
+"On this Mac" = "इस Mac पर";
+"On this iPhone" = "इस iPhone पर";
 "On-device" = "उपकरण पर";
 "On-device & private" = "ऑन-डिवाइस और निजी";
 "On-device AI studio manual & workflows" = "ऑन-डिवाइस AI स्टूडियो मैनुअल और वर्कफ़्लोज़";
@@ -1310,13 +1320,16 @@
 "Running tool: {{0}}" = "रनिंग टूल: {{0}}";
 "Running {{0}}" = "चल रहा है {{0}}";
 "Runs all steps of the selected macro" = "चयनित मैक्रो के सभी चरण चलाता है";
+"Runs on" = "इन पर चलता है";
 "Runs on supported iPhone, iPad, and Apple silicon Mac devices." = "समर्थित iPhone, iPad और Apple सिलिकॉन Mac डिवाइस पर चलता है।";
 "Runs the selected assistant model locally — nothing leaves your device." = "चयनित सहायक मॉडल को स्थानीय रूप से चलाता है - आपके डिवाइस से कुछ भी नहीं छूटता।";
 "Runtime" = "रनटाइम";
+"Runtime Not Available" = "रनटाइम उपलब्ध नहीं है";
 "Runtime Required" = "रनटाइम आवश्यक";
 "Runtime status: %@" = "रनटाइम स्थिति: %1$@";
 "Runtime status: {{0}}" = "रनटाइम स्थिति: {{0}}";
 "SD / SDXL diffusion via MLX. FLUX is too large for iOS memory." = "एमएलएक्स के माध्यम से एसडी/एसडीएक्सएल प्रसार। IOS मेमोरी के लिए FLUX बहुत बड़ा है।";
+"SDXL needs a high-memory Mac. Live headroom is checked before loading a model." = "SDXL को उच्च मेमोरी वाले Mac की आवश्यकता है। किसी मॉडल को लोड करने से पहले लाइव हेडरूम की जाँच की जाती है।";
 "SDXL needs the highest-memory iPhones. Live headroom is checked before loading a model." = "SDXL को उच्चतम मेमोरी वाले iPhone की आवश्यकता है। किसी मॉडल को लोड करने से पहले लाइव हेडरूम की जाँच की जाती है।";
 "SETTINGS" = "सेटिंग्स";
 "SPEECH & EMBEDDING" = "SPEECH & EMBEDDING";
@@ -1353,6 +1366,7 @@
 "Search voice models" = "ध्वनि मॉडल खोजें";
 "Search voices" = "आवाज़ें खोजें";
 "Searching" = "खोज रहे हैं";
+"See all" = "सभी देखें";
 "See the preview and follow launch updates." = "पूर्वावलोकन देखें और लॉन्च अपडेट का पालन करें।";
 "Select" = "चुनना";
 "Select & Test" = "चयन करें और परीक्षण करें";
@@ -1403,6 +1417,7 @@
 "Shows on-device model and performance details" = "ऑन-डिवाइस मॉडल और प्रदर्शन विवरण दिखाता है";
 "Shows tool details" = "उपकरण विवरण दिखाता है";
 "Silver" = "चाँदी";
+"Size" = "आकार";
 "Size is a repository estimate and may include multiple variants. Runtime memory also depends on context length and other active features." = "आकार एक भंडार अनुमान है और इसमें कई प्रकार शामिल हो सकते हैं। रनटाइम मेमोरी संदर्भ लंबाई और अन्य सक्रिय सुविधाओं पर भी निर्भर करती है।";
 "Skip for now — finish in Models" = "अभी के लिए छोड़ें - मॉडल में समाप्त करें";
 "Smart handling" = "स्मार्ट हैंडलिंग";
@@ -1466,6 +1481,7 @@
 "Supertonic (neural)" = "Supertonic (तंत्रिका)";
 "Supertonic — Multilingual" = "Supertonic — बहुभाषी";
 "Support" = "सहायता";
+"Supported Macs" = "समर्थित Mac";
 "Supported iPads" = "समर्थित आईपैड";
 "Supported iPhones" = "समर्थित आईफ़ोन";
 "Swap" = "बदलें";
@@ -1544,7 +1560,8 @@
 "Thinking mode" = "सोच विधा";
 "Thinking…" = "सोच रहा है…";
 "This Core AI language bundle is missing tokenizer/tokenizer.json." = "This Core AI language bundle is missing tokenizer/tokenizer.json.";
-"This Core AI model is not supported by this iPhone build." = "This Core AI model is not supported by this iPhone build.";
+"This Core AI model is not supported by this Mac build." = "यह Core AI मॉडल इस Mac बिल्ड द्वारा समर्थित नहीं है।";
+"This Core AI model is not supported by this iPhone build." = "यह Core AI मॉडल इस iPhone बिल्ड द्वारा समर्थित नहीं है।";
 "This build exceeds the iOS per-app memory budget and is available only on Apple silicon Mac." = "यह बिल्ड iOS प्रति-ऐप मेमोरी बजट से अधिक है और केवल Apple सिलिकॉन Mac पर उपलब्ध है।";
 "This can include recent messages, system instructions, and text extracted from files, web pages, or images." = "इसमें हाल के संदेश, सिस्टम निर्देश और फ़ाइलों, वेब पेजों या छवियों से निकाला गया पाठ शामिल हो सकता है।";
 "This chat is removed from this device. This can't be undone." = "यह चैट इस डिवाइस से हटा दी गई है. इसे पूर्ववत नहीं किया जा सकता.";
@@ -1785,7 +1802,6 @@
 "asking the Mac if argent is available" = "मैक से पूछें कि क्या अर्जेन्ट उपलब्ध है";
 "asr · whisper · dictation" = "एएसआर · कानाफूसी · श्रुतलेख";
 "assistant" = "सहायक";
-"assistant, api keys, models" = "सहायक, एपीआई कुंजी, मॉडल";
 "attributions" = "विशेषताएं";
 "audio" = "ऑडियो";
 "audio out" = "ऑडियो आउट";
@@ -1977,6 +1993,7 @@
 "iOS Local LLM" = "iOS Local LLM";
 "iOS Local LLM is built on the work of many researchers and engineers who released their models, frameworks, and tools openly. Each is listed below with its license and source." = "iOS लोकल एलएलएम कई शोधकर्ताओं और इंजीनियरों के काम पर बनाया गया है जिन्होंने अपने मॉडल, फ्रेमवर्क और टूल खुले तौर पर जारी किए। प्रत्येक को उसके लाइसेंस और स्रोत के साथ नीचे सूचीबद्ध किया गया है।";
 "iOS Local LLM runs large AI models entirely on-device. Inference needs at least 8 GB of physical RAM to load without thermal throttling or Jetsam kills." = "आईओएस लोकल एलएलएम बड़े एआई मॉडल को पूरी तरह से डिवाइस पर चलाता है। थर्मल थ्रॉटलिंग या जेट्सम किल्स के बिना लोड करने के लिए अनुमान को कम से कम 8 जीबी भौतिक रैम की आवश्यकता होती है।";
+"iPhone · iPad" = "iPhone · iPad";
 "iPhone · iPad · Mac" = "आईफोन · आईपैड · मैक";
 "idle" = "निष्क्रिय";
 "image" = "छवि";
@@ -2096,6 +2113,7 @@
 "off → hide pill, no auto-cap on max tokens" = "बंद → गोली छुपाएं, अधिकतम टोकन पर कोई ऑटो-कैप नहीं";
 "off: web tool only runs on wi-fi" = "बंद: वेब टूल केवल वाई-फाई पर चलता है";
 "on" = "पर";
+"on this Mac" = "इस Mac पर";
 "on-device" = "उपकरण पर";
 "on-device AI heats the device — what to know" = "ऑन-डिवाइस एआई डिवाइस को गर्म करता है - क्या जानना है";
 "on-device ai heats the device — what to know" = "ऑन-डिवाइस एआई डिवाइस को गर्म करता है - क्या जानना है";
@@ -2171,6 +2189,7 @@
 "red" = "लाल";
 "refresh" = "ताज़ा";
 "refresh devices" = "उपकरणों को ताज़ा करें";
+"replies stay on your Mac" = "जवाब इस Mac पर ही रहते हैं";
 "required" = "आवश्यक";
 "reset" = "रीसेट";
 "reset standings" = "स्थिति रीसेट करें";
@@ -2204,6 +2223,7 @@
 "running right…" = "दायां चल रहा है…";
 "running {{0}}…" = "चल रहा है {{0}}...";
 "running…" = "चल रहा है…";
+"runs on this Mac" = "इस Mac पर चलता है";
 "runs on this iPhone" = "इस iPhone पर चलता है";
 "runtime" = "रनटाइम";
 "safari" = "सफ़ारी";
@@ -2386,6 +2406,7 @@
 "wifi.exclamationmark" = "wifi.exclamationmark";
 "wifi.slash" = "wifi.slash";
 "wiped" = "सफाया";
+"won't run on this Mac" = "इस Mac पर नहीं चलेगा";
 "won't run on this iPhone" = "इस iPhone पर नहीं चलेगा";
 "xmark" = "xmark";
 "you" = "आप";

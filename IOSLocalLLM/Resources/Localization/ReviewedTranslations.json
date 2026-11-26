@@ -111,7 +111,15 @@
     "Voice {{0}}": "Ses {{0}}",
     "echo cancellation": "yankı engelleme",
     "engine status": "motor durumu",
-    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Bu model henüz cihazınızda yok. İndirme bittiğinde sesli mod bu modele geçer."
+    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Bu model henüz cihazınızda yok. İndirme bittiğinde sesli mod bu modele geçer.",
+    "In use": "Kullanımda",
+    "On this iPhone": "Bu iPhone'da",
+    "See all": "Tümünü gör",
+    "Not downloaded": "İndirilmedi",
+    "Size": "Boyut",
+    "Memory": "Bellek",
+    "Runs on": "Uyumlu cihazlar",
+    "Get": "Al"
   },
   "ja": {
     "My Models": "マイモデル",
@@ -158,7 +166,15 @@
     "Voice {{0}}": "音声 {{0}}",
     "echo cancellation": "エコーキャンセル",
     "engine status": "エンジンの状態",
-    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "このモデルはまだ端末にありません。ダウンロードが完了すると音声モードで使用されます。"
+    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "このモデルはまだ端末にありません。ダウンロードが完了すると音声モードで使用されます。",
+    "In use": "使用中",
+    "On this iPhone": "このiPhone上",
+    "See all": "すべて表示",
+    "Not downloaded": "未ダウンロード",
+    "Size": "サイズ",
+    "Memory": "メモリ",
+    "Runs on": "対応デバイス",
+    "Get": "入手"
   },
   "ko": {
     "Discover": "탐색",
@@ -203,7 +219,15 @@
     "Voice {{0}}": "음성 {{0}}",
     "echo cancellation": "에코 제거",
     "engine status": "엔진 상태",
-    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "이 모델은 아직 기기에 없습니다. 다운로드가 끝나면 음성 모드가 이 모델로 전환됩니다."
+    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "이 모델은 아직 기기에 없습니다. 다운로드가 끝나면 음성 모드가 이 모델로 전환됩니다.",
+    "In use": "사용 중",
+    "On this iPhone": "이 iPhone에 있음",
+    "See all": "모두 보기",
+    "Not downloaded": "다운로드 안 됨",
+    "Size": "크기",
+    "Memory": "메모리",
+    "Runs on": "지원 기기",
+    "Get": "받기"
   },
   "el": {
     "Discover": "Ανακαλύψτε",
@@ -248,7 +272,17 @@
     "Voice {{0}}": "Φωνή {{0}}",
     "echo cancellation": "ακύρωση ηχούς",
     "engine status": "κατάσταση μηχανής",
-    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Αυτό το μοντέλο δεν υπάρχει ακόμη στη συσκευή σας. Η φωνητική λειτουργία θα το χρησιμοποιήσει μόλις ολοκληρωθεί η λήψη."
+    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Αυτό το μοντέλο δεν υπάρχει ακόμη στη συσκευή σας. Η φωνητική λειτουργία θα το χρησιμοποιήσει μόλις ολοκληρωθεί η λήψη.",
+    "In use": "Σε χρήση",
+    "On this iPhone": "Σε αυτό το iPhone",
+    "See all": "Εμφάνιση όλων",
+    "Not downloaded": "Δεν έχει ληφθεί",
+    "Size": "Μέγεθος",
+    "Memory": "Μνήμη",
+    "Runs on": "Λειτουργεί σε",
+    "Get": "Λήψη",
+    "Load": "Φόρτωση",
+    "Unload": "Αποφόρτωση"
   },
   "ro": {
     "Discover": "Descoperă",
@@ -293,7 +327,17 @@
     "Voice {{0}}": "Voce {{0}}",
     "echo cancellation": "anulare ecou",
     "engine status": "starea motorului",
-    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Acest model nu este încă pe dispozitiv. Modul vocal va trece la el când se termină descărcarea."
+    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Acest model nu este încă pe dispozitiv. Modul vocal va trece la el când se termină descărcarea.",
+    "In use": "În uz",
+    "On this iPhone": "Pe acest iPhone",
+    "See all": "Vezi tot",
+    "Not downloaded": "Nedescărcat",
+    "Size": "Dimensiune",
+    "Memory": "Memorie",
+    "Runs on": "Rulează pe",
+    "Get": "Obține",
+    "Load": "Încarcă",
+    "Unload": "Descarcă"
   },
   "ru": {
     "Discover": "Обзор",
@@ -338,7 +382,15 @@
     "Voice {{0}}": "Голос {{0}}",
     "echo cancellation": "эхоподавление",
     "engine status": "состояние движка",
-    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Этой модели ещё нет на устройстве. Голосовой режим переключится на неё, когда загрузка завершится."
+    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Этой модели ещё нет на устройстве. Голосовой режим переключится на неё, когда загрузка завершится.",
+    "In use": "Используется",
+    "On this iPhone": "На этом iPhone",
+    "See all": "Показать все",
+    "Not downloaded": "Не загружено",
+    "Size": "Размер",
+    "Memory": "Память",
+    "Runs on": "Работает на",
+    "Get": "Загрузить"
   },
   "ar": {
     "Import": "استيراد",
@@ -386,7 +438,15 @@
     "Voice {{0}}": "صوت {{0}}",
     "echo cancellation": "إلغاء الصدى",
     "engine status": "حالة المحرك",
-    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "هذا النموذج غير موجود على جهازك بعد. سينتقل وضع الصوت إليه عند اكتمال التنزيل."
+    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "هذا النموذج غير موجود على جهازك بعد. سينتقل وضع الصوت إليه عند اكتمال التنزيل.",
+    "In use": "قيد الاستخدام",
+    "On this iPhone": "على هذا الـ iPhone",
+    "See all": "عرض الكل",
+    "Not downloaded": "لم يتم التنزيل",
+    "Size": "الحجم",
+    "Memory": "الذاكرة",
+    "Runs on": "يعمل على",
+    "Get": "احصل"
   },
   "de": {
     "Core AI · Optional local runtime": "Core AI · Optionale lokale Laufzeit",
@@ -430,7 +490,15 @@
     "Voice {{0}}": "Stimme {{0}}",
     "echo cancellation": "Echounterdrückung",
     "engine status": "Engine-Status",
-    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Dieses Modell ist noch nicht auf deinem Gerät. Der Sprachmodus wechselt dazu, sobald der Download fertig ist."
+    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Dieses Modell ist noch nicht auf deinem Gerät. Der Sprachmodus wechselt dazu, sobald der Download fertig ist.",
+    "In use": "In Verwendung",
+    "On this iPhone": "Auf diesem iPhone",
+    "See all": "Alle anzeigen",
+    "Not downloaded": "Nicht heruntergeladen",
+    "Size": "Größe",
+    "Memory": "Arbeitsspeicher",
+    "Runs on": "Läuft auf",
+    "Get": "Laden"
   },
   "fr": {
     "Core AI · Optional local runtime": "Core AI · Moteur local facultatif",
@@ -474,7 +542,15 @@
     "Voice {{0}}": "Voix {{0}}",
     "echo cancellation": "annulation d’écho",
     "engine status": "état du moteur",
-    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Ce modèle n’est pas encore sur votre appareil. Le mode vocal l’utilisera une fois le téléchargement terminé."
+    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Ce modèle n’est pas encore sur votre appareil. Le mode vocal l’utilisera une fois le téléchargement terminé.",
+    "In use": "Utilisé",
+    "On this iPhone": "Sur cet iPhone",
+    "See all": "Tout afficher",
+    "Not downloaded": "Non téléchargé",
+    "Size": "Taille",
+    "Memory": "Mémoire",
+    "Runs on": "Fonctionne sur",
+    "Get": "Obtenir"
   },
   "es": {
     "Core AI · Optional local runtime": "Core AI · Motor local opcional",
@@ -518,7 +594,15 @@
     "Voice {{0}}": "Voz {{0}}",
     "echo cancellation": "cancelación de eco",
     "engine status": "estado del motor",
-    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Este modelo aún no está en tu dispositivo. El modo de voz cambiará a él cuando termine la descarga."
+    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Este modelo aún no está en tu dispositivo. El modo de voz cambiará a él cuando termine la descarga.",
+    "In use": "En uso",
+    "On this iPhone": "En este iPhone",
+    "See all": "Ver todo",
+    "Not downloaded": "No descargado",
+    "Size": "Tamaño",
+    "Memory": "Memoria",
+    "Runs on": "Funciona en",
+    "Get": "Obtener"
   },
   "pt": {
     "Core AI · Optional local runtime": "Core AI · Motor local opcional",
@@ -562,7 +646,15 @@
     "Voice {{0}}": "Voz {{0}}",
     "echo cancellation": "cancelamento de eco",
     "engine status": "estado do motor",
-    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Este modelo ainda não está no seu dispositivo. O modo de voz passa a usá-lo quando o download terminar."
+    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Este modelo ainda não está no seu dispositivo. O modo de voz passa a usá-lo quando o download terminar.",
+    "In use": "Em uso",
+    "On this iPhone": "Neste iPhone",
+    "See all": "Ver tudo",
+    "Not downloaded": "Não descarregado",
+    "Size": "Tamanho",
+    "Memory": "Memória",
+    "Runs on": "Funciona em",
+    "Get": "Obter"
   },
   "it": {
     "Core AI · Optional local runtime": "Core AI · Motore locale opzionale",
@@ -606,7 +698,15 @@
     "Voice {{0}}": "Voce {{0}}",
     "echo cancellation": "cancellazione dell’eco",
     "engine status": "stato del motore",
-    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Questo modello non è ancora sul tuo dispositivo. La modalità vocale passerà a questo modello al termine del download."
+    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "Questo modello non è ancora sul tuo dispositivo. La modalità vocale passerà a questo modello al termine del download.",
+    "In use": "In uso",
+    "On this iPhone": "Su questo iPhone",
+    "See all": "Mostra tutto",
+    "Not downloaded": "Non scaricato",
+    "Size": "Dimensioni",
+    "Memory": "Memoria",
+    "Runs on": "Funziona su",
+    "Get": "Ottieni"
   },
   "hi": {
     "Core AI · Optional local runtime": "Core AI · वैकल्पिक स्थानीय रनटाइम",
@@ -650,7 +750,15 @@
     "Voice {{0}}": "आवाज़ {{0}}",
     "echo cancellation": "इको रद्दीकरण",
     "engine status": "इंजन स्थिति",
-    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "यह मॉडल अभी आपके डिवाइस पर नहीं है। डाउनलोड पूरा होने पर वॉइस मोड इस पर स्विच हो जाएगा।"
+    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "यह मॉडल अभी आपके डिवाइस पर नहीं है। डाउनलोड पूरा होने पर वॉइस मोड इस पर स्विच हो जाएगा।",
+    "In use": "उपयोग में",
+    "On this iPhone": "इस iPhone पर",
+    "See all": "सभी देखें",
+    "Not downloaded": "डाउनलोड नहीं हुआ",
+    "Size": "आकार",
+    "Memory": "मेमोरी",
+    "Runs on": "इन पर चलता है",
+    "Get": "प्राप्त करें"
   },
   "zh-Hans": {
     "Core AI · Optional local runtime": "Core AI · 可选本地运行时",
@@ -694,6 +802,14 @@
     "Voice {{0}}": "语音 {{0}}",
     "echo cancellation": "回声消除",
     "engine status": "引擎状态",
-    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "此模型尚未在你的设备上。下载完成后，语音模式会切换到该模型。"
+    "This model isn't on your device yet. Voice mode switches to it when the download finishes.": "此模型尚未在你的设备上。下载完成后，语音模式会切换到该模型。",
+    "In use": "正在使用",
+    "On this iPhone": "此 iPhone 上",
+    "See all": "查看全部",
+    "Not downloaded": "未下载",
+    "Size": "大小",
+    "Memory": "内存",
+    "Runs on": "支持设备",
+    "Get": "获取"
   }
 }

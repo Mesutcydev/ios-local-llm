@@ -52,7 +52,7 @@ struct MicDictationButton: View {
     private var iconLabel: some View {
         if composerStyle {
             Image(systemName: dictation.isRecording ? "stop.fill" : "mic")
-                .font(.system(size: dictation.isRecording ? 16 : 20, weight: .medium))
+                .font((dictation.isRecording ? Font.callout : .title3).weight(.medium))
                 .foregroundStyle(dictation.isRecording ? T.bad : T.ink2)
                 .frame(width: Size.control, height: Size.control)
                 .background(dictation.isRecording ? T.bad.opacity(0.10) : .clear, in: Circle())

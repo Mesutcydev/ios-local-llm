@@ -1,5 +1,9 @@
 import SwiftUI
 
+#if targetEnvironment(macCatalyst)
+import UIKit
+#endif
+
 /// The message and primary action share a row; quieter editing tools sit below.
 struct AssistantComposer: View {
     @Binding var text: String
@@ -19,7 +23,6 @@ struct AssistantComposer: View {
     let onStop: () -> Void
 
     @Environment(\.koduTheme) private var theme
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var textSize
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @ObservedObject private var localization = LocalizationService.shared
@@ -28,9 +31,46 @@ struct AssistantComposer: View {
         text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !hasAttachments && !isGenerating
     }
 
+    #if targetEnvironment(macCatalyst)
+    /// The Mac composer sends on Return. A SwiftUI multi-line TextField cannot
+    /// express that — Return is always a newline — so this swaps in a UITextView
+    /// that sends on a bare Return and keeps Shift/Option+Return for a line
+    /// break. Everything else (snippets, dictation, draft clearing) still flows
+    /// through the same `text` binding.
+    private var macInput: some View {
+        ZStack(alignment: .topLeading) {
+            if text.isEmpty {
+                Text("Message your assistant")
+                    .font(.body)
+                    .foregroundStyle(theme.ink3)
+                    .padding(.leading, Space.xs)
+                    .padding(.top, Space.s)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+            MacComposerTextView(
+                text: $text,
+                ink: UIColor(theme.ink),
+                accent: UIColor(theme.accent),
+                maximumLines: textSize.isAccessibilitySize ? 4 : 6,
+                canSend: canSend && !isGenerating,
+                onSend: onSend
+            )
+            .padding(.leading, Space.xs)
+        }
+        .frame(minHeight: 44, alignment: .topLeading)
+        .layoutPriority(1)
+        .accessibilityLabel("Message your on-device assistant")
+        .accessibilityIdentifier("assistant.composer.input")
+    }
+    #endif
+
     var body: some View {
         VStack(alignment: .leading, spacing: Space.xxs) {
             HStack(alignment: .bottom, spacing: Space.s) {
+                #if targetEnvironment(macCatalyst)
+                macInput
+                #else
                 TextField("Message your assistant", text: $text, prompt: Text("Message your assistant").foregroundStyle(theme.ink3), axis: .vertical)
                 .font(.body)
                 .foregroundStyle(theme.ink)
@@ -48,6 +88,7 @@ struct AssistantComposer: View {
                 .layoutPriority(1)
                 .accessibilityLabel("Message your on-device assistant")
                 .accessibilityIdentifier("assistant.composer.input")
+                #endif
                 primaryAction
             }
 
@@ -122,12 +163,12 @@ struct AssistantComposer: View {
             else { onSend() }
         } label: {
             Image(systemName: isGenerating ? "stop.fill" : offersVoice ? "waveform" : "arrow.up")
-                .font(.system(size: isGenerating ? 17 : 20, weight: .semibold))
-                .foregroundStyle(enabled ? theme.bg : theme.ink3)
-                .frame(width: Size.control, height: Size.control)
-                .background(enabled ? theme.ink : theme.ink.opacity(0.08), in: Circle())
+                .font((isGenerating ? Font.body : .title3).weight(.semibold))
+                .frame(width: Size.tile, height: Size.tile)
         }
-        .buttonStyle(AssistantSendButtonStyle(reduceMotion: reduceMotion))
+        // The composer's main action: Apple's prominent glass circle.
+        .glassButton(prominent: true)
+        .buttonBorderShape(.circle)
         .disabled(!enabled)
         .accessibilityLabel(localization.t(isGenerating ? "Stop generating" : offersVoice ? "Start voice conversation" : "Send message"))
         .accessibilityHint(localization.t(isGenerating ? "Stops the current response" : offersVoice ? "Opens voice mode" : "Sends this message when the model is ready"))
@@ -155,17 +196,6 @@ struct AssistantComposer: View {
         .accessibilityHint("Choose a model")
         .accessibilityValue(localization.t(hasCustomSampling ? "Custom sampling settings" : "Default sampling settings"))
         .accessibilityIdentifier("assistant.composer.model")
-    }
-}
-
-private struct AssistantSendButtonStyle: ButtonStyle {
-    let reduceMotion: Bool
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
-            .animation(reduceMotion ? nil : .interactiveSpring(response: 0.24, dampingFraction: 0.82),
-                       value: configuration.isPressed)
     }
 }
 
@@ -577,3 +607,128 @@ private struct AssistantModelSettingsSliderRow: View {
         }
     }
 }
+
+#if targetEnvironment(macCatalyst)
+// MARK: - MacComposerTextView
+//
+// Mac chat fields send on Return. SwiftUI's multi-line TextField cannot do
+// that — Return is always a newline for a vertical-axis field, and `.onSubmit`
+// never fires — so the Mac composer wraps a UITextView instead. A bare Return
+// sends; Shift+Return and Option+Return still insert a line break. The
+// modifier state is tracked in `pressesBegan` because `shouldChangeTextIn`
+// does not report modifiers.
+//
+// Height follows the text between one and `maximumLines` lines, then the view
+// scrolls, matching the iPhone composer's `lineLimit`.
+
+struct MacComposerTextView: UIViewRepresentable {
+    @Binding var text: String
+    let ink: UIColor
+    let accent: UIColor
+    let maximumLines: Int
+    let canSend: Bool
+    let onSend: () -> Void
+
+    func makeUIView(context: Context) -> ComposerUITextView {
+        let view = ComposerUITextView()
+        view.delegate = context.coordinator
+        view.onSend = onSend
+        view.canSend = canSend
+        view.isScrollEnabled = false
+        view.backgroundColor = .clear
+        view.textContainerInset = UIEdgeInsets(top: Space.s, left: 0, bottom: Space.s, right: 0)
+        view.textContainer.lineFragmentPadding = 0
+        view.font = .preferredFont(forTextStyle: .body)
+        view.adjustsFontForContentSizeCategory = true
+        view.tintColor = accent
+        view.textColor = ink
+        view.text = text
+        view.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return view
+    }
+
+    func updateUIView(_ view: ComposerUITextView, context: Context) {
+        context.coordinator.parent = self
+        view.onSend = onSend
+        view.canSend = canSend
+        view.tintColor = accent
+        view.textColor = ink
+        // Snippets and dictation write through the binding; mirror them and
+        // leave the caret at the end so the next keystroke appends.
+        if view.text != text {
+            view.text = text
+            let end = (text as NSString).length
+            view.selectedRange = NSRange(location: end, length: 0)
+        }
+    }
+
+    func sizeThatFits(
+        _ proposal: ProposedViewSize,
+        uiView: ComposerUITextView,
+        context: Context
+    ) -> CGSize? {
+        let width = proposal.width ?? uiView.bounds.width
+        guard width > 1 else { return nil }
+        let fitting = uiView.sizeThatFits(
+            CGSize(width: width, height: .greatestFiniteMagnitude)
+        ).height
+        let insets = uiView.textContainerInset.top + uiView.textContainerInset.bottom
+        let lineHeight = uiView.font?.lineHeight ?? 20
+        let cap = lineHeight * CGFloat(max(maximumLines, 1)) + insets
+        uiView.isScrollEnabled = fitting > cap + 0.5
+        return CGSize(width: width, height: min(fitting, cap))
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    final class Coordinator: NSObject, UITextViewDelegate {
+        var parent: MacComposerTextView
+
+        init(_ parent: MacComposerTextView) { self.parent = parent }
+
+        func textViewDidChange(_ textView: UITextView) {
+            parent.text = textView.text
+        }
+
+        func textView(
+            _ textView: UITextView,
+            shouldChangeTextIn range: NSRange,
+            replacementText replacement: String
+        ) -> Bool {
+            guard replacement == "\n" else { return true }
+            guard let view = textView as? ComposerUITextView else { return true }
+            // Shift/Option+Return is the explicit line break.
+            let flags = view.lastModifierFlags
+            if flags.contains(.shift) || flags.contains(.alternate) { return true }
+            guard parent.canSend else { return true }
+            parent.onSend()
+            return false
+        }
+    }
+}
+
+final class ComposerUITextView: UITextView {
+    var onSend: () -> Void = {}
+    var canSend = false
+    fileprivate var lastModifierFlags: UIKeyModifierFlags = []
+
+    override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+        if let key = presses.first?.key {
+            lastModifierFlags = key.modifierFlags
+            if key.keyCode == .keyboardReturnOrEnter,
+               !key.modifierFlags.contains(.shift),
+               !key.modifierFlags.contains(.alternate),
+               canSend {
+                onSend()
+                return
+            }
+        }
+        super.pressesBegan(presses, with: event)
+    }
+
+    override func pressesEnded(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+        lastModifierFlags = []
+        super.pressesEnded(presses, with: event)
+    }
+}
+#endif

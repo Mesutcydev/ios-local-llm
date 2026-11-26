@@ -83,20 +83,37 @@ enum LocalModelFileValidator {
     /// loader (`LlamaCppVLMService.resolveLLMPath`) BOTH route through this, so
     /// a repo whose weights sit in a subfolder — or end in uppercase `.GGUF` —
     /// can never pass the probe yet fail to resolve at load.
-    static func ggufLLM(in dir: URL) -> URL? {
-        firstValidGGUF(in: dir) { !$0.hasPrefix("mmproj") }
+    /// When supplied, `allowedFiles` restricts resolution to exact package paths.
+    static func ggufLLM(in dir: URL, allowedFiles: [String]? = nil) -> URL? {
+        firstValidGGUF(in: dir, allowedFiles: allowedFiles) { !$0.hasPrefix("mmproj") }
     }
 
     /// First valid vision-projector GGUF (`mmproj-*.gguf`) under `dir`, or nil.
-    static func ggufProjector(in dir: URL) -> URL? {
-        firstValidGGUF(in: dir) { $0.hasPrefix("mmproj") }
+    static func ggufProjector(in dir: URL, allowedFiles: [String]? = nil) -> URL? {
+        firstValidGGUF(in: dir, allowedFiles: allowedFiles) { $0.hasPrefix("mmproj") }
     }
 
     /// Shared recursive, case-insensitive GGUF finder. `nameMatches` receives
     /// the lowercased filename. A folder can hold several quantizations of
     /// one model; directory order is unspecified, so candidates are ranked
-    /// (4-bit first, then by name) to load the same file every time.
-    private static func firstValidGGUF(in dir: URL, where nameMatches: (String) -> Bool) -> URL? {
+    /// (4-bit first, then by name) to load the same file every time. Curated
+    /// packages instead resolve their explicit paths in catalog order.
+    private static func firstValidGGUF(
+        in dir: URL,
+        allowedFiles: [String]?,
+        where nameMatches: (String) -> Bool
+    ) -> URL? {
+        // Curated packages specify exact relative paths. Never substitute an
+        // imported or older quantization when the selected file is missing.
+        if let allowedFiles {
+            return allowedFiles.compactMap { path -> URL? in
+                guard !path.hasPrefix("/"), !path.split(separator: "/").contains("..") else { return nil }
+                let url = dir.appendingPathComponent(path)
+                guard url.pathExtension.lowercased() == "gguf",
+                      nameMatches(url.lastPathComponent.lowercased()) else { return nil }
+                return url
+            }.first(where: isValidGGUFFile)
+        }
         guard let files = recursiveFiles(in: dir) else { return nil }
         return files
             .filter { url in

@@ -2,6 +2,72 @@ import XCTest
 @testable import IOSLocalLLM
 
 final class HFHubMetadataTests: XCTestCase {
+    @MainActor
+    func testUnavailablePinnedRevisionFailsWithoutRequestingMain() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let revision = String(repeating: "a", count: 40)
+        var requests: [URL] = []
+        let manager = HFModelDownloadManager(repoID: "test/model", destination: root, branch: revision) { request in
+            requests.append(try XCTUnwrap(request.url))
+            return (Data(), HTTPURLResponse(url: request.url!, statusCode: 404,
+                                            httpVersion: nil, headerFields: nil)!)
+        }
+        // Retrying must keep the pin as well.
+        for _ in 0..<2 {
+            manager.start()
+            for _ in 0..<10_000 {
+                if !manager.state.isActive { break }
+                await Task.yield()
+            }
+            guard case .failed(let message) = manager.state else {
+                return XCTFail("An unavailable pinned revision must fail")
+            }
+            XCTAssertTrue(message.contains(revision))
+        }
+        XCTAssertEqual(requests.count, 2)
+        XCTAssertTrue(requests.allSatisfy { $0.path == "/api/models/test/model/tree/\(revision)" })
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.path))
+    }
+
+    @MainActor
+    func testEmptyTreeFallbackUsesTheSelectedRevisionForMetadataAndSizes() async throws {
+        for revision in ["main", String(repeating: "b", count: 40)] {
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: root) }
+            try Data([1]).write(to: root.appendingPathComponent("weights.bin"))
+            var paths: [String] = []
+            let manager = HFModelDownloadManager(
+                repoID: "test/model", destination: root, branch: revision, fileAllowlist: ["weights.bin"]
+            ) { request in
+                let path = try XCTUnwrap(request.url).path
+                paths.append(path)
+                let infoPath = "/api/models/test/model" + (revision == "main" ? "" : "/revision/\(revision)")
+                let body: Data
+                switch path {
+                case "/api/models/test/model/tree/\(revision)": body = Data("[]".utf8)
+                case infoPath: body = Data(#"{"siblings":[{"rfilename":"weights.bin"}]}"#.utf8)
+                case "/test/model/resolve/\(revision)/weights.bin": body = Data()
+                default: throw URLError(.badURL)
+                }
+                return (body, HTTPURLResponse(url: request.url!, statusCode: 200,
+                    httpVersion: nil, headerFields: ["Content-Length": "1"])!)
+            }
+            manager.start()
+            for _ in 0..<10_000 {
+                if !manager.state.isActive { break }
+                await Task.yield()
+            }
+            XCTAssertEqual(manager.state, .ready)
+            XCTAssertEqual(paths, [
+                "/api/models/test/model/tree/\(revision)",
+                "/api/models/test/model" + (revision == "main" ? "" : "/revision/\(revision)"),
+                "/test/model/resolve/\(revision)/weights.bin",
+            ])
+        }
+    }
+
     func testLFSChecksumNormalization() {
         let digest = String(repeating: "ABCDEF01", count: 8)
         XCTAssertEqual(HFHubMetadata.normalizedSHA256("sha256:" + digest), digest.lowercased())
@@ -114,6 +180,29 @@ final class HFHubMetadataTests: XCTestCase {
 }
 
 final class HFDownloadReadinessTests: XCTestCase {
+    @MainActor
+    func testMissingAllowlistedFileFailsBeforeDownloadingAvailableFiles() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let manager = HFModelDownloadManager(
+            repoID: "test/model", destination: root,
+            fileAllowlist: ["model.gguf", "LICENSE"]
+        ) { request in
+            (Data(#"[{"type":"file","path":"LICENSE","size":1},{"type":"file","path":"other/model.gguf","size":1}]"#.utf8),
+             HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+        }
+        manager.start()
+        for _ in 0..<10_000 {
+            if !manager.state.isActive { break }
+            await Task.yield()
+        }
+        guard case .failed(let message) = manager.state else {
+            return XCTFail("An incomplete allowlist must fail")
+        }
+        XCTAssertTrue(message.contains("model.gguf"))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.path))
+    }
+
     @MainActor
     func testMLXFolderNeedsTokenizerAndCustomRuntimeIsDetected() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

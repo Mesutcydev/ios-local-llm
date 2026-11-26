@@ -3,12 +3,87 @@
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and intends to use semantic version tags for source releases.
 
-## [Unreleased]
+## [3.5.6] - Build 162
 
-## [3.5.3]
+- Assistant restores its runtime-status row while editing an empty conversation,
+  keeping model setup reachable after the empty-state controls disappear.
+- Voice layout clamps its minimum height during initial and transient small
+  layouts, avoiding a negative frame size.
 
-- No app changes from 3.5.2. App Store Connect closed the 3.5.2 version,
-  so new builds use 3.5.3.
+- Model downloads keep the selected revision for file listings, size checks,
+  retries and transfers. An unavailable pinned revision now reports an error
+  instead of silently downloading a different revision.
+- Curated GGUF assistants load their specified model and audio projector files,
+  even when older quantizations share the folder. Imported models retain their
+  existing file selection behavior.
+- Downloads check that every required file is published before transferring
+  weights, preventing incomplete packages from being reported as ready.
+
+## [3.5.5] - Build 161
+
+- llama.cpp updated to b12662. On iPhone, Metal work is split into shorter
+  command buffers, so long ternary Bonsai GGUF graphs no longer hit the GPU
+  timeout. The build also runs Ternary Bonsai 2 / 2.5 `Q2_0` files (Hadamard
+  activations, b11556+). Rebuild `llama.xcframework` after pulling.
+- Ternary Bonsai 2.5 27B added for Mac (2-bit `Q2_0` GGUF, 7.7 GB, text
+  only). It is too large for the iPhone app memory limit. On Mac, large GGUFs
+  now run every layer on the GPU; iPhones keep the 12-layer cap above 3 GiB.
+- The Mac (Catalyst) build links again. ONNX Runtime has no Mac Catalyst
+  build, so KittenTTS, Paradee and Supertonic voices are unavailable on Mac
+  (the Podfile leaves it out of the Mac link). Pods share the app's iOS 18
+  floor, the camera's multitasking call is iPad/iPhone only, and the
+  Catalyst llama slice links `libvendor-hash.a` (llama.cpp b12662+).
+- Mac follows Mac conventions: Return sends a chat message (Shift or Option
+  + Return adds a line). Home, Models, HF search, the voice picker, the image
+  model note, the unsupported-device cards and the Core AI import error say
+  "Mac" instead of "iPhone". The ONNX voices are marked iPhone/iPad-only and
+  stop offering a download that could not run; the voice picker and Voice
+  settings no longer list them as selectable engines.
+
+## [3.5.4] - Build 160
+
+- Settings shows a card for Token: Local AI & Code Studio under the category
+  list; tapping it opens the App Store listing. The subtitle is in all 15
+  languages. App Store Connect closed 3.5.3, so this build uses 3.5.4.
+
+## [3.5.3] - Build 159
+
+- Models tab rebuilt. My Models shows storage used and free, which model
+  Assistant, Lens and Voice use, and one grouped list of installed models
+  (Core AI packs included). Search and filters appear from six models up.
+- Discover shows the top three per category with See all, and every row has a
+  one-tap Get button with progress in place; image rows keep the parental PIN
+  gate. Edge mode and Guided setup moved into the ••• menu.
+- Model pages follow the App Store layout: name and size, one main action,
+  an info list (size, memory fit, devices, runtime, repository) and an actions
+  list. The app-wide "Smart handling" card is gone (it lives in Settings).
+- Recommended setups are a grouped list that warns about low storage or
+  memory; KittenTTS Mini resolves to the real model; Kokoro's size reads
+  ~330 MB, its real download.
+- Downloads uses a standard title bar; sizes use one number format.
+- Settings is one grouped list with sentence-case labels and native switches;
+  Lens notices stay dark over the camera; Home and Voice use one tile size.
+- New interface text in all 15 languages, and "Get" uses App Store wording.
+
+### Build 158
+
+- Buttons use Apple's Liquid Glass styles (`glassButton`): prominent glass for
+  a screen's main action, glass for secondary ones, system capsule shapes.
+- One layout scale: spacing is 16 pt × φⁿ, text uses Apple's text styles and
+  follows Text Size, radii and tile sizes come from four values each. Screens
+  share a 16 pt edge and a 10 pt gap between cards.
+  `scripts/audit_ui_metrics.py` keeps new code on the scale.
+- The "Running tool" and "Image generated" toasts are gone (the chat already
+  shows both), and toasts no longer overlap the conversation or Lens controls.
+- A finished reply switches to its formatted version without a cross-fade.
+- During image generation the assistant no longer offers Load, and the
+  progress card drops its stale status line.
+- The Analyze button sits on the generated image; Lens hides its scan frame
+  behind the camera-unavailable and paused panels.
+- Model lists: Get buttons keep their width, and "Suggested · best fit first"
+  is a description line rather than a second header.
+- Build 157 (a SenseNova model test) was reverted; 3.5.3 otherwise matches
+  3.5.2.
 
 ## [3.5.2] - Build 155
 

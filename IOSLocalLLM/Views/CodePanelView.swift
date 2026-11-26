@@ -30,10 +30,8 @@ struct CodePanelView: View {
                         systemImage: copyFeedback ? "checkmark.circle.fill" : "doc.on.doc"
                     )
                     .font(.system(.footnote, weight: .semibold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, Space.m).padding(.vertical, Space.s)
-                    .background(Capsule().fill(copyFeedback ? Color.green : Color.blue))
                 }
+                .glassButton(prominent: true)
                 .padding()
             }
             .navigationTitle("\(language) Code")

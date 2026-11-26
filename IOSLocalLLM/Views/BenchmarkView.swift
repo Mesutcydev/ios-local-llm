@@ -164,11 +164,8 @@ struct BenchmarkView: View {
                 Image(systemName: "play.fill").font(.system(.caption2))
                 Text("run benchmark").font(T.mono(12, .semibold))
             }
-            .foregroundColor(T.bg)
-            .padding(.horizontal, Space.m).padding(.vertical, Space.s)
-            .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
         }
-        .buttonStyle(.plain)
+        .glassButton(prominent: true)
         .disabled(!isReadyToRun)
         .opacity(isReadyToRun ? 1 : 0.5)
     }

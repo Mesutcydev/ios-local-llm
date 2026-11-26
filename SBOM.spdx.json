@@ -19,7 +19,7 @@
     {
       "name": "ios-local-llm",
       "SPDXID": "SPDXRef-Package-ios-local-llm",
-      "versionInfo": "3.5.3",
+      "versionInfo": "3.5.6",
       "downloadLocation": "git+https://github.com/Mesutcydev/ios-local-llm.git",
       "filesAnalyzed": false,
       "licenseConcluded": "MIT AND LicenseRef-Apple-Sample-Code AND LicenseRef-CMUdict",
@@ -29,8 +29,8 @@
     {
       "name": "llama.cpp",
       "SPDXID": "SPDXRef-Package-llama-cpp",
-      "versionInfo": "19ff817fb25e9a1b838b1d7f9f4325f7bf9779c4",
-      "downloadLocation": "git+https://github.com/ggml-org/llama.cpp.git@19ff817fb25e9a1b838b1d7f9f4325f7bf9779c4",
+      "versionInfo": "1f3ea67fbf857bb831d3fb9e3a91c0f8ad3fbe78",
+      "downloadLocation": "git+https://github.com/ggml-org/llama.cpp.git@1f3ea67fbf857bb831d3fb9e3a91c0f8ad3fbe78",
       "filesAnalyzed": false,
       "licenseConcluded": "MIT",
       "licenseDeclared": "MIT",

@@ -1,62 +1,7 @@
 import SwiftUI
 import Combine
 
-// MARK: - Recommended setup download control
-
-/// Observes one catalog downloader directly so a setup row updates through
-/// enumeration, progress, failure, and completion without refreshing the
-/// surrounding Models screen.
-struct ComboModelDownloadControl: View {
-    @ObservedObject var downloader: HFModelDownloadManager
-    let tint: Color
-    let getLabel: String
-    let retryLabel: String
-    let readyLabel: String
-    let start: () -> Void
-
-    @Environment(\.koduTheme) private var T
-
-    var body: some View {
-        Group {
-            switch downloader.state {
-            case .ready:
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(.body, weight: .semibold))
-                    .foregroundColor(tint)
-                    .frame(width: 42, height: 30)
-                    .accessibilityLabel(readyLabel)
-
-            case .enumerating:
-                ProgressView()
-                    .controlSize(.small)
-                    .tint(tint)
-                    .frame(width: 42, height: 30)
-
-            case .downloading:
-                HStack(spacing: Space.xs) {
-                    ProgressView(value: downloader.progress)
-                        .tint(tint)
-                        .frame(width: 26)
-                    Text("\(Int(downloader.progress * 100))%")
-                        .font(T.mono(9, .semibold))
-                        .foregroundColor(tint)
-                }
-                .frame(width: 58, height: 30)
-
-            case .failed:
-                actionButton(retryLabel)
-
-            case .idle:
-                actionButton(getLabel)
-            }
-        }
-        .fixedSize(horizontal: true, vertical: false)
-    }
-
-    private func actionButton(_ label: String) -> some View {
-        GlassGetButton(label: label, tint: tint, action: start)
-    }
-}
+// MARK: - Get button
 
 /// App Store-style Get pill: Apple's glass capsule at its natural width, so a
 /// neighbour with layout priority can't squeeze it.
@@ -319,11 +264,8 @@ struct InstallingRow: View {
                     Button(action: { downloader.start(); HapticManager.impact(.medium) }) {
                         Text(loc.t(downloader.isPaused ? "Resume" : "Retry"))
                             .font(T.mono(11, .semibold))
-                            .foregroundColor(T.bg)
-                            .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
-                            .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
                     }
-                    .buttonStyle(.plain)
+                    .glassButton(prominent: true)
                     // Paused or failed: let the row be dismissed and its
                     // partial files removed.
                     actionButton("Cancel download") { confirmingCancel = true }
@@ -332,11 +274,8 @@ struct InstallingRow: View {
                     Button(action: { UIApplication.shared.open(url) }) {
                         Text(loc.t("Open on HuggingFace"))
                             .font(T.mono(11, .semibold))
-                            .foregroundColor(T.ink2)
-                            .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
-                            .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface2))
                     }
-                    .buttonStyle(.plain)
+                    .glassButton()
                 }
                 Spacer(minLength: 0)
             }
@@ -349,11 +288,8 @@ struct InstallingRow: View {
         Button(action: action) {
             Text(loc.t(title))
                 .font(T.mono(11, .semibold))
-                .foregroundColor(T.ink2)
-                .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
-                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.surface2))
         }
-        .buttonStyle(.plain)
+        .glassButton()
     }
 
     /// Match the icon set used by installedRow's categoryGlyph so a

@@ -156,7 +156,7 @@ struct HFSearchView: View {
                     .foregroundColor(T.ink3)
                 KMono(text: "search failed", size: 12, color: T.ink2)
                 Button("Retry") { scheduleSearch() }
-                    .buttonStyle(.kSecondary)
+                    .glassButton()
                 Text(err)
                     .font(T.sans(11))
                     .foregroundColor(T.ink3)
@@ -483,7 +483,7 @@ struct HFSearchRow: View {
         switch verdict {
         case .runnable(let notes):
             badgePill(symbol: "checkmark.circle.fill",
-                      text: "runs on this iPhone",
+                      text: DeviceCopy.runsOnDevice,
                       detail: notes, color: T.good)
         case .marginal(let notes):
             badgePill(symbol: "exclamationmark.triangle.fill",
@@ -491,7 +491,7 @@ struct HFSearchRow: View {
                       detail: notes, color: T.warn)
         case .blocked(let reason):
             badgePill(symbol: "xmark.octagon.fill",
-                      text: "won't run on this iPhone",
+                      text: DeviceCopy.wontRunOnDevice,
                       detail: reason, color: T.bad)
         }
     }
@@ -560,13 +560,8 @@ struct HFSearchRow: View {
                         .font(T.sans(13, .semibold))
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .foregroundColor(.white)
-                .padding(.horizontal, Space.m)
-                .padding(.vertical, Space.s)
-                .frame(minHeight: 44)
-                .background(Capsule().fill(isBlocked ? T.ink3 : T.accentStrong))
             }
-            .buttonStyle(.plain)
+            .glassButton(prominent: true)
             .accessibilityIdentifier("model.download.\(model.id)")
             .disabled(isBlocked)
             .opacity(isBlocked ? 0.6 : 1)

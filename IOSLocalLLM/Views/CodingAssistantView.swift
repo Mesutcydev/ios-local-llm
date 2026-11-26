@@ -238,7 +238,12 @@ struct CodingAssistantView: View {
                 if route == .chat {
                     // An iPhone in landscape has about 90 pt between the
                     // navigation bar and the keyboard: the composer needs it.
-                    if !(verticalSizeClass == .compact && inputFocused) {
+                    // With no model downloaded the empty state already offers
+                    // "Choose a model"; a second "Not loaded · Choose" strip
+                    // above it repeats the same action. Editing hides that
+                    // empty state, so restore the runtime status while typing.
+                    if !(verticalSizeClass == .compact && inputFocused),
+                       !(needsModelDownload && messages.isEmpty && !inputFocused) {
                         modelStatusBar
                     }
 
@@ -1712,7 +1717,7 @@ struct CodingAssistantView: View {
             ViewThatFits(in: .horizontal) {
                 VStack(spacing: 1) {
                     HStack(spacing: Space.xxs) {
-                        Text(loc.t("assistant"))
+                        Text(loc.t("assistant").sentenceCased)
                             .font(.headline)
                             .foregroundStyle(T.ink)
                         Image(systemName: "chevron.down")
@@ -2001,15 +2006,8 @@ struct CodingAssistantView: View {
                     } label: {
                         Text("Switch model")
                             .font(T.sans(12, .semibold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, Space.s)
-                            .padding(.vertical, Space.xs)
-                            .background(
-                                RoundedRectangle(cornerRadius: Radius.inner, style: .continuous)
-                                    .fill(T.accent)
-                            )
                     }
-                    .buttonStyle(.plain)
+                    .glassButton(prominent: true)
                 }
             }
             .padding(Space.m)
@@ -2038,15 +2036,8 @@ struct CodingAssistantView: View {
                     } label: {
                         Text("Load")
                             .font(T.sans(12, .semibold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, Space.s)
-                            .padding(.vertical, Space.xs)
-                            .background(
-                                RoundedRectangle(cornerRadius: Radius.inner, style: .continuous)
-                                    .fill(T.accent)
-                            )
                     }
-                    .buttonStyle(.plain)
+                    .glassButton(prominent: true)
                     Button {
                         showModelPicker = true
                         HapticManager.impact(.light)
@@ -2336,13 +2327,11 @@ struct CodingAssistantView: View {
                 HapticManager.impact(.light)
             } label: {
                 Image(systemName: "waveform")
-                    .font(.system(.title3, weight: .semibold))
-                    .foregroundColor(T.bg)
-                    .frame(width: Size.control, height: Size.control)
-                    .background(Circle().fill(T.ink))
-                    .contentShape(Circle())
+                    .font(.title3.weight(.semibold))
+                    .frame(width: Size.tile, height: Size.tile)
             }
-            .buttonStyle(.plain)
+            .glassButton(prominent: true)
+            .buttonBorderShape(.circle)
             .accessibilityLabel(loc.t("Voice conversation"))
         }
         .padding(.horizontal, Space.s)
@@ -2854,15 +2843,9 @@ struct CodingAssistantView: View {
         return Button { sendMessage() } label: {
             Image(systemName: "arrow.up")
                 .font(.system(.subheadline, weight: .bold))
-                .foregroundColor(.white)
-                .frame(width: Size.control, height: Size.control)
-                .background(
-                    Circle().fill(
-                        canSend ? AnyShapeStyle(T.accentStrong) : AnyShapeStyle(T.ink3)
-                    )
-                )
         }
-        .buttonStyle(.plain)
+        .glassButton(prominent: true)
+        .buttonBorderShape(.circle)
         .disabled(!canSend)
         .animation(.easeInOut(duration: 0.15), value: canSend)
     }
@@ -4734,10 +4717,9 @@ private struct ChatThreadEmptyState: View {
                         systemImage: needsModelDownload ? "square.stack.3d.up" : "play.fill"
                     )
                     .font(.body.weight(.semibold))
-                    .padding(.horizontal, Space.m)
-                    .frame(minHeight: 44)
                 }
-                .buttonStyle(.kPrimary)
+                .glassButton(prominent: true)
+                .controlSize(.large)
                 .accessibilityIdentifier("assistant.model.setup")
             } else if !isFiltering {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: Space.s)],
@@ -5151,11 +5133,8 @@ struct ConversationPickerView: View {
                     Text("start a new chat")
                         .font(T.mono(11, .semibold))
                 }
-                .foregroundColor(T.bg)
-                .padding(.horizontal, Space.m).padding(.vertical, Space.xs)
-                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
             }
-            .buttonStyle(.plain)
+            .glassButton(prominent: true)
             .padding(.top, Space.xxs)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -6627,12 +6606,8 @@ private struct LandingStatusPillView: View {
                         Text("Repair & retry")
                             .font(theme.mono(10.5, .semibold))
                     }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, Space.m)
-                    .padding(.vertical, Space.xs)
-                    .background(Capsule().fill(theme.accent))
                 }
-                .buttonStyle(.plain)
+                .glassButton(prominent: true)
                 .padding(.top, Space.hair)
             }
         }

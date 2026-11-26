@@ -869,6 +869,7 @@ final class ModelDownloadCenter: ObservableObject {
                     fileAllowlist: configuration.artifacts.map(\.relativePath)
                 ),
                 approxRAMBytes: memory,
+                platformCompatibility: .iosOnly,
                 supportedVoiceEngine: .kittenTTS
             ))
         }
@@ -894,7 +895,8 @@ final class ModelDownloadCenter: ObservableObject {
             id: "kokoro-82m",
             displayName: "Kokoro-82M",
             subtitle: "aufklarer/Kokoro-82M-CoreML · 57 voices, 9 languages",
-            sizeLabel: "~100 MB",
+            // Measured: the pinned revision's allowlisted files total 327 MB.
+            sizeLabel: "~330 MB",
             category: .voice,
             docURL: "https://huggingface.co/aufklarer/Kokoro-82M-CoreML",
             downloader: HFModelDownloadManager(
@@ -933,6 +935,7 @@ final class ModelDownloadCenter: ObservableObject {
                 fileAllowlist: ["onnx/paradee_int8.onnx", "config.json", "LICENSE"]
             ),
             approxRAMBytes: 60_000_000,
+            platformCompatibility: .iosOnly,
             supportedVoiceEngine: .paradee
         ))
         models.append(DownloadableModel(
@@ -949,6 +952,7 @@ final class ModelDownloadCenter: ObservableObject {
                 fileAllowlist: ["onnx/", "voice_styles/", "LICENSE"]
             ),
             approxRAMBytes: 900_000_000,
+            platformCompatibility: .iosOnly,
             supportedVoiceEngine: .supertonic
         ))
 

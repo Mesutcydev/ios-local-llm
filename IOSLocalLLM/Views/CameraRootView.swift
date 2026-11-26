@@ -339,6 +339,7 @@ struct CameraRootView: View {
                     .font(.subheadline.weight(.semibold))
                     .padding(Space.m)
                     .appPanel(cameraSafe: true)
+                    .environment(\.colorScheme, .dark)
                     .padding(Space.l)
                     .accessibilityIdentifier("lens.camera.paused")
             }
@@ -358,12 +359,13 @@ struct CameraRootView: View {
                             guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
                             UIApplication.shared.open(url)
                         }
-                        .buttonStyle(.kPrimary)
+                        .glassButton(prominent: true)
                         .controlSize(.large)
                     }
                 }
                 .padding(Space.l)
                 .appPanel(cameraSafe: true)
+                .environment(\.colorScheme, .dark)
                 .padding(Space.l)
                 .accessibilityElement(children: .combine)
             }
@@ -931,15 +933,8 @@ struct CameraRootView: View {
                     Text(loc.t(missingVisionModelButtonLabel(hasSelection: hasSelection)))
                         .font(T.mono(11, .semibold))
                 }
-                .foregroundColor(.white)
-                .padding(.horizontal, Space.m)
-                .padding(.vertical, Space.s)
-                .background(
-                    Capsule(style: .continuous)
-                        .fill(T.accentStrong)
-                )
             }
-            .buttonStyle(.plain)
+            .glassButton(prominent: true)
         }
         .padding(.horizontal, Space.m)
         .padding(.vertical, Space.m)
@@ -1119,7 +1114,7 @@ struct CameraRootView: View {
                     HapticManager.impact(.light)
                     stopLiveMode()
                 }
-                .buttonStyle(.kSecondary)
+                .glassButton()
                 .controlSize(.small)
                 .tint(.white)
                 .accessibilityIdentifier("lens.live.stop")
@@ -1138,20 +1133,29 @@ struct CameraRootView: View {
         .appPanel(cameraSafe: true)
     }
 
+    private func lensCircleLabel(_ icon: String) -> some View {
+        Image(systemName: icon)
+            .font(.system(.subheadline, weight: .semibold))
+            .foregroundColor(.white)
+            .frame(width: Size.control, height: Size.control)
+            .glassSurface(.toolbarButton, cornerRadius: Radius.panel)
+            .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
+    }
+
     private func lensCircleButton(_ icon: String, action: @escaping () -> Void) -> some View {
         Button {
             HapticManager.impact(.light); action()
         } label: {
-            Image(systemName: icon)
-                .font(.system(.subheadline, weight: .semibold))
-                .foregroundColor(.white)
-                .frame(width: Size.control, height: Size.control)
-                .glassSurface(.toolbarButton, cornerRadius: Radius.panel)
-                .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
+            lensCircleLabel(icon)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(icon == "xmark" ? "Close Lens" : "Lens control")
+        .accessibilityLabel(Self.circleButtonLabel[icon] ?? "Lens control")
     }
+
+    private static let circleButtonLabel = [
+        "xmark": "Close Lens", "doc.viewfinder": "Scan a document",
+        "bolt.fill": "Turn off torch", "bolt.slash.fill": "Turn on torch",
+    ]
 
     /// ⋯ menu — the contextual actions that used to live in the bottom
     /// toolbar (history, document scan, read-aloud, OCR, model, mode).
@@ -1378,14 +1382,7 @@ struct CameraRootView: View {
     private var shutterRow: some View {
         HStack {
             PhotosPicker(selection: $photoItem, matching: .images, photoLibrary: .shared()) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
-                        .fill(Color.black.opacity(0.72))
-                    Image(systemName: "photo.on.rectangle")
-                        .font(.system(.callout, weight: .semibold)).foregroundColor(.white)
-                }
-                .frame(width: Size.control, height: Size.control)
-                .overlay(RoundedRectangle(cornerRadius: Radius.control).stroke(.white.opacity(0.18), lineWidth: 1))
+                lensCircleLabel("photo.on.rectangle")
             }
             .buttonStyle(.plain)
             .minimumInteractiveSize()

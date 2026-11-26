@@ -407,12 +407,10 @@ struct BridgePairingView: View {
                     Text("Scan Mac QR")
                 }
                 .font(T.mono(13, .semibold))
-                .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, Space.s)
-                .background(RoundedRectangle(cornerRadius: Radius.control).fill(T.accent))
             }
-            .buttonStyle(.plain)
+            .glassButton(prominent: true)
+            .controlSize(.large)
             .disabled(!BridgeQRScannerView.isAvailable)
         }
     }

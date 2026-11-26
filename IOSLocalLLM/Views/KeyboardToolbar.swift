@@ -185,17 +185,9 @@ struct KeyboardToolbar: View {
                     .contentTransition(.identity)
                     .animation(.easeInOut(duration: 0.18), value: isSending)
             }
-            .foregroundColor(.white)
-            .padding(.horizontal, Space.s).padding(.vertical, Space.s)
             .frame(minWidth: 78)
-            .background(
-                RoundedRectangle(cornerRadius: 9999, style: .continuous)
-                    .fill(
-                        canSend ? AnyShapeStyle(T.accentStrong) : AnyShapeStyle(T.ink3)
-                    )
-            )
         }
-        .buttonStyle(.plain)
+        .glassButton(prominent: true)
         .disabled(!canSend || isSending)
         .accessibilityLabel("Send")
     }

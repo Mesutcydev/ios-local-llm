@@ -178,11 +178,8 @@ struct WebSettingsView: View {
             } label: {
                 Text("save key")
                     .font(T.mono(11, .semibold))
-                    .foregroundColor(T.bg)
-                    .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
-                    .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
             }
-            .buttonStyle(.plain)
+            .glassButton(prominent: true)
             .disabled(apiKeyInput.isEmpty)
         }
         .padding(Space.m)
@@ -204,11 +201,8 @@ struct WebSettingsView: View {
             } label: {
                 Text("save endpoint")
                     .font(T.mono(11, .semibold))
-                    .foregroundColor(T.bg)
-                    .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
-                    .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
             }
-            .buttonStyle(.plain)
+            .glassButton(prominent: true)
             .disabled(endpointInput.isEmpty)
         }
         .padding(Space.m)

@@ -2,10 +2,28 @@ import SwiftUI
 
 struct UnsupportedDeviceView: View {
     @Environment(\.koduTheme) private var T
+    @ObservedObject private var localization = LocalizationService.shared
 
-    // Two columns now — the gate is RAM-based, so iPhones and iPads
-    // share the same "8 GB+" rule and we can show both pathways
-    // without misleading anyone into thinking only iPhones qualify.
+    // The gate is RAM-based, so iPhones and iPads share the same "8 GB+"
+    // rule and we can show both pathways without misleading anyone into
+    // thinking only iPhones qualify. The Mac build runs the same gate, but
+    // there the card names Macs.
+    private struct SupportedCard: Identifiable {
+        let title: String
+        let items: [String]
+        var id: String { title }
+    }
+
+    private var supportedCards: [SupportedCard] {
+        #if targetEnvironment(macCatalyst)
+        [SupportedCard(title: "Supported Macs",
+                       items: ["Apple silicon Mac (M1 or later)", "8 GB RAM or more"])]
+        #else
+        [SupportedCard(title: "Supported iPhones", items: supportedPhones),
+         SupportedCard(title: "Supported iPads", items: supportedTablets)]
+        #endif
+    }
+
     private let supportedPhones = [
         "iPhone 15 Pro / Pro Max",
         "iPhone 16 / Plus / Pro / Pro Max / Air",
@@ -16,6 +34,14 @@ struct UnsupportedDeviceView: View {
         "iPad Air with M1, M2, or M3",
         "iPad mini (A17 Pro)",
     ]
+
+    private var deviceIcon: String {
+        #if targetEnvironment(macCatalyst)
+        return "laptopcomputer"
+        #else
+        return DeviceCompatibility.isiPad() ? "ipad.and.iphone.slash" : "iphone.slash"
+        #endif
+    }
 
     /// Diagnostic line for the current device — helps the user
     /// understand exactly why they're seeing this screen. Built off
@@ -34,9 +60,7 @@ struct UnsupportedDeviceView: View {
                 VStack(spacing: Space.l) {
                     Spacer().frame(height: 8)
 
-                    Image(systemName: DeviceCompatibility.isiPad()
-                          ? "ipad.and.iphone.slash"
-                          : "iphone.slash")
+                    Image(systemName: deviceIcon)
                         .font(.system(size: Space.xl, weight: .thin))
                         .foregroundColor(T.ink3)
 
@@ -52,17 +76,10 @@ struct UnsupportedDeviceView: View {
                             .padding(.horizontal, Space.l)
                     }
 
-                    // iPhone column.
-                    supportedCard(
-                        title: "Supported iPhones",
-                        items: supportedPhones
-                    )
-
-                    // iPad column.
-                    supportedCard(
-                        title: "Supported iPads",
-                        items: supportedTablets
-                    )
+                    // iPhone and iPad columns on iOS; one Mac card on Catalyst.
+                    ForEach(supportedCards) { card in
+                        supportedCard(title: card.title, items: card.items)
+                    }
 
                     // Diagnostic + "why".
                     VStack(spacing: Space.xs) {
@@ -86,7 +103,7 @@ struct UnsupportedDeviceView: View {
     @ViewBuilder
     private func supportedCard(title: String, items: [String]) -> some View {
         VStack(alignment: .leading, spacing: Space.s) {
-            KMono(text: title.uppercased(), size: 10, color: T.ink4)
+            KMono(text: localization.t(title).uppercased(), size: 10, color: T.ink4)
             VStack(alignment: .leading, spacing: Space.xs) {
                 ForEach(items, id: \.self) { item in
                     HStack(spacing: Space.s) {

@@ -124,34 +124,26 @@ struct VoiceLibraryView: View {
         VStack(spacing: Space.m) {
             // Tile and its label are one group: s, not m.
             HStack(spacing: Space.s) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
-                        .fill(LinearGradient(colors: [T.roseHi, T.accentStrong],
-                                             startPoint: .topLeading, endPoint: .bottomTrailing))
-                    Image(systemName: "waveform")
-                        .font(.system(.title2, weight: .semibold)).foregroundColor(.white)
-                }
-                .frame(width: Size.feature, height: Size.feature)
+                Image(systemName: "waveform")
+                    .font(.body.weight(.semibold)).foregroundStyle(.white)
+                    .frame(width: Size.control, height: Size.control)
+                    .background(T.accentStrong, in: RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
 
                 VStack(alignment: .leading, spacing: Space.hair) {
                     Text(loc.t("NOW USING"))
-                        .font(T.sans(11.5, .semibold)).foregroundColor(T.ink2)
+                        .font(T.sans(11, .semibold)).tracking(TextScale.capsTracking).foregroundColor(T.ink3)
                     Text(v.name).font(T.display(20, .semibold)).foregroundColor(T.ink).fixedSize(horizontal: false, vertical: true)
                     Text(voiceSubtitle(v)).font(T.sans(13)).foregroundColor(T.ink2).fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: Space.xs)
 
                 Button(action: { preview(v) }) {
-                    ZStack {
-                        Circle().fill(LinearGradient(colors: [T.roseHi, T.accentStrong],
-                                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-                        Image(systemName: voice.isPlaying ? "stop.fill" : "play.fill")
-                            .font(.system(.callout, weight: .bold)).foregroundColor(.white)
-                            .offset(x: voice.isPlaying ? 0 : 1)
-                    }
-                    .frame(width: Size.control, height: Size.control)
+                    Image(systemName: voice.isPlaying ? "stop.fill" : "play.fill")
+                        .font(.body.weight(.bold))
+                        .frame(width: Size.tile, height: Size.tile)
                 }
-                .buttonStyle(.plain)
+                .glassButton(prominent: true)
+                .buttonBorderShape(.circle)
                 .accessibilityLabel(voice.isPlaying ? loc.t("Stop preview") : loc.t("Preview voice"))
             }
 
@@ -185,15 +177,13 @@ struct VoiceLibraryView: View {
     private var enginePicker: some View {
         Button(action: { HapticManager.impact(.light); showEnginePicker = true }) {
             HStack(spacing: Space.s) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: Radius.control, style: .continuous).fill(T.accentSoft)
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.system(.callout, weight: .semibold)).foregroundColor(T.accent)
-                }
-                .frame(width: Size.control, height: Size.control)
+                Image(systemName: "slider.horizontal.3")
+                    .font(.body.weight(.semibold)).foregroundStyle(T.ink2)
+                    .frame(width: Size.control, height: Size.control)
+                    .background(T.surface2, in: RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
                 VStack(alignment: .leading, spacing: 1) {
                     Text(loc.t("Voice engine").uppercased())
-                        .font(T.sans(11, .bold)).tracking(TextScale.capsTracking).foregroundColor(T.ink3)
+                        .font(T.sans(11, .semibold)).tracking(TextScale.capsTracking).foregroundColor(T.ink3)
                     Text(voice.currentEngineKind.displayName)
                         .font(T.sans(15.5, .semibold)).foregroundColor(T.ink)
                 }

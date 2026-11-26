@@ -199,13 +199,8 @@ struct HFTokenSheet: View {
                             Text("Test")
                                 .font(T.mono(10, .semibold))
                         }
-                        .foregroundColor(T.accent)
-                        .padding(.horizontal, Space.s)
-                        .padding(.vertical, Space.xs)
-                        .background(Capsule().fill(T.accentSoft))
-                        .overlay(Capsule().stroke(T.accent.opacity(0.4), lineWidth: 0.5))
                     }
-                    .buttonStyle(.plain)
+                    .glassButton()
                     .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || testing)
                     .opacity(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.4 : 1)
 

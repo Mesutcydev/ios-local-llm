@@ -777,7 +777,7 @@ enum CoreAIModelStoreError: LocalizedError, Equatable {
         case .ambiguousBundleRoot: return "This download contains multiple Core AI bundles. Choose one exact model folder."
         case .invalidRuntimeMetadata: return "The Core AI metadata.json is invalid or is not a language-model bundle."
         case .invalidManifest: return "The Core AI model manifest is invalid."
-        case .unsupportedModel: return "This Core AI model is not supported by this iPhone build."
+        case .unsupportedModel: return DeviceCopy.coreAIUnsupportedBuild
         }
     }
 }

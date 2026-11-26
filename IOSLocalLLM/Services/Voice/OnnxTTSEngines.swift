@@ -361,3 +361,40 @@ final class SupertonicTTSService: LocalVoiceEngine, ObservableObject {
         return (-2 * log(u1)).squareRoot() * cos(2 * .pi * u2)
     }
 }
+
+#if targetEnvironment(macCatalyst)
+// ponytail: ONNX Runtime ships no Mac Catalyst slice, so the Mac build links
+// none of it (see Podfile). These stand-ins cover the API the ONNX voices use;
+// creating the environment throws, so KittenTTS, Paradee and Supertonic fail
+// to load on Mac with a clear message. Replace with the real runtime once a
+// Catalyst onnxruntime.xcframework exists.
+private let onnxUnavailableOnMac = VoiceError.engineNotReady("ONNX voices are not available on Mac.")
+
+enum ORTLoggingLevel { case warning }
+enum ORTTensorElementDataType { case int64, float }
+final class ORTRunOptions {}
+
+final class ORTEnv {
+    init(loggingLevel: ORTLoggingLevel) throws { throw onnxUnavailableOnMac }
+}
+
+final class ORTSessionOptions {
+    init() throws {}
+    func setLogSeverityLevel(_ level: ORTLoggingLevel) throws {}
+    func setIntraOpNumThreads(_ count: Int32) throws {}
+}
+
+final class ORTSession {
+    init(env: ORTEnv, modelPath: String, sessionOptions: ORTSessionOptions) throws { throw onnxUnavailableOnMac }
+    func outputNames() throws -> [String] { throw onnxUnavailableOnMac }
+    func run(withInputs inputs: [String: ORTValue], outputNames: Set<String>,
+             runOptions: ORTRunOptions?) throws -> [String: ORTValue] { throw onnxUnavailableOnMac }
+}
+
+final class ORTValue {
+    init(tensorData: NSMutableData, elementType: ORTTensorElementDataType, shape: [NSNumber]) throws {
+        throw onnxUnavailableOnMac
+    }
+    func tensorData() throws -> NSMutableData { throw onnxUnavailableOnMac }
+}
+#endif

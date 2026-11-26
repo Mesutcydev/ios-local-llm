@@ -44,6 +44,8 @@ def main():
     local_files = [
         ("Original app code", "LICENSE"),
         ("Liquid AI LFM3 optional model weights", "LICENSES/LFM-Open-License-v1.0.txt"),
+        ("PrismML Ternary Bonsai 2.5 27B optional GGUF — Apache-2.0", "LICENSES/Models/PrismML-Bonsai-2.5-27B-GGUF/LICENSE"),
+        ("PrismML Ternary Bonsai 2.5 27B publisher notice", "LICENSES/Models/PrismML-Bonsai-2.5-27B-GGUF/NOTICE.txt"),
         ("Apple Core AI text runtime", "LICENSES/CoreAI-Models-BSD-3-Clause.txt"),
         ("DLPack header in the Core AI grammar bridge", "LICENSES/Apache-2.0.txt"),
         ("Apple FastVLM sample code (model weights excluded)", "LICENSES/Apple-Sample-Code-License.txt"),

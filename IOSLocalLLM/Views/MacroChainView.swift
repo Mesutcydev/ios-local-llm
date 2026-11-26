@@ -160,11 +160,8 @@ struct MacroChainView: View {
                     Image(systemName: "play.fill").font(.system(.caption2))
                     Text("run macro").font(T.mono(12, .semibold))
                 }
-                .foregroundColor(T.bg)
-                .padding(.horizontal, Space.m).padding(.vertical, Space.s)
-                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
             }
-            .buttonStyle(.plain)
+            .glassButton(prominent: true)
             .disabled(disabled)
             .opacity(disabled ? 0.5 : 1)
             .accessibilityLabel("Run macro")

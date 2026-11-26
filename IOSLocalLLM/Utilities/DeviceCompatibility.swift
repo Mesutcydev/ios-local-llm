@@ -72,3 +72,84 @@ enum DeviceCompatibility {
         UIDevice.current.userInterfaceIdiom == .pad
     }
 }
+
+// MARK: - DeviceCopy
+
+/// Keys for interface copy that names the device the app runs on. The Mac
+/// Catalyst build runs this same iPhone/iPad UI, so "on this iPhone" has to
+/// become "on this Mac" there. The Mac strings are separate catalog keys
+/// rather than a substituted noun: translations inflect the article and the
+/// verb around the device, so "ce Mac" cannot be derived from "cet iPhone".
+enum DeviceCopy {
+    /// Mid-sentence, e.g. "8.3 GB on this iPhone".
+    static var onThisDevice: String {
+        #if targetEnvironment(macCatalyst)
+        return "on this Mac"
+        #else
+        return "on this iPhone"
+        #endif
+    }
+
+    /// Sentence-case section header.
+    static var onThisDeviceTitle: String {
+        #if targetEnvironment(macCatalyst)
+        return "On this Mac"
+        #else
+        return "On this iPhone"
+        #endif
+    }
+
+    /// Hero subtitle under the assistant title.
+    static var repliesStayOnDevice: String {
+        #if targetEnvironment(macCatalyst)
+        return "replies stay on your Mac"
+        #else
+        return "replies stay on your iPhone"
+        #endif
+    }
+
+    /// Voice picker summary above the engine list.
+    static var downloadedVoicesRunOffline: String {
+        #if targetEnvironment(macCatalyst)
+        return "Choose the voice that reads replies aloud. Downloaded voices run offline on this Mac."
+        #else
+        return "Choose the voice that reads replies aloud. Downloaded voices run offline on this iPhone."
+        #endif
+    }
+
+    /// Fit badge on a model row that this device can run.
+    static var runsOnDevice: String {
+        #if targetEnvironment(macCatalyst)
+        return "runs on this Mac"
+        #else
+        return "runs on this iPhone"
+        #endif
+    }
+
+    /// Fit badge on a model row this device cannot run.
+    static var wontRunOnDevice: String {
+        #if targetEnvironment(macCatalyst)
+        return "won't run on this Mac"
+        #else
+        return "won't run on this iPhone"
+        #endif
+    }
+
+    /// Image-model screen note about SDXL's memory needs.
+    static var sdxlMemoryNote: String {
+        #if targetEnvironment(macCatalyst)
+        return "SDXL needs a high-memory Mac. Live headroom is checked before loading a model."
+        #else
+        return "SDXL needs the highest-memory iPhones. Live headroom is checked before loading a model."
+        #endif
+    }
+
+    /// Core AI import error when the bundle targets another platform build.
+    static var coreAIUnsupportedBuild: String {
+        #if targetEnvironment(macCatalyst)
+        return "This Core AI model is not supported by this Mac build."
+        #else
+        return "This Core AI model is not supported by this iPhone build."
+        #endif
+    }
+}

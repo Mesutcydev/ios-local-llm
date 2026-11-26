@@ -100,11 +100,8 @@ struct SnippetPickerView: View {
                     Image(systemName: "plus").font(.system(.caption2))
                     Text("create your first").font(T.mono(11, .semibold))
                 }
-                .foregroundColor(T.bg)
-                .padding(.horizontal, Space.m).padding(.vertical, Space.xs)
-                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
             }
-            .buttonStyle(.plain)
+            .glassButton(prominent: true)
             .padding(.top, Space.xxs)
         }
         .padding(.vertical, Space.xl)
@@ -145,13 +142,10 @@ struct SnippetPickerView: View {
                 Text("new snippet")
                     .font(T.mono(12, .semibold))
             }
-            .foregroundColor(T.bg)
-            .padding(.horizontal, Space.m)
-            .frame(height: 44)
             .frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
         }
-        .buttonStyle(.plain)
+        .glassButton(prominent: true)
+        .controlSize(.large)
         .padding(.horizontal, Space.m)
         .padding(.top, Space.m)
     }

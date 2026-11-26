@@ -196,11 +196,8 @@ struct AnalysisPanelView: View {
                             Text("ask assistant")
                                 .font(T.mono(12, .semibold))
                         }
-                        .foregroundColor(T.bg)
-                        .padding(.horizontal, Space.s).padding(.vertical, Space.s)
-                        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
                     }
-                    .buttonStyle(.plain)
+                    .glassButton(prominent: true)
 
                     // Share — secondary
                     Button {

@@ -82,7 +82,7 @@ struct VoiceConversationView: View {
                     }
                     .padding(.horizontal, Space.m)
                     .padding(.top, Space.xxs)
-                    .frame(minHeight: proxy.size.height - 100)
+                    .frame(minHeight: max(0, proxy.size.height - 100))
                     .frame(maxWidth: AppLayout.readingWidth)
                     .frame(maxWidth: .infinity)
                 }
@@ -576,14 +576,8 @@ struct VoiceConversationView: View {
                 Text(loc.t("test audio"))
                     .font(T.mono(9.5, .semibold))
             }
-            .foregroundColor(T.accent)
-            .padding(.horizontal, Space.s).padding(.vertical, Space.xxs)
-            .background(
-                Capsule().fill(T.accentSoft)
-                    .overlay(Capsule().stroke(T.accent.opacity(0.3), lineWidth: 0.5))
-            )
         }
-        .buttonStyle(.plain)
+        .glassButton()
         .disabled(testTTSInFlight)
         .accessibilityLabel(loc.t("test audio"))
     }

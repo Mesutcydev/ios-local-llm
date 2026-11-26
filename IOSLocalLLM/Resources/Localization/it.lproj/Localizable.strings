@@ -38,6 +38,7 @@
 "2-bit · 1.1 GB · balanced" = "2 bit · 1,1 GB · bilanciato";
 "2-bit · 2.3 GB · quality low-bit" = "2 bit · 2,3 GB · qualità low-bit";
 "2-bit · 510 MB · ultralight" = "2 bit · 510 MB · ultraleggero";
+"2-bit · 7.7 GB download · Mac only" = "2 bit · Download da 7,7 GB · Solo Mac";
 "2-bit · 8.5 GB download · Mac only" = "2 bit · Download da 8,5 GB · Solo Mac";
 "20 steps · 512px" = "20 passi · 512px";
 "3 B class · sweet spot on 6 GB" = "3 Classe B · punto debole su 6 GB";
@@ -181,6 +182,7 @@
 "Assistant is thinking…" = "L'assistente sta pensando...";
 "Assistant response transcript" = "Trascrizione della risposta dell'assistente";
 "Assistant, %@" = "Assistente, %1$@";
+"Assistant, API keys, models" = "assistente, chiavi API, modelli";
 "Assistant, {{0}}" = "Assistente, {{0}}";
 "Assistants" = "Assistenti";
 "Audio must be mono PCM at 16 kHz for whisper.cpp" = "L'audio deve essere mono PCM a 16 kHz per Whisper.cpp";
@@ -284,6 +286,7 @@
 "Choose file" = "Scegli file";
 "Choose installed model" = "Scegli il modello installato";
 "Choose model" = "Scegli modello";
+"Choose the voice that reads replies aloud. Downloaded voices run offline on this Mac." = "Scegli la voce che legge ad alta voce le risposte. Le voci scaricate funzionano offline su questo Mac.";
 "Choose the voice that reads replies aloud. Downloaded voices run offline on this iPhone." = "Scegli la voce che legge ad alta voce le risposte. Le voci scaricate funzionano offline su questo iPhone.";
 "Choose what you want to try first. Download only the model you need now; add the others later in Models." = "Scegli prima cosa vuoi provare. Scarica subito solo il modello che ti serve; aggiungi gli altri più tardi in Modelli.";
 "Choose your models" = "Scegli i tuoi modelli";
@@ -674,7 +677,7 @@
 "Generating · shared runtime is busy" = "La generazione · lo Shared Runtime è occupato";
 "Generating · {{0}}%" = "Generazione · {{0}}%";
 "Generating…" = "Generazione…";
-"Get" = "Ottenere";
+"Get" = "Ottieni";
 "Get a fast on-device answer from the built-in system model — no app launch, fully private." = "Ottieni una risposta rapida sul dispositivo grazie al modello di sistema integrato: nessun avvio di app, completamente privato.";
 "Get the Mac bridge" = "Ottieni il ponte Mac";
 "Good afternoon" = "Buon pomeriggio";
@@ -744,6 +747,7 @@
 "Import model" = "Importa modello";
 "Imported {{0}}" = "Importato {{0}}";
 "In progress" = "In corso";
+"In use" = "In uso";
 "Incompatible LoRA" = "LoRA incompatibile";
 "Incorrect parental PIN." = "PIN parentale errato.";
 "Indexing…" = "Indicizzazione...";
@@ -854,6 +858,7 @@
 "Loading {{0}}…" = "Caricamento {{0}}…";
 "Loading…" = "Caricamento…";
 "Loads the selected on-device model" = "Carica il modello selezionato sul dispositivo";
+"Local AI, code, chat & images" = "IA locale, codice, chat e immagini";
 "Local AI. Optional connected features." = "IA locale. Funzionalità connesse opzionali.";
 "Local API" = "API locale";
 "Local API Server" = "Server API locale";
@@ -899,6 +904,7 @@
 "Max tokens" = "Token max";
 "Maximum {{0}} attachments per message." = "Massimo {{0}} allegati per messaggio.";
 "May not fit this device. Available memory is checked before generation." = "Potrebbe non essere compatibile con questo dispositivo. La memoria disponibile viene controllata prima della generazione.";
+"Memory" = "Memoria";
 "Memory estimates vary with context length and other active apps. Choose a smaller model if loading is refused." = "Le stime della memoria variano in base alla durata del contesto e ad altre app attive. Scegli un modello più piccolo se il caricamento viene rifiutato.";
 "Memory margin" = "Margine di memoria";
 "Memory safety" = "Sicurezza della memoria";
@@ -1030,6 +1036,7 @@
 "Normal" = "Normale";
 "Not Now" = "Non ora";
 "Not chat models — embedding, rerank, and transcription." = "Not chat models — embedding, rerank, and transcription.";
+"Not downloaded" = "Non scaricato";
 "Not enabled for this build" = "Non abilitato per questa build";
 "Not enough storage: this pack needs about {{0}} (including install headroom) but only {{1}} is free." = "Not enough storage: this pack needs about {{0}} (including install headroom) but only {{1}} is free.";
 "Not loaded" = "Non caricato";
@@ -1044,6 +1051,7 @@
 "OFFICIAL RECIPE" = "OFFICIAL RECIPE";
 "OK" = "OK";
 "OLED" = "OLED";
+"ONNX Runtime has no Mac Catalyst build, so this voice runs on iPhone and iPad only." = "ONNX Runtime non ha una build per Mac Catalyst, quindi questa voce funziona solo su iPhone e iPad.";
 "OPEN GUIDE" = "GUIDA APERTA";
 "OPEN_SOURCE" = "OPEN_SOURCE";
 "Off" = "Spento";
@@ -1054,6 +1062,8 @@
 "Official higher-quality KittenML ONNX · 8 English voices." = "KittenML ONNX ufficiale di qualità superiore · 8 voci inglesi.";
 "Official quantized KittenML ONNX · 8 English voices." = "KittenML quantizzato ufficiale ONNX · 8 voci inglesi.";
 "Offline" = "Non in linea";
+"On this Mac" = "Su questo Mac";
+"On this iPhone" = "Su questo iPhone";
 "On-device" = "Sul dispositivo";
 "On-device & private" = "Sul dispositivo e privato";
 "On-device AI studio manual & workflows" = "Manuale e flussi di lavoro di AI Studio sul dispositivo";
@@ -1310,13 +1320,16 @@
 "Running tool: {{0}}" = "Strumento in esecuzione: {{0}}";
 "Running {{0}}" = "In esecuzione {{0}}";
 "Runs all steps of the selected macro" = "Esegue tutti i passaggi della macro selezionata";
+"Runs on" = "Funziona su";
 "Runs on supported iPhone, iPad, and Apple silicon Mac devices." = "Funziona su dispositivi iPhone, iPad e Apple Silicon Mac supportati.";
 "Runs the selected assistant model locally — nothing leaves your device." = "Esegue localmente il modello di assistente selezionato: nulla lascia il tuo dispositivo.";
 "Runtime" = "Runtime";
+"Runtime Not Available" = "Tempo di esecuzione non disponibile";
 "Runtime Required" = "Tempo di esecuzione richiesto";
 "Runtime status: %@" = "Stato di esecuzione: %1$@";
 "Runtime status: {{0}}" = "Stato di esecuzione: {{0}}";
 "SD / SDXL diffusion via MLX. FLUX is too large for iOS memory." = "Diffusione SD/SDXL tramite MLX. FLUX è troppo grande per la memoria iOS.";
+"SDXL needs a high-memory Mac. Live headroom is checked before loading a model." = "SDXL richiede un Mac con molta memoria. L'headroom in tempo reale viene controllato prima di caricare un modello.";
 "SDXL needs the highest-memory iPhones. Live headroom is checked before loading a model." = "SDXL ha bisogno degli iPhone con la memoria più alta. L'headroom in tempo reale viene controllato prima di caricare un modello.";
 "SETTINGS" = "IMPOSTAZIONI";
 "SPEECH & EMBEDDING" = "SPEECH & EMBEDDING";
@@ -1353,6 +1366,7 @@
 "Search voice models" = "Cerca modelli vocali";
 "Search voices" = "Cerca voci";
 "Searching" = "Ricerca";
+"See all" = "Mostra tutto";
 "See the preview and follow launch updates." = "Guarda l'anteprima e segui gli aggiornamenti sul lancio.";
 "Select" = "Selezionare";
 "Select & Test" = "Seleziona e prova";
@@ -1403,6 +1417,7 @@
 "Shows on-device model and performance details" = "Mostra il modello del dispositivo e i dettagli sulle prestazioni";
 "Shows tool details" = "Mostra i dettagli dello strumento";
 "Silver" = "Argento";
+"Size" = "Dimensioni";
 "Size is a repository estimate and may include multiple variants. Runtime memory also depends on context length and other active features." = "La dimensione è una stima del repository e può includere più varianti. La memoria di runtime dipende anche dalla lunghezza del contesto e da altre funzionalità attive.";
 "Skip for now — finish in Models" = "Salta per ora: finisci in Modelli";
 "Smart handling" = "Gestione intelligente";
@@ -1466,6 +1481,7 @@
 "Supertonic (neural)" = "Supertonic (neurale)";
 "Supertonic — Multilingual" = "Supertonic — Multilingue";
 "Support" = "Supporto";
+"Supported Macs" = "Mac supportati";
 "Supported iPads" = "iPad supportati";
 "Supported iPhones" = "iPhone supportati";
 "Swap" = "Scambia";
@@ -1544,7 +1560,8 @@
 "Thinking mode" = "Modalità di pensiero";
 "Thinking…" = "Pensando…";
 "This Core AI language bundle is missing tokenizer/tokenizer.json." = "This Core AI language bundle is missing tokenizer/tokenizer.json.";
-"This Core AI model is not supported by this iPhone build." = "This Core AI model is not supported by this iPhone build.";
+"This Core AI model is not supported by this Mac build." = "Questo modello Core AI non è supportato da questa versione per Mac.";
+"This Core AI model is not supported by this iPhone build." = "Questo modello Core AI non è supportato da questa versione per iPhone.";
 "This build exceeds the iOS per-app memory budget and is available only on Apple silicon Mac." = "Questa build supera il budget di memoria per app iOS ed è disponibile solo su Apple Silicon Mac.";
 "This can include recent messages, system instructions, and text extracted from files, web pages, or images." = "Ciò può includere messaggi recenti, istruzioni di sistema e testo estratto da file, pagine Web o immagini.";
 "This chat is removed from this device. This can't be undone." = "Questa chat è stata rimossa da questo dispositivo. L'operazione non può essere annullata.";
@@ -1785,7 +1802,6 @@
 "asking the Mac if argent is available" = "chiedendo al Mac se l'argento è disponibile";
 "asr · whisper · dictation" = "asr · sussurro · dettatura";
 "assistant" = "assistente";
-"assistant, api keys, models" = "assistente, chiavi API, modelli";
 "attributions" = "attribuzioni";
 "audio" = "audio";
 "audio out" = "uscita audio";
@@ -1977,6 +1993,7 @@
 "iOS Local LLM" = "iOS Local LLM";
 "iOS Local LLM is built on the work of many researchers and engineers who released their models, frameworks, and tools openly. Each is listed below with its license and source." = "iOS Local LLM si basa sul lavoro di molti ricercatori e ingegneri che hanno rilasciato apertamente i loro modelli, framework e strumenti. Ciascuno è elencato di seguito con la sua licenza e fonte.";
 "iOS Local LLM runs large AI models entirely on-device. Inference needs at least 8 GB of physical RAM to load without thermal throttling or Jetsam kills." = "iOS Local LLM esegue modelli IA di grandi dimensioni interamente sul dispositivo. L'inferenza richiede almeno 8 GB di RAM fisica per essere caricata senza limitazioni termiche o interruzioni di Jetsam.";
+"iPhone · iPad" = "iPhone · iPad";
 "iPhone · iPad · Mac" = "iPhone · iPad · Mac";
 "idle" = "inattivo";
 "image" = "immagine";
@@ -2096,6 +2113,7 @@
 "off → hide pill, no auto-cap on max tokens" = "disattivato → nascondi pillola, nessun limite automatico sui token massimi";
 "off: web tool only runs on wi-fi" = "off: lo strumento web funziona solo su Wi-Fi";
 "on" = "SU";
+"on this Mac" = "su questo Mac";
 "on-device" = "sul dispositivo";
 "on-device AI heats the device — what to know" = "l'intelligenza artificiale sul dispositivo riscalda il dispositivo: cosa sapere";
 "on-device ai heats the device — what to know" = "l'intelligenza artificiale sul dispositivo riscalda il dispositivo: cosa sapere";
@@ -2171,6 +2189,7 @@
 "red" = "rosso";
 "refresh" = "aggiornare";
 "refresh devices" = "aggiornare i dispositivi";
+"replies stay on your Mac" = "le risposte restano su questo Mac";
 "required" = "richiesto";
 "reset" = "ripristina";
 "reset standings" = "resettare la classifica";
@@ -2204,6 +2223,7 @@
 "running right…" = "destra in esecuzione…";
 "running {{0}}…" = "in esecuzione {{0}}…";
 "running…" = "in esecuzione…";
+"runs on this Mac" = "funziona su questo Mac";
 "runs on this iPhone" = "funziona su questo iPhone";
 "runtime" = "runtime";
 "safari" = "safari";
@@ -2386,6 +2406,7 @@
 "wifi.exclamationmark" = "wifi.exclamationmark";
 "wifi.slash" = "wifi.slash";
 "wiped" = "spazzato via";
+"won't run on this Mac" = "non funzionerà su questo Mac";
 "won't run on this iPhone" = "non funzionerà su questo iPhone";
 "xmark" = "xmark";
 "you" = "tu";

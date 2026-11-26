@@ -95,7 +95,7 @@ struct VoiceModelPickerView: View {
         VStack(alignment: .leading, spacing: Space.xxs) {
             KCaption(text: "VOICE")
             KPageTitle(title: "Voice engines", size: 28)
-            Text(loc.t("Choose the voice that reads replies aloud. Downloaded voices run offline on this iPhone."))
+            Text(loc.t(DeviceCopy.downloadedVoicesRunOffline))
                 .font(T.sans(13))
                 .foregroundColor(T.ink2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -119,7 +119,7 @@ struct VoiceModelPickerView: View {
             if catalog.loadState == .failed, let error = catalog.loadError {
                 VStack(spacing: Space.s) {
                     Text(error).font(T.sans(12)).foregroundColor(T.bad)
-                    Button(loc.t("Retry")) { catalog.load() }.buttonStyle(.kSecondary)
+                    Button(loc.t("Retry")) { catalog.load() }.glassButton()
                 }
                 .padding()
             }
@@ -267,7 +267,7 @@ struct VoiceModelPickerView: View {
                     Label(sizeText(for: entry).map { loc.t("Download \($0)") } ?? loc.t("Download"),
                           systemImage: "arrow.down")
                 }
-                .buttonStyle(.kPrimary)
+                .glassButton(prominent: true)
             case .downloading(let progress):
                 VStack(alignment: .leading, spacing: Space.xs) {
                     ProgressView(value: progress).tint(T.accent)
@@ -277,7 +277,7 @@ struct VoiceModelPickerView: View {
                 }
             case .failed:
                 Button(loc.t("Retry")) { model?.start() }
-                    .buttonStyle(.kSecondary)
+                    .glassButton()
             case .builtIn, .ready, .unavailable:
                 EmptyView()
             }
@@ -525,7 +525,7 @@ struct VoiceCatalogDetailView: View {
                         Link(destination: url) {
                             Label(loc.t("Open Project"), systemImage: "arrow.up.right")
                         }
-                        .buttonStyle(.kSecondary)
+                        .glassButton()
                     }
                 }
                 .padding(Space.m)

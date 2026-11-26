@@ -108,14 +108,12 @@ struct HomeView: View {
 
     /// Subtitle under the hero title — shows the live load progress / error
     /// while preparing or failed, otherwise the model name + privacy tagline.
-    private var heroSubtitle: String {
+    private var heroSubtitle: String? {
         if case .loading(let m) = assistant.state, !m.isEmpty { return m }
         if case .failed(let e) = assistant.state, !e.isEmpty,
            !e.localizedCaseInsensitiveContains("cancel") { return e }
-        if needsModelSetup {
-            return loc.t("Choose and download a model in Models before starting a local chat.")
-        }
-        return "\(assistant.activeModel.displayName) — \(loc.t("replies stay on your iPhone"))"
+        if needsModelSetup { return nil }
+        return "\(assistant.activeModel.displayName) — \(loc.t(DeviceCopy.repliesStayOnDevice))"
     }
 
     private var needsModelSetup: Bool {
@@ -158,11 +156,13 @@ struct HomeView: View {
                 .font(T.display(22, .semibold))
                 .foregroundColor(T.ink)
                 .padding(.top, Space.m)
-            Text(heroSubtitle)
-                .font(T.sans(14))
-                .foregroundColor(T.ink2)
-                .padding(.top, Space.xxs)
-                .fixedSize(horizontal: false, vertical: true)
+            if let heroSubtitle {
+                Text(heroSubtitle)
+                    .font(T.sans(14))
+                    .foregroundColor(T.ink2)
+                    .padding(.top, Space.xxs)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             HStack(spacing: Space.s) {
                 KPrimaryButton(
@@ -207,13 +207,10 @@ struct HomeView: View {
     private func quickAction(icon: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: { HapticManager.impact(.light); action() }) {
             VStack(spacing: Space.s) {
-                ZStack {
-                    Image(systemName: icon)
-                        .font(.system(.title3, weight: .regular))
-                        .foregroundColor(T.ink2)
-                }
-                .frame(width: Size.control, height: Size.control)
-                .kGlass(cornerRadius: Radius.inner, fallbackFill: T.surface2)
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundStyle(T.ink)
+                    .frame(height: Size.tile)
                 Text(label)
                     .font(T.sans(12.5, .semibold))
                     .foregroundColor(T.ink)
@@ -221,7 +218,9 @@ struct HomeView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, Space.xs)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Top-align so every card in the row shares one icon line and one
+            // label start, even when a label wraps (e.g. "Local API Server").
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .padding(.vertical, Space.m)
             .background(card(Radius.card))
         }
@@ -245,7 +244,9 @@ struct HomeView: View {
                     Text("Generate an Image")
                         .font(.headline)
                         .foregroundStyle(T.ink)
-                    Text("Create images privately with on-device models")
+                    // Non-breaking hyphen: "on-device" never splits across lines.
+                    Text(loc.t("Create images privately with on-device models")
+                        .replacingOccurrences(of: "-", with: "\u{2011}"))
                         .font(.subheadline)
                         .foregroundStyle(T.ink2)
                         .multilineTextAlignment(.leading)
@@ -282,7 +283,7 @@ struct HomeView: View {
 
             if recent.isEmpty {
                 HStack(spacing: Space.s) {
-                    iconTile("message", tint: T.accent)
+                    iconTile("message")
                     VStack(alignment: .leading, spacing: Space.xxs) {
                         Text(loc.t("No recent activity yet"))
                             .font(T.sans(15, .medium)).foregroundStyle(T.ink)
@@ -309,12 +310,12 @@ struct HomeView: View {
 
     private func recentRow(_ convo: StoredConversation, isLast: Bool) -> some View {
         HStack(spacing: Space.s) {
-            iconTile("message", tint: T.accent)
+            iconTile("message")
             VStack(alignment: .leading, spacing: 1) {
                 Text(convo.title.isEmpty ? loc.t("Untitled chat") : convo.title)
                     .font(T.sans(15, .medium)).foregroundColor(T.ink)
                     .lineLimit(1)
-                Text("\(loc.t("assistant")) · \(Self.relative(convo.updatedAt))")
+                Text("\(loc.t("assistant").sentenceCased) · \(Self.relative(convo.updatedAt))")
                     .font(T.sans(12.5)).foregroundColor(T.ink3)
             }
             Spacer(minLength: 6)
@@ -325,7 +326,7 @@ struct HomeView: View {
         .padding(.horizontal, Space.m)
         .padding(.vertical, Space.s)
         .overlay(alignment: .bottom) {
-            if !isLast { Rectangle().fill(T.rule).frame(height: 0.5).padding(.leading, 59) }
+            if !isLast { Rectangle().fill(T.rule).frame(height: 0.5).padding(.leading, Space.m + Size.control + Space.s) }
         }
         .contentShape(Rectangle())
     }
@@ -335,11 +336,11 @@ struct HomeView: View {
     private var privacyCard: some View {
         let readyCount = center.models.filter { $0.isReady }.count
         return HStack(spacing: Space.s) {
-            iconTile("lock.fill", tint: T.accent, filledTile: true)
+            iconTile("lock.fill", filledTile: true)
             VStack(alignment: .leading, spacing: 1) {
                 Text(loc.t("Private by design"))
                     .font(T.sans(15, .semibold)).foregroundColor(T.ink)
-                Text("\(readyCount) \(loc.t("models")) · \(Self.bytes(center.totalStorageUsed)) \(loc.t("on this iPhone"))")
+                Text("\(readyCount) \(loc.t("models")) · \(Self.bytes(center.totalStorageUsed)) \(loc.t(DeviceCopy.onThisDevice))")
                     .font(T.sans(12.5)).foregroundColor(T.ink3)
             }
             Spacer(minLength: 6)
@@ -364,15 +365,13 @@ struct HomeView: View {
 
     // MARK: Reusable bits
 
-    private func iconTile(_ symbol: String, tint: Color, filledTile: Bool = false) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
-                .fill(filledTile ? AnyShapeStyle(T.accentStrong) : AnyShapeStyle(T.surface2))
-            Image(systemName: symbol)
-                .font(.system(size: filledTile ? 18 : 16, weight: .regular))
-                .foregroundColor(filledTile ? .white : T.ink2)
-        }
-        .frame(width: filledTile ? 38 : 32, height: filledTile ? 38 : 32)
+    private func iconTile(_ symbol: String, filledTile: Bool = false) -> some View {
+        Image(systemName: symbol)
+            .font(.body.weight(.semibold))
+            .foregroundStyle(filledTile ? Color.white : T.ink2)
+            .frame(width: Size.control, height: Size.control)
+            .background(filledTile ? AnyShapeStyle(T.accentStrong) : AnyShapeStyle(T.surface2),
+                        in: RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
     }
 
     private func card(_ radius: CGFloat) -> some View {

@@ -232,18 +232,16 @@ struct ImageGenerationView: View {
             }
             HStack(spacing: Space.s) {
                 if svc.isBusy {
-                    Button {
+                    Button(role: .destructive) {
                         svc.cancel()
                         HapticManager.impact(.medium)
                     } label: {
                         Text("Stop")
                             .font(T.display(16, .semibold))
-                            .foregroundColor(T.bad)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, Space.m)
-                            .background(RoundedRectangle(cornerRadius: Radius.card).fill(T.bad.opacity(0.12)))
                     }
-                    .buttonStyle(.plain)
+                    .glassButton()
+                    .controlSize(.large)
                 } else {
                     Button {
                         KeyboardDismiss.now()
@@ -258,16 +256,11 @@ struct ImageGenerationView: View {
                             Text(svc.isInstalled(model) ? "Generate" : "Download & Generate")
                         }
                         .font(T.display(16, .semibold))
-                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, Space.m)
-                        .background(
-                            RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
-                                .fill(prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || svc.isDownloading(model)
-                                      ? T.ink4 : T.roseHi)
-                        )
                     }
-                    .buttonStyle(.plain)
+                    // The studio's main action: prominent glass; disabled dims it.
+                    .glassButton(prominent: true)
+                    .controlSize(.large)
                     .disabled(prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || svc.isDownloading(model))
                     .accessibilityIdentifier("imageGenerationStart")
                 }
@@ -329,6 +322,7 @@ private struct ImageGenerationSelectedModelCard: View {
 struct ImageGenerationModelsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.koduTheme) private var T
+    @ObservedObject private var loc = LocalizationService.shared
 
     var body: some View {
         NavigationStack {
@@ -342,7 +336,7 @@ struct ImageGenerationModelsView: View {
                         ForEach(ImageGenerationService.catalog) { model in
                             ImageGenerationModelRow(model: model)
                         }
-                        Text("SDXL needs the highest-memory iPhones. Live headroom is checked before loading a model.")
+                        Text(loc.t(DeviceCopy.sdxlMemoryNote))
                             .font(.footnote)
                             .foregroundStyle(T.ink3)
                     }
@@ -500,10 +494,11 @@ struct ImageModelDownloadControl: View {
                     }
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(T.ink)
-                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .frame(maxWidth: .infinity)
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.kSecondary)
+                .glassButton()
+                .controlSize(.large)
                 .tint(T.accent)
                 .disabled(!parentalControls.canGenerate || service.isBusy)
                 .accessibilityLabel("Download \(model.displayName), \(model.sizeLabel)")

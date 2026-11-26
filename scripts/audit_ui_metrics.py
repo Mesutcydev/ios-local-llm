@@ -28,6 +28,8 @@ RULES = [
      lambda v: 4 < v < 999, "use a Radius token"),
     ("font", re.compile(r"\.system\(size:\s*" + NUM),
      lambda v: True, "use a text style (TextScale)"),
+    ("font", re.compile(r"\.system\(size:\s*[^,)\n?]*\?\s*" + NUM),
+     lambda v: True, "use text styles in both branches"),
     ("square", re.compile(r"\.frame\(width:\s*" + NUM + r",\s*height:\s*\1\s*\)"),
      lambda v: 16 <= v <= 56, "use a Size token"),
     ("tracking", re.compile(r"\.tracking\(\s*" + NUM + r"\s*\)"),

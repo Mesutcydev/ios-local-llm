@@ -37,10 +37,10 @@ struct CoreAIDownloadControlsView: View {
                 HStack {
                     if manager.state != .installing {
                         Button("Pause") { manager.pause() }
-                            .buttonStyle(.kSecondary)
+                            .glassButton()
                     }
                     Button("Cancel", role: .destructive) { manager.cancel() }
-                        .buttonStyle(.kSecondary)
+                        .glassButton()
                 }
             }
 
@@ -50,10 +50,10 @@ struct CoreAIDownloadControlsView: View {
                     manager.resume()
                     ToastCenter.shared.info("Resuming Core AI download")
                 }
-                .buttonStyle(.kPrimary)
+                .glassButton(prominent: true)
                 .tint(T.accent)
                 Button("Cancel", role: .destructive) { manager.cancel() }
-                    .buttonStyle(.kSecondary)
+                    .glassButton()
             }
 
         case .failed(let message):
@@ -67,10 +67,10 @@ struct CoreAIDownloadControlsView: View {
                         manager.resume()
                         ToastCenter.shared.info("Retrying Core AI download")
                     }
-                    .buttonStyle(.kPrimary)
+                    .glassButton(prominent: true)
                     .tint(T.accent)
                     Button("Clear") { manager.cancel() }
-                        .buttonStyle(.kSecondary)
+                        .glassButton()
                 }
             }
 
@@ -86,7 +86,7 @@ struct CoreAIDownloadControlsView: View {
             } label: {
                 Label("Download", systemImage: "arrow.down.circle")
             }
-            .buttonStyle(.kPrimary)
+            .glassButton(prominent: true)
             .tint(T.accent)
         }
     }

@@ -147,7 +147,7 @@ targets:
         # writes these into the generated Info.plist files on every run,
         # so hand-edits to those plists get reverted next regen — always
         # bump HERE first, then `xcodegen` to propagate.
-        CFBundleShortVersionString: "3.5.3"
+        CFBundleShortVersionString: "3.5.6"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         # Standard HTTPS only — answers the ASC export-compliance question
         # automatically so review submission doesn't stall on it.
@@ -194,7 +194,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: IOSLocalLLM/IOSLocalLLM.entitlements
         CODE_SIGN_STYLE: Automatic
         VERSIONING_SYSTEM: apple-generic
-        CURRENT_PROJECT_VERSION: "156"
+        CURRENT_PROJECT_VERSION: "162"
         # Private Cloud Compute requires a managed capability granted to the
         # developer account. Standard builds use the local-only entitlement
         # file. Enable FM_PCC and IOSLocalLLM-PCC.entitlements explicitly only
@@ -394,7 +394,7 @@ targets:
         CFBundleDisplayName: OnDevice LLM
         # Must match the main target's version above — App Store rejects
         # extension targets with mismatched marketing versions.
-        CFBundleShortVersionString: "3.5.3"
+        CFBundleShortVersionString: "3.5.6"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         ITSAppUsesNonExemptEncryption: false
         NSExtension:
@@ -414,7 +414,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: IOSLocalLLMShareExtension/IOSLocalLLMShareExtension.entitlements
         CODE_SIGN_STYLE: Automatic
         VERSIONING_SYSTEM: apple-generic
-        CURRENT_PROJECT_VERSION: "156"
+        CURRENT_PROJECT_VERSION: "162"
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_EMIT_LOC_STRINGS: YES
 

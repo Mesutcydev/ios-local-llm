@@ -61,6 +61,30 @@ final class LocalAIFoundationTests: XCTestCase {
         XCTAssertTrue(ModelCacheProbe.isUsableModelDirectory(dir))
     }
 
+    func testCuratedGGUFUsesExactModelAndProjectorPaths() throws {
+        let dir = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let nested = dir.appendingPathComponent("selected")
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        let magic = Data("GGUF".utf8)
+        for name in ["old-Q4_K_M.gguf", "mmproj-old-Q4_K_M.gguf", "selected/model-Q2_0.gguf", "selected/mmproj-model.gguf"] {
+            try magic.write(to: dir.appendingPathComponent(name))
+        }
+        let allowed = ["selected/model-Q2_0.gguf", "selected/mmproj-model.gguf", "LICENSE"]
+        XCTAssertEqual(LocalModelFileValidator.ggufLLM(in: dir, allowedFiles: allowed),
+                       nested.appendingPathComponent("model-Q2_0.gguf"))
+        XCTAssertEqual(LocalModelFileValidator.ggufProjector(in: dir, allowedFiles: allowed),
+                       nested.appendingPathComponent("mmproj-model.gguf"))
+        // Generic imports keep their established ranking.
+        XCTAssertEqual(LocalModelFileValidator.ggufLLM(in: dir)?.lastPathComponent, "old-Q4_K_M.gguf")
+        try FileManager.default.removeItem(at: nested.appendingPathComponent("model-Q2_0.gguf"))
+        XCTAssertNil(LocalModelFileValidator.ggufLLM(in: dir, allowedFiles: allowed))
+        try Data("NOPE".utf8).write(to: nested.appendingPathComponent("model-Q2_0.gguf"))
+        XCTAssertNil(LocalModelFileValidator.ggufLLM(in: dir, allowedFiles: allowed))
+        try FileManager.default.removeItem(at: nested.appendingPathComponent("mmproj-model.gguf"))
+        XCTAssertNil(LocalModelFileValidator.ggufProjector(in: dir, allowedFiles: allowed))
+    }
+
     func testShardedSafetensorsRequireEveryShard() throws {
         let dir = try makeTempDir()
         defer { try? FileManager.default.removeItem(at: dir) }

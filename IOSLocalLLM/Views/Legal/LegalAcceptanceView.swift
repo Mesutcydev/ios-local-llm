@@ -78,14 +78,8 @@ struct LegalAcceptanceView: View {
                                 .font(T.mono(11))
                                 .foregroundColor(T.ink4)
                         }
-                        .foregroundColor(canContinue ? T.bg : T.ink3)
-                        .padding(.horizontal, Space.m)
-                        .padding(.vertical, Space.s)
-                        .frame(minHeight: 50)
-                        .background(RoundedRectangle(cornerRadius: Radius.control)
-                            .fill(canContinue ? T.ink : T.surface2))
                     }
-                    .buttonStyle(.plain)
+                    .glassButton(prominent: true)
                     .disabled(!canContinue)
                     .accessibilityLabel("agree and continue".tr)
                     .accessibilityIdentifier("legal.agree")

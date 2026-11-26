@@ -383,12 +383,10 @@ struct VisualModelComparisonView: View {
                          : "compare")
                         .font(T.mono(13, .semibold))
                 }
-                .foregroundColor(T.bg)
-                .padding(.horizontal, Space.m).padding(.vertical, Space.s)
                 .frame(maxWidth: .infinity)
-                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(canRun ? T.ink : T.ink3))
             }
-            .buttonStyle(.plain)
+            .glassButton(prominent: true)
+            .controlSize(.large)
             .disabled(!canRun)
 
             if !reason.isEmpty && !(leftRunning || rightRunning) {

@@ -72,7 +72,11 @@ final class CodingAssistantServicePolicyTests: XCTestCase {
         )
 
         XCTAssertFalse(policy.storageBacked)
+        #if targetEnvironment(macCatalyst)
+        XCTAssertEqual(policy.gpuLayers, 999)
+        #else
         XCTAssertEqual(policy.gpuLayers, 12)
+        #endif
         XCTAssertGreaterThan(policy.minimumAvailableBytes, 4_000_000_000)
     }
 

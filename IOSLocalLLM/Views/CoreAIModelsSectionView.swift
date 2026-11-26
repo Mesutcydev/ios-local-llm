@@ -9,7 +9,6 @@ struct CoreAIModelsSectionView: View {
     @ObservedObject private var assistant = CodingAssistantService.shared
     @Environment(\.koduTheme) private var theme
     @State private var pendingDownload: CoreAIZooModel?
-    @State private var pendingRemoval: CoreAIInstalledModel?
 
     private var installedPacks: [CoreAIInstalledModel] {
         store.installations.filter {
@@ -18,47 +17,54 @@ struct CoreAIModelsSectionView: View {
     }
 
     var body: some View {
-        if showsCatalog || !installedPacks.isEmpty {
+        if showsCatalog {
+            catalogCard
+        } else {
+            // My Models: plain rows, so the enclosing list card divides them
+            // like the MLX and GGUF rows around them.
+            ForEach(installedPacks) { installed in
+                CoreAIInstalledPackRow(installed: installed)
+            }
+        }
+    }
+
+    private var catalogCard: some View {
         VStack(alignment: .leading, spacing: Space.m) {
             Label("Core AI · Optional local runtime", systemImage: "cpu")
                 .font(.headline)
             // On a device that can't run Core AI the reason sits inside the
-            // disclosure below, so the card stays two lines tall and the
-            // models that do run are not pushed down the page.
-            if let reason = CoreAIInferenceService.availabilityReason {
-                if !showsCatalog {
-                    Text(reason).font(.subheadline).foregroundStyle(.secondary)
-                }
-            } else if showsCatalog {
+            // disclosure below, so the card stays two lines tall.
+            if CoreAIInferenceService.availabilityReason == nil {
                 Text("Text chat runs on this device. Download a complete pack before loading. One heavy runtime is kept in memory at a time.")
                     .font(.subheadline).foregroundStyle(.secondary)
             }
-            ForEach(installedPacks) { installed in
-                CoreAIInstalledPackRow(installed: installed) {
-                    pendingRemoval = installed
+            if !installedPacks.isEmpty {
+                ModelsListCard {
+                    ForEach(installedPacks) { installed in
+                        CoreAIInstalledPackRow(installed: installed)
+                    }
                 }
             }
-            if showsCatalog {
-                DisclosureGroup("Core AI model downloads") {
-                    LazyVStack(alignment: .leading, spacing: Space.m) {
-                        if let reason = CoreAIInferenceService.availabilityReason {
-                            Text(reason).font(.subheadline).foregroundStyle(.secondary)
-                        }
-                        ForEach(CoreAIZooCatalog.downloadableTextModels.filter {
-                            query.isEmpty || $0.displayName.localizedCaseInsensitiveContains(query)
-                        }) { pack in
-                            if store.installedModel(id: pack.id) == nil {
-                                CoreAICatalogPackRow(pack: pack) { pendingDownload = pack }
-                            }
+            DisclosureGroup("Core AI model downloads") {
+                LazyVStack(alignment: .leading, spacing: Space.m) {
+                    if let reason = CoreAIInferenceService.availabilityReason {
+                        Text(reason).font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    ForEach(CoreAIZooCatalog.downloadableTextModels.filter {
+                        query.isEmpty || $0.displayName.localizedCaseInsensitiveContains(query)
+                    }) { pack in
+                        if store.installedModel(id: pack.id) == nil {
+                            CoreAICatalogPackRow(pack: pack) { pendingDownload = pack }
                         }
                     }
-                    .padding(.top, Space.s)
                 }
-                .accessibilityIdentifier("coreai.catalog")
+                .padding(.top, Space.s)
             }
+            .accessibilityIdentifier("coreai.catalog")
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Space.m)
-        .background(theme.surface, in: RoundedRectangle(cornerRadius: Radius.card))
+        .background(theme.surface, in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
         .onAppear { store.refresh() }
         .confirmationDialog("Download Core AI pack?", isPresented: Binding(get: { pendingDownload != nil }, set: { if !$0 { pendingDownload = nil } }), presenting: pendingDownload) { pack in
             Button("Download \(pack.approxDownloadBytes.formattedBytes)") {
@@ -67,41 +73,52 @@ struct CoreAIModelsSectionView: View {
         } message: { pack in
             Text("This downloads model files from Hugging Face. Keep the app open while the transfer completes. \(pack.licenseNotice)")
         }
-        .confirmationDialog("Remove Core AI pack?", isPresented: Binding(get: { pendingRemoval != nil }, set: { if !$0 { pendingRemoval = nil } }), presenting: pendingRemoval) { installed in
-            Button("Remove pack", role: .destructive) {
-                Task {
-                    if assistant.activeModel.id == installed.assistantSelectionID {
-                        await assistant.unloadAndWaitForCleanup()
-                    }
-                    do { try store.removeModel(id: installed.id) }
-                    catch { ToastCenter.shared.error("Could not remove pack", detail: error.localizedDescription) }
-                }
-            }
-        }
-        }
     }
 }
 
+/// Same row as an installed MLX or GGUF model; tap for Use / Remove.
 private struct CoreAIInstalledPackRow: View {
     let installed: CoreAIInstalledModel
-    let onRemove: () -> Void
+    @ObservedObject private var store = CoreAIModelStore.shared
     @ObservedObject private var assistant = CodingAssistantService.shared
+    @ObservedObject private var loc = LocalizationService.shared
+    @State private var showActions = false
+
+    private var isInUse: Bool { assistant.activeModel.id == installed.assistantSelectionID }
+
+    private var status: String {
+        if let reason = CoreAIInferenceService.availabilityReason { return reason }
+        guard isInUse else { return "" }
+        return loc.t(assistant.state == .ready || assistant.state == .generating ? "Loaded" : "In use")
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.s) {
-            Text(installed.manifest.displayName).font(.headline)
-            Label("Installed · Core AI", systemImage: "checkmark.circle")
-                .font(.caption).foregroundStyle(.secondary)
-            HStack {
-                Button("Use model") {
-                    guard let model = installed.assistantModel else { return }
-                    Task { await assistant.switchTo(model, allowDownload: false) }
-                }
-                .buttonStyle(.kSecondary)
-                .disabled(assistant.state == .generating)
-                Button("Remove", role: .destructive, action: onRemove)
-                    .buttonStyle(.kSecondary)
+        ModelsCompactRow(
+            name: installed.manifest.displayName,
+            subtitle: loc.t("Assistant") + " · " + installed.manifest.totalDownloadBytes.formattedBytes,
+            status: status,
+            runtime: .coreAI,
+            actionTitle: loc.t("Details"),
+            identifier: "models.installed.coreai.\(installed.id)",
+            action: { showActions = true }
+        )
+        .confirmationDialog(installed.manifest.displayName, isPresented: $showActions, titleVisibility: .visible) {
+            Button("Use model") {
+                guard let model = installed.assistantModel else { return }
+                Task { await assistant.switchTo(model, allowDownload: false) }
             }
+            .disabled(isInUse || assistant.state == .generating || CoreAIInferenceService.availabilityReason != nil)
+            Button("Remove pack", role: .destructive) { remove() }
+        } message: {
+            Text(installed.manifest.totalDownloadBytes.formattedBytes + " · Core AI")
+        }
+    }
+
+    private func remove() {
+        Task {
+            if isInUse { await assistant.unloadAndWaitForCleanup() }
+            do { try store.removeModel(id: installed.id) }
+            catch { ToastCenter.shared.error("Could not remove pack", detail: error.localizedDescription) }
         }
     }
 }
@@ -123,7 +140,7 @@ private struct CoreAICatalogPackRow: View {
                 CoreAIDownloadControlsView(manager: manager)
             } else {
                 Button("Review download", action: onReviewDownload)
-                    .buttonStyle(.kSecondary)
+                    .glassButton()
                     .disabled(CoreAIInferenceService.availabilityReason != nil)
                     .accessibilityIdentifier("coreai.download.\(pack.id)")
             }

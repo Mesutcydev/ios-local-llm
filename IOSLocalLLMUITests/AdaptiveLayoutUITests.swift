@@ -57,6 +57,22 @@ final class AdaptiveLayoutUITests: XCTestCase {
         item.tap()
     }
 
+    /// Role filters live on Discover; a short library shows none.
+    private func openDiscover(_ app: XCUIApplication) {
+        let segment = app.buttons["Discover"]
+        if segment.waitForExistence(timeout: 5), segment.isHittable {
+            segment.tap()
+            return
+        }
+        // Accessibility text sizes turn the destination picker into a menu.
+        let menu = app.buttons["modelsDestinationPicker"].firstMatch
+        XCTAssertTrue(menu.waitForExistence(timeout: 5))
+        menu.tap()
+        let item = app.buttons["Discover"].firstMatch
+        XCTAssertTrue(item.waitForExistence(timeout: 5))
+        item.tap()
+    }
+
     private func sidebarReveal(in app: XCUIApplication) -> XCUIElement {
         app.buttons.matching(NSPredicate(
             format: "label CONTAINS[c] %@ AND NOT (label BEGINSWITH[c] %@)", "sidebar", "Hide"
@@ -173,6 +189,7 @@ final class AdaptiveLayoutUITests: XCTestCase {
         if hideSidebar.exists, hideSidebar.isHittable { hideSidebar.tap() }
         let catalog = app.scrollViews["models.catalog.scroll"]
         XCTAssertTrue(catalog.waitForExistence(timeout: 10))
+        openDiscover(app)
         for role in ["Assistant", "Lens", "Voice", "Image"] {
             let button = catalog.descendants(matching: .any)
                 .matching(identifier: "modelsSection-\(role)").firstMatch
@@ -195,15 +212,10 @@ final class AdaptiveLayoutUITests: XCTestCase {
         let library = app.buttons["My Models"]
         XCTAssertTrue(library.waitForExistence(timeout: 10))
         XCTAssertTrue(library.isSelected)
-        let input = app.textFields["Search downloaded models…"]
-        XCTAssertTrue(input.exists)
-        input.tap()
-        input.typeText("no-installed-model-matches-this-query")
-        XCTAssertTrue(app.staticTexts["No downloaded models found"].waitForExistence(timeout: 5))
+        // A short library has nothing to search or filter; Import stays up top.
+        XCTAssertFalse(app.textFields["Search downloaded models…"].exists)
+        XCTAssertFalse(app.buttons["modelsSection-Assistant"].exists)
         XCTAssertTrue(app.buttons["modelsImportButton"].isHittable)
-        // Both the field and empty-state recovery offer a clear action.
-        app.buttons["Clear search"].firstMatch.tap()
-        XCTAssertEqual(input.value as? String, "Search downloaded models…")
         app.buttons["Discover"].tap()
         XCTAssertTrue(app.textFields["Search online · Hugging Face…"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Discover"].isSelected)
@@ -215,8 +227,10 @@ final class AdaptiveLayoutUITests: XCTestCase {
         selectTab("Models", in: app)
         app.buttons["Discover"].tap()
         let scroll = app.scrollViews["models.catalog.scroll"]
+        // Core AI sits at the end of the full Assistant list, not the overview.
+        scroll.buttons["modelsSection-Assistant"].tap()
         let disclosure = app.buttons["coreai.catalog"]
-        for _ in 0..<8 {
+        for _ in 0..<16 {
             if disclosure.isHittable { break }
             scroll.swipeUp()
         }
@@ -313,7 +327,8 @@ final class AdaptiveLayoutUITests: XCTestCase {
         row.tap()
         let close = app.buttons["models.details.close"]
         XCTAssertTrue(close.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["Select"].exists)
+        // System Voice is the default, so its page usually says In use.
+        XCTAssertTrue(app.buttons["Select"].exists || app.staticTexts["In use"].exists)
         capture(app, "Models-voice-details-dark")
         close.tap()
         XCTAssertTrue(catalog.waitForExistence(timeout: 5))
@@ -337,7 +352,6 @@ final class AdaptiveLayoutUITests: XCTestCase {
         let app = launch(screen: "models", language: "tr")
         XCTAssertTrue(app.buttons["Modellerim"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["İçe aktar"].exists)
-        XCTAssertTrue(app.textFields["İndirilen modellerde ara…"].exists)
         app.buttons["Keşfet"].tap()
         let catalog = app.scrollViews["models.catalog.scroll"]
         let assistant = catalog.buttons["modelsSection-Assistant"]
@@ -353,8 +367,9 @@ final class AdaptiveLayoutUITests: XCTestCase {
         XCTAssertTrue(app.buttons["models.details.close"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.buttons["models.details.close"].label, "Tamam")
         XCTAssertFalse(app.staticTexts["RECOMMENDED"].exists)
+        // App-wide model settings live in Settings, not on each model page.
         XCTAssertFalse(app.staticTexts["SMART HANDLING"].exists)
-        XCTAssertTrue(app.staticTexts["AKILLI YÖNETİM"].exists)
+        XCTAssertFalse(app.staticTexts["AKILLI YÖNETİM"].exists)
         capture(app, "Models-Turkish-details")
         app.buttons["Model ayarları"].tap()
         // This Done button is a native SwiftUI literal rather than loc.t(...).
@@ -395,9 +410,13 @@ final class AdaptiveLayoutUITests: XCTestCase {
         assistant.tap()
         XCTAssertTrue(input.waitForExistence(timeout: 5))
         XCTAssertEqual(input.value as? String, enteredDraft)
-        XCTAssertTrue(app.buttons.matching(NSPredicate(
+        // With no model downloaded the localized setup button replaces the
+        // runtime status strip; either way the screen is in Turkish.
+        let status = app.buttons.matching(NSPredicate(
             format: "label BEGINSWITH %@", "Çalışma zamanı durumu:"
-        )).firstMatch.exists)
+        )).firstMatch
+        let setup = app.buttons["assistant.model.setup"]
+        XCTAssertTrue(status.exists || (setup.exists && setup.label != "Choose a model"))
         XCTAssertFalse(app.staticTexts["Not loaded"].exists)
         capture(app, "Assistant-Turkish-live-switch-keeps-draft")
     }

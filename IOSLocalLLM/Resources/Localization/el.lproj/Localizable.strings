@@ -38,6 +38,7 @@
 "2-bit · 1.1 GB · balanced" = "2-bit · 1,1 GB · ισορροπημένο";
 "2-bit · 2.3 GB · quality low-bit" = "2 bit · 2,3 GB · ποιότητα low-bit";
 "2-bit · 510 MB · ultralight" = "2-bit · 510 MB · εξαιρετικά ελαφρύ";
+"2-bit · 7.7 GB download · Mac only" = "2-bit · Λήψη 7,7 GB · Μόνο Mac";
 "2-bit · 8.5 GB download · Mac only" = "2-bit · Λήψη 8,5 GB · Μόνο Mac";
 "20 steps · 512px" = "20 βήματα · 512 εικονοστοιχεία";
 "3 B class · sweet spot on 6 GB" = "3 B class · sweet spot στα 6 GB";
@@ -181,6 +182,7 @@
 "Assistant is thinking…" = "Ο βοηθός σκέφτεται…";
 "Assistant response transcript" = "Μεταγραφή απάντησης βοηθού";
 "Assistant, %@" = "Βοηθός, %1$@";
+"Assistant, API keys, models" = "Βοηθός, κλειδιά API, μοντέλα";
 "Assistant, {{0}}" = "Βοηθός, {{0}}";
 "Assistants" = "Βοηθοί";
 "Audio must be mono PCM at 16 kHz for whisper.cpp" = "Ο ήχος πρέπει να είναι mono PCM στα 16 kHz για το whisper.cpp";
@@ -284,6 +286,7 @@
 "Choose file" = "Επιλέξτε αρχείο";
 "Choose installed model" = "Επιλέξτε εγκατεστημένο μοντέλο";
 "Choose model" = "Επιλέξτε μοντέλο";
+"Choose the voice that reads replies aloud. Downloaded voices run offline on this Mac." = "Επιλέξτε τη φωνή που διαβάζει δυνατά τις απαντήσεις. Οι φωνές που έχετε κατεβάσει λειτουργούν εκτός σύνδεσης σε αυτό το Mac.";
 "Choose the voice that reads replies aloud. Downloaded voices run offline on this iPhone." = "Επιλέξτε τη φωνή που διαβάζει δυνατά τις απαντήσεις. Οι φωνές που έχετε κατεβάσει λειτουργούν εκτός σύνδεσης σε αυτό το iPhone.";
 "Choose what you want to try first. Download only the model you need now; add the others later in Models." = "Επιλέξτε πρώτα τι θέλετε να δοκιμάσετε. Κάντε λήψη μόνο του μοντέλου που χρειάζεστε τώρα. προσθέστε τα άλλα αργότερα στα Μοντέλα.";
 "Choose your models" = "Επιλέξτε τα μοντέλα σας";
@@ -674,7 +677,7 @@
 "Generating · shared runtime is busy" = "Δημιουργία · ο κοινόχρηστος χρόνος εκτέλεσης είναι απασχολημένος";
 "Generating · {{0}}%" = "Δημιουργία · {{0}}%";
 "Generating…" = "Δημιουργώντας…";
-"Get" = "Παίρνω";
+"Get" = "Λήψη";
 "Get a fast on-device answer from the built-in system model — no app launch, fully private." = "Λάβετε μια γρήγορη απάντηση στη συσκευή από το ενσωματωμένο μοντέλο συστήματος — χωρίς εκκίνηση εφαρμογής, πλήρως ιδιωτική.";
 "Get the Mac bridge" = "Αποκτήστε τη γέφυρα Mac";
 "Good afternoon" = "Καλημέρα";
@@ -744,6 +747,7 @@
 "Import model" = "Μοντέλο εισαγωγής";
 "Imported {{0}}" = "Εισήχθη {{0}}";
 "In progress" = "Σε εξέλιξη";
+"In use" = "Σε χρήση";
 "Incompatible LoRA" = "Μη συμβατό LoRA";
 "Incorrect parental PIN." = "Εσφαλμένο γονικό PIN.";
 "Indexing…" = "Ευρετηρίαση…";
@@ -834,7 +838,7 @@
 "LoRA removed" = "Το LoRA αφαιρέθηκε";
 "LoRA support coming soon" = "Η υποστήριξη LoRA έρχεται σύντομα";
 "LoRA weights missing" = "Λείπουν βάρη LoRA";
-"Load" = "Φορτίο";
+"Load" = "Φόρτωση";
 "Load failed" = "Η φόρτωση απέτυχε";
 "Load model" = "Μοντέλο φόρτωσης";
 "Load now" = "Φόρτωση τώρα";
@@ -854,6 +858,7 @@
 "Loading {{0}}…" = "Φόρτωση {{0}}…";
 "Loading…" = "Φόρτωση…";
 "Loads the selected on-device model" = "Φορτώνει το επιλεγμένο μοντέλο στη συσκευή";
+"Local AI, code, chat & images" = "Τοπικό AI, συνομιλία και φωνή";
 "Local AI. Optional connected features." = "Τοπικό AI. Προαιρετικά συνδεδεμένα χαρακτηριστικά.";
 "Local API" = "Τοπικό API";
 "Local API Server" = "Τοπικός διακομιστής API";
@@ -899,6 +904,7 @@
 "Max tokens" = "Μέγ. μάρκες";
 "Maximum {{0}} attachments per message." = "Μέγιστο {{0}} συνημμένα ανά μήνυμα.";
 "May not fit this device. Available memory is checked before generation." = "Μπορεί να μην ταιριάζει σε αυτήν τη συσκευή. Η διαθέσιμη μνήμη ελέγχεται πριν από τη δημιουργία.";
+"Memory" = "Μνήμη";
 "Memory estimates vary with context length and other active apps. Choose a smaller model if loading is refused." = "Οι εκτιμήσεις μνήμης ποικίλλουν ανάλογα με το μήκος περιβάλλοντος και άλλες ενεργές εφαρμογές. Επιλέξτε ένα μικρότερο μοντέλο εάν η φόρτωση απορρίπτεται.";
 "Memory margin" = "Περιθώριο μνήμης";
 "Memory safety" = "Ασφάλεια μνήμης";
@@ -1030,6 +1036,7 @@
 "Normal" = "Κανονικός";
 "Not Now" = "Όχι τώρα";
 "Not chat models — embedding, rerank, and transcription." = "Not chat models — embedding, rerank, and transcription.";
+"Not downloaded" = "Δεν έχει ληφθεί";
 "Not enabled for this build" = "Δεν είναι ενεργοποιημένο για αυτήν την κατασκευή";
 "Not enough storage: this pack needs about {{0}} (including install headroom) but only {{1}} is free." = "Not enough storage: this pack needs about {{0}} (including install headroom) but only {{1}} is free.";
 "Not loaded" = "Δεν έχει φορτωθεί";
@@ -1044,6 +1051,7 @@
 "OFFICIAL RECIPE" = "OFFICIAL RECIPE";
 "OK" = "ΕΝΤΑΞΕΙ";
 "OLED" = "OLED";
+"ONNX Runtime has no Mac Catalyst build, so this voice runs on iPhone and iPad only." = "Το ONNX Runtime δεν έχει έκδοση για Mac Catalyst, επομένως αυτή η φωνή λειτουργεί μόνο σε iPhone και iPad.";
 "OPEN GUIDE" = "ΑΝΟΙΚΤΟΣ ΟΔΗΓΟΣ";
 "OPEN_SOURCE" = "OPEN_SOURCE";
 "Off" = "Μακριά από";
@@ -1054,6 +1062,8 @@
 "Official higher-quality KittenML ONNX · 8 English voices." = "Επίσημο KittenML ONNX υψηλότερης ποιότητας · 8 αγγλικές φωνές.";
 "Official quantized KittenML ONNX · 8 English voices." = "Επίσημο κβαντισμένο KittenML ONNX · 8 αγγλικές φωνές.";
 "Offline" = "Εκτός σύνδεσης";
+"On this Mac" = "Σε αυτό το Mac";
+"On this iPhone" = "Σε αυτό το iPhone";
 "On-device" = "Στη συσκευή";
 "On-device & private" = "Στη συσκευή & ιδιωτικό";
 "On-device AI studio manual & workflows" = "Εγχειρίδιο και ροές εργασιών στο AI στούντιο στη συσκευή";
@@ -1310,13 +1320,16 @@
 "Running tool: {{0}}" = "Εργαλείο λειτουργίας: {{0}}";
 "Running {{0}}" = "Τρέξιμο {{0}}";
 "Runs all steps of the selected macro" = "Εκτελεί όλα τα βήματα της επιλεγμένης μακροεντολής";
+"Runs on" = "Λειτουργεί σε";
 "Runs on supported iPhone, iPad, and Apple silicon Mac devices." = "Λειτουργεί σε υποστηριζόμενες συσκευές iPhone, iPad και Apple silicon Mac.";
 "Runs the selected assistant model locally — nothing leaves your device." = "Εκτελεί το επιλεγμένο μοντέλο βοηθού τοπικά — τίποτα δεν φεύγει από τη συσκευή σας.";
 "Runtime" = "Χρόνο εκτέλεσης";
+"Runtime Not Available" = "Ο χρόνος εκτέλεσης δεν είναι διαθέσιμος";
 "Runtime Required" = "Απαιτείται χρόνος εκτέλεσης";
 "Runtime status: %@" = "Κατάσταση χρόνου εκτέλεσης: %1$@";
 "Runtime status: {{0}}" = "Κατάσταση χρόνου εκτέλεσης: {{0}}";
 "SD / SDXL diffusion via MLX. FLUX is too large for iOS memory." = "Διάχυση SD / SDXL μέσω MLX. Το FLUX είναι πολύ μεγάλο για τη μνήμη iOS.";
+"SDXL needs a high-memory Mac. Live headroom is checked before loading a model." = "Το SDXL χρειάζεται Mac με μεγάλη μνήμη. Ο ζωντανός χώρος ελέγχεται πριν από τη φόρτωση ενός μοντέλου.";
 "SDXL needs the highest-memory iPhones. Live headroom is checked before loading a model." = "Η SDXL χρειάζεται τα iPhone με την υψηλότερη μνήμη. Ο χώρος του ζωντανού κεφαλιού ελέγχεται πριν από τη φόρτωση ενός μοντέλου.";
 "SETTINGS" = "ΡΥΘΜΊΣΕΙΣ";
 "SPEECH & EMBEDDING" = "SPEECH & EMBEDDING";
@@ -1353,6 +1366,7 @@
 "Search voice models" = "Αναζήτηση μοντέλων φωνής";
 "Search voices" = "Αναζήτηση φωνών";
 "Searching" = "Ερευνητικός";
+"See all" = "Εμφάνιση όλων";
 "See the preview and follow launch updates." = "Δείτε την προεπισκόπηση και ακολουθήστε τις ενημερώσεις εκκίνησης.";
 "Select" = "Επιλέγω";
 "Select & Test" = "Επιλογή & δοκιμή";
@@ -1403,6 +1417,7 @@
 "Shows on-device model and performance details" = "Εμφανίζει το μοντέλο και τις λεπτομέρειες απόδοσης στη συσκευή";
 "Shows tool details" = "Εμφανίζει τις λεπτομέρειες του εργαλείου";
 "Silver" = "Ασήμι";
+"Size" = "Μέγεθος";
 "Size is a repository estimate and may include multiple variants. Runtime memory also depends on context length and other active features." = "Το μέγεθος είναι μια εκτίμηση αποθετηρίου και μπορεί να περιλαμβάνει πολλές παραλλαγές. Η μνήμη χρόνου εκτέλεσης εξαρτάται επίσης από το μήκος περιβάλλοντος και άλλες ενεργές λειτουργίες.";
 "Skip for now — finish in Models" = "Παράλειψη προς το παρόν — ολοκληρώστε στα μοντέλα";
 "Smart handling" = "Έξυπνος χειρισμός";
@@ -1466,6 +1481,7 @@
 "Supertonic (neural)" = "Supertonic (νευρικό)";
 "Supertonic — Multilingual" = "Supertonic — Πολύγλωσσος";
 "Support" = "Υποστήριξη";
+"Supported Macs" = "Υποστηριζόμενα Mac";
 "Supported iPads" = "Υποστηριζόμενα iPad";
 "Supported iPhones" = "Υποστηριζόμενα iPhone";
 "Swap" = "Ανταλαγή";
@@ -1544,7 +1560,8 @@
 "Thinking mode" = "Λειτουργία σκέψης";
 "Thinking…" = "Σκέψη…";
 "This Core AI language bundle is missing tokenizer/tokenizer.json." = "This Core AI language bundle is missing tokenizer/tokenizer.json.";
-"This Core AI model is not supported by this iPhone build." = "This Core AI model is not supported by this iPhone build.";
+"This Core AI model is not supported by this Mac build." = "Αυτό το μοντέλο Core AI δεν υποστηρίζεται από αυτήν την έκδοση για Mac.";
+"This Core AI model is not supported by this iPhone build." = "Αυτό το μοντέλο Core AI δεν υποστηρίζεται από αυτήν την έκδοση για iPhone.";
 "This build exceeds the iOS per-app memory budget and is available only on Apple silicon Mac." = "Αυτή η έκδοση υπερβαίνει τον προϋπολογισμό μνήμης iOS ανά εφαρμογή και είναι διαθέσιμη μόνο σε Apple silicon Mac.";
 "This can include recent messages, system instructions, and text extracted from files, web pages, or images." = "Αυτό μπορεί να περιλαμβάνει πρόσφατα μηνύματα, οδηγίες συστήματος και κείμενο που εξάγεται από αρχεία, ιστοσελίδες ή εικόνες.";
 "This chat is removed from this device. This can't be undone." = "Αυτή η συνομιλία καταργήθηκε από αυτήν τη συσκευή. Αυτό δεν μπορεί να αναιρεθεί.";
@@ -1606,7 +1623,7 @@
 "Under 8 GB the OS evicts the model mid-inference and the app crashes or freezes. We'd rather block install than ship that experience." = "Κάτω από 8 GB το λειτουργικό σύστημα εξάγει το μοντέλο στη μέση και η εφαρμογή διακόπτεται ή παγώνει. Προτιμούμε να αποκλείσουμε την εγκατάσταση παρά να στείλουμε αυτήν την εμπειρία.";
 "Unified Model Library" = "Ενοποιημένη Βιβλιοθήκη Μοντέλων";
 "Unknown" = "Αγνωστος";
-"Unload" = "Ξεφορτώνω";
+"Unload" = "Αποφόρτωση";
 "Unload model" = "Ξεφόρτωση μοντέλου";
 "Unload model (free RAM)" = "Ξεφόρτωση μοντέλου (δωρεάν RAM)";
 "Unlock image generation" = "Ξεκλείδωμα δημιουργίας εικόνων";
@@ -1785,7 +1802,6 @@
 "asking the Mac if argent is available" = "ρωτώντας το Mac εάν είναι διαθέσιμο το argent";
 "asr · whisper · dictation" = "asr · ψίθυρος · υπαγόρευση";
 "assistant" = "βοηθός";
-"assistant, api keys, models" = "βοηθός, πλήκτρα api, μοντέλα";
 "attributions" = "κατανομές";
 "audio" = "ήχου";
 "audio out" = "έξοδος ήχου";
@@ -1977,6 +1993,7 @@
 "iOS Local LLM" = "iOS Local LLM";
 "iOS Local LLM is built on the work of many researchers and engineers who released their models, frameworks, and tools openly. Each is listed below with its license and source." = "Το iOS Local LLM βασίζεται στη δουλειά πολλών ερευνητών και μηχανικών που κυκλοφόρησαν ανοιχτά τα μοντέλα, τα πλαίσια και τα εργαλεία τους. Το καθένα παρατίθεται παρακάτω με την άδεια και την πηγή του.";
 "iOS Local LLM runs large AI models entirely on-device. Inference needs at least 8 GB of physical RAM to load without thermal throttling or Jetsam kills." = "Το iOS Local LLM εκτελεί μεγάλα μοντέλα AI εξ ολοκλήρου στη συσκευή. Το συμπέρασμα χρειάζεται τουλάχιστον 8 GB φυσικής RAM για φόρτωση χωρίς θερμικό στραγγαλισμό ή σκοτώσεις Jetsam.";
+"iPhone · iPad" = "iPhone · iPad";
 "iPhone · iPad · Mac" = "iPhone · iPad · Mac";
 "idle" = "άεργος";
 "image" = "εικών";
@@ -2096,6 +2113,7 @@
 "off → hide pill, no auto-cap on max tokens" = "Απενεργοποίηση → απόκρυψη χαπιού, χωρίς αυτόματο καπάκι στα μέγιστα κουπόνια";
 "off: web tool only runs on wi-fi" = "απενεργοποιημένο: το εργαλείο ιστού εκτελείται μόνο σε Wi-Fi";
 "on" = "επί";
+"on this Mac" = "σε αυτό το Mac";
 "on-device" = "στη συσκευή";
 "on-device AI heats the device — what to know" = "Το AI στη συσκευή θερμαίνει τη συσκευή — τι πρέπει να γνωρίζετε";
 "on-device ai heats the device — what to know" = "Το AI στη συσκευή θερμαίνει τη συσκευή — τι πρέπει να γνωρίζετε";
@@ -2171,6 +2189,7 @@
 "red" = "κόκκινος";
 "refresh" = "φρεσκάρω";
 "refresh devices" = "ανανέωση συσκευών";
+"replies stay on your Mac" = "οι απαντήσεις μένουν σε αυτό το Mac";
 "required" = "υποχρεούμαι";
 "reset" = "επαναφορά";
 "reset standings" = "επαναφορά της βαθμολογίας";
@@ -2204,6 +2223,7 @@
 "running right…" = "τρέχει σωστά…";
 "running {{0}}…" = "εκτέλεση {{0}}…";
 "running…" = "τρέξιμο…";
+"runs on this Mac" = "τρέχει σε αυτό το Mac";
 "runs on this iPhone" = "τρέχει σε αυτό το iPhone";
 "runtime" = "χρόνο εκτέλεσης";
 "safari" = "σαφάρι";
@@ -2386,6 +2406,7 @@
 "wifi.exclamationmark" = "wifi.exclamationmark";
 "wifi.slash" = "wifi.slash";
 "wiped" = "σκουπίστηκε";
+"won't run on this Mac" = "δεν θα τρέξει σε αυτό το Mac";
 "won't run on this iPhone" = "δεν θα τρέξει σε αυτό το iPhone";
 "xmark" = "xmark";
 "you" = "εσείς";

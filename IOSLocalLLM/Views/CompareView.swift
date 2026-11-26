@@ -223,11 +223,8 @@ struct CompareView: View {
                     Text(isRunning ? "running \(runLabel)…" : "run both")
                         .font(T.mono(12, .semibold))
                 }
-                .foregroundColor(T.bg)
-                .padding(.horizontal, Space.m).padding(.vertical, Space.s)
-                .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
             }
-            .buttonStyle(.plain)
+            .glassButton(prominent: true)
             .disabled(!canRun)
             .opacity(canRun ? 1 : 0.5)
             if modelAID == modelBID {

@@ -38,6 +38,7 @@
 "2-bit · 1.1 GB · balanced" = "2비트 · 1.1GB · 밸런스";
 "2-bit · 2.3 GB · quality low-bit" = "2비트 · 2.3GB · 품질이 낮은 비트";
 "2-bit · 510 MB · ultralight" = "2비트 · 510MB · 초경량";
+"2-bit · 7.7 GB download · Mac only" = "2비트 · 7.7GB 다운로드 · Mac 전용";
 "2-bit · 8.5 GB download · Mac only" = "2비트 · 8.5GB 다운로드 · Mac 전용";
 "20 steps · 512px" = "20단계 · 512px";
 "3 B class · sweet spot on 6 GB" = "3 B 클래스 · 6GB의 최적의 공간";
@@ -181,6 +182,7 @@
 "Assistant is thinking…" = "어시스턴트가 생각 중입니다…";
 "Assistant response transcript" = "어시스턴트 응답 기록";
 "Assistant, %@" = "어시스턴트, %1$@";
+"Assistant, API keys, models" = "어시스턴트, API 키, 모델";
 "Assistant, {{0}}" = "어시스턴트, {{0}}";
 "Assistants" = "어시스턴트";
 "Audio must be mono PCM at 16 kHz for whisper.cpp" = "Whisper.cpp의 경우 오디오는 16kHz의 모노 PCM이어야 합니다.";
@@ -284,6 +286,7 @@
 "Choose file" = "파일 선택";
 "Choose installed model" = "설치된 모델 선택";
 "Choose model" = "모델 선택";
+"Choose the voice that reads replies aloud. Downloaded voices run offline on this Mac." = "답변을 소리 내어 읽을 음성을 선택하세요. 다운로드한 음성은 이 Mac에서 오프라인으로 실행됩니다.";
 "Choose the voice that reads replies aloud. Downloaded voices run offline on this iPhone." = "답변을 소리 내어 읽을 음성을 선택하세요. 다운로드한 음성은 이 iPhone에서 오프라인으로 실행됩니다.";
 "Choose what you want to try first. Download only the model you need now; add the others later in Models." = "먼저 시도해보고 싶은 것을 선택하세요. 지금 필요한 모델만 다운로드하세요. 나중에 모델에 다른 것을 추가하세요.";
 "Choose your models" = "모델을 선택하세요";
@@ -674,7 +677,7 @@
 "Generating · shared runtime is busy" = "생성 중 · 공유 런타임 사용 중";
 "Generating · {{0}}%" = "생성 중 · {{0}}%";
 "Generating…" = "생성 중…";
-"Get" = "얻다";
+"Get" = "받기";
 "Get a fast on-device answer from the built-in system model — no app launch, fully private." = "내장된 시스템 모델을 통해 장치 내에서 빠른 답변을 얻으세요. 앱을 실행할 필요도 없고 완전 비공개입니다.";
 "Get the Mac bridge" = "Mac 브리지 받기";
 "Good afternoon" = "좋은 오후에요";
@@ -744,6 +747,7 @@
 "Import model" = "수입모델";
 "Imported {{0}}" = "수입된 {{0}}";
 "In progress" = "진행 중";
+"In use" = "사용 중";
 "Incompatible LoRA" = "호환되지 않는 LoRA";
 "Incorrect parental PIN." = "잘못된 부모 PIN입니다.";
 "Indexing…" = "인덱싱 중…";
@@ -854,6 +858,7 @@
 "Loading {{0}}…" = "{{0}} 로드 중…";
 "Loading…" = "로딩 중…";
 "Loads the selected on-device model" = "선택한 기기 모델을 로드합니다.";
+"Local AI, code, chat & images" = "로컬 AI, 코드, 채팅 및 이미지";
 "Local AI. Optional connected features." = "로컬 AI. 선택적 연결 기능.";
 "Local API" = "로컬 API";
 "Local API Server" = "로컬 API 서버";
@@ -899,6 +904,7 @@
 "Max tokens" = "최대 토큰";
 "Maximum {{0}} attachments per message." = "메시지당 최대 {{0}}개의 첨부 파일입니다.";
 "May not fit this device. Available memory is checked before generation." = "이 장치에 맞지 않을 수 있습니다. 생성 전에 사용 가능한 메모리를 확인합니다.";
+"Memory" = "메모리";
 "Memory estimates vary with context length and other active apps. Choose a smaller model if loading is refused." = "메모리 추정치는 컨텍스트 길이와 기타 활성 앱에 따라 다릅니다. 로딩이 거부되면 더 작은 모델을 선택하십시오.";
 "Memory margin" = "메모리 마진";
 "Memory safety" = "메모리 안전";
@@ -1030,6 +1036,7 @@
 "Normal" = "보통";
 "Not Now" = "나중에";
 "Not chat models — embedding, rerank, and transcription." = "Not chat models — embedding, rerank, and transcription.";
+"Not downloaded" = "다운로드 안 됨";
 "Not enabled for this build" = "이 빌드에서는 활성화되지 않았습니다.";
 "Not enough storage: this pack needs about {{0}} (including install headroom) but only {{1}} is free." = "Not enough storage: this pack needs about {{0}} (including install headroom) but only {{1}} is free.";
 "Not loaded" = "로드되지 않음";
@@ -1044,6 +1051,7 @@
 "OFFICIAL RECIPE" = "OFFICIAL RECIPE";
 "OK" = "확인";
 "OLED" = "OLED";
+"ONNX Runtime has no Mac Catalyst build, so this voice runs on iPhone and iPad only." = "ONNX Runtime에는 Mac Catalyst 빌드가 없으므로 이 음성은 iPhone과 iPad에서만 작동합니다.";
 "OPEN GUIDE" = "오픈 가이드";
 "OPEN_SOURCE" = "OPEN_SOURCE";
 "Off" = "끄다";
@@ -1054,6 +1062,8 @@
 "Official higher-quality KittenML ONNX · 8 English voices." = "공식 고품질 KittenML ONNX · 8개의 영어 음성.";
 "Official quantized KittenML ONNX · 8 English voices." = "공식 양자화된 KittenML ONNX · 8개의 영어 음성.";
 "Offline" = "오프라인";
+"On this Mac" = "이 Mac에 있음";
+"On this iPhone" = "이 iPhone에 있음";
 "On-device" = "기기 내";
 "On-device & private" = "온디바이스 및 비공개";
 "On-device AI studio manual & workflows" = "온디바이스 AI 스튜디오 매뉴얼 및 워크플로우";
@@ -1310,13 +1320,16 @@
 "Running tool: {{0}}" = "실행 도구: {{0}}";
 "Running {{0}}" = "{{0}} 실행 중";
 "Runs all steps of the selected macro" = "선택한 매크로의 모든 단계를 실행합니다.";
+"Runs on" = "지원 기기";
 "Runs on supported iPhone, iPad, and Apple silicon Mac devices." = "지원되는 iPhone, iPad 및 Apple 실리콘 Mac 장치에서 실행됩니다.";
 "Runs the selected assistant model locally — nothing leaves your device." = "선택한 보조 모델을 로컬에서 실행합니다. 기기에는 아무 것도 남지 않습니다.";
 "Runtime" = "런타임";
+"Runtime Not Available" = "런타임을 사용할 수 없음";
 "Runtime Required" = "런타임 필요";
 "Runtime status: %@" = "런타임 상태: %1$@";
 "Runtime status: {{0}}" = "런타임 상태: {{0}}";
 "SD / SDXL diffusion via MLX. FLUX is too large for iOS memory." = "MLX를 통한 SD/SDXL 확산. FLUX는 iOS 메모리에 비해 너무 큽니다.";
+"SDXL needs a high-memory Mac. Live headroom is checked before loading a model." = "SDXL에는 메모리가 큰 Mac이 필요합니다. 모델을 로드하기 전에 라이브 헤드룸을 확인합니다.";
 "SDXL needs the highest-memory iPhones. Live headroom is checked before loading a model." = "SDXL에는 최고 메모리 용량의 iPhone이 필요합니다. 모델을 로드하기 전에 라이브 헤드룸을 확인합니다.";
 "SETTINGS" = "설정";
 "SPEECH & EMBEDDING" = "SPEECH & EMBEDDING";
@@ -1353,6 +1366,7 @@
 "Search voice models" = "음성 모델 검색";
 "Search voices" = "음성 검색";
 "Searching" = "수색";
+"See all" = "모두 보기";
 "See the preview and follow launch updates." = "미리보기를 확인하고 출시 업데이트를 따르세요.";
 "Select" = "선택하다";
 "Select & Test" = "선택 및 테스트";
@@ -1403,6 +1417,7 @@
 "Shows on-device model and performance details" = "기기 내 모델 및 성능 세부정보를 표시합니다.";
 "Shows tool details" = "도구 세부정보 표시";
 "Silver" = "은";
+"Size" = "크기";
 "Size is a repository estimate and may include multiple variants. Runtime memory also depends on context length and other active features." = "크기는 저장소 추정치이며 여러 변형이 포함될 수 있습니다. 런타임 메모리는 컨텍스트 길이와 기타 활성 기능에 따라 달라집니다.";
 "Skip for now — finish in Models" = "지금은 건너뛰고 모델에서 마무리하세요.";
 "Smart handling" = "스마트한 핸들링";
@@ -1466,6 +1481,7 @@
 "Supertonic (neural)" = "Supertonic(신경)";
 "Supertonic — Multilingual" = "Supertonic — 다국어";
 "Support" = "지원하다";
+"Supported Macs" = "지원되는 Mac";
 "Supported iPads" = "지원되는 아이패드";
 "Supported iPhones" = "지원되는 아이폰";
 "Swap" = "교체";
@@ -1544,7 +1560,8 @@
 "Thinking mode" = "사고 모드";
 "Thinking…" = "생각 중…";
 "This Core AI language bundle is missing tokenizer/tokenizer.json." = "This Core AI language bundle is missing tokenizer/tokenizer.json.";
-"This Core AI model is not supported by this iPhone build." = "This Core AI model is not supported by this iPhone build.";
+"This Core AI model is not supported by this Mac build." = "이 Core AI 모델은 이 Mac 빌드에서 지원되지 않습니다.";
+"This Core AI model is not supported by this iPhone build." = "이 Core AI 모델은 이 iPhone 빌드에서 지원되지 않습니다.";
 "This build exceeds the iOS per-app memory budget and is available only on Apple silicon Mac." = "이 빌드는 iOS 앱별 메모리 예산을 초과하며 Apple Silicon Mac에서만 사용할 수 있습니다.";
 "This can include recent messages, system instructions, and text extracted from files, web pages, or images." = "여기에는 최근 메시지, 시스템 지침, 파일, 웹 페이지 또는 이미지에서 추출된 텍스트가 포함될 수 있습니다.";
 "This chat is removed from this device. This can't be undone." = "이 채팅이 이 기기에서 삭제되었습니다. 이 작업은 취소할 수 없습니다.";
@@ -1785,7 +1802,6 @@
 "asking the Mac if argent is available" = "Mac에 argent를 사용할 수 있는지 물어보기";
 "asr · whisper · dictation" = "asr · 속삭임 · 받아쓰기";
 "assistant" = "어시스턴트";
-"assistant, api keys, models" = "어시스턴트, API 키, 모델";
 "attributions" = "속성";
 "audio" = "오디오";
 "audio out" = "오디오 출력";
@@ -1977,6 +1993,7 @@
 "iOS Local LLM" = "iOS Local LLM";
 "iOS Local LLM is built on the work of many researchers and engineers who released their models, frameworks, and tools openly. Each is listed below with its license and source." = "iOS Local LLM은 모델, 프레임워크 및 도구를 공개적으로 출시한 많은 연구원 및 엔지니어의 작업을 기반으로 구축되었습니다. 각 항목은 해당 라이센스 및 소스와 함께 아래에 나열되어 있습니다.";
 "iOS Local LLM runs large AI models entirely on-device. Inference needs at least 8 GB of physical RAM to load without thermal throttling or Jetsam kills." = "iOS 로컬 LLM은 대규모 AI 모델을 전적으로 기기 내에서 실행합니다. 열 조절이나 Jetsam 종료 없이 로드하려면 추론에 최소 8GB의 물리적 RAM이 필요합니다.";
+"iPhone · iPad" = "iPhone · iPad";
 "iPhone · iPad · Mac" = "아이폰·아이패드·맥";
 "idle" = "대기 중";
 "image" = "영상";
@@ -2096,6 +2113,7 @@
 "off → hide pill, no auto-cap on max tokens" = "꺼짐 → 알약 숨기기, 최대 토큰 자동 제한 없음";
 "off: web tool only runs on wi-fi" = "끄기: 웹 도구는 Wi-Fi에서만 실행됩니다.";
 "on" = "~에";
+"on this Mac" = "이 Mac에 있음";
 "on-device" = "기기 내";
 "on-device AI heats the device — what to know" = "온디바이스 AI가 장치를 가열합니다. 알아야 할 사항";
 "on-device ai heats the device — what to know" = "온디바이스 AI가 장치를 가열합니다. 알아야 할 사항";
@@ -2171,6 +2189,7 @@
 "red" = "빨간색";
 "refresh" = "새로 고치다";
 "refresh devices" = "새로 고침 장치";
+"replies stay on your Mac" = "답변은 이 Mac에 남습니다";
 "required" = "필수";
 "reset" = "재설정";
 "reset standings" = "순위 재설정";
@@ -2204,6 +2223,7 @@
 "running right…" = "오른쪽 실행 중…";
 "running {{0}}…" = "{{0}} 실행 중…";
 "running…" = "실행 중…";
+"runs on this Mac" = "이 Mac에서 실행됩니다.";
 "runs on this iPhone" = "이 iPhone에서 실행됩니다.";
 "runtime" = "런타임";
 "safari" = "원정 여행";
@@ -2386,6 +2406,7 @@
 "wifi.exclamationmark" = "wifi.exclamationmark";
 "wifi.slash" = "wifi.slash";
 "wiped" = "지워졌다";
+"won't run on this Mac" = "이 Mac에서는 실행되지 않습니다";
 "won't run on this iPhone" = "이 iPhone에서는 실행되지 않습니다";
 "xmark" = "엑스마크";
 "you" = "당신";

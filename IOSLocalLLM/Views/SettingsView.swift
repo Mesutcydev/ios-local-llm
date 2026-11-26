@@ -33,6 +33,8 @@ struct SettingsView: View {
     /// Keeping this nil makes the promo visible without exposing a dead link.
     private static let imageStudioAppStoreURL: URL? = nil
     private static let imageStudioWebsiteURL = URL(string: "https://mesut.uk/apps/ondeviceimage")!
+    private static let tokenAppStoreURL = URL(string: "https://apps.apple.com/app/id6774354746")!
+    private static let tokenAppName = "Token: Local AI & Code Studio" // brand name, not translated
 
     init(assistant: CodingAssistantService) {
         self.assistant = assistant
@@ -48,8 +50,11 @@ struct SettingsView: View {
                     // overwhelmed first-time users. Each row navigates to a
                     // focused sub-screen that still hosts the original
                     // KSection bodies — same content, less noise.
-                    VStack(spacing: Space.s) {
+                    VStack(spacing: 0) {
                         ForEach(filteredCategories) { cat in
+                            if cat != filteredCategories.first {
+                                Divider().padding(.leading, Size.control + Space.s + Space.m)
+                            }
                             NavigationLink {
                                 categoryDestination(cat)
                             } label: {
@@ -59,11 +64,18 @@ struct SettingsView: View {
                             .buttonStyle(.plain)
                         }
                     }
+                    .background(T.surface, in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
                     // Same edge as the system search field above.
                     .padding(.horizontal, Space.screenMargin)
 
                     if filteredCategories.isEmpty {
                         ContentUnavailableView.search(text: settingsSearch)
+                    }
+
+                    if settingsSearch.isEmpty {
+                        tokenPromoCard
+                            .padding(.horizontal, Space.screenMargin)
+                            .padding(.top, Space.l)
                     }
                 }
                 .padding(.top, Space.s)
@@ -75,14 +87,9 @@ struct SettingsView: View {
             .searchable(text: $settingsSearch, placement: .navigationBarDrawer(displayMode: .always), prompt: loc.t("Search settings"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Label(loc.t("Done"), systemImage: "checkmark")
-                            .font(T.sans(15, .medium)).foregroundColor(T.accent)
-                            .accessibilityIdentifier("settings.close")
-                    }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(loc.t("Done"), systemImage: "checkmark") { dismiss() }
+                        .accessibilityIdentifier("settings.close")
                 }
                 ToolbarItem(placement: .principal) {
                     Text(loc.t("Settings")).font(T.sans(16, .semibold)).foregroundColor(T.ink)
@@ -161,7 +168,7 @@ struct SettingsView: View {
             switch self {
             case .userGuide:    return LocalizationService.shared.t("User guide and getting started")
             case .capture:      return LocalizationService.shared.t("analysis mode, camera, detection")
-            case .modelsAI:     return LocalizationService.shared.t("assistant, api keys, models")
+            case .modelsAI:     return LocalizationService.shared.t("Assistant, API keys, models")
             case .voice:        return LocalizationService.shared.t("engine, voice, audio, behavior")
             case .appearance:   return LocalizationService.shared.t("theme, language, interface")
             case .system:       return LocalizationService.shared.t("status, thermal, developer tools")
@@ -740,13 +747,8 @@ struct SettingsView: View {
                     } label: {
                         Text(hfToken.hasToken ? "Update" : "Set token")
                             .font(T.sans(11, .semibold))
-                            .foregroundColor(T.accent)
-                            .padding(.horizontal, Space.s)
-                            .padding(.vertical, Space.xs)
-                            .background(Capsule().fill(T.accentSoft))
-                            .overlay(Capsule().stroke(T.accent.opacity(0.4), lineWidth: 0.5))
                     }
-                    .buttonStyle(.plain)
+                    .glassButton()
                     .fixedSize()
                 }
             }
@@ -858,11 +860,8 @@ struct SettingsView: View {
                             Text(filesOnDisk ? "Load now" : "Download models")
                                 .font(T.sans(11, .semibold))
                         }
-                        .foregroundColor(T.bg)
-                        .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
-                        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
                     }
-                    .buttonStyle(.plain)
+                    .glassButton(prominent: true)
                 }
                 .padding(Space.m)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -1135,7 +1134,7 @@ struct SettingsView: View {
     /// compiles because of INCLUDE_ALL_APPICON_ASSETS.
     private var appIconPickerRow: some View {
         VStack(alignment: .leading, spacing: Space.s) {
-            KMono(text: "app icon", size: 11.5, color: T.ink, mono: false)
+            Text(loc.t("app icon").sentenceCased).font(T.sans(15)).foregroundColor(T.ink)
             HStack(spacing: Space.m) {
                 appIconOption(name: nil, title: "Silver", preview: "AppIconPreview")
                 appIconOption(name: "AppIconClassic", title: "Classic", preview: "AppIconClassicPreview")
@@ -1144,6 +1143,7 @@ struct SettingsView: View {
         }
         .padding(.horizontal, Space.m)
         .padding(.vertical, Space.s)
+        .overlay(alignment: .bottom) { Rectangle().fill(T.rule).frame(height: 1) }
     }
 
     private func appIconOption(name: String?, title: String, preview: String) -> some View {
@@ -1187,8 +1187,8 @@ struct SettingsView: View {
         KSection(title: loc.t("INTERFACE").lowercased(), tinted: true) {
             KRow(label: loc.t("appearance"), trailing: {
                 Picker("", selection: $settings.appearance) {
-                    Text(loc.t("light")).tag("light")
-                    Text(loc.t("dark")).tag("dark")
+                    Text(loc.t("light").sentenceCased).tag("light")
+                    Text(loc.t("dark").sentenceCased).tag("dark")
                     Text(loc.t("OLED")).tag("oled")
                 }
                 .pickerStyle(.segmented)
@@ -1221,16 +1221,15 @@ struct SettingsView: View {
             KRow(label: "Show FPS counter", trailing: {
                 KToggle(isOn: $settings.showFPSCounter)
             })
-            Rectangle().fill(T.rule).frame(height: 1)
             Button {
                 settings.hasSeenOnboarding = false
                 dismiss()
             } label: {
                 HStack {
                     Image(systemName: "arrow.counterclockwise")
-                        .font(.system(.caption))
+                        .font(T.sans(15))
                         .foregroundColor(T.ink)
-                    KMono(text: "Show onboarding again", size: 11.5, color: T.ink, mono: false)
+                    Text(loc.t("Show onboarding again")).font(T.sans(15)).foregroundColor(T.ink)
                     Spacer()
                 }
                 .padding(.horizontal, Space.m)
@@ -1247,9 +1246,9 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: "lightbulb")
-                        .font(.system(.caption))
+                        .font(T.sans(15))
                         .foregroundColor(T.ink)
-                    KMono(text: "Reset onboarding tips", size: 11.5, color: T.ink, mono: false)
+                    Text(loc.t("Reset onboarding tips")).font(T.sans(15)).foregroundColor(T.ink)
                     Spacer()
                 }
                 .padding(.horizontal, Space.m)
@@ -1569,6 +1568,51 @@ struct SettingsView: View {
         }
         .buttonStyle(KTactileButtonStyle())
         .accessibilityLabel("Open the OnDevice AI Image Studio preview website. App Store release coming soon.")
+    }
+
+    // Whole card opens the live App Store listing.
+    private var tokenPromoCard: some View {
+        Button {
+            openURL(Self.tokenAppStoreURL)
+            HapticManager.impact(.light)
+        } label: {
+        HStack(spacing: Space.s) {
+            Image("token_app_icon")
+                .resizable()
+                .scaledToFit()
+                .frame(width: Size.feature + Space.s, height: Size.feature + Space.s)
+                .clipShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
+                        .stroke(T.rule, lineWidth: 1)
+                )
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: Space.hair) {
+                KCaption(text: "also by mesut")
+                Text(verbatim: Self.tokenAppName)
+                    .font(.headline)
+                    .foregroundStyle(T.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                Text(loc.t("Local AI, code, chat & images"))
+                    .font(.subheadline)
+                    .foregroundStyle(T.ink2)
+                    .lineLimit(2)
+            }
+            .layoutPriority(1)
+
+            Spacer(minLength: 0)
+
+            Image(systemName: "chevron.forward").foregroundStyle(T.ink2)
+        }
+        .padding(Space.m)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .kGlass(cornerRadius: Radius.card, fallbackFill: T.surface, fallbackStroke: T.rule)
+        }
+        .buttonStyle(KTactileButtonStyle())
+        .accessibilityLabel(Text(verbatim: "\(loc.t("Get")) \(Self.tokenAppName)"))
+        .accessibilityIdentifier("settings.about.tokenPromo")
     }
 
     private func promoFeaturePill(icon: String, text: String) -> some View {
@@ -1905,15 +1949,16 @@ struct SettingsNavigationRow: View {
                 .frame(width: Size.control, height: Size.control)
             VStack(alignment: .leading, spacing: Space.xxs) {
                 Text(title).font(.headline).foregroundStyle(theme.ink)
-                Text(subtitle).font(.subheadline).foregroundStyle(theme.ink2)
+                Text(subtitle.sentenceCased).font(.subheadline).foregroundStyle(theme.ink2)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
             Image(systemName: "chevron.forward").foregroundStyle(theme.ink2)
         }
-        .padding(Space.m)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-        .background(theme.surface, in: RoundedRectangle(cornerRadius: Radius.card))
+        .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }
 }

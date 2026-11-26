@@ -229,6 +229,30 @@ final class ModelCategoryInferenceTests: XCTestCase {
         XCTAssertEqual(found?.resolvingSymlinksInPath().path, dir.resolvingSymlinksInPath().path)
     }
 
+    @MainActor
+    func test_curatedAssistantDoesNotTreatAnotherGGUFVariantAsInstalled() throws {
+        let folder = "curated-gguf-test-\(UUID().uuidString)"
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let dir = docs.appendingPathComponent("LLMModels").appendingPathComponent(folder)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let magic = Data("GGUF".utf8)
+        try magic.write(to: dir.appendingPathComponent("another-Q4_K_M.gguf"))
+        var model = AssistantModel(
+            id: folder, repoID: "test/\(folder)", displayName: "Test", subtitle: "",
+            approxRAMBytes: 1, tags: [], contextWindowTokens: 4096,
+            downloadFiles: ["selected-Q2_0.gguf"], runtime: .llamaCpp
+        )
+        XCTAssertNil(CodingAssistantService.preStagedDirectory(for: model))
+        XCTAssertFalse(CodingAssistantService.isInstalled(model))
+        try magic.write(to: dir.appendingPathComponent("selected-Q2_0.gguf"))
+        XCTAssertEqual(CodingAssistantService.preStagedDirectory(for: model)?.lastPathComponent, folder)
+        XCTAssertTrue(CodingAssistantService.isInstalled(model))
+        model.downloadFiles = nil
+        try FileManager.default.removeItem(at: dir.appendingPathComponent("selected-Q2_0.gguf"))
+        XCTAssertTrue(CodingAssistantService.isInstalled(model), "Generic imports still accept their valid GGUF")
+    }
+
     func test_explicitConversationSwitchPreservesItsLoadTarget() {
         let savedDefault = AssistantModel(
             id: "downloaded:MercuriusDream/Nanbeige4.2-3B-mlx-4bit",
@@ -456,8 +480,9 @@ final class ModelCategoryInferenceTests: XCTestCase {
 
     func test_bonsaiCatalog_containsAllPublishedMLXVariants() {
         let bonsai = AssistantModelCatalog.presets.filter { $0.repoID.lowercased().contains("bonsai") }
-        XCTAssertEqual(bonsai.count, 8)
+        XCTAssertEqual(bonsai.count, 9)
         XCTAssertEqual(Set(bonsai.map(\.id)), [
+            "bonsai-2.5-27b-ternary-gguf",
             "bonsai-27b-1bit", "bonsai-27b-ternary",
             "bonsai-8b-1bit", "bonsai-8b-ternary",
             "bonsai-4b-1bit", "bonsai-4b-ternary",
@@ -465,6 +490,19 @@ final class ModelCategoryInferenceTests: XCTestCase {
         ])
         XCTAssertTrue(bonsai.allSatisfy { $0.downloadSizeBytes != nil })
         XCTAssertTrue(bonsai.allSatisfy { $0.supportsThinking })
+    }
+
+    func test_ternaryBonsai25_isAMacOnlyStockLlamaCppQ2_0Preset() throws {
+        let model = try XCTUnwrap(AssistantModelCatalog.model(forID: "bonsai-2.5-27b-ternary-gguf"))
+        XCTAssertEqual(model.runtime, .llamaCpp)
+        XCTAssertEqual(model.platformCompatibility, .macOnly)
+        XCTAssertEqual(model.downloadRevision, "f71afa90d5f8f07f0518b6105eaf9b50e2c6d210")
+        // Q2_0 is the only packing stock llama.cpp loads; PTQ1_0/PQ2_0 need PrismML's fork.
+        XCTAssertEqual(model.downloadFiles, ["Ternary-Bonsai-2.5-27B-Q2_0.gguf", "LICENSE", "NOTICE.txt"])
+        XCTAssertFalse(model.supportsVision)
+        XCTAssertTrue(model.supportsThinking)
+        XCTAssertTrue(model.supportsTools)
+        XCTAssertEqual(ChatTemplate.detect(for: model.repoID), .qwen35)
     }
 
     func test_ornithIsAFirstClassHighMemoryAssistantPreset() throws {
@@ -661,7 +699,7 @@ final class ModelCategoryInferenceTests: XCTestCase {
         let binary27 = try XCTUnwrap(AssistantModelCatalog.model(forID: "bonsai-27b-1bit"))
         let ternary27 = try XCTUnwrap(AssistantModelCatalog.model(forID: "bonsai-27b-ternary"))
         let smaller = AssistantModelCatalog.presets.filter {
-            $0.id.hasPrefix("bonsai-") && !$0.id.hasPrefix("bonsai-27b")
+            $0.id.hasPrefix("bonsai-") && !$0.id.contains("27b")
         }
 
         XCTAssertTrue(binary27.capabilities.contains(.vision))
@@ -688,7 +726,7 @@ final class ModelCategoryInferenceTests: XCTestCase {
         let binary27 = try XCTUnwrap(AssistantModelCatalog.model(forID: "bonsai-27b-1bit"))
         let ternary27 = try XCTUnwrap(AssistantModelCatalog.model(forID: "bonsai-27b-ternary"))
         let smaller = AssistantModelCatalog.presets.filter {
-            $0.id.hasPrefix("bonsai-") && !$0.id.hasPrefix("bonsai-27b")
+            $0.id.hasPrefix("bonsai-") && !$0.id.contains("27b")
         }
 
         XCTAssertEqual(binary27.platformCompatibility, .highMemoryMobileAndMac)
@@ -697,9 +735,31 @@ final class ModelCategoryInferenceTests: XCTestCase {
 
         #if os(macOS) || targetEnvironment(macCatalyst)
         XCTAssertTrue(ModelPlatformCompatibility.macOnly.supportsCurrentPlatform)
+        XCTAssertFalse(ModelPlatformCompatibility.iosOnly.supportsCurrentPlatform)
         #else
         XCTAssertFalse(ModelPlatformCompatibility.macOnly.supportsCurrentPlatform)
+        XCTAssertTrue(ModelPlatformCompatibility.iosOnly.supportsCurrentPlatform)
         #endif
+    }
+
+    /// The ONNX voices (KittenTTS, Paradee, Supertonic) need ONNX Runtime,
+    /// which ships no Mac Catalyst slice. They must say so instead of being
+    /// offered as a download that can only fail after the bytes arrive.
+    @MainActor
+    func test_onnxVoiceModels_declareIOSOnlyPlatformCompatibility() throws {
+        let ids = [
+            "tts.kitten.micro.0_8", "tts.kitten.nano.0_8.int8", "tts.kitten.mini.0_8",
+            "paradee-8m", "supertonic-3",
+        ]
+        for id in ids {
+            let model = try XCTUnwrap(ModelDownloadCenter.shared.models.first { $0.id == id }, id)
+            XCTAssertEqual(model.platformCompatibility, .iosOnly, id)
+            XCTAssertEqual(model.supportedVoiceEngine?.isSupportedOnThisPlatform,
+                           model.platformCompatibility?.supportsCurrentPlatform, id)
+        }
+        // Kokoro is Core ML, so it keeps running on every platform.
+        let kokoro = try XCTUnwrap(ModelDownloadCenter.shared.models.first { $0.id == "kokoro-82m" })
+        XCTAssertNil(kokoro.platformCompatibility)
     }
 
     func test_inferred_plainRepo_noFalsePositives() {

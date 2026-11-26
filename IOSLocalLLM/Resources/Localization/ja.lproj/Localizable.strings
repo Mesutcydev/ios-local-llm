@@ -38,6 +38,7 @@
 "2-bit · 1.1 GB · balanced" = "2ビット・1.1GB・バランス";
 "2-bit · 2.3 GB · quality low-bit" = "2ビット・2.3GB・高品質のロービット";
 "2-bit · 510 MB · ultralight" = "2ビット・510MB・超軽量";
+"2-bit · 7.7 GB download · Mac only" = "2 ビット · 7.7 GB ダウンロード · Mac のみ";
 "2-bit · 8.5 GB download · Mac only" = "2 ビット · 8.5 GB ダウンロード · Mac のみ";
 "20 steps · 512px" = "20ステップ・512px";
 "3 B class · sweet spot on 6 GB" = "3 B クラス · 6 GB のスイートスポット";
@@ -181,6 +182,7 @@
 "Assistant is thinking…" = "アシスタントは考えています...";
 "Assistant response transcript" = "アシスタントの応答記録";
 "Assistant, %@" = "アシスタント、%1$@";
+"Assistant, API keys, models" = "アシスタント、API キー、モデル";
 "Assistant, {{0}}" = "アシスタント、{{0}}";
 "Assistants" = "アシスタント";
 "Audio must be mono PCM at 16 kHz for whisper.cpp" = "Whisper.cpp の場合、オーディオは 16 kHz のモノラル PCM である必要があります";
@@ -284,6 +286,7 @@
 "Choose file" = "ファイルを選択してください";
 "Choose installed model" = "インストールされているモデルを選択してください";
 "Choose model" = "モデルを選択";
+"Choose the voice that reads replies aloud. Downloaded voices run offline on this Mac." = "返信を読み上げる音声を選びます。ダウンロードした音声はこの Mac 上でオフラインで動作します。";
 "Choose the voice that reads replies aloud. Downloaded voices run offline on this iPhone." = "返信を読み上げる音声を選びます。ダウンロードした音声はこの iPhone 上でオフラインで動作します。";
 "Choose what you want to try first. Download only the model you need now; add the others later in Models." = "最初に試したいものを選択してください。今必要なモデルのみをダウンロードしてください。他のものは後でモデルに追加します。";
 "Choose your models" = "モデルを選択してください";
@@ -674,7 +677,7 @@
 "Generating · shared runtime is busy" = "共有ランタイムの生成がビジーです";
 "Generating · {{0}}%" = "生成中 · {{0}}%";
 "Generating…" = "生成中…";
-"Get" = "得る";
+"Get" = "入手";
 "Get a fast on-device answer from the built-in system model — no app launch, fully private." = "内蔵システム モデルからデバイス上で迅速な回答が得られます。アプリの起動は不要で、完全にプライベートです。";
 "Get the Mac bridge" = "Macブリッジを入手";
 "Good afternoon" = "こんにちは";
@@ -744,6 +747,7 @@
 "Import model" = "インポートモデル";
 "Imported {{0}}" = "輸入された{{0}}";
 "In progress" = "進行中";
+"In use" = "使用中";
 "Incompatible LoRA" = "互換性のない LoRA";
 "Incorrect parental PIN." = "保護者用 PIN が正しくありません。";
 "Indexing…" = "インデックス作成中…";
@@ -854,6 +858,7 @@
 "Loading {{0}}…" = "{{0}}を読み込み中…";
 "Loading…" = "読み込み中…";
 "Loads the selected on-device model" = "選択したオンデバイス モデルをロードします";
+"Local AI, code, chat & images" = "ローカルAI・チャット・音声・画像";
 "Local AI. Optional connected features." = "ローカルAI。オプションの接続機能。";
 "Local API" = "ローカルAPI";
 "Local API Server" = "ローカルAPIサーバー";
@@ -899,6 +904,7 @@
 "Max tokens" = "最大トークン";
 "Maximum {{0}} attachments per message." = "メッセージあたりの添付ファイルの最大数は {{0}} 個です。";
 "May not fit this device. Available memory is checked before generation." = "このデバイスには適合しない可能性があります。利用可能なメモリは生成前にチェックされます。";
+"Memory" = "メモリ";
 "Memory estimates vary with context length and other active apps. Choose a smaller model if loading is refused." = "メモリの推定値は、コンテキストの長さや他のアクティブなアプリによって異なります。ロードが拒否される場合は、より小さいモデルを選択してください。";
 "Memory margin" = "メモリマージン";
 "Memory safety" = "メモリの安全性";
@@ -1030,6 +1036,7 @@
 "Normal" = "標準";
 "Not Now" = "後で";
 "Not chat models — embedding, rerank, and transcription." = "Not chat models — embedding, rerank, and transcription.";
+"Not downloaded" = "未ダウンロード";
 "Not enabled for this build" = "このビルドでは有効になっていません";
 "Not enough storage: this pack needs about {{0}} (including install headroom) but only {{1}} is free." = "Not enough storage: this pack needs about {{0}} (including install headroom) but only {{1}} is free.";
 "Not loaded" = "未読み込み";
@@ -1044,6 +1051,7 @@
 "OFFICIAL RECIPE" = "OFFICIAL RECIPE";
 "OK" = "OK";
 "OLED" = "OLED";
+"ONNX Runtime has no Mac Catalyst build, so this voice runs on iPhone and iPad only." = "ONNX Runtime には Mac Catalyst 用ビルドがないため、この音声は iPhone と iPad でのみ動作します。";
 "OPEN GUIDE" = "ガイドを開く";
 "OPEN_SOURCE" = "オープンソース";
 "Off" = "オフ";
@@ -1054,6 +1062,8 @@
 "Official higher-quality KittenML ONNX · 8 English voices." = "公式のより高品質なKittenML ONNX・8つの英語音声。";
 "Official quantized KittenML ONNX · 8 English voices." = "公式量子化されたKittenML ONNX・8つの英語音声。";
 "Offline" = "オフライン";
+"On this Mac" = "このMac上";
+"On this iPhone" = "このiPhone上";
 "On-device" = "オンデバイス";
 "On-device & private" = "オンデバイスとプライベート";
 "On-device AI studio manual & workflows" = "オンデバイス AI Studio マニュアルとワークフロー";
@@ -1310,13 +1320,16 @@
 "Running tool: {{0}}" = "ランニングツール: {{0}}";
 "Running {{0}}" = "{{0}}を実行中";
 "Runs all steps of the selected macro" = "選択したマクロのすべてのステップを実行します";
+"Runs on" = "対応デバイス";
 "Runs on supported iPhone, iPad, and Apple silicon Mac devices." = "サポートされている iPhone、iPad、および Apple Silicon Mac デバイス上で実行します。";
 "Runs the selected assistant model locally — nothing leaves your device." = "選択したアシスタント モデルをローカルで実行します。デバイスからは何も出力されません。";
 "Runtime" = "ランタイム";
+"Runtime Not Available" = "ランタイムを利用できません";
 "Runtime Required" = "必要なランタイム";
 "Runtime status: %@" = "実行時のステータス: %1$@";
 "Runtime status: {{0}}" = "実行時のステータス: {{0}}";
 "SD / SDXL diffusion via MLX. FLUX is too large for iOS memory." = "MLXを介したSD/SDXLの拡散。 FLUX は iOS メモリに対して大きすぎます。";
+"SDXL needs a high-memory Mac. Live headroom is checked before loading a model." = "SDXL にはメモリの大きい Mac が必要です。モデルをロードする前にライブヘッドルームがチェックされます。";
 "SDXL needs the highest-memory iPhones. Live headroom is checked before loading a model." = "SDXL には最高のメモリを備えた iPhone が必要です。モデルをロードする前にライブヘッドルームがチェックされます。";
 "SETTINGS" = "設定";
 "SPEECH & EMBEDDING" = "SPEECH & EMBEDDING";
@@ -1353,6 +1366,7 @@
 "Search voice models" = "音声モデルの検索";
 "Search voices" = "音声を検索する";
 "Searching" = "検索中";
+"See all" = "すべて表示";
 "See the preview and follow launch updates." = "プレビューを確認し、発売の最新情報をフォローしてください。";
 "Select" = "選択";
 "Select & Test" = "選択してテストする";
@@ -1403,6 +1417,7 @@
 "Shows on-device model and performance details" = "デバイス上のモデルとパフォーマンスの詳細を表示します";
 "Shows tool details" = "ツールの詳細を表示します";
 "Silver" = "銀";
+"Size" = "サイズ";
 "Size is a repository estimate and may include multiple variants. Runtime memory also depends on context length and other active features." = "サイズはリポジトリの推定値であり、複数のバリアントが含まれる場合があります。ランタイム メモリは、コンテキストの長さや他のアクティブな機能にも依存します。";
 "Skip for now — finish in Models" = "今はスキップして、モデルで終了します";
 "Smart handling" = "スマートなハンドリング";
@@ -1466,6 +1481,7 @@
 "Supertonic (neural)" = "Supertonic（神経）";
 "Supertonic — Multilingual" = "Supertonic — 多言語対応";
 "Support" = "サポート";
+"Supported Macs" = "サポートされているMac";
 "Supported iPads" = "サポートされているiPad";
 "Supported iPhones" = "サポートされているiPhone";
 "Swap" = "切り替え";
@@ -1544,7 +1560,8 @@
 "Thinking mode" = "思考モード";
 "Thinking…" = "考え中…";
 "This Core AI language bundle is missing tokenizer/tokenizer.json." = "This Core AI language bundle is missing tokenizer/tokenizer.json.";
-"This Core AI model is not supported by this iPhone build." = "This Core AI model is not supported by this iPhone build.";
+"This Core AI model is not supported by this Mac build." = "この Core AI モデルはこの Mac ビルドではサポートされていません。";
+"This Core AI model is not supported by this iPhone build." = "この Core AI モデルはこの iPhone ビルドではサポートされていません。";
 "This build exceeds the iOS per-app memory budget and is available only on Apple silicon Mac." = "このビルドは iOS のアプリごとのメモリ バジェットを超えており、Apple Silicon Mac でのみ利用できます。";
 "This can include recent messages, system instructions, and text extracted from files, web pages, or images." = "これには、最近のメッセージ、システム指示、ファイル、Web ページ、または画像から抽出されたテキストが含まれる場合があります。";
 "This chat is removed from this device. This can't be undone." = "このチャットはこのデバイスから削除されます。これを元に戻すことはできません。";
@@ -1785,7 +1802,6 @@
 "asking the Mac if argent is available" = "argent が利用可能かどうかを Mac に問い合わせる";
 "asr · whisper · dictation" = "asr · ささやき · ディクテーション";
 "assistant" = "アシスタント";
-"assistant, api keys, models" = "アシスタント、API キー、モデル";
 "attributions" = "帰属";
 "audio" = "オーディオ";
 "audio out" = "音声出力";
@@ -1977,6 +1993,7 @@
 "iOS Local LLM" = "iOS Local LLM";
 "iOS Local LLM is built on the work of many researchers and engineers who released their models, frameworks, and tools openly. Each is listed below with its license and source." = "iOS Local LLM は、モデル、フレームワーク、ツールをオープンにリリースした多くの研究者やエンジニアの成果に基づいて構築されています。それぞれのライセンスとソースを以下に示します。";
 "iOS Local LLM runs large AI models entirely on-device. Inference needs at least 8 GB of physical RAM to load without thermal throttling or Jetsam kills." = "iOS Local LLM は、大規模な AI モデルを完全にデバイス上で実行します。サーマル スロットリングや Jetsam の強制終了を行わずに推論を読み込むには、少なくとも 8 GB の物理 RAM が必要です。";
+"iPhone · iPad" = "iPhone · iPad";
 "iPhone · iPad · Mac" = "iPhone・iPad・Mac";
 "idle" = "待機中";
 "image" = "画像";
@@ -2096,6 +2113,7 @@
 "off → hide pill, no auto-cap on max tokens" = "オフ → 錠剤を非表示、最大トークンの自動上限なし";
 "off: web tool only runs on wi-fi" = "オフ: Web ツールは Wi-Fi 上でのみ実行されます";
 "on" = "の上";
+"on this Mac" = "このMac上";
 "on-device" = "オンデバイス";
 "on-device AI heats the device — what to know" = "オンデバイス AI がデバイスを加熱する — 知っておくべきこと";
 "on-device ai heats the device — what to know" = "オンデバイス AI がデバイスを加熱する — 知っておくべきこと";
@@ -2171,6 +2189,7 @@
 "red" = "赤";
 "refresh" = "リフレッシュする";
 "refresh devices" = "デバイスをリフレッシュする";
+"replies stay on your Mac" = "返信はこのMac上に保存されます";
 "required" = "必須";
 "reset" = "リセット";
 "reset standings" = "順位をリセットする";
@@ -2204,6 +2223,7 @@
 "running right…" = "右側実行中…";
 "running {{0}}…" = "{{0}} を実行中…";
 "running…" = "実行中…";
+"runs on this Mac" = "このMacで動作します";
 "runs on this iPhone" = "このiPhoneで動作します";
 "runtime" = "ランタイム";
 "safari" = "サファリ";
@@ -2386,6 +2406,7 @@
 "wifi.exclamationmark" = "wifi.exclamationmark";
 "wifi.slash" = "wifi.slash";
 "wiped" = "拭いた";
+"won't run on this Mac" = "このMacでは動作しません";
 "won't run on this iPhone" = "このiPhoneでは動作しません";
 "xmark" = "×マーク";
 "you" = "あなた";

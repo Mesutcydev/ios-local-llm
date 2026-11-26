@@ -316,7 +316,7 @@ final class CodingAssistantService: ObservableObject {
         if model.runtime == .coreAI { return CoreAIModelStore.shared.installedModel(id: model.id) != nil }
         guard let directory = preStagedDirectory(for: model) else { return false }
         return model.runtime != .llamaCpp
-            || LocalModelFileValidator.ggufLLM(in: directory) != nil
+            || LocalModelFileValidator.ggufLLM(in: directory, allowedFiles: model.downloadFiles) != nil
     }
 
     var isSelectedLocalModelResident: Bool {
@@ -457,7 +457,12 @@ final class CodingAssistantService: ObservableObject {
         // falls back to the repo-id config and HubApi re-fetches the snapshot,
         // skipping the weights already on disk. See
         // LocalModelFileValidator.isUsableMLXTextModelDirectory.
-        return candidates.first(where: LocalModelFileValidator.isUsableMLXTextModelDirectory)
+        return candidates.first { directory in
+            if model.runtime == .llamaCpp {
+                return LocalModelFileValidator.ggufLLM(in: directory, allowedFiles: model.downloadFiles) != nil
+            }
+            return LocalModelFileValidator.isUsableMLXTextModelDirectory(directory)
+        }
     }
 
     /// Returns true when the model's weights are already cached and look
@@ -909,7 +914,7 @@ final class CodingAssistantService: ObservableObject {
 
         if activeModel.runtime == .llamaCpp {
             guard let directory = Self.preStagedDirectory(for: activeModel),
-                  let modelURL = LocalModelFileValidator.ggufLLM(in: directory) else {
+                  let modelURL = LocalModelFileValidator.ggufLLM(in: directory, allowedFiles: activeModel.downloadFiles) else {
                 state = .failed("The imported GGUF file could not be found on disk.")
                 return
             }
@@ -926,7 +931,9 @@ final class CodingAssistantService: ObservableObject {
                 let context = UInt32(audioModel
                     ? max(ggufProfile.contextTokens, 8_192)
                     : ggufProfile.contextTokens)
-                let projectorURL = audioModel ? LocalModelFileValidator.ggufProjector(in: directory) : nil
+                let projectorURL = audioModel
+                    ? LocalModelFileValidator.ggufProjector(in: directory, allowedFiles: activeModel.downloadFiles)
+                    : nil
                 if audioModel && projectorURL == nil { throw LlamaCppError.mmprojLoadFailed(directory.path) }
                 let fileBytes = ([modelURL] + [projectorURL].compactMap { $0 }).reduce(Int64(0)) { total, url in
                     total + (((try? FileManager.default.attributesOfItem(atPath: url.path))?[.size] as? NSNumber)?.int64Value ?? 0)

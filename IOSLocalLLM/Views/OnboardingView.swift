@@ -119,13 +119,8 @@ struct OnboardingView: View {
                                     .font(T.mono(11))
                                     .foregroundColor(T.ink4)
                             }
-                            .foregroundColor(T.bg)
-                            .padding(.horizontal, Space.m)
-                            .padding(.vertical, Space.s)
-                            .frame(minHeight: 50)
-                            .background(RoundedRectangle(cornerRadius: Radius.control).fill(T.ink))
                         }
-                        .buttonStyle(.plain)
+                        .glassButton(prominent: true)
                         .accessibilityIdentifier("onboarding.next")
                         .accessibilityLabel("Next")
 

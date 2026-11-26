@@ -209,9 +209,9 @@ struct AssistantModelPickerView: View {
                                     Label("Browse Models", systemImage: "cube.box")
                                         .font(T.sans(15, .semibold))
                                         .frame(maxWidth: .infinity)
-                                        .padding(.vertical, Space.m)
                                 }
-                                .buttonStyle(.kPrimary)
+                                .glassButton(prominent: true)
+                                .controlSize(.large)
                                 .tint(T.accent)
                                 .padding(.horizontal, Space.l)
                             }
@@ -875,11 +875,8 @@ struct AssistantModelPickerView: View {
                         Text("load this repo")
                             .font(T.mono(11, .semibold))
                     }
-                    .foregroundColor(T.bg)
-                    .padding(.horizontal, Space.s).padding(.vertical, Space.xs)
-                    .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
                 }
-                .buttonStyle(.plain)
+                .glassButton(prominent: true)
             }
             .padding(Space.m)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1104,9 +1101,9 @@ private struct ApplePrivateCloudPrivacyDisclosureView: View {
                         Text("Agree and Continue")
                             .font(T.sans(15, .semibold))
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, Space.m)
                     }
-                    .buttonStyle(.kPrimary)
+                    .glassButton(prominent: true)
+                    .controlSize(.large)
                     .tint(T.accent)
                 }
                 .padding(Space.l)

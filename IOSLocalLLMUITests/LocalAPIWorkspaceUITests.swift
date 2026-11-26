@@ -99,7 +99,11 @@ final class LocalAPIWorkspaceUITests: XCTestCase {
         XCTAssertEqual(listening.label, "Server stopped")
     }
 
-    func testKeyRotationRequiresConfirmationAndBackgroundMasksKey() {
+    func testKeyRotationRequiresConfirmationAndBackgroundMasksKey() throws {
+        #if targetEnvironment(macCatalyst)
+        // The backgrounding step presses the Home button; the Mac has none.
+        throw XCTSkip("iOS-only Home-button step.")
+        #else
         let app = launch()
         let revealKey = app.buttons["api.key.reveal"]
         XCTAssertTrue(revealKey.waitForExistence(timeout: 10))
@@ -115,6 +119,7 @@ final class LocalAPIWorkspaceUITests: XCTestCase {
         app.activate()
         reveal(revealKey, app: app)
         XCTAssertEqual(revealKey.label, "Reveal key")
+        #endif
     }
 
     func testPortValidationAndAllSupportedEndpoints() {

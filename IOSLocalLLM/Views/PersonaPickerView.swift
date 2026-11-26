@@ -139,13 +139,10 @@ struct PersonaPickerView: View {
                 Text("create persona")
                     .font(T.mono(12, .semibold))
             }
-            .foregroundColor(T.bg)
-            .padding(.horizontal, Space.m)
-            .frame(height: 44)
             .frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
         }
-        .buttonStyle(.plain)
+        .glassButton(prominent: true)
+        .controlSize(.large)
         .padding(.horizontal, Space.m)
         .padding(.top, Space.m)
     }

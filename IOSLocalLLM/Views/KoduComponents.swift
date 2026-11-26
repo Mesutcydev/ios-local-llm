@@ -345,72 +345,6 @@ struct KSecondaryButton: View {
     }
 }
 
-// MARK: - Compact inline buttons
-
-/// Inline action sized to its label (row actions, banners, retries) in the
-/// same palette as KPrimaryButton / KSecondaryButton. Use `.kPrimary` /
-/// `.kSecondary` instead of the system `.borderedProminent` / `.bordered`,
-/// which render as oversized glass pills next to the studio components.
-/// `role: .destructive` turns a secondary label red.
-struct KCompactButtonStyle: ButtonStyle {
-    enum Kind { case primary, secondary }
-    var kind: Kind
-
-    func makeBody(configuration: Configuration) -> some View {
-        KCompactButtonBody(configuration: configuration, kind: kind)
-    }
-}
-
-private struct KCompactButtonBody: View {
-    let configuration: ButtonStyleConfiguration
-    let kind: KCompactButtonStyle.Kind
-    @Environment(\.koduTheme) private var T
-    @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        let destructive = configuration.role == .destructive
-        let foreground: Color = kind == .primary ? T.bg : (destructive ? T.bad : T.ink)
-        configuration.label
-            .font(T.sans(13, .semibold))
-            .lineLimit(1)
-            .minimumScaleFactor(0.85)
-            .foregroundStyle(foreground)
-            .padding(.horizontal, Space.m)
-            .frame(minHeight: 34)
-            .background {
-                if kind == .primary {
-                    Capsule().fill(destructive ? T.bad : T.ink)
-                }
-            }
-            .modifier(KCompactGlass(enabled: kind == .secondary))
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
-            .opacity(isEnabled ? (configuration.isPressed ? 0.85 : 1) : 0.45)
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.16), value: configuration.isPressed)
-    }
-}
-
-private struct KCompactGlass: ViewModifier {
-    let enabled: Bool
-    @Environment(\.koduTheme) private var T
-
-    func body(content: Content) -> some View {
-        if enabled {
-            content.kClearGlass(in: Capsule(), interactive: true,
-                                fallbackFill: T.surface, fallbackStroke: T.rule)
-        } else {
-            content
-        }
-    }
-}
-
-extension ButtonStyle where Self == KCompactButtonStyle {
-    static var kPrimary: KCompactButtonStyle { .init(kind: .primary) }
-    static var kSecondary: KCompactButtonStyle { .init(kind: .secondary) }
-}
-
 // MARK: - Section
 // A grouped settings/info block: small mono caption + a hairline rule
 // extending to the right, then a bordered surface container.
@@ -529,6 +463,12 @@ struct KCollapsibleSection<Content: View>: View {
 }
 
 /// One row inside a KSection. `last: true` removes the bottom divider.
+extension StringProtocol {
+    /// First letter upper-cased for the current locale, rest untouched.
+    /// Many localization keys are lowercase in every language table.
+    var sentenceCased: String { prefix(1).localizedUppercase + dropFirst() }
+}
+
 struct KRow<Trailing: View>: View {
     @ObservedObject private var localization = LocalizationService.shared
     let label: String
@@ -544,15 +484,15 @@ struct KRow<Trailing: View>: View {
             Group {
                 if stack || textSize.isAccessibilitySize {
                     VStack(alignment: .leading, spacing: Space.s) {
-                        Text(localization.t(label)).font(T.sans(15)).foregroundColor(T.ink)
-                        trailing().accessibilityLabel(localization.t(label))
+                        Text(localization.t(label).sentenceCased).font(T.sans(15)).foregroundColor(T.ink)
+                        trailing().accessibilityLabel(localization.t(label).sentenceCased)
                     }
                 } else {
                     HStack(spacing: Space.s) {
-                        Text(localization.t(label)).font(T.sans(15)).foregroundColor(T.ink)
+                        Text(localization.t(label).sentenceCased).font(T.sans(15)).foregroundColor(T.ink)
                             .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 8)
-                        trailing().accessibilityLabel(localization.t(label))
+                        trailing().accessibilityLabel(localization.t(label).sentenceCased)
                     }
                 }
             }
@@ -926,31 +866,11 @@ struct KPageTitle: View {
 struct KToggle: View {
     @Binding var isOn: Bool
     @Environment(\.koduTheme) private var T
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    // Native switch: system size, haptics and VoiceOver "switch, on/off".
+    // The label comes from the enclosing KRow.
     var body: some View {
-        Button {
-            withAnimation(reduceMotion ? nil : .spring(response: 0.25, dampingFraction: 0.85)) { isOn.toggle() }
-        } label: {
-            ZStack(alignment: isOn ? .trailing : .leading) {
-                RoundedRectangle(cornerRadius: Radius.control)
-                    .fill(isOn ? T.accent : T.ink4.opacity(0.5))
-                    .frame(width: 32, height: 18)
-                Circle()
-                    .fill(T.surface)
-                    .frame(width: 14, height: 14)
-                    .padding(.horizontal, Space.hair)
-            }
-            .frame(minWidth: 44, minHeight: 44)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        // This is a custom switch, not a SwiftUI Toggle — without these traits
-        // VoiceOver announces a bare "button". `.isToggle` + on/off value makes
-        // it read as "<label>, switch, on" like a native control. The label
-        // comes from the enclosing KRow / settings context.
-        .accessibilityAddTraits(.isToggle)
-        .accessibilityValue(isOn ? "on" : "off")
+        Toggle("", isOn: $isOn).labelsHidden().tint(T.accent)
     }
 }
 

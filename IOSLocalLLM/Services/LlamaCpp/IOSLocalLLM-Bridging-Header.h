@@ -55,6 +55,10 @@
 #import "whisper.h"
 
 // ONNX Runtime Objective-C API used by the official KittenTTS 0.8 models.
+// It has no Mac Catalyst build; OnnxTTSEngines.swift stands in on Mac.
+#include <TargetConditionals.h>
+#if !TARGET_OS_MACCATALYST
 #import <onnxruntime.h>
+#endif
 
 #endif  // IOS_LOCAL_LLM_BRIDGING_HEADER_H

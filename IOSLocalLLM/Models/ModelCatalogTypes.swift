@@ -20,12 +20,17 @@ enum ModelPlatformCompatibility: String, Codable, Hashable, Sendable {
     case mobileAndMac
     case highMemoryMobileAndMac
     case macOnly
+    /// Needs a runtime that ships no Mac Catalyst slice. ONNX Runtime is the
+    /// only one today, so the ONNX voices (KittenTTS, Paradee, Supertonic)
+    /// stay iPhone/iPad-only even though the rest of the app runs on Mac.
+    case iosOnly
 
     var label: String {
         switch self {
         case .mobileAndMac:           return "iPhone · iPad · Mac"
         case .highMemoryMobileAndMac: return "high-memory iOS · Mac"
         case .macOnly:                return "Mac only"
+        case .iosOnly:                return "iPhone · iPad"
         }
     }
 
@@ -34,6 +39,7 @@ enum ModelPlatformCompatibility: String, Codable, Hashable, Sendable {
         case .mobileAndMac:           return "iphone.and.arrow.forward"
         case .highMemoryMobileAndMac: return "memorychip"
         case .macOnly:                return "laptopcomputer"
+        case .iosOnly:                return "iphone"
         }
     }
 
@@ -45,12 +51,14 @@ enum ModelPlatformCompatibility: String, Codable, Hashable, Sendable {
             return "Requires a high-memory iPhone or iPad; Apple silicon Macs are also supported. Exact fit depends on live memory."
         case .macOnly:
             return "This build exceeds the iOS per-app memory budget and is available only on Apple silicon Mac."
+        case .iosOnly:
+            return "ONNX Runtime has no Mac Catalyst build, so this voice runs on iPhone and iPad only."
         }
     }
 
     var supportsCurrentPlatform: Bool {
         #if os(macOS) || targetEnvironment(macCatalyst)
-        return true
+        return self != .iosOnly
         #else
         return self != .macOnly
         #endif

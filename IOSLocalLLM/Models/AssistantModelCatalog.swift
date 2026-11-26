@@ -291,6 +291,32 @@ enum AssistantModelCatalog {
             capabilities: [.best, .newRelease, .vision, .thinking, .multilingual],
             supportsTools: true
         ),
+        // Ternary Bonsai 2.5 (2026-11-24) stores Hadamard-rotated ternary
+        // weights. Its MLX export needs Hadamard kernels our mlx-swift fork
+        // lacks, and PTQ1_0/PQ2_0 need PrismML's llama.cpp fork, so this is
+        // the Q2_0 file that stock llama.cpp b11556+ decodes. 7.7 GB is over
+        // the ~6.5 GB iPhone app limit. Without a reasoning_effort line the
+        // prompt matches the template's `medium` effort.
+        // ponytail: text only. Its projector is named `…-mmproj-Q8_0.gguf`
+        // and every projector lookup keys on an `mmproj` prefix; add vision
+        // once that lookup matches on `contains`.
+        AssistantModel(
+            id: "bonsai-2.5-27b-ternary-gguf",
+            repoID: "prism-ml/Ternary-Bonsai-2.5-27B-GGUF",
+            displayName: "Ternary Bonsai 2.5 27B",
+            subtitle: "2-bit · 7.7 GB download · Mac only",
+            // GGUFLoadPolicy admission: file × 1.15 + 0.5 GB.
+            approxRAMBytes: 9_330_000_000,
+            tags: ["reason", "thinking", "code", "agent"],
+            contextWindowTokens: 32_768,
+            downloadSizeBytes: 7_673_194_848,
+            downloadRevision: "f71afa90d5f8f07f0518b6105eaf9b50e2c6d210",
+            downloadFiles: ["Ternary-Bonsai-2.5-27B-Q2_0.gguf", "LICENSE", "NOTICE.txt"],
+            platformCompatibility: .macOnly,
+            capabilities: [.newRelease, .thinking, .multilingual, .tools],
+            supportsTools: true,
+            runtime: .llamaCpp
+        ),
         AssistantModel(
             id: "bonsai-8b-ternary",
             repoID: "prism-ml/Ternary-Bonsai-8B-mlx-2bit",

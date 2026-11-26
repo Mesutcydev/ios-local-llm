@@ -128,13 +128,10 @@ struct LegalDocumentView: View {
                     Text((scrolledToEnd ? "i have read this" : "scroll to the end to continue").tr)
                         .fixedSize(horizontal: false, vertical: true)
                         .font(T.mono(13, .semibold))
-                        .foregroundColor(scrolledToEnd ? T.bg : T.ink3)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, Space.s)
-                        .background(RoundedRectangle(cornerRadius: Radius.inner)
-                            .fill(scrolledToEnd ? T.ink : T.surface2))
                 }
-                .buttonStyle(.plain)
+                .glassButton(prominent: true)
+                .controlSize(.large)
                 .disabled(!scrolledToEnd)
                 .accessibilityIdentifier("legal.confirmRead")
             }
@@ -158,12 +155,10 @@ struct LegalDocumentView: View {
                 } label: {
                     Text(primary.label.lowercased())
                         .font(T.mono(13, .semibold))
-                        .foregroundColor(T.bg)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, Space.s)
-                        .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
                 }
-                .buttonStyle(.plain)
+                .glassButton(prominent: true)
+                .controlSize(.large)
             }
         }
     }

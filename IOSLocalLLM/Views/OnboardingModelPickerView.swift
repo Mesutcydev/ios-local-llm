@@ -468,12 +468,10 @@ struct OnboardingModelPickerView: View {
                       systemImage: needsAnyDownload ? "arrow.down.circle" : "arrow.right")
                     .font(T.sans(16, .semibold))
                     .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .padding(Space.s)
-                    .foregroundStyle(T.bg)
-                    .background(T.ink, in: RoundedRectangle(cornerRadius: Radius.control))
+                    .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.plain)
+            .glassButton(prominent: true)
+            .controlSize(.large)
             .accessibilityIdentifier("onboarding.install")
             .padding(.horizontal, Space.m)
 

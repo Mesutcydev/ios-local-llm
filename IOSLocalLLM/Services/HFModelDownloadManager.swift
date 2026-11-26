@@ -97,9 +97,6 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
     /// File the background session is writing right now, so `pause()` can
     /// stop exactly that transfer (several catalog entries share a folder).
     private var currentFileDestination: URL?
-    /// Revision used for requests. Starts as `branch`; falls back to "main"
-    /// when a pinned commit no longer exists upstream.
-    private var requestBranch: String
     private let fetchData: (URLRequest) async throws -> (Data, URLResponse)
 
     // MARK: - Init
@@ -116,7 +113,6 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         self.id          = repoID
         self.repoID      = repoID
         self.branch      = branch
-        self.requestBranch = branch
         self.destination = destination
         self.fileAllowlist = fileAllowlist
         self.fetchData = fetchData
@@ -450,6 +446,10 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
 
     // MARK: - Core download loop
 
+    private static func matchesAllowlistRule(_ file: HFFileMeta, rule: String) -> Bool {
+        rule.hasSuffix("/") ? file.path.hasPrefix(rule) : file.path == rule
+    }
+
     private func run() async {
         state = .enumerating
         reset(keepState: true)
@@ -461,27 +461,22 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         do {
             // 1. List files from HF API (retried — the tree endpoint is
             //    rate-limited and 429s/5xxs under load like the LFS hosts).
-            let allFiles: [HFFileMeta]
-            do {
-                allFiles = try await withRetries { try await self.fetchFileList() }
-            } catch let error as NSError
-                        where error.domain == "HFDownload" && error.code == 404 && requestBranch != "main" {
-                // The pinned commit is gone upstream (history rewritten).
-                // Follow the default branch rather than leave the model
-                // impossible to download.
-                requestBranch = "main"
-                allFiles = try await withRetries { try await self.fetchFileList() }
-            }
+            // Enumeration, size probes and transfers must use one revision.
+            // A missing pin requires a catalog update, not different weights.
+            let allFiles = try await withRetries { try await self.fetchFileList() }
             try Task.checkCancellation()
             let files: [HFFileMeta]
             if let allowlist = fileAllowlist {
+                let missing = allowlist.filter { rule in
+                    !allFiles.contains { Self.matchesAllowlistRule($0, rule: rule) }
+                }
+                guard missing.isEmpty else {
+                    lastFailureKind = .generic
+                    state = .failed("Required files are missing from \(repoID) at revision \(branch): \(missing.joined(separator: ", ")).")
+                    return
+                }
                 files = allFiles.filter { f in
-                    allowlist.contains { rule in
-                        // Prefix match for directory rules ending in '/'
-                        if rule.hasSuffix("/") { return f.path.hasPrefix(rule) }
-                        // Equality match for plain file names
-                        return f.path == rule || f.name == rule
-                    }
+                    allowlist.contains { Self.matchesAllowlistRule(f, rule: $0) }
                 }
             } else {
                 files = Self.selectingOneGGUFVariant(from: allFiles)
@@ -697,7 +692,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         // HF tree API with recursive=true to enumerate subdirectories
         // (mlpackage repos have files nested under <model>.mlpackage/...).
         // Also append &expand=true for richer metadata where supported.
-        let urlString = "https://huggingface.co/api/models/\(repoID)/tree/\(requestBranch)?recursive=true&expand=true"
+        let urlString = "https://huggingface.co/api/models/\(repoID)/tree/\(branch)?recursive=true&expand=true"
         guard let url = URL(string: urlString) else { throw URLError(.badURL) }
 
         var json: [[String: Any]] = []
@@ -747,7 +742,10 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
                 }
                 let reason: String
                 switch http.statusCode {
-                case 404: reason = "Repo \(repoID) not found (404). Verify it exists at huggingface.co/\(repoID)"
+                case 404:
+                    reason = branch == "main"
+                        ? "Repo \(repoID) not found (404). Verify it exists at huggingface.co/\(repoID)"
+                        : "The selected revision \(branch) of \(repoID) is unavailable (404). Retry later or update the app's model catalog."
                 case 429: reason = "Rate limited by huggingface.co (429). Wait a minute and retry."
                 case 500...599: reason = "huggingface.co server error (\(http.statusCode)). Retry shortly."
                 default:  reason = "huggingface.co returned HTTP \(http.statusCode) for \(repoID)"
@@ -930,10 +928,11 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         return results
     }
 
-    /// Fallback file enumeration via the /api/models/{repo} endpoint.
+    /// Fallback file enumeration via the model-info endpoint at the same revision.
     /// Returns less metadata (sizes via HEAD only) but works when tree fails.
     private func fetchFileListViaSiblings() async throws -> [HFFileMeta] {
-        let urlString = "https://huggingface.co/api/models/\(repoID)"
+        let revisionPath = branch == "main" ? "" : "/revision/\(branch)"
+        let urlString = "https://huggingface.co/api/models/\(repoID)\(revisionPath)"
         guard let url = URL(string: urlString) else { throw URLError(.badURL) }
         var request = URLRequest(url: url)
         request.setValue("ios-local-llm/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
@@ -961,7 +960,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
     private func headSize(for path: String) async -> Int64? {
         let encoded = path
             .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path
-        let urlString = "https://huggingface.co/\(repoID)/resolve/\(requestBranch)/\(encoded)"
+        let urlString = "https://huggingface.co/\(repoID)/resolve/\(branch)/\(encoded)"
         guard let url = URL(string: urlString) else { return nil }
         var request = URLRequest(url: url)
         request.httpMethod = "HEAD"
@@ -994,7 +993,7 @@ final class HFModelDownloadManager: ObservableObject, Identifiable {
         // Percent-encode each path component so files with spaces, '+', etc work
         let encoded = path
             .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path
-        return URL(string: "https://huggingface.co/\(repoID)/resolve/\(requestBranch)/\(encoded)")
+        return URL(string: "https://huggingface.co/\(repoID)/resolve/\(branch)/\(encoded)")
     }
 
     private func downloadFile(meta: HFFileMeta, to destination: URL) async throws -> Int64 {

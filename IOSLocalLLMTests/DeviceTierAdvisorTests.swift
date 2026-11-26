@@ -705,7 +705,12 @@ final class DeviceTierAdvisorTests: XCTestCase {
             pagingEnabled: false
         )
 
+        #if targetEnvironment(macCatalyst)
+        // Mac keeps all layers on Metal; the partial-offload cap is iOS-only.
+        XCTAssertEqual(policy.gpuLayers, 999)
+        #else
         XCTAssertEqual(policy.gpuLayers, 12)
+        #endif
         XCTAssertFalse(policy.storageBacked)
     }
 

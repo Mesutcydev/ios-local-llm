@@ -38,6 +38,7 @@
 "2-bit · 1.1 GB · balanced" = "2 biți · 1,1 GB · echilibrat";
 "2-bit · 2.3 GB · quality low-bit" = "2 biți · 2,3 GB · calitate low-bit";
 "2-bit · 510 MB · ultralight" = "2 biți · 510 MB · ultraușoară";
+"2-bit · 7.7 GB download · Mac only" = "2 biți · 7,7 GB descărcare · Doar Mac";
 "2-bit · 8.5 GB download · Mac only" = "2 biți · 8,5 GB descărcare · Doar Mac";
 "20 steps · 512px" = "20 de pași · 512px";
 "3 B class · sweet spot on 6 GB" = "Clasa 3 B · punct favorabil pe 6 GB";
@@ -181,6 +182,7 @@
 "Assistant is thinking…" = "Asistentul se gândește...";
 "Assistant response transcript" = "transcrierea răspunsului asistentului";
 "Assistant, %@" = "Asistent, %1$@";
+"Assistant, API keys, models" = "Asistent, chei API, modele";
 "Assistant, {{0}}" = "Asistent, {{0}}";
 "Assistants" = "Asistenți";
 "Audio must be mono PCM at 16 kHz for whisper.cpp" = "Audio trebuie să fie mono PCM la 16 kHz pentru whisper.cpp";
@@ -284,6 +286,7 @@
 "Choose file" = "Alegeți fișierul";
 "Choose installed model" = "Alegeți modelul instalat";
 "Choose model" = "Alege modelul";
+"Choose the voice that reads replies aloud. Downloaded voices run offline on this Mac." = "Alegeți vocea care citește răspunsurile cu voce tare. Vocile descărcate funcționează offline pe acest Mac.";
 "Choose the voice that reads replies aloud. Downloaded voices run offline on this iPhone." = "Alegeți vocea care citește răspunsurile cu voce tare. Vocile descărcate funcționează offline pe acest iPhone.";
 "Choose what you want to try first. Download only the model you need now; add the others later in Models." = "Alegeți ce doriți să încercați mai întâi. Descărcați doar modelul de care aveți nevoie acum; adăugați-i pe celelalte mai târziu în Modele.";
 "Choose your models" = "Alegeți-vă modelele";
@@ -674,7 +677,7 @@
 "Generating · shared runtime is busy" = "Generarea · runtime partajată este ocupată";
 "Generating · {{0}}%" = "Se generează · {{0}}%";
 "Generating…" = "Generând…";
-"Get" = "Obţine";
+"Get" = "Obține";
 "Get a fast on-device answer from the built-in system model — no app launch, fully private." = "Obțineți un răspuns rapid pe dispozitiv din modelul de sistem încorporat - fără lansare a aplicației, complet privat.";
 "Get the Mac bridge" = "Ia podul Mac";
 "Good afternoon" = "Bună ziua";
@@ -744,6 +747,7 @@
 "Import model" = "Import model";
 "Imported {{0}}" = "Importat {{0}}";
 "In progress" = "În curs";
+"In use" = "În uz";
 "Incompatible LoRA" = "LoRA incompatibil";
 "Incorrect parental PIN." = "PIN parental incorect.";
 "Indexing…" = "Se indexează...";
@@ -834,7 +838,7 @@
 "LoRA removed" = "LoRA a fost eliminată";
 "LoRA support coming soon" = "Suportul LoRA va veni în curând";
 "LoRA weights missing" = "Greutățile LoRA lipsesc";
-"Load" = "Încărca";
+"Load" = "Încarcă";
 "Load failed" = "Încărcarea a eșuat";
 "Load model" = "Încărcați modelul";
 "Load now" = "Încărcați acum";
@@ -854,6 +858,7 @@
 "Loading {{0}}…" = "Se încarcă {{0}}...";
 "Loading…" = "Încărcare…";
 "Loads the selected on-device model" = "Încarcă modelul selectat pe dispozitiv";
+"Local AI, code, chat & images" = "AI local: chat, voce, imagini";
 "Local AI. Optional connected features." = "AI local. Funcții conectate opționale.";
 "Local API" = "API local";
 "Local API Server" = "Server API local";
@@ -899,6 +904,7 @@
 "Max tokens" = "Max jetoane";
 "Maximum {{0}} attachments per message." = "Maximum {{0}} atașamente pe mesaj.";
 "May not fit this device. Available memory is checked before generation." = "Este posibil să nu se potrivească cu acest dispozitiv. Memoria disponibilă este verificată înainte de generare.";
+"Memory" = "Memorie";
 "Memory estimates vary with context length and other active apps. Choose a smaller model if loading is refused." = "Estimările de memorie variază în funcție de lungimea contextului și de alte aplicații active. Alegeți un model mai mic dacă încărcarea este refuzată.";
 "Memory margin" = "Marja de memorie";
 "Memory safety" = "Siguranța memoriei";
@@ -1030,6 +1036,7 @@
 "Normal" = "Normal";
 "Not Now" = "Nu acum";
 "Not chat models — embedding, rerank, and transcription." = "Not chat models — embedding, rerank, and transcription.";
+"Not downloaded" = "Nedescărcat";
 "Not enabled for this build" = "Nu este activat pentru această versiune";
 "Not enough storage: this pack needs about {{0}} (including install headroom) but only {{1}} is free." = "Not enough storage: this pack needs about {{0}} (including install headroom) but only {{1}} is free.";
 "Not loaded" = "Neîncărcat";
@@ -1044,6 +1051,7 @@
 "OFFICIAL RECIPE" = "OFFICIAL RECIPE";
 "OK" = "Bine";
 "OLED" = "OLED";
+"ONNX Runtime has no Mac Catalyst build, so this voice runs on iPhone and iPad only." = "ONNX Runtime nu are o versiune pentru Mac Catalyst, așa că această voce rulează doar pe iPhone și iPad.";
 "OPEN GUIDE" = "GHID DESCHIS";
 "OPEN_SOURCE" = "OPEN_SOURCE";
 "Off" = "Oprit";
@@ -1054,6 +1062,8 @@
 "Official higher-quality KittenML ONNX · 8 English voices." = "KittenML ONNX oficial de calitate superioară · 8 voci în engleză.";
 "Official quantized KittenML ONNX · 8 English voices." = "KittenML ONNX cuantificat oficial · 8 voci engleze.";
 "Offline" = "Offline";
+"On this Mac" = "Pe acest Mac";
+"On this iPhone" = "Pe acest iPhone";
 "On-device" = "Pe dispozitiv";
 "On-device & private" = "Pe dispozitiv și privat";
 "On-device AI studio manual & workflows" = "Manual de studio AI pe dispozitiv și fluxuri de lucru";
@@ -1310,13 +1320,16 @@
 "Running tool: {{0}}" = "Instrument de rulare: {{0}}";
 "Running {{0}}" = "Rulează {{0}}";
 "Runs all steps of the selected macro" = "Rulează toți pașii macrocomenzii selectate";
+"Runs on" = "Rulează pe";
 "Runs on supported iPhone, iPad, and Apple silicon Mac devices." = "Funcționează pe dispozitivele iPhone, iPad și Apple silicon Mac acceptate.";
 "Runs the selected assistant model locally — nothing leaves your device." = "Rulează modelul de asistent selectat la nivel local - nimic nu părăsește dispozitivul dvs.";
 "Runtime" = "Timpul de rulare";
+"Runtime Not Available" = "Timp de rulare indisponibil";
 "Runtime Required" = "Timp de rulare necesar";
 "Runtime status: %@" = "Stare de rulare: %1$@";
 "Runtime status: {{0}}" = "Stare de rulare: {{0}}";
 "SD / SDXL diffusion via MLX. FLUX is too large for iOS memory." = "Difuzare SD / SDXL prin MLX. FLUX este prea mare pentru memoria iOS.";
+"SDXL needs a high-memory Mac. Live headroom is checked before loading a model." = "SDXL are nevoie de un Mac cu multă memorie. Spațiul liber este verificat înainte de a încărca un model.";
 "SDXL needs the highest-memory iPhones. Live headroom is checked before loading a model." = "SDXL are nevoie de iPhone-uri cu cea mai mare memorie. Spațiul liber este verificat înainte de a încărca un model.";
 "SETTINGS" = "SETĂRI";
 "SPEECH & EMBEDDING" = "SPEECH & EMBEDDING";
@@ -1353,6 +1366,7 @@
 "Search voice models" = "Căutați modele de voce";
 "Search voices" = "Caută voci";
 "Searching" = "Căutând";
+"See all" = "Vezi tot";
 "See the preview and follow launch updates." = "Vedeți previzualizarea și urmăriți actualizările de lansare.";
 "Select" = "Selecta";
 "Select & Test" = "Selectați și testați";
@@ -1403,6 +1417,7 @@
 "Shows on-device model and performance details" = "Afișează modelul de pe dispozitiv și detaliile de performanță";
 "Shows tool details" = "Afișează detaliile instrumentului";
 "Silver" = "Argint";
+"Size" = "Dimensiune";
 "Size is a repository estimate and may include multiple variants. Runtime memory also depends on context length and other active features." = "Dimensiunea este o estimare a depozitului și poate include mai multe variante. Memoria de rulare depinde și de lungimea contextului și de alte caracteristici active.";
 "Skip for now — finish in Models" = "Sariți deocamdată — terminați în Modele";
 "Smart handling" = "Manevrare inteligentă";
@@ -1466,6 +1481,7 @@
 "Supertonic (neural)" = "Supertonic (neural)";
 "Supertonic — Multilingual" = "Supertonic — Multilingv";
 "Support" = "Sprijin";
+"Supported Macs" = "Mac-uri acceptate";
 "Supported iPads" = "iPad-uri acceptate";
 "Supported iPhones" = "iPhone-uri acceptate";
 "Swap" = "Schimbați";
@@ -1544,7 +1560,8 @@
 "Thinking mode" = "Modul de gândire";
 "Thinking…" = "Gândire…";
 "This Core AI language bundle is missing tokenizer/tokenizer.json." = "This Core AI language bundle is missing tokenizer/tokenizer.json.";
-"This Core AI model is not supported by this iPhone build." = "This Core AI model is not supported by this iPhone build.";
+"This Core AI model is not supported by this Mac build." = "Acest model Core AI nu este acceptat de această versiune pentru Mac.";
+"This Core AI model is not supported by this iPhone build." = "Acest model Core AI nu este acceptat de această versiune pentru iPhone.";
 "This build exceeds the iOS per-app memory budget and is available only on Apple silicon Mac." = "Această versiune depășește bugetul de memorie iOS per aplicație și este disponibilă numai pe Apple Silicon Mac.";
 "This can include recent messages, system instructions, and text extracted from files, web pages, or images." = "Acestea pot include mesaje recente, instrucțiuni de sistem și text extras din fișiere, pagini web sau imagini.";
 "This chat is removed from this device. This can't be undone." = "Acest chat este eliminat de pe acest dispozitiv. Acest lucru nu poate fi anulat.";
@@ -1606,7 +1623,7 @@
 "Under 8 GB the OS evicts the model mid-inference and the app crashes or freezes. We'd rather block install than ship that experience." = "Sub 8 GB sistemul de operare evacuează modelul la mijlocul inferenței și aplicația se blochează sau se blochează. Preferăm să blocăm instalarea decât să livrăm această experiență.";
 "Unified Model Library" = "Biblioteca unificată de modele";
 "Unknown" = "Necunoscut";
-"Unload" = "Descărca";
+"Unload" = "Descarcă";
 "Unload model" = "Descărcați modelul";
 "Unload model (free RAM)" = "Descărcați modelul (RAM liberă)";
 "Unlock image generation" = "Deblocați generarea de imagini";
@@ -1785,7 +1802,6 @@
 "asking the Mac if argent is available" = "întrebând Mac-ul dacă argent este disponibil";
 "asr · whisper · dictation" = "asr · șoaptă · dictare";
 "assistant" = "asistent";
-"assistant, api keys, models" = "asistent, chei api, modele";
 "attributions" = "atributii";
 "audio" = "audio";
 "audio out" = "ieșire audio";
@@ -1977,6 +1993,7 @@
 "iOS Local LLM" = "iOS Local LLM";
 "iOS Local LLM is built on the work of many researchers and engineers who released their models, frameworks, and tools openly. Each is listed below with its license and source." = "iOS Local LLM se bazează pe munca multor cercetători și ingineri care și-au lansat în mod deschis modelele, cadrele și instrumentele. Fiecare este listat mai jos cu licența și sursa sa.";
 "iOS Local LLM runs large AI models entirely on-device. Inference needs at least 8 GB of physical RAM to load without thermal throttling or Jetsam kills." = "iOS Local LLM rulează modele mari de IA în întregime pe dispozitiv. Inferența are nevoie de cel puțin 8 GB de memorie RAM fizică pentru a se încărca fără limitare termică sau distrugeri Jetsam.";
+"iPhone · iPad" = "iPhone · iPad";
 "iPhone · iPad · Mac" = "iPhone · iPad · Mac";
 "idle" = "inactiv";
 "image" = "imagine";
@@ -2096,6 +2113,7 @@
 "off → hide pill, no auto-cap on max tokens" = "dezactivat → ascunde pilula, fără limitare automată a numărului maxim de jetoane";
 "off: web tool only runs on wi-fi" = "dezactivat: instrumentul web rulează numai pe wi-fi";
 "on" = "pe";
+"on this Mac" = "pe acest Mac";
 "on-device" = "pe dispozitiv";
 "on-device AI heats the device — what to know" = "pe dispozitiv ai încălzește dispozitivul — ce să știți";
 "on-device ai heats the device — what to know" = "pe dispozitiv ai încălzește dispozitivul — ce să știți";
@@ -2171,6 +2189,7 @@
 "red" = "roşu";
 "refresh" = "reîmprospăta";
 "refresh devices" = "reîmprospătare dispozitive";
+"replies stay on your Mac" = "răspunsurile rămân pe acest Mac";
 "required" = "necesar";
 "reset" = "resetare";
 "reset standings" = "resetați clasamentul";
@@ -2204,6 +2223,7 @@
 "running right…" = "alergand corect...";
 "running {{0}}…" = "rulează {{0}}...";
 "running…" = "funcţionare…";
+"runs on this Mac" = "rulează pe acest Mac";
 "runs on this iPhone" = "rulează pe acest iPhone";
 "runtime" = "timpul de rulare";
 "safari" = "safari";
@@ -2386,6 +2406,7 @@
 "wifi.exclamationmark" = "wifi.exclamationmark";
 "wifi.slash" = "wifi.slash";
 "wiped" = "şters";
+"won't run on this Mac" = "nu va rula pe acest Mac";
 "won't run on this iPhone" = "nu va rula pe acest iPhone";
 "xmark" = "xmark";
 "you" = "tu";

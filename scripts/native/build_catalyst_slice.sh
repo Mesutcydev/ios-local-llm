@@ -111,6 +111,7 @@ if [[ "$framework_name" == llama ]]; then
     "${build_dir}/ggml/src/ggml-metal/libggml-metal.a"
     "${build_dir}/ggml/src/ggml-blas/libggml-blas.a"
     "${build_dir}/tools/mtmd/libmtmd.a"
+    "${build_dir}/vendor/hash/libvendor-hash.a"
   )
 else
   header_sources=(

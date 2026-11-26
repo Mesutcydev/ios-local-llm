@@ -123,11 +123,9 @@ struct WebPermissionSheet: View {
                 Text("Allow Once")
                     .font(T.mono(13, .semibold))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, Space.s)
-                    .foregroundColor(T.bg)
-                    .background(RoundedRectangle(cornerRadius: Radius.inner).fill(T.ink))
             }
-            .buttonStyle(.plain)
+            .glassButton(prominent: true)
+            .controlSize(.large)
             .accessibilityLabel("Allow this web request once")
 
             Button {

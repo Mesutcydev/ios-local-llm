@@ -38,6 +38,7 @@
 "2-bit · 1.1 GB · balanced" = "2 位 · 1.1 GB · 平衡";
 "2-bit · 2.3 GB · quality low-bit" = "2 位 · 2.3 GB · 质量低位";
 "2-bit · 510 MB · ultralight" = "2 位 · 510 MB · 超轻量";
+"2-bit · 7.7 GB download · Mac only" = "2 位 · 7.7 GB 下载 · 仅限 Mac";
 "2-bit · 8.5 GB download · Mac only" = "2 位 · 8.5 GB 下载 · 仅限 Mac";
 "20 steps · 512px" = "20 步·512 像素";
 "3 B class · sweet spot on 6 GB" = "3 B 级 · 6 GB 最佳点";
@@ -181,6 +182,7 @@
 "Assistant is thinking…" = "助理正在思考……";
 "Assistant response transcript" = "助理回复记录";
 "Assistant, %@" = "助理，%1$@";
+"Assistant, API keys, models" = "助手、API 密钥、模型";
 "Assistant, {{0}}" = "助理，{{0}}";
 "Assistants" = "助理";
 "Audio must be mono PCM at 16 kHz for whisper.cpp" = "耳语.cpp 的音频必须是 16 kHz 的单声道 PCM";
@@ -284,6 +286,7 @@
 "Choose file" = "选择文件";
 "Choose installed model" = "选择安装型号";
 "Choose model" = "选择模型";
+"Choose the voice that reads replies aloud. Downloaded voices run offline on this Mac." = "选择朗读回复的声音。已下载的声音可在此 Mac 上离线运行。";
 "Choose the voice that reads replies aloud. Downloaded voices run offline on this iPhone." = "选择朗读回复的声音。已下载的声音可在此 iPhone 上离线运行。";
 "Choose what you want to try first. Download only the model you need now; add the others later in Models." = "首先选择您想尝试的内容。只下载您现在需要的型号；稍后在模型中添加其他内容。";
 "Choose your models" = "选择您的型号";
@@ -674,7 +677,7 @@
 "Generating · shared runtime is busy" = "正在生成·共享运行时正忙";
 "Generating · {{0}}%" = "正在生成·{{0}}%";
 "Generating…" = "生成中…";
-"Get" = "得到";
+"Get" = "获取";
 "Get a fast on-device answer from the built-in system model — no app launch, fully private." = "从内置系统模型中获得快速的设备上答案 - 无需启动应用程序，完全私密。";
 "Get the Mac bridge" = "获取 Mac 桥接";
 "Good afternoon" = "下午好";
@@ -744,6 +747,7 @@
 "Import model" = "进口型号";
 "Imported {{0}}" = "进口{{0}}";
 "In progress" = "进行中";
+"In use" = "正在使用";
 "Incompatible LoRA" = "不兼容的 LoRA";
 "Incorrect parental PIN." = "家长 PIN 码不正确。";
 "Indexing…" = "索引…";
@@ -854,6 +858,7 @@
 "Loading {{0}}…" = "正在加载{{0}}...";
 "Loading…" = "加载中…";
 "Loads the selected on-device model" = "加载选定的设备上模型";
+"Local AI, code, chat & images" = "本地 AI、代码、聊天与图像";
 "Local AI. Optional connected features." = "本地人工智能。可选连接功能。";
 "Local API" = "本地API";
 "Local API Server" = "本地API服务器";
@@ -899,6 +904,7 @@
 "Max tokens" = "最大令牌数";
 "Maximum {{0}} attachments per message." = "每封邮件最多包含 {{0}} 个附件。";
 "May not fit this device. Available memory is checked before generation." = "可能不适合该设备。在生成之前检查可用内存。";
+"Memory" = "内存";
 "Memory estimates vary with context length and other active apps. Choose a smaller model if loading is refused." = "内存估计值随上下文长度和其他活动应用程序的不同而变化。如果拒绝装载，请选择较小的型号。";
 "Memory margin" = "内存裕量";
 "Memory safety" = "内存安全";
@@ -1030,6 +1036,7 @@
 "Normal" = "正常";
 "Not Now" = "稍后再说";
 "Not chat models — embedding, rerank, and transcription." = "Not chat models — embedding, rerank, and transcription.";
+"Not downloaded" = "未下载";
 "Not enabled for this build" = "此版本未启用";
 "Not enough storage: this pack needs about {{0}} (including install headroom) but only {{1}} is free." = "Not enough storage: this pack needs about {{0}} (including install headroom) but only {{1}} is free.";
 "Not loaded" = "未加载";
@@ -1044,6 +1051,7 @@
 "OFFICIAL RECIPE" = "OFFICIAL RECIPE";
 "OK" = "确定";
 "OLED" = "有机发光二极管";
+"ONNX Runtime has no Mac Catalyst build, so this voice runs on iPhone and iPad only." = "ONNX Runtime 没有 Mac Catalyst 版本，因此此声音仅在 iPhone 和 iPad 上运行。";
 "OPEN GUIDE" = "开放指南";
 "OPEN_SOURCE" = "OPEN_SOURCE";
 "Off" = "离开";
@@ -1054,6 +1062,8 @@
 "Official higher-quality KittenML ONNX · 8 English voices." = "官方更高品质 KittenML ONNX · 8 种英文语音。";
 "Official quantized KittenML ONNX · 8 English voices." = "官方量化 KittenML ONNX · 8 种英文语音。";
 "Offline" = "离线";
+"On this Mac" = "此 Mac 上";
+"On this iPhone" = "此 iPhone 上";
 "On-device" = "设备上";
 "On-device & private" = "设备上和私人的";
 "On-device AI studio manual & workflows" = "设备端 AI studio 手册和工作流程";
@@ -1310,13 +1320,16 @@
 "Running tool: {{0}}" = "运行工具：{{0}}";
 "Running {{0}}" = "正在运行 {{0}}";
 "Runs all steps of the selected macro" = "运行所选宏的所有步骤";
+"Runs on" = "支持设备";
 "Runs on supported iPhone, iPad, and Apple silicon Mac devices." = "在支持的 iPhone、iPad 和 Apple Silicon Mac 设备上运行。";
 "Runs the selected assistant model locally — nothing leaves your device." = "在本地运行选定的助手模型 - 任何内容都不会离开您的设备。";
 "Runtime" = "运行时";
+"Runtime Not Available" = "运行时不可用";
 "Runtime Required" = "需要运行时";
 "Runtime status: %@" = "运行时状态：%1$@";
 "Runtime status: {{0}}" = "运行时状态：{{0}}";
 "SD / SDXL diffusion via MLX. FLUX is too large for iOS memory." = "SD / SDXL 通过 MLX 扩散。 FLUX 对于 iOS 内存来说太大了。";
+"SDXL needs a high-memory Mac. Live headroom is checked before loading a model." = "SDXL 需要内存较大的 Mac。在加载模型之前会检查实时可用余量。";
 "SDXL needs the highest-memory iPhones. Live headroom is checked before loading a model." = "SDXL 需要最高内存的 iPhone。在加载模型之前检查实时动态余量。";
 "SETTINGS" = "设置";
 "SPEECH & EMBEDDING" = "SPEECH & EMBEDDING";
@@ -1353,6 +1366,7 @@
 "Search voice models" = "搜索语音模型";
 "Search voices" = "搜索声音";
 "Searching" = "搜寻中";
+"See all" = "查看全部";
 "See the preview and follow launch updates." = "查看预览并关注发布更新。";
 "Select" = "选择";
 "Select & Test" = "选择和测试";
@@ -1403,6 +1417,7 @@
 "Shows on-device model and performance details" = "显示设备上的型号和性能详细信息";
 "Shows tool details" = "显示工具详细信息";
 "Silver" = "银";
+"Size" = "大小";
 "Size is a repository estimate and may include multiple variants. Runtime memory also depends on context length and other active features." = "大小是存储库估计值，可能包括多个变体。运行时内存还取决于上下文长度和其他活动功能。";
 "Skip for now — finish in Models" = "暂时跳过 — 在模型中完成";
 "Smart handling" = "智能操控";
@@ -1466,6 +1481,7 @@
 "Supertonic (neural)" = "Supertonic（神经）";
 "Supertonic — Multilingual" = "Supertonic — 多种语言";
 "Support" = "支持";
+"Supported Macs" = "支持的 Mac";
 "Supported iPads" = "支持的 iPad";
 "Supported iPhones" = "支持的 iPhone";
 "Swap" = "切换";
@@ -1544,7 +1560,8 @@
 "Thinking mode" = "思维模式";
 "Thinking…" = "思考中…";
 "This Core AI language bundle is missing tokenizer/tokenizer.json." = "This Core AI language bundle is missing tokenizer/tokenizer.json.";
-"This Core AI model is not supported by this iPhone build." = "This Core AI model is not supported by this iPhone build.";
+"This Core AI model is not supported by this Mac build." = "此 Core AI 模型不受此 Mac 版本支持。";
+"This Core AI model is not supported by this iPhone build." = "此 Core AI 模型不受此 iPhone 版本支持。";
 "This build exceeds the iOS per-app memory budget and is available only on Apple silicon Mac." = "此版本超出了 iOS 每个应用程序的内存预算，并且仅在 Apple Silicon Mac 上可用。";
 "This can include recent messages, system instructions, and text extracted from files, web pages, or images." = "这可以包括最近的消息、系统指令以及从文件、网页或图像中提取的文本。";
 "This chat is removed from this device. This can't be undone." = "该聊天已从此设备中删除。这无法撤消。";
@@ -1785,7 +1802,6 @@
 "asking the Mac if argent is available" = "询问 Mac argent 是否可用";
 "asr · whisper · dictation" = "Asr · 耳语 · 听写";
 "assistant" = "助手";
-"assistant, api keys, models" = "助手、API 密钥、模型";
 "attributions" = "归因";
 "audio" = "声音的";
 "audio out" = "音频输出";
@@ -1977,6 +1993,7 @@
 "iOS Local LLM" = "iOS Local LLM";
 "iOS Local LLM is built on the work of many researchers and engineers who released their models, frameworks, and tools openly. Each is listed below with its license and source." = "iOS Local LLM 建立在许多研究人员和工程师的工作基础上，他们公开发布了他们的模型、框架和工具。下面列出了每一个及其许可证和来源。";
 "iOS Local LLM runs large AI models entirely on-device. Inference needs at least 8 GB of physical RAM to load without thermal throttling or Jetsam kills." = "iOS 本地法学硕士完全在设备上运行大型人工智能模型。推理需要至少 8 GB 物理 RAM 才能加载，而不会出现热限制或 Jetsam 终止现象。";
+"iPhone · iPad" = "iPhone · iPad";
 "iPhone · iPad · Mac" = "iPhone·iPad·Mac";
 "idle" = "空闲";
 "image" = "图像";
@@ -2096,6 +2113,7 @@
 "off → hide pill, no auto-cap on max tokens" = "关闭 → 隐藏药丸，最大代币数量没有自动上限";
 "off: web tool only runs on wi-fi" = "关闭：网络工具仅在 Wi-Fi 上运行";
 "on" = "在";
+"on this Mac" = "此 Mac 上";
 "on-device" = "设备上";
 "on-device AI heats the device — what to know" = "设备上的人工智能加热设备——要知道什么";
 "on-device ai heats the device — what to know" = "设备上的人工智能加热设备——要知道什么";
@@ -2171,6 +2189,7 @@
 "red" = "红色的";
 "refresh" = "刷新";
 "refresh devices" = "刷新设备";
+"replies stay on your Mac" = "回复保留在此 Mac 上";
 "required" = "必需";
 "reset" = "重置";
 "reset standings" = "重置积分榜";
@@ -2204,6 +2223,7 @@
 "running right…" = "右侧运行中…";
 "running {{0}}…" = "正在运行 {{0}}...";
 "running…" = "运行中…";
+"runs on this Mac" = "在此 Mac 上运行";
 "runs on this iPhone" = "在此 iPhone 上运行";
 "runtime" = "运行时";
 "safari" = "游猎";
@@ -2386,6 +2406,7 @@
 "wifi.exclamationmark" = "wifi.exclamationmark";
 "wifi.slash" = "wifi.slash";
 "wiped" = "擦掉了";
+"won't run on this Mac" = "无法在此 Mac 上运行";
 "won't run on this iPhone" = "无法在此 iPhone 上运行";
 "xmark" = "标记";
 "you" = "你";

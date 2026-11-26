@@ -30,7 +30,7 @@ dependencies are included in this design adaptation.
 
 | Component | Upstream | License |
 | --- | --- | --- |
-| llama.cpp LFM3 support (`19ff817fb25e9a1b838b1d7f9f4325f7bf9779c4`) | <https://github.com/ggml-org/llama.cpp> | MIT |
+| llama.cpp b12662 (`1f3ea67fbf857bb831d3fb9e3a91c0f8ad3fbe78`) | <https://github.com/ggml-org/llama.cpp> | MIT |
 | whisper.cpp | <https://github.com/ggerganov/whisper.cpp> | MIT |
 
 Each submodule retains its upstream notices and license.
@@ -75,6 +75,19 @@ The following are deliberately excluded from Git:
 
 Anyone redistributing a build is responsible for reviewing and satisfying the
 licenses of every model and binary they add.
+
+### Ternary Bonsai 2.5 27B (optional GGUF download)
+
+- Publisher: [PrismML](https://huggingface.co/prism-ml/Ternary-Bonsai-2.5-27B-GGUF),
+  revision `f71afa90d5f8f07f0518b6105eaf9b50e2c6d210`.
+- The Mac-only text preset selects `Ternary-Bonsai-2.5-27B-Q2_0.gguf`
+  (7,673,194,848 bytes), `LICENSE` and `NOTICE.txt` at that revision.
+- License: [Apache-2.0](LICENSES/Models/PrismML-Bonsai-2.5-27B-GGUF/LICENSE).
+  The verbatim [publisher notice](LICENSES/Models/PrismML-Bonsai-2.5-27B-GGUF/NOTICE.txt)
+  retains the Qwen3.8-27B and MTP-head provenance. Both are bundled in the
+  in-app notices. Model weights remain outside Git.
+- The existing upstream llama.cpp runtime loads Q2_0. This integration does not
+  include the publisher's Python runtime or a PTQ1_0 fork.
 
 ### Official KittenTTS 0.8 variants
 

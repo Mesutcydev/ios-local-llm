@@ -12,6 +12,21 @@ enum VoiceEngineKind: String, CaseIterable, Identifiable, Codable {
 
     var id: String { rawValue }
 
+    /// KittenTTS 0.8, Paradee and Supertonic are ONNX Runtime models, and ONNX
+    /// Runtime ships no Mac Catalyst slice — the Mac build links none of it
+    /// (see Podfile). Offering them on Mac would be a dead end. Kokoro is
+    /// Core ML, so it runs everywhere.
+    var isSupportedOnThisPlatform: Bool {
+        #if targetEnvironment(macCatalyst)
+        switch self {
+        case .kittenTTS, .paradee, .supertonic: return false
+        case .appleSystem, .kokoro:             return true
+        }
+        #else
+        return true
+        #endif
+    }
+
     /// Engines the user can pick from the settings UI. Kokoro lands
     /// here once its CoreML bundle is on disk — the catalog now ships
     /// a real download for `aufklarer/Kokoro-82M-CoreML`, so the old
@@ -21,6 +36,7 @@ enum VoiceEngineKind: String, CaseIterable, Identifiable, Codable {
     /// found" failure when they tap a row that can't be loaded.
     static var userSelectableCases: [VoiceEngineKind] {
         allCases.filter { kind in
+            guard kind.isSupportedOnThisPlatform else { return false }
             switch kind {
             case .appleSystem, .kittenTTS: return true
             case .kokoro:                   return VoiceModelBundleValidator.isKokoroAvailable()

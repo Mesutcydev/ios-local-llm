@@ -166,11 +166,9 @@ struct AssistantApprovalCard: View {
                         Text("Allow once")
                             .scaledFont(size: 13, weight: .semibold, design: .monospaced)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, Space.s)
-                            .foregroundStyle(T.bg)
-                            .background(RoundedRectangle(cornerRadius: Radius.inner, style: .continuous).fill(T.ink))
                     }
-                    .buttonStyle(.plain)
+                    .glassButton(prominent: true)
+                    .controlSize(.large)
                     .accessibilityLabel("Allow this \(AssistantActivity.displayName(forTool: toolName)) once")
 
                     if let onAlwaysAllow {
@@ -235,11 +233,9 @@ struct AssistantFileApprovalCard: View {
                     Text("Choose file")
                         .scaledFont(size: 13, weight: .semibold, design: .monospaced)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, Space.s)
-                        .foregroundStyle(T.bg)
-                        .background(RoundedRectangle(cornerRadius: Radius.inner, style: .continuous).fill(T.ink))
                 }
-                .buttonStyle(.plain)
+                .glassButton(prominent: true)
+                .controlSize(.large)
                 .accessibilityLabel("Choose a file for the assistant")
 
                 Button(action: {

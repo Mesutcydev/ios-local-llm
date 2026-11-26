@@ -68,7 +68,7 @@ struct ImageParentalControlsView: View {
             Text("This feature lock does not verify age or replace content safeguards. Use Screen Time to restrict access to the entire app.".tr)
                 .font(.caption).foregroundStyle(.secondary)
         }
-        .buttonStyle(.kSecondary)
+        .glassButton()
         .padding()
     }
 }
